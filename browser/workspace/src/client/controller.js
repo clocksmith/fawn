@@ -136,7 +136,7 @@ export class WorkspaceController {
       kind: 'navigate', target: { url: target.href }, observationVersion: observation.observationVersion });
     return admitted.result;
   }
-  async capture(id, { pageId, regions = [], compositorRegion, sinceVersion, artifactId, expectedRevision = 0 }, owner = null, onObservation = null) {
+  async capture(id, { pageId, regions = [], compositorRegion, compositorSession, sinceVersion, artifactId, expectedRevision = 0 }, owner = null, onObservation = null) {
     const previous = artifactId ? this.store.get(id).artifacts[artifactId] : null;
     const previousSelector = previous?.source?.compositor?.selector;
     if (artifactId && (previous?.source?.kind !== 'page' || previous.source.pageId !== pageId
@@ -144,8 +144,10 @@ export class WorkspaceController {
     const selector = compositorRegion ?? previousSelector;
     const selected = selector ? [...new Set([...regions, selector])] : regions;
     const identity = owner ?? await this.humanPage(id, pageId, [], selector ? selected : null);
+    const session = compositorSession ?? previous?.source?.compositor?.sessionId ?? (!artifactId && !owner ? 'start' : undefined);
     const observation = await this.service.observe({ ...identity, pageId, ...(selected.length ? { regions: selected } : {}),
-      ...(selector ? { compositorRegion: selector, sinceVersion: sinceVersion ?? previous?.source?.observationVersion } : {}) });
+      ...(selector ? { compositorRegion: selector, compositorSession: session,
+        sinceVersion: sinceVersion ?? previous?.source?.observationVersion } : {}) });
     onObservation?.(observation);
     const frame = observation.frameEvidence?.[selector];
     if (selector && !frame) throw Error('Browser supplied no evidence for the selected surface');
@@ -364,7 +366,7 @@ export class WorkspaceController {
       if (['observe', 'act', 'capture'].includes(tool) && !pageIds.includes(pageId)) throw Error('Page exceeds this delegation');
       if (tool === 'observe') {
         const observation = await this.service.observe({ ...owner, pageId, regions: input.regions, sinceVersion: input.sinceVersion,
-          ...(input.compositorRegion ? { compositorRegion: input.compositorRegion, regions: input.regions ?? [input.compositorRegion] } : {}) });
+          ...(input.compositorRegion ? { compositorRegion: input.compositorRegion, compositorSession: input.compositorSession ?? observations.get(pageId)?.frameEvidence?.[input.compositorRegion]?.sessionId, regions: input.regions ?? [input.compositorRegion] } : {}) });
         observations.set(pageId, observation); return plannerView(observation, pageId);
       }
       if (input.artifactId && !visibleArtifacts.has(input.artifactId)) throw Error('Source record was not shared with this task');
@@ -379,7 +381,8 @@ export class WorkspaceController {
         // Saving a page reads it again, which supersedes the observation the planner last saw. Keep the
         // newer one as current so the next action is not refused as stale; handles and digests are still
         // checked against it, so a page that changed in between is refused there instead.
-        const artifact = await this.capture(id, { ...input, pageId }, owner, observation => { if (!input.regions?.length || observation.frameEvidence) observations.set(pageId, observation); });
+        const compositorSession = input.compositorSession ?? observations.get(pageId)?.frameEvidence?.[input.compositorRegion]?.sessionId;
+        const artifact = await this.capture(id, { ...input, pageId, compositorSession }, owner, observation => { if (!input.regions?.length || observation.frameEvidence) observations.set(pageId, observation); });
         visibleArtifacts.add(artifact.id); return artifact;
       }
       if (tool === 'repository_files') return repositoryFiles(this.store.get(id).repositoryRoot, this.config.maxRepositoryFiles);

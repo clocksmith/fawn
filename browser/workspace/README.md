@@ -130,14 +130,18 @@ The contract's semantic names map to these concrete rules.
   and other compositor layers fall outside this canvas-bitmap observation.
 - **Composited element evidence.** An administrator can enable
   `observation.compositorCapture` on a visible Chromium browser. Call
-  `observe({ regions: ['#surface'], compositorRegion: '#surface', sinceVersion })`
+  `observe({ regions: ['#surface'], compositorRegion: '#surface', compositorSession: 'start' })`
   on a scoped workspace with a live grant naming that canvas and origin. The
   user selects the current tab in Chromium's sharing chooser. The service
   attaches its frame reader only after the browser confirms element restriction.
   Rendering includes the target's CSS. Occluding sibling elements are excluded.
-  The stream and its frame close after each sample. A new sample, including
-  action revalidation, opens the browser's chooser again. Denial, timeout and
-  unsupported layouts stop the sample. `frameEvidence` records the selected
+  Reuse `frameEvidence['#surface'].sessionId` as `compositorSession` for later
+  observations. A write citing that observation rechecks the current grant and
+  reads a fresh restricted frame on the same stream. Each sample closes its
+  frames. Ending sharing in the browser, replacing the element, navigating,
+  revoking the grant, handing off, or losing contact with the service retires
+  the stream. A new share requires an explicit start and browser consent. Only
+  the evidence and session identifier survive a restart. `frameEvidence` records the selected
   surface ID, document loader, grant revision, media timestamp and captured
   dimensions. Rectangles in this mode use captured-frame pixels.
   `observation.compositorTransport` selects `external-texture` (direct WebGPU
@@ -150,7 +154,8 @@ The contract's semantic names map to these concrete rules.
   evidence recaptures the surface, reads every canonical pixel and refuses a
   new document, replacement element, revised grant or changed digest. An
   application revision check can still cover the interval between revalidation
-  and an external write.
+  and an external write. With a live renderer and a disconnected service, an
+  eight-second heartbeat lease closes the share when browser timers run.
   A region-scoped action can bind the digest to detect a repaint. Applications
   with interchangeable cells also need a stable entity and revision at dispatch.
   Targetable elements are links, buttons, inputs, selects, textareas and elements
@@ -413,7 +418,14 @@ BLITZEN_TEST_ELEMENT_CAPTURE=1 BLITZEN_TEST_COMPOSITOR_TRANSPORT=external-textur
 
 `BLITZEN_COMPOSITOR_RECEIPT_PREFIX` optionally writes a new JSON receipt for
 each adapter. Each includes actual planner-call count and reported model spend,
-along with explicit host-copy, GPU tile-mask and padded tile-readback bytes.
+along with permission requests, consumed frames, local application HTTP requests
+and explicit host-copy, GPU tile-mask and padded tile-readback bytes. The optional
+`BLITZEN_TEST_NATIVE_STOP_SHARING` test helper must operate only a disposable
+test display and click Chromium’s own Stop sharing control. The fixture verifies
+the native track ended and the pre-write check refused the old grant. Use
+`BLITZEN_TEST_CAPTURE_LEASE=1` to exercise service-heartbeat expiry. The
+separate `test/browser/compositor-service-crash.test.js` uses the same visible
+browser opt-in and kills the fixture-owned service after its first capture.
 A software Vulkan run checks behavior. Native backend selection and transfer
 ownership still require the corresponding Chromium lane identity and trace.
 

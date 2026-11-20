@@ -1,6 +1,8 @@
 // A real browser chooser is required. The opt-in fixture runner may preselect
 // only this disposable tab on a private display. Production sets no such flag.
 import assert from 'node:assert/strict';
+import { execFile } from 'node:child_process';
+import { promisify } from 'node:util';
 import { createServer } from 'node:http';
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -17,7 +19,9 @@ if (process.env.BLITZEN_TEST_ELEMENT_CAPTURE !== '1') {
   process.exit(0);
 }
 const directory = mkdtempSync(join(tmpdir(), 'blitzen-compositor-'));
+let pageRequests = 0;
 const server = createServer((_rq, res) => {
+  pageRequests++;
   res.setHeader('content-type', 'text/html');
   res.end(`<!doctype html><title>Blitzen ephemeral compositor fixture</title>
   <style>body{margin:0}canvas{isolation:isolate;position:absolute;inset:0;z-index:1}
@@ -60,12 +64,26 @@ try {
       const navigation = await service.submitAction({ ...owner, actionId: 'open', authorizedIntent: 'inspect', observationVersion: initial.observationVersion,
         kind: 'navigate', target: { url: origin } });
       assert.equal((await navigation.result).outcome, 'completed');
-      const observe = sinceVersion => service.observe({ ...owner, regions: ['#surface'], compositorRegion: '#surface', sinceVersion });
+      let session = 'start';
+      const observe = async sinceVersion => {
+        const result = await service.observe({ ...owner, regions: ['#surface'], compositorRegion: '#surface', compositorSession: session, sinceVersion });
+        session = result.frameEvidence['#surface'].sessionId;
+        return result;
+      };
       await assert.rejects(observe(), { code: 'unauthorized-target' }, 'a broad page grant cannot initiate a restricted surface capture');
       await service.revokeAuthorization({ ...admin, grantId: 'navigate' });
       await service.grantAuthorization({ ...grant, grantId: 'selected', readRegions: ['#surface','#ack'] });
       const evaluate = fn => name === 'playwright' ? adapter._page(workspaceId).evaluate(fn) : adapter._evaluate(workspaceId, '('+fn.toString()+')()');
-      const original = await observe();
+      // Chromium may ramp its tab-capture output size after the first frame.
+      // A size change legitimately resets the tile baseline. Start the sibling
+      // check after the first unchanged-size frame on the same permission.
+      let original = await observe();
+      for (let i = 0; i < 5; i++) {
+        const another = await observe(original.observationVersion);
+        original = another;
+        if (another.visualChanges['#surface'].baseline === 'compared') break;
+      }
+      assert.equal(original.visualChanges['#surface'].baseline, 'compared');
       assert.equal(original.frameEvidence['#surface'].transport, transport);
       const { width, height } = original.frameEvidence['#surface'];
       assert.ok(width > 0 && width <= 256 && width === height * 2);
@@ -75,12 +93,18 @@ try {
       // The sibling occludes half the chosen canvas on the compositor. Its
       // color is outside the grant and must not enter the captured pixels.
       await evaluate(() => { document.querySelector('aside').style.background = 'lime'; });
+      // A second explicit selection of the same active surface uses its
+      // existing browser grant too, including from a new evidence artifact.
+      session = 'start';
       const same = await observe(original.observationVersion);
       assert.deepEqual(same.visualChanges['#surface'].changed, []);
       assert.equal(lastMetric.comparedOnGpu, true);
       assert.equal(lastMetric.tilePixelReadbackBytes, 0);
       const unchangedComparison = { ...lastMetric };
       assert.equal(unchangedComparison.gpuMaskReadbackBytes, 4);
+      assert.equal(original.frameEvidence['#surface'].sessionId, same.frameEvidence['#surface'].sessionId);
+      assert.equal(captures.reduce((n, v) => n + v.permissionRequests, 0), 1);
+      assert.equal(same.frameEvidence['#surface'].mediaTimestampUs > original.frameEvidence['#surface'].mediaTimestampUs, true);
       const backing = await service.observe({ ...owner, regions: ['#surface'] });
       await evaluate(() => { document.body.classList.add('tint'); });
       const tinted = await observe(original.observationVersion);
@@ -101,17 +125,25 @@ try {
       });
       const replacement = await submit(beforeReplacement, 'different-surface');
       assert.equal((await replacement.result).neverDispatched?.code, 'stale-observation');
+      await assert.rejects(observe(), /ended|changed|expired|replaced/);
+      session = 'start';
       const beforeRegrant = await observe();
+      const revokedEntry = [...adapter.compositor.entries.values()][0];
       await service.revokeAuthorization({ ...admin, grantId: 'selected' });
+      const revoked = (await adapter.compositor.control(revokedEntry, 'status')).result.value;
+      assert.equal(revoked.trackState, 'ended');
+      assert.equal(revoked.permissionRequests, 1);
       await service.grantAuthorization({ ...grant, grantId: 'selected', readRegions: ['#surface','#ack'] });
       assert.equal((await (await submit(beforeRegrant, 'reused-grant-id')).result).neverDispatched?.code, 'stale-observation');
+      await assert.rejects(observe(), /expired|changed/);
+      session = 'start';
       const wholePage = await observe();
       await evaluate(() => { document.querySelector('#ack').title = 'changed target description'; });
       const wholeAction = await service.submitAction({ ...owner, actionId: 'changed-page', kind: 'click',
         authorizedIntent: 'inspect', observationVersion: wholePage.observationVersion,
         target: { handle: wholePage.elements.find(x => x.selector === '#ack').handle } });
       assert.equal((await wholeAction.result).neverDispatched?.code, 'stale-observation');
-      const firstCapture = captures.length, started = performance.now();
+      const firstCapture = captures.length, firstRequest = pageRequests, started = performance.now();
       const fresh = await observe();
       const ack = await submit(fresh, 'ack');
       const outcome = await ack.result;
@@ -120,12 +152,66 @@ try {
       assert.equal(lastMetric.tilePixelReadbackBytes, width * height * 4, 'dispatch independently read every rendered pixel');
       assert.equal(await evaluate(() => typeof globalThis.__blitzenSurface), 'undefined', 'the page cannot access the private capture handle');
       const receipt = {
-        clock: 'fresh-permitted-observation-through-confirmed-click-effect', transport, adapter: name,
+        clock: 'fresh-permitted-observation-through-confirmed-click-effect', transport, adapter: name, applicationHttpRequests: pageRequests - firstRequest,
         selection: config.browser.channel === 'fawn' ? config.browser.fawnBuild : { channel: config.browser.channel },
         dimensions: [width, height], unchangedComparison,
         ...summarizeResidentOutcome({ elapsedMs: performance.now() - started, verified: true,
           ruleEvaluations: 1, modelCalls: [], captures: captures.slice(firstCapture) }),
       };
+      assert.equal(receipt.permissionRequests, 0, 'observation and dispatch reused the existing browser permission');
+      let browserStop = null;
+      const nativeStop = process.env.BLITZEN_TEST_NATIVE_STOP_SHARING;
+      if (nativeStop) {
+        const entry = [...adapter.compositor.entries.values()][0];
+        const old = await observe();
+        await promisify(execFile)(nativeStop, [name]);
+        const status = await adapter.compositor.control(entry, 'status');
+        assert.equal(status.result.value.trackState, 'ended', 'browser chrome stopped the actual native track');
+        assert.equal(status.result.value.permissionRequests, 1);
+        await assert.rejects(observe(), /ended|expired|changed/);
+        assert.equal((await (await submit(old, 'native-stop')).result).neverDispatched?.code, 'stale-observation');
+        browserStop = { trackState: status.result.value.trackState, permissionRequests: status.result.value.permissionRequests, staleRefusal: true };
+        session = 'start'; await observe();
+      }
+      const preNavigation = [...adapter.compositor.entries.values()][0];
+      await evaluate(() => { location.hash = 'new-revision'; });
+      assert.equal((await adapter.compositor.control(preNavigation, 'status')).result.value.trackState, 'ended');
+      await assert.rejects(observe(), /ended|expired|changed/);
+      session = 'start'; await observe();
+      receipt.nativeBrowserRevocation = browserStop;
+      if (process.env.BLITZEN_TEST_CAPTURE_LEASE === '1') {
+        const abandoned = [...adapter.compositor.entries.values()][0];
+        // Keep Chromium running but stop the authority's renewal. A renderer
+        // holding only its expired lease must stop its live native track itself.
+        clearInterval(abandoned.heartbeat);
+        const deadline = Date.now() + 12000;
+        let state;
+        do {
+          await new Promise(resolve => setTimeout(resolve, 200));
+          state = (await adapter.compositor.control(abandoned, 'status')).result.value;
+        } while (!state.ended && Date.now() < deadline);
+        assert.equal(state.trackState, 'ended');
+        await assert.rejects(observe(), /ended|expired|changed/);
+        session = 'start'; await observe();
+        receipt.serviceLeaseExpired = true;
+        const expiresAt = Date.now() + 5000;
+        await service.grantAuthorization({ ...grant, grantId: 'selected', readRegions: ['#surface','#ack'],
+          expiresAt: new Date(expiresAt).toISOString() });
+        session = 'start'; await observe();
+        const expiring = [...adapter.compositor.entries.values()][0];
+        await new Promise(resolve => setTimeout(resolve, Math.max(1, expiresAt - Date.now() + 200)));
+        assert.equal((await adapter.compositor.control(expiring, 'status')).result.value.trackState, 'ended');
+        await assert.rejects(observe(), { code: 'unauthorized-target' });
+        await service.grantAuthorization({ ...grant, grantId: 'selected', readRegions: ['#surface','#ack'] });
+        session = 'start'; await observe();
+        receipt.grantExpiryEndedTrack = true;
+      }
+      const handoffEntry = [...adapter.compositor.entries.values()][0];
+      const replacementOwner = { workspaceId, ...await service.assignOwner({ ...admin, ownerId: 'other-account' }) };
+      await assert.rejects(service.observe({ ...replacementOwner, regions: ['#surface'], compositorRegion: '#surface', compositorSession: session }),
+        { code: 'unauthorized-target' });
+      assert.equal((await adapter.compositor.control(handoffEntry, 'status')).result.value.trackState, 'ended');
+      assert.equal(adapter.compositor.entries.size, 0, 'handoff released the browser share before returning');
       if (process.env.BLITZEN_COMPOSITOR_RECEIPT_PREFIX) writeFileSync(
         process.env.BLITZEN_COMPOSITOR_RECEIPT_PREFIX + '-' + name + '.json',
         JSON.stringify(receipt, null, 2) + '\n', { flag: 'wx' });
@@ -137,14 +223,16 @@ try {
         const first = await controller.capture(project.id, { pageId: 'main', compositorRegion: '#surface' });
         assert.equal(first.source.compositor.selector, '#surface');
         const refresh = () => controller.capture(project.id, { pageId: 'main', artifactId: first.id, expectedRevision: first.revision });
-        assert.equal((await refresh()).revision, first.revision, 'the same granted pixels preserve the evidence revision');
+        const settled = await refresh();
+        const refreshSettled = () => controller.capture(project.id, { pageId: 'main', artifactId: first.id, expectedRevision: settled.revision });
+        assert.equal((await refreshSettled()).revision, settled.revision, 'the same granted pixels preserve the evidence revision');
         const tint = () => document.body.classList.add('tint');
         if (name === 'playwright') await adapter._page(project.id).evaluate(tint);
         else await adapter._evaluate(project.id, '('+tint.toString()+')()');
-        const next = await refresh();
-        assert.equal(next.revision, first.revision + 1);
+        const next = await refreshSettled();
+        assert.equal(next.revision, settled.revision + 1);
         const continuity = ['width', 'height', 'transport', 'loaderId', 'surfaceId', 'grantRevision']
-          .every(key => next.source.compositor[key] === first.source.compositor[key]);
+          .every(key => next.source.compositor[key] === settled.source.compositor[key]);
         assert.equal(next.source.visualChanges.baseline, continuity ? 'compared' : 'new',
           JSON.stringify({ earlier: first.source.compositor, later: next.source.compositor }));
         assert.ok(next.source.visualChanges.changed.length);

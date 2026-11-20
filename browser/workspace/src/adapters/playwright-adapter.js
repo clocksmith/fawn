@@ -1,4 +1,4 @@
-import { snapshotCompositor } from './compositor-capture.js';
+import { CompositorSessions } from './compositor-capture.js';
 import { createResidentCanvasReader } from './resident-canvas.js';
 import { pickRegion } from './region-picker.js';
 // Fawn workspace — narrow Playwright adapter over stock Chromium
@@ -23,6 +23,7 @@ class PlaywrightWorkspaceAdapter {
     this._profileRoot = profileRoot;
     this._artifactRoot = artifactRoot;
     this._workspaces = new Map();
+    this.compositor = new CompositorSessions();
     this._canvasReaders = new WeakMap();
     this._surfaceSessions = new WeakMap();
   }
@@ -74,7 +75,7 @@ class PlaywrightWorkspaceAdapter {
         session = await page.context().newCDPSession(page);
         this._surfaceSessions.set(page, session);
       }
-      const raw = await snapshotCompositor((method, params) => session.send(method, params), args, read.capture);
+      const raw = await this.compositor.snapshot(workspaceId, read.pageId ?? 'main', (method, params) => session.send(method, params), args, read.capture, read.captureSignal);
       return buildSnapshot(raw, this._workspaces.get(workspaceId).context.pages().length);
     }
     if (!read.verifyCanvas && this._config.observation.canvasBackend === 'webgpu' && (args.regions.length || args.regionGroups.length)) {
@@ -151,6 +152,7 @@ class PlaywrightWorkspaceAdapter {
    * A workspace whose browser could not be shown to have exited stays owned by this adapter.
    */
   async close({ timeoutMs = this._config.dispatch.actionTimeoutMs, releaseBrowser = closeWithin } = {}) {
+    await this.compositor.release();
     // Releasing the workspace never waits on a browser that will not exit.
     return Promise.all([...this._workspaces.entries()].map(async ([workspaceId, entry]) => {
       const { release, survivors, errors } = await releaseBrowser(entry.context, { profileDir: entry.profileDir, timeoutMs });

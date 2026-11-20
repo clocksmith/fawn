@@ -1,4 +1,4 @@
-import { snapshotCompositor } from './compositor-capture.js';
+import { CompositorSessions } from './compositor-capture.js';
 import { createResidentCanvasReader } from './resident-canvas.js';
 import { pickRegion } from './region-picker.js';
 // Fawn workspace — narrow raw-CDP adapter over stock Chromium
@@ -197,6 +197,7 @@ class CdpWorkspaceAdapter {
     this._profileRoot = profileRoot;
     this._artifactRoot = artifactRoot;
     this._workspaces = new Map();
+    this.compositor = new CompositorSessions();
   }
 
   async openWorkspace(workspaceId, { pages = [] } = {}) {
@@ -257,7 +258,7 @@ class CdpWorkspaceAdapter {
     let raw;
     if (read.capture) {
       const { sessionId } = this._entry({ workspaceId, pageId });
-      raw = await snapshotCompositor((method, params) => cdp.send(method, params, sessionId), args, read.capture);
+      raw = await this.compositor.snapshot(workspaceId, read.pageId ?? 'main', (method, params) => cdp.send(method, params, sessionId), args, read.capture, read.captureSignal);
     } else if (!read.verifyCanvas && this._config.observation.canvasBackend === 'webgpu' && (args.regions.length || args.regionGroups.length)) {
       const page = this._workspaces.get(workspaceId).pages.get(pageId);
       const { frameTree } = await cdp.send('Page.getFrameTree', {}, page.sessionId);
@@ -376,6 +377,7 @@ class CdpWorkspaceAdapter {
    * stays owned by this adapter.
    */
   async close({ timeoutMs = this._config.dispatch.actionTimeoutMs } = {}) {
+    await this.compositor.release();
     return Promise.all([...this._workspaces.entries()].map(async ([workspaceId, entry]) => {
       const { release, survivors, errors } = await entry.cdp.close({ timeoutMs });
       if (release !== 'unresolved' && this._workspaces.get(workspaceId) === entry) this._workspaces.delete(workspaceId);

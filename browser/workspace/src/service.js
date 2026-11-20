@@ -91,7 +91,7 @@ function validateObservationRead(command, config) {
   return read;
 }
 
-function compositorRequest(workspace, permission, selector, url, config, now, verify) {
+function compositorRequest(workspace, permission, selector, url, config, now, verify, session) {
   if (!selector) return null;
   if (!config.observation.compositorCapture || config.browser.headless) {
     throw workspaceError(REJECTION_CODES.INVALID_CONFIG, 'Compositor capture requires an enabled browser with a visible permission chooser');
@@ -100,10 +100,14 @@ function compositorRequest(workspace, permission, selector, url, config, now, ve
     || !permission.targetOrigins.includes(new URL(url).origin)) {
     throw workspaceError(REJECTION_CODES.UNAUTHORIZED_TARGET, 'Compositor capture needs a grant naming the selected element and origin');
   }
+  if (typeof session !== 'string' || !session || session.length > 128 || (verify && session === 'start')) {
+    throw workspaceError(REJECTION_CODES.STALE_OBSERVATION, 'Name the current capture session, or explicitly start a new one');
+  }
   const expires = permission.expiresAt ? Date.parse(permission.expiresAt) - now : Infinity;
   return { selector, origin: new URL(url).origin, ownerGeneration: workspace.ownerGeneration,
     grantId: permission.grantId, grantRevision: permission.grantRevision,
-    readRoots: permission.readRegions, verify, transport: config.observation.compositorTransport ?? 'rgba-upload',
+    readRoots: permission.readRegions, verify, session, transport: config.observation.compositorTransport ?? 'rgba-upload',
+    ttlMs: Number.isFinite(expires) ? Math.max(0, expires) : null,
     timeoutMs: Math.max(1, Math.min(config.dispatch.actionTimeoutMs - 100, expires)) };
 }
 
@@ -112,7 +116,7 @@ function observationBase(workspace, recorded, sinceVersion) {
   for (const [selector, frame] of Object.entries(recorded.frameEvidence ?? {})) {
     const prior = previous?.frameEvidence?.[selector];
     if (!prior || prior.loaderId !== frame.loaderId || prior.surfaceId !== frame.surfaceId
-      || prior.grantRevision !== frame.grantRevision || prior.transport !== frame.transport) return null;
+      || prior.sessionId !== frame.sessionId || prior.grantRevision !== frame.grantRevision || prior.transport !== frame.transport) return null;
   }
   return previous && previous.url === recorded.url && previous.ownerGeneration === recorded.ownerGeneration
     && (previous.pageId ?? MAIN_PAGE) === (recorded.pageId ?? MAIN_PAGE) ? previous : null;
@@ -299,7 +303,10 @@ class WorkspaceService {
   }
 
   #snapshot(workspaceId, read = {}, pageId = MAIN_PAGE) {
-    return this.#bounded(this.#adapter.snapshot(workspaceId, { ...read, pageId, ownerGeneration: this.#workspace(workspaceId).ownerGeneration }));
+    const capture = read.capture ? new AbortController() : null;
+    const pending = this.#adapter.snapshot(workspaceId, { ...read, pageId, captureSignal: capture?.signal,
+      ownerGeneration: this.#workspace(workspaceId).ownerGeneration });
+    return this.#bounded(pending).finally(() => capture?.abort());
   }
 
   #nowMs() {
@@ -428,7 +435,7 @@ class WorkspaceService {
     if (actionKinds.includes('upload') !== (uploadFiles !== undefined)) {
       throw workspaceError(REJECTION_CODES.INVALID_COMMAND, 'Upload grants require explicitly selected uploadFiles; other grants cannot select files');
     }
-    return this.#runtimeFor(workspaceId).mutex.run(() => {
+    return this.#runtimeFor(workspaceId).mutex.run(async () => {
       const files = uploadFiles === undefined ? [] : this.#uploads.stage(uploadFiles);
       try {
         this.#append(RECORD_TYPES.AUTHORIZATION_GRANTED, {
@@ -441,6 +448,7 @@ class WorkspaceService {
         this.#uploads.discard(files);
         throw error;
       }
+      await this.#adapter.compositor?.release(workspaceId, grantId);
       return { grantId, ...(files.length ? { uploadFiles: files } : {}) };
     });
   }
@@ -448,8 +456,9 @@ class WorkspaceService {
   async revokeAuthorization({ workspaceId, adminCredential, grantId }) {
     const workspace = this.#workspace(workspaceId);
     authenticateAdmin(workspace, adminCredential);
-    return this.#runtimeFor(workspaceId).mutex.run(() => {
+    return this.#runtimeFor(workspaceId).mutex.run(async () => {
       this.#append(RECORD_TYPES.AUTHORIZATION_REVOKED, { workspaceId, grantId });
+      await this.#adapter.compositor?.release(workspaceId, grantId);
       return { grantId };
     });
   }
@@ -466,7 +475,7 @@ class WorkspaceService {
       throw workspaceError(REJECTION_CODES.INVALID_COMMAND, 'ownerId: expected non-empty string', { path: 'ownerId' });
     }
     const runtime = this.#runtimeFor(workspaceId);
-    return runtime.mutex.run(() => {
+    return runtime.mutex.run(async () => {
       const previous = { ownerId: workspace.ownerId, ownerGeneration: workspace.ownerGeneration };
       const { credential, credentialHash } = issueCredential(this.#config.credentials.secretBytes);
       this.#append(RECORD_TYPES.OWNERSHIP_ADVANCED, {
@@ -476,6 +485,7 @@ class WorkspaceService {
         ownerCredentialHash: credentialHash,
         previous,
       });
+      await this.#adapter.compositor?.release(workspaceId);
       for (const action of workspace.actions.values()) {
         if (action.status !== ACTION_STATUS.QUEUED) continue;
         this.#append(RECORD_TYPES.ACTION_NOT_DISPATCHED, {
@@ -518,7 +528,7 @@ class WorkspaceService {
       const snapshot = await this.#snapshot(command.workspaceId, {
         ...read, outline: read.view === OUTLINE_VIEW,
         capture: command.compositorRegion ? compositorRequest(workspace, readGrant(workspace, command, url, this.#nowMs()),
-          command.compositorRegion, url, this.#config, this.#nowMs(), false) : null,
+          command.compositorRegion, url, this.#config, this.#nowMs(), false, command.compositorSession) : null,
       }, pageId);
       readGrant(workspace, command, snapshot.url, this.#nowMs());
       const recorded = this.#recordObservation(workspace, snapshot, 'observe', pageId);
@@ -602,9 +612,12 @@ class WorkspaceService {
     if (selected && earlier.grantRevision !== permission?.grantRevision) {
       throw workspaceError(REJECTION_CODES.STALE_OBSERVATION, 'The selected surface grant changed before dispatch');
     }
-    const capture = compositorRequest(workspace, permission, selected, url, this.#config, this.#nowMs(), true);
+    const capture = compositorRequest(workspace, permission, selected, url, this.#config, this.#nowMs(), true, earlier?.sessionId);
     const snapshot = await this.#snapshot(workspaceId, { regions, verifyCanvas: true, capture,
-      readRoots: permission?.readRegions ?? null }, request.pageId);
+      readRoots: permission?.readRegions ?? null }, request.pageId).catch(error => {
+      if (capture) throw workspaceError(REJECTION_CODES.STALE_OBSERVATION, 'Could not revalidate the authorized compositor session: ' + error.message);
+      throw error;
+    });
     const latest = snapshot.frameEvidence?.[selected];
     if (selected && (earlier.loaderId !== latest?.loaderId || earlier.surfaceId !== latest?.surfaceId)) {
       throw workspaceError(REJECTION_CODES.STALE_OBSERVATION, 'The captured surface changed before dispatch');
