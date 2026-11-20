@@ -1,0 +1,207 @@
+{
+  "schema": "blitzen.sparse-restricted-tiles/v1",
+  "chromiumSource": "4a6fb38567da21dc86f8ba468ac0ca9002f4f606",
+  "dawnSource": "758e5e6a974e8ca8039b1d7b209646dabccbcb7f",
+  "feature": "FawnRestrictedPlaneEvidence",
+  "overlaySha256": "c9f76d15fdfec2f99947463451e40961a2c85e63e8966619240f1ac3efed789c",
+  "compiledObjects": {
+    "video_frame": "e0c4a2e2fcd0e0690b781cb776865719ba7c1aa22f2ecf6f580c1363f1c184e3",
+    "v8_video_frame": "4aba0c2e17c3ff6fc30bc0be7f4ecb8c5fb70aa9fe61c2d65ad63eeb00cb4e2e"
+  },
+  "nativeRenderer": {
+    "rows": [
+      {
+        "width": 512,
+        "height": 256,
+        "planeByteOffset": 42067,
+        "potentiallyDirty": 1,
+        "nativeSnapshotCopyBytes": 512
+      },
+      {
+        "width": 512,
+        "height": 256,
+        "planeByteOffset": 139039,
+        "potentiallyDirty": 4,
+        "nativeSnapshotCopyBytes": 256
+      },
+      {
+        "width": 512,
+        "height": 256,
+        "planeByteOffset": 172064,
+        "potentiallyDirty": 4,
+        "nativeSnapshotCopyBytes": 256
+      },
+      {
+        "width": 512,
+        "height": 256,
+        "planeByteOffset": 163839,
+        "potentiallyDirty": 1,
+        "nativeSnapshotCopyBytes": 256
+      },
+      {
+        "width": 512,
+        "height": 256,
+        "planeByteOffset": 131071,
+        "potentiallyDirty": 1,
+        "nativeSnapshotCopyBytes": 512
+      },
+      {
+        "width": 514,
+        "height": 258,
+        "planeByteOffset": 42231,
+        "potentiallyDirty": 1,
+        "nativeSnapshotCopyBytes": 514
+      },
+      {
+        "width": 514,
+        "height": 258,
+        "planeByteOffset": 140610,
+        "potentiallyDirty": 4,
+        "nativeSnapshotCopyBytes": 257
+      },
+      {
+        "width": 514,
+        "height": 258,
+        "planeByteOffset": 174021,
+        "potentiallyDirty": 4,
+        "nativeSnapshotCopyBytes": 257
+      },
+      {
+        "width": 514,
+        "height": 258,
+        "planeByteOffset": 165764,
+        "potentiallyDirty": 4,
+        "nativeSnapshotCopyBytes": 257
+      },
+      {
+        "width": 514,
+        "height": 258,
+        "planeByteOffset": 132611,
+        "potentiallyDirty": 1,
+        "nativeSnapshotCopyBytes": 514
+      }
+    ],
+    "rgbaReference": "complete pinned CPU Skia video paint compared with prior full pixels plus actual cropped paints",
+    "rejected": [
+      "other capture",
+      "stale prior serial",
+      "different source epoch or restriction",
+      "crop",
+      "scaled frame",
+      "retired lease"
+    ],
+    "resizeRequiresFull": true,
+    "externalSamplerCollisionDetectedTiles": 32
+  },
+  "stockWebCodecs": {
+    "fixturePlaneMasks": true,
+    "chromium": "158.0.8108.0",
+    "rows": [
+      {
+        "kind": "baseline",
+        "exact": true,
+        "actualChanged": [],
+        "copiedBytes": 524288,
+        "hashedBytes": 1048576,
+        "tilesHashed": 32
+      },
+      {
+        "kind": "luma",
+        "exact": true,
+        "actualChanged": [
+          9
+        ],
+        "copiedBytes": 16384,
+        "hashedBytes": 16384,
+        "tilesHashed": 1
+      },
+      {
+        "kind": "U at edge",
+        "exact": true,
+        "actualChanged": [
+          0
+        ],
+        "copiedBytes": 65536,
+        "hashedBytes": 65536,
+        "tilesHashed": 4
+      },
+      {
+        "kind": "V at edge",
+        "exact": true,
+        "actualChanged": [
+          9
+        ],
+        "copiedBytes": 65536,
+        "hashedBytes": 65536,
+        "tilesHashed": 4
+      },
+      {
+        "kind": "unchanged",
+        "exact": true,
+        "actualChanged": [],
+        "copiedBytes": 0,
+        "hashedBytes": 0,
+        "tilesHashed": 0
+      },
+      {
+        "kind": "new lease",
+        "exact": true,
+        "actualChanged": [],
+        "copiedBytes": 524288,
+        "hashedBytes": 1048576,
+        "tilesHashed": 32
+      }
+    ]
+  },
+  "stockResidentWorkflow": {
+    "stock-workflow-upload": {
+      "verified": true,
+      "knownEffects": 1,
+      "imageCorrect": true,
+      "canvasObservations": 3,
+      "plannerCalls": 0,
+      "modelSpendUsd": 0,
+      "applicationHttpRequests": 5,
+      "frameHostCopyBytes": 291200,
+      "canonicalHashedBytes": 161984,
+      "staleEffectsBefore": 0,
+      "staleEffectsAfter": 0,
+      "freshEffects": 1,
+      "originalReceiptSha256": "2bd2a345707e4b7c836d32bc0096b551d6fbbb7c066e70dbf903f9367da90af9"
+    },
+    "stock-review-helper": {
+      "verified": true,
+      "knownEffects": 1,
+      "imageCorrect": true,
+      "canvasObservations": 3,
+      "plannerCalls": 0,
+      "modelSpendUsd": 0,
+      "applicationHttpRequests": 5,
+      "frameHostCopyBytes": 291200,
+      "canonicalHashedBytes": 161984,
+      "staleEffectsBefore": 0,
+      "staleEffectsAfter": 0,
+      "freshEffects": 1,
+      "originalReceiptSha256": "61aa1e64f92714e4cf211a2700338583e90390f136c297a08f4e8894c75e39b9"
+    },
+    "stock-final-upload": {
+      "phase": "authorize-surface",
+      "knownEffects": 0,
+      "reason": "Error: Timed out waiting for restricted compositor evidence",
+      "originalReceiptSha256": "4b5e1d0aa781d51d1979bdf0c22ffb688d8932cd4632e3cbe0c5dee0724df3fe"
+    },
+    "stock-final-helper": {
+      "phase": "authorize-surface",
+      "knownEffects": 0,
+      "reason": "Error: Timed out waiting for restricted compositor evidence",
+      "originalReceiptSha256": "7d599e5011ea3a7581a92bcdc8317c3b9fa604f38e3944115c7daa3fc179378c"
+    },
+    "stock-workflow-lvp": {
+      "phase": "authorize-surface",
+      "knownEffects": 0,
+      "reason": "Error: [Invalid Texture] is invalid due to a previous error.",
+      "originalReceiptSha256": "e6ec45d2f313ed784f3160c756da06dd24c8d3b6107a8014773e89bb4cc8c450"
+    }
+  },
+  "scope": "CPU software correctness; no linked browser contained the optional native overlay"
+}

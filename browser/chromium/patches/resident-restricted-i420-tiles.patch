@@ -1,0 +1,201 @@
+diff --git a/third_party/blink/renderer/modules/webcodecs/fawn_restricted_plane_cache.h b/third_party/blink/renderer/modules/webcodecs/fawn_restricted_plane_cache.h
+index 4e89162b8f2b68393f7c028b6f49133d04d31e18..4beaae7b1067ae472329ac076eda35d070682373 100644
+--- a/third_party/blink/renderer/modules/webcodecs/fawn_restricted_plane_cache.h
++++ b/third_party/blink/renderer/modules/webcodecs/fawn_restricted_plane_cache.h
+@@ -33,6 +33,22 @@ class FawnRestrictedPlaneCache
+   // may be reused only in the same reader and after its earlier canonical
+   // digest was actually accepted. A changed native byte is never ignored.
+   uint32_t Observe(int world, const media::VideoFrame& frame) {
++    return Compare(world, frame, nullptr, 0, 0).serial;
++  }
++
++  struct Comparison {
++    uint32_t serial = 0;
++    uint32_t prior = 0;  // Zero means no tile may inherit a digest.
++    uint32_t snapshot_bytes_copied = 0;
++    std::array<uint32_t, 256> indexes{};
++    size_t count = 0;
++    base::span<const uint32_t> dirty() const { return base::span(indexes).first(count); }
++  };
++
++  Comparison Compare(int world, const media::VideoFrame& frame,
++                     const FawnRestrictedPlaneCache* prior, uint32_t prior_serial,
++                     uint32_t tile_size) {
++    Comparison result;
+     if (!active_ || !world_ || world != world_ || version_.sub_capture == 0 ||
+         frame.metadata().capture.version != version_ ||
+         frame.format() != media::PIXEL_FORMAT_I420 ||
+@@ -44,12 +60,12 @@ class FawnRestrictedPlaneCache
+         !frame.ColorSpace().IsValid() || frame.ColorSpace().IsHDR() ||
+         frame.visible_rect() != gfx::Rect(frame.coded_size()) ||
+         frame.natural_size() != frame.coded_size()) {
+-      return 0;
++      return result;
+     }
+     const int w = frame.coded_size().width(), h = frame.coded_size().height();
+     if (w <= 0 || h <= 0 || (w & 1) || (h & 1) ||
+         static_cast<uint64_t>(w) * h > 4u * 1024u * 1024u)
+-      return 0;
++      return result;
+ 
+     std::array<base::span<const uint8_t>, 3> planes;
+     size_t total = 0;
+@@ -58,34 +74,92 @@ class FawnRestrictedPlaneCache
+       const size_t length = width * (i == 0 ? h : h / 2);
+       auto data = frame.data_span(i);
+       if (frame.stride(i) != width || data.size() < length)
+-        return 0;
++        return result;
+       planes[i] = data.first(length);
+       total += length;
+     }
+-    bool same = baseline_.size() == total && size_ == frame.coded_size() &&
+-                color_ == frame.ColorSpace();
++    const bool comparable = baseline_.size() == total && size_ == frame.coded_size() &&
++                            color_ == frame.ColorSpace();
++    bool same = comparable;
+     size_t offset = 0;
+     for (auto plane : planes) {
+       if (same && !std::ranges::equal(plane, base::span(baseline_).subspan(offset, plane.size())))
+         same = false;
+       offset += plane.size();
+     }
+-    if (same)
+-      return serial_;
++    // The prior wrapper may be closed. Its lease, not a serial supplied by the
++    // caller, identifies the capture. Partial conversion is qualified for this
++    // exact native-scale SDR conversion and even, chroma-aligned tile origins.
++    if (comparable && prior == this && serial_ && prior_serial == serial_ &&
++        color_ == gfx::ColorSpace::CreateREC709() && tile_size >= 16 &&
++        tile_size <= 256 && (tile_size & (tile_size - 1)) == 0) {
++      const int tile = static_cast<int>(tile_size);
++      const int cols = (w + tile - 1) / tile, rows = (h + tile - 1) / tile;
++      if (cols * rows <= 256) {
++        result.prior = serial_;
++        if (!same) {
++          std::array<bool, 256> dirty{};
++          offset = 0;
++          for (size_t i = 0; i < planes.size(); ++i) {
++            const int scale = i == 0 ? 1 : 2;
++            const int pw = w / scale, ph = h / scale;
++            const auto old = base::span(baseline_).subspan(offset, planes[i].size());
++            for (int y = 0; y < ph; ++y) {
++              const size_t start = static_cast<size_t>(y) * pw;
++              const auto row = planes[i].subspan(start, static_cast<size_t>(pw));
++              auto previous = old.subspan(start, static_cast<size_t>(pw));
++              if (std::ranges::equal(row, previous))
++                continue;
++              for (int x = 0; x < pw; ++x) {
++                if (row[x] == previous[x])
++                  continue;
++                // The pinned CPU renderer uses nearest chroma. Include one
++                // adjacent chroma sample on every side of its 2x2 footprint.
++                const int halo = i == 0 ? 0 : 2;
++                const int x0 = std::max(0, x * scale - halo) / tile;
++                const int x1 = std::min(w - 1, (x + 1) * scale - 1 + halo) / tile;
++                const int y0 = std::max(0, y * scale - halo) / tile;
++                const int y1 = std::min(h - 1, (y + 1) * scale - 1 + halo) / tile;
++                for (int ty = y0; ty <= y1; ++ty)
++                  for (int tx = x0; tx <= x1; ++tx)
++                    dirty[ty * cols + tx] = true;
++              }
++              previous.copy_from(row);
++              result.snapshot_bytes_copied += static_cast<uint32_t>(pw);
++            }
++            offset += planes[i].size();
++          }
++          for (int i = 0; i < cols * rows; ++i)
++            if (dirty[i])
++              result.indexes[result.count++] = i;
++        }
++      }
++    }
++    if (same) {
++      // Whole-frame equality remains available for every supported SDR space.
++      if (prior == this && prior_serial == serial_)
++        result.prior = serial_;
++      result.serial = serial_;
++      return result;
++    }
+     if (serial_ == std::numeric_limits<uint32_t>::max()) {
+       Retire();
+-      return 0;
++      return {};
+     }
+-    if (baseline_.size() != total)
+-      baseline_ = base::HeapArray<uint8_t>::Uninit(total);
+-    offset = 0;
+-    for (auto plane : planes) {
+-      base::span(baseline_).subspan(offset, plane.size()).copy_from(plane);
+-      offset += plane.size();
++    if (!result.prior) {
++      if (baseline_.size() != total)
++        baseline_ = base::HeapArray<uint8_t>::Uninit(total);
++      offset = 0;
++      for (auto plane : planes) {
++        base::span(baseline_).subspan(offset, plane.size()).copy_from(plane);
++        offset += plane.size();
++      }
++      result.snapshot_bytes_copied = static_cast<uint32_t>(total);
+     }
+     size_ = frame.coded_size();
+     color_ = frame.ColorSpace();
+-    return ++serial_;
++    result.serial = ++serial_;
++    return result;
+   }
+ 
+  private:
+diff --git a/third_party/blink/renderer/modules/webcodecs/video_frame.cc b/third_party/blink/renderer/modules/webcodecs/video_frame.cc
+index 08862522338b8798fb1ada50acc32ba17da5b4da..cdfb78f61b4d11090639fd924f9bdb27c5cca242 100644
+--- a/third_party/blink/renderer/modules/webcodecs/video_frame.cc
++++ b/third_party/blink/renderer/modules/webcodecs/video_frame.cc
+@@ -1266,6 +1266,23 @@ uint32_t VideoFrame::fawnRestrictedPlaneVersion(ScriptState* state) const {
+   return restricted_plane_cache_->Observe(world, *media_frame);
+ }
+ 
++Vector<uint32_t> VideoFrame::fawnRestrictedPlaneTiles(
++    ScriptState* state, VideoFrame* prior, uint32_t serial, uint32_t tile_size) const {
++  auto media_frame = frame();
++  if (!media_frame || !restricted_plane_cache_ || !state->ContextIsValid() ||
++      !state->World().IsIsolatedWorld())
++    return {};
++  const int world = v8_inspector::V8ContextInfo::executionContextId(state->GetContext());
++  const auto observed = restricted_plane_cache_->Compare(
++      world, *media_frame, prior ? prior->restricted_plane_cache_.get() : nullptr, serial, tile_size);
++  if (!observed.serial)
++    return {};
++  Vector<uint32_t> result{observed.serial, observed.prior, observed.snapshot_bytes_copied};
++  for (uint32_t index : observed.dirty())
++    result.push_back(index);
++  return result;
++}
++
+ uint32_t VideoFrame::allocationSize(VideoFrameCopyToOptions* options,
+                                     ExceptionState& exception_state) {
+   auto local_frame = handle_->frame();
+diff --git a/third_party/blink/renderer/modules/webcodecs/video_frame.h b/third_party/blink/renderer/modules/webcodecs/video_frame.h
+index 054bd326cca3eb69463998810aac4bdc9787cbee..27cfee6ae0ba7c4c9b7c241fdb2b4df17b8cd4fe 100644
+--- a/third_party/blink/renderer/modules/webcodecs/video_frame.h
++++ b/third_party/blink/renderer/modules/webcodecs/video_frame.h
+@@ -131,6 +131,7 @@ class MODULES_EXPORT VideoFrame final : public ScriptWrappable,
+ 
+   // Native-only, on this wrapper. Clones, transfers and script-created frames
+   // default to zero even when their underlying media::VideoFrame is shared.
++  Vector<uint32_t> fawnRestrictedPlaneTiles(ScriptState*, VideoFrame*, uint32_t, uint32_t) const;
+   uint32_t fawnRestrictedPlaneVersion(ScriptState*) const;
+   int FawnCaptureComponent() const { return fawn_capture_component_; }
+   int FawnCaptureWorld() const { return fawn_capture_world_; }
+diff --git a/third_party/blink/renderer/modules/webcodecs/video_frame.idl b/third_party/blink/renderer/modules/webcodecs/video_frame.idl
+index da2f6720aeefa7dcccac695444965a0816ade58d..9aa4d3530fb593f24d2cd73bd1466d63a1670c4b 100644
+--- a/third_party/blink/renderer/modules/webcodecs/video_frame.idl
++++ b/third_party/blink/renderer/modules/webcodecs/video_frame.idl
+@@ -72,5 +72,8 @@ typedef ([AllowShared] ArrayBuffer or [AllowShared] ArrayBufferView) AllowShared
+   [CallWith=ScriptState, RuntimeEnabled=FawnRestrictedPlaneEvidence]
+   unsigned long fawnRestrictedPlaneVersion();
+ 
++  [CallWith=ScriptState, RuntimeEnabled=FawnRestrictedPlaneEvidence]
++  sequence<unsigned long> fawnRestrictedPlaneTiles(VideoFrame? prior, unsigned long serial, unsigned long tileSize);
++
+   void close();
+ };

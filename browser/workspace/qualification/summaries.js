@@ -40,6 +40,7 @@ function summarizeError(error) {
  * log or a call without measured usage makes spend unknown. Rules are counted
  * separately so a local model call is still charged as a planner call. */
 function summarizeResidentOutcome({ elapsedMs, verified, ruleEvaluations, modelCalls, captures }) {
+  const planeSnapshots = captures.filter(sample => Number.isSafeInteger(sample.nativePlaneSnapshotCopyBytes));
   const priced = Array.isArray(modelCalls) && modelCalls.every(call =>
     typeof call?.usage?.costUsd === 'number' && Number.isFinite(call.usage.costUsd) && call.usage.costUsd >= 0);
   return {
@@ -52,6 +53,10 @@ function summarizeResidentOutcome({ elapsedMs, verified, ruleEvaluations, modelC
     discardedFrames: captures.reduce((total, sample) => total + (sample.discardedFrames ?? 0), 0),
     cpuPixelReadBytes: captures.reduce((total, sample) => total + sample.cpuPixelReadBytes, 0),
     frameHostCopyBytes: captures.reduce((total, sample) => total + (sample.frameHostCopyBytes ?? 0), 0),
+    sparseCanonicalFrames: captures.filter(sample => sample.nativePlaneSparseTilesReused).length,
+    nativePlaneSnapshotSamples: planeSnapshots.length,
+    nativePlaneSnapshotCopyBytes: planeSnapshots.length ? planeSnapshots.reduce((sum, sample) => sum + sample.nativePlaneSnapshotCopyBytes, 0) : null,
+    rejectedCanonicalTileReads: captures.reduce((sum, sample) => sum + (sample.rejectedCanonicalTileReads ?? 0), 0),
     nativePlaneDigestReuses: captures.filter(sample => sample.nativePlaneEqualityReused).length,
     nativePlaneLogicalBytesComparedOnReuse: captures.reduce((sum,sample) => sum + (sample.nativePlaneLogicalBytesComparedOnReuse ?? 0),0),
     canonicalHashedBytes: captures.reduce((total, sample) => total + (sample.canonicalHashedBytes ?? 0), 0),

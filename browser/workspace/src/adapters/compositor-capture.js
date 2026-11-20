@@ -44,28 +44,69 @@ export async function canonicalRgbaTiles(bytes, width, height, tileSize, previou
 // The optional native witness is issued by the current restricted reader. Its serial
 // names byte-identical I420 conversion inputs within that reader, never an image.
 export async function canonicalRestrictedFrame(frame, width, height, tileSize, prior, copyRgba, canonicalTiles) {
-  const serial = frame.fawnRestrictedPlaneVersion?.() ?? 0;
-  if (Number.isSafeInteger(serial) && serial > 0 && serial === prior?.serial &&
-      prior.record.width === width && prior.record.height === height && prior.record.tileSize === tileSize) {
-    return { serial, record: prior.record, copiedBytes: 0, hashedBytes: 0, tilesHashed: 0, usedNativeEquality: true };
+  const plan = frame.fawnRestrictedPlaneTiles?.(prior?.witness ?? null, prior?.serial ?? 0, tileSize);
+  const serial = plan === undefined ? frame.fawnRestrictedPlaneVersion?.() ?? 0 : plan[0] ?? 0;
+  const snapshotBytesCopied = plan?.[2] ?? null;
+  const compatible = prior?.record.width === width && prior.record.height === height && prior.record.tileSize === tileSize;
+  const bound = compatible && prior.serial > 0 && plan?.[1] === prior.serial;
+  const dirty = bound ? plan.slice(3) : null;
+  const cols = Math.ceil(width / tileSize), count = cols * Math.ceil(height / tileSize);
+  const valid = dirty && prior.record.hashes.length === count && count <= 256 &&
+    dirty.every((n, i) => Number.isInteger(n) && n >= 0 && n < count && (!i || dirty[i - 1] < n));
+  // The closed wrapper retains only its native lease identity. Frames are closed by the caller.
+  const witness = plan === undefined || !serial ? null : frame;
+  const common = { serial, witness, snapshotBytesCopied, usedNativeEquality: false, usedNativeTiles: false };
+  if (compatible && serial > 0 && prior.serial === serial && (plan === undefined || (valid && !dirty.length))) {
+    return { ...common, record: prior.record, copiedBytes: 0, hashedBytes: 0, tilesHashed: 0, usedNativeEquality: true };
+  }
+  if (valid && serial !== prior.serial && dirty.length && dirty.length < count) {
+    const hashes = prior.record.hashes.slice();
+    let copiedBytes = 0, hashedTiles = 0;
+    for (const index of dirty) {
+      const x = (index % cols) * tileSize, y = Math.floor(index / cols) * tileSize;
+      const rect = { x, y, width: Math.min(tileSize, width - x), height: Math.min(tileSize, height - y) };
+      let pixels;
+      try { pixels = await copyRgba(frame, width, height, rect); }
+      catch {
+        // This browser rejected a tile read. Trust only a fresh full conversion.
+        const full = await copyRgba(frame, width, height);
+        const result = await canonicalTiles(full, width, height, tileSize, prior.record);
+        return { ...common, ...result, copiedBytes: copiedBytes + full.length,
+          hashedBytes: copiedBytes + result.hashedBytes, tilesHashed: hashedTiles + result.tilesHashed,
+          rejectedTileReads: 1 };
+      }
+      if (pixels.length !== rect.width * rect.height * 4) throw Error('Incomplete canonical tile');
+      copiedBytes += pixels.length;
+      hashedTiles++;
+      hashes[index] = Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', pixels)),
+        value => value.toString(16).padStart(2, '0')).join('');
+    }
+    // Tile hashes are authoritative. A whole-frame SHA cannot be updated from tile digests.
+    return { ...common, record: { width, height, tileSize, frameDigest: null, hashes },
+      copiedBytes, hashedBytes: copiedBytes, tilesHashed: dirty.length, usedNativeTiles: true };
   }
   const pixels = await copyRgba(frame, width, height);
   const result = await canonicalTiles(pixels, width, height, tileSize, prior?.record);
-  return { ...result, serial, copiedBytes: pixels.length, usedNativeEquality: false };
+  return { ...result, ...common, copiedBytes: pixels.length };
 }
 
 function createElementCapture(id, resident, capture, leaseMs, scopeProbe, canonicalTiles, restrictedFrame) {
   const { selector, origin } = capture;
   let element, stream, track, reader, observer, watchdog, expiry, ended = false;
   let verifiedBrackets = 0, previousCanonical = null;
-  async function copyRgba(frame, width, height) {
-    const rect = frame.visibleRect;
+  async function copyRgba(frame, width, height, tile) {
+    const bounds = frame.visibleRect;
     if (width < 1 || height < 1 || width * height > 4 * 1024 * 1024
-      || rect.width !== width || rect.height !== height || frame.rotation || frame.flip) {
+      || bounds.width !== width || bounds.height !== height || frame.rotation || frame.flip) {
       throw Error('RGBA evidence requires a bounded, unrotated restricted frame at native scale');
     }
-    const pixels = new Uint8Array(width * height * 4);
-    await frame.copyTo(pixels, { rect, format: 'RGBA', colorSpace: 'srgb', layout: [{ offset: 0, stride: width * 4 }] });
+    if (tile && (!Number.isSafeInteger(tile.x) || !Number.isSafeInteger(tile.y)
+      || !Number.isSafeInteger(tile.width) || !Number.isSafeInteger(tile.height)
+      || tile.x < 0 || tile.y < 0 || tile.width < 1 || tile.height < 1
+      || tile.x + tile.width > width || tile.y + tile.height > height)) throw Error('Tile outside restricted frame');
+    const rect = tile ? { ...tile, x: bounds.x + tile.x, y: bounds.y + tile.y } : bounds;
+    const pixels = new Uint8Array(rect.width * rect.height * 4);
+    await frame.copyTo(pixels, { rect, format: 'RGBA', colorSpace: 'srgb', layout: [{ offset: 0, stride: rect.width * 4 }] });
     return pixels;
   }
   const stop = () => {
@@ -180,10 +221,13 @@ function createElementCapture(id, resident, capture, leaseMs, scopeProbe, canoni
             const canonical = await restrictedFrame(frame, width, height, tileSize, previousCanonical, copyRgba, canonicalTiles);
             assertCurrent();
             const hintMissedChange = Boolean(previousCanonical && metrics.comparedOnGpu && metrics.rehashedTiles === 0
-              && previousCanonical.record.frameDigest !== canonical.record.frameDigest);
+              && (previousCanonical.record.hashes.length !== canonical.record.hashes.length
+                || canonical.record.hashes.some((hash, index) => hash !== previousCanonical.record.hashes[index])));
             previousCanonical = canonical;
             authority = canonical.record.hashes;
             Object.assign(bitmapMetrics, { externalHintMissedChange: hintMissedChange,
+              nativePlaneSparseTilesReused: canonical.usedNativeTiles, nativePlaneSnapshotCopyBytes: canonical.snapshotBytesCopied,
+              rejectedCanonicalTileReads: canonical.rejectedTileReads ?? 0,
               nativePlaneEqualitySupported: canonical.serial > 0, nativePlaneEqualityReused: canonical.usedNativeEquality,
               nativePlaneLogicalBytesComparedOnReuse: canonical.usedNativeEquality ? 3 * width * height : 0,
               frameHostCopyBytes: canonical.copiedBytes, canonicalHashedBytes: canonical.hashedBytes,
