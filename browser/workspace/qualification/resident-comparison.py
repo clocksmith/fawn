@@ -69,6 +69,63 @@ def run_id(wave, slot):
     return f"r{wave['repeat']:03}-c{wave['width']:02}-{wave['arm']}-p{slot:02}"
 
 
+
+def drm_residency(pid: int, proc: Path = Path("/proc")) -> dict | None:
+    """Linux DRM fdinfo for one observed Chromium GPU subprocess."""
+    directory = proc / str(pid)
+    try:
+        if b"--type=gpu-process" not in (directory / "cmdline").read_bytes().split(b"\0"):
+            return None
+        descriptors = list((directory / "fd").iterdir())
+    except OSError:
+        return None
+
+    clients = {}
+    for fd in descriptors:
+        try:
+            if not re.fullmatch(r"/dev/dri/(?:renderD|card)\d+", str(fd.readlink())):
+                continue
+            info = (directory / "fdinfo" / fd.name).read_text()
+        except FileNotFoundError:
+            continue  # The descriptor closed between enumeration and sampling.
+        except (OSError, UnicodeError):
+            return None
+        fields = dict(line.split(":", 1) for line in info.splitlines() if ":" in line)
+        client = fields.get("drm-client-id", "").strip()
+        driver = fields.get("drm-driver", "").strip()
+        if not driver or not client.isdecimal():
+            return None
+        device = fields.get("drm-pdev", "").strip()
+        key = (driver, device, client)
+        if key in clients:
+            continue
+        regions = {}
+        for prefix in (("drm-memory-", "drm-resident-") if driver == "amdgpu" else ("drm-resident-",)):
+            for field, value in fields.items():
+                if not field.startswith(prefix):
+                    continue
+                match = re.fullmatch(r"(\d+)(?:\s+(B|KiB|MiB))?", value.strip())
+                if not match:
+                    return None
+                count, unit = match.groups()
+                regions[field[len(prefix):]] = int(count) * {None: 1, "B": 1, "KiB": 1024, "MiB": 1024**2}[unit]
+        if not regions:
+            return None
+        clients[key] = regions
+    if not clients:
+        return None
+    devices = {}
+    for (driver, device, _), regions in clients.items():
+        buckets = devices.setdefault(f"{driver}@{device}" if device else driver, {})
+        for region, size in regions.items():
+            buckets[region] = buckets.get(region, 0) + size
+    return {
+        "bytes": sum(sum(regions.values()) for regions in devices.values()),
+        "byDeviceAndRegion": devices,
+        "clients": len(clients),
+    }
+
+
 def sample_tree_rss(jobs):
     # One snapshot for the entire wave. RSS sums may count shared mappings twice.
     out = subprocess.run(
@@ -84,9 +141,17 @@ def sample_tree_rss(jobs):
         root = job["child"].pid
         if root not in sizes:
             continue
+        gpu_pid = job.get("gpuPid")
         stack, total = [root], 0
         while stack:
             pid = stack.pop()
+            if gpu_pid is not None and pid == gpu_pid:
+                observed = drm_residency(pid)
+                job["drmAttempts"] += 1
+                if observed is not None:
+                    job["drmSamples"] += 1
+                    if job["drmPeak"] is None or observed["bytes"] > job["drmPeak"]["bytes"]:
+                        job["drmPeak"] = observed
             total += sizes[pid]
             stack.extend(by_parent[pid])
         job["samples"] += 1
@@ -191,7 +256,7 @@ def run_wave(out, wave, args):
                 )
             else:
                 env["BLITZEN_TEST_BROWSER_CHANNEL"] = args.stock_channel
-            if sources:
+            if sources or sys.platform.startswith("linux"):
                 env["BLITZEN_RESIDENT_OBSERVE_BROWSER_PID"] = "1"
             env.update(
                 BLITZEN_TEST_ELEMENT_CAPTURE="1",
@@ -208,7 +273,8 @@ def run_wave(out, wave, args):
                 child = subprocess.Popen(
                     ["node", str(FIXTURE)], env=env, stdout=log, stderr=subprocess.STDOUT
                 )
-            jobs.append({"dir": row, "child": child, "peak": 0, "samples": 0})
+            jobs.append({"dir": row, "child": child, "peak": 0, "samples": 0,
+                         "drmPeak": None, "drmSamples": 0, "drmAttempts": 0})
         while any(j["child"].poll() is None for j in jobs):
             if not admitted:
                 phases = [read(j["dir"] / "progress.json").get("phase") for j in jobs]
@@ -219,6 +285,9 @@ def run_wave(out, wave, args):
                             progress = read(job["dir"] / "progress.json")
                             observed = source_for_browser(progress, source, job["child"].pid)
                             write(job["dir"] / "browser-source.json", observed)
+                    if sys.platform.startswith("linux"):
+                        for job in jobs:
+                            job["gpuPid"] = read(job["dir"] / "progress.json").get("gpuProcessPid")
                     gate.touch(exist_ok=False)
                     admitted = True
                 elif any(j["child"].poll() is not None for j in jobs):
@@ -249,6 +318,8 @@ def run_wave(out, wave, args):
                     "peakSampledTreeRssBytes": job["peak"] if job["samples"] else None,
                     "rssSamples": job["samples"],
                     "physicalGpuMemoryBytes": None,
+                    "gpuProcessDrm": {"peak": job["drmPeak"], "samples": job["drmSamples"],
+                                      "attempts": job["drmAttempts"]},
                 },
             )
 
@@ -286,6 +357,7 @@ def summarize_row(path, wave, slot):
         "peakSampledTreeRssBytes": e.get("peakSampledTreeRssBytes"),
         "rssSamples": e.get("rssSamples"),
         "physicalGpuMemoryBytes": None,
+        "gpuProcessDrm": e.get("gpuProcessDrm"),
         **{k: o.get(k, p.get("partial", {}).get(k)) for k in COUNTERS},
     }
     if not e:
@@ -439,7 +511,7 @@ def summarize(out):
     return {
         "clock": "Host monotonic bounds bracket the page canvas mutation, ending at authoritative application reconciliation. Midpoint is an estimate. No compositor frame-commit stamp.",
         "aggregation": "Nearest-rank p95 per completed process, median p50. Paired values are candidate minus baseline milliseconds in matching repeat and slot. Report every planned attempt; incomplete overlapping cohorts excluded.",
-        "memoryScope": "250 ms nominal process-tree RSS samples including browser and Blitzen; shared mappings double-counted. VRAM unknown.",
+        "memoryScope": "Process-tree RSS is sampled about every 250 ms. From browser readiness, Linux DRM counts resident bytes reported for the fixture GPU process. The peak contains one sample across regions, deduplicated by device and DRM client. Separate clients can count shared buffers twice. Missing samples are unknown. Whole-device VRAM is unmeasured.",
         "attribution": "Matching source revisions and versions permits a whole-browser comparison only. Build options and renderer paths may differ. Fawn/Doe timings stay withheld pending native per-page provenance.",
         "byArm": by_arm,
         "paired": pairs,

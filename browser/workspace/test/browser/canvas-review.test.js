@@ -338,7 +338,7 @@ try {
     try {
       const { targetInfo } = await sessionCdp.send('Target.getTargetInfo');
       const version = await sessionCdp.send('Browser.getVersion');
-      let browserPid;
+      let browserPid, gpuProcessPid;
       if (process.env.BLITZEN_RESIDENT_OBSERVE_BROWSER_PID === '1') {
         const control = await page.context().browser().newBrowserCDPSession();
         try {
@@ -346,6 +346,8 @@ try {
           const roots = processInfo.filter(row => row.type === 'browser');
           assert.equal(roots.length, 1, 'one browser root per fixture');
           browserPid = roots[0].id;
+          const gpuProcesses = processInfo.filter(row => row.type.toLowerCase() === 'gpu');
+          if (gpuProcesses.length === 1) gpuProcessPid = gpuProcesses[0].id;
         } finally { await control.detach(); }
       }
       if (process.env.BLITZEN_RESIDENT_PHYSICAL === '1') {
@@ -356,7 +358,7 @@ try {
       }
       const entry = [...adapter.compositor.entries.values()].find(e => e.id === session);
       const gpu = (await adapter.compositor.control(entry, 'adapterInfo')).result?.value ?? null;
-      checkpoint({ phase: 'ready', targetId: targetInfo.targetId, surfaceId: session, browser: version, browserPid,
+      checkpoint({ phase: 'ready', targetId: targetInfo.targetId, surfaceId: session, browser: version, browserPid, gpuProcessPid,
         gpu, commandLabel: null,
         selection: config.browser.fawnBuild ?? { channel: config.browser.channel } });
     } finally { await sessionCdp.detach(); }

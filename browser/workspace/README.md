@@ -677,8 +677,12 @@ Each receipt includes the oracle tile, final application revision and effect
 count, measured bytes at the copy/readback boundaries, planner calls and spend,
 and sampled process-tree RSS. This is one deterministic rules workload; the zero
 model calls and spend say nothing about adaptive planners. Whole-tree summed RSS
-counts shared pages multiple times. Actual GPU memory and physical bus traffic
-are unmeasured. Refusals retain reached phases and known costs; missing fields
+counts shared pages multiple times. On Linux, `gpuProcessDrm` samples only the
+fixture Chromium GPU process after readiness. Its peak records all reported
+resident memory regions from the same sample. Duplicated DRM clients count once.
+Distinct clients can share buffers. A missing or inaccessible driver counter
+leaves the sample unknown. Physical bus traffic and unique device-wide VRAM
+remain unmeasured. [Linux DRM client accounting](https://docs.kernel.org/gpu/drm-usage-stats.html). Refusals retain reached phases and known costs; missing fields
 mean unknown.
 
 **Doe timing eligibility.** A selector, an adapter string or a page-authored

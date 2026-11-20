@@ -44,6 +44,40 @@ class ResidentComparisonTest(unittest.TestCase):
                 self.assertGreaterEqual(row["pageChangeToVerifiedBoundsMs"][0], 300)
             self.assertTrue((root / (module.run_id(wave, 0) + ".go")).exists())
 
+    def test_drm_counts_unique_clients_per_device_and_distinguishes_zero_from_unknown(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            process = root / "23"
+            (process / "fd").mkdir(parents=True)
+            (process / "fdinfo").mkdir()
+            (process / "cmdline").write_bytes(b"chromium\0--type=gpu-process\0")
+
+            def descriptor(n, device, client, fields):
+                fd = process / "fd" / str(n)
+                if not fd.is_symlink():
+                    fd.symlink_to("/dev/dri/renderD128")
+                (process / "fdinfo" / str(n)).write_text(
+                    f"drm-driver: amdgpu\ndrm-pdev: {device}\ndrm-client-id: {client}\n" + fields
+                )
+
+            self.assertIsNone(module.drm_residency(23, root))
+            descriptor(3, "a", 7, "drm-resident-vram: 0 KiB\n")
+            self.assertEqual(module.drm_residency(23, root)["bytes"], 0)
+            descriptor(3, "a", 7, "drm-memory-vram: 1 MiB\ndrm-resident-vram: 1048576\n")
+            descriptor(4, "a", 7, "drm-resident-vram: 1 MiB\n")
+            descriptor(5, "b", 7, "drm-memory-vram: 10 KiB\n")
+            descriptor(6, "a", 8, "drm-resident-gtt: 1 KiB\ndrm-total-vram: 190 MiB\n")
+            sample = module.drm_residency(23, root)
+            self.assertEqual(sample["clients"], 3)
+            self.assertEqual(sample["byDeviceAndRegion"]["amdgpu@a"], {"vram": 1048576, "gtt": 1024})
+            self.assertEqual(sample["bytes"], 1048576 + 1024 + 10240)
+            descriptor(6, "a", 8, "drm-resident-gtt: 10 unsupported-units\n")
+            self.assertIsNone(module.drm_residency(23, root))
+            descriptor(6, "a", 8, "drm-total-vram: 2 MiB\n")
+            self.assertIsNone(module.drm_residency(23, root))
+            (process / "cmdline").write_bytes(b"chromium\0--type=renderer\0")
+            self.assertIsNone(module.drm_residency(23, root))
+
     def test_incorrect_effect_and_failed_oracle_cannot_enter_latency(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
