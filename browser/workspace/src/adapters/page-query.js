@@ -10,7 +10,7 @@ const ELEMENT_MODE = 'element';
 const ELEMENT_TEXT_CHARS = 200;
 
 // Runs inside the page; must stay self-contained.
-function queryPage({ mode, selector, maxElements, maxTextChars, elementTextChars, regions = [], regionGroups = [], outline = false, readRoots = null }) {
+async function queryPage({ mode, selector, maxElements, maxTextChars, elementTextChars, regions = [], regionGroups = [], outline = false, readRoots = null }) {
   // A typed password never leaves the page: observations, evidence and digests see only whether
   // the field is filled. A person enters credentials; agents and journals do not read them.
   const controlValue = (node) => node.tagName === 'INPUT' && node.type === 'password' ? (node.value ? '[hidden]' : '') : String(node.value);
@@ -246,9 +246,30 @@ function queryPage({ mode, selector, maxElements, maxTextChars, elementTextChars
     visit(root);
     return parts.join(' | ').slice(0, maxTextChars);
   };
+  // Snapshot only canvases selected as regions. Take each bitmap snapshot in
+  // the same page turn as its markup and controls, then hash it on the page.
+  // An unreadable or over-budget bitmap cannot establish a dispatch binding.
+  let remainingCanvasPixels = 4 * 1024 * 1024;
+  const canvasRegion = async (region, description) => {
+    const pixels = region.width * region.height;
+    let bitmapSha256 = null;
+    if (pixels > 0 && pixels <= remainingCanvasPixels && globalThis.crypto?.subtle) {
+      remainingCanvasPixels -= pixels;
+      try {
+        const png = await new Promise(resolve => region.toBlob(resolve, 'image/png'));
+        if (png) {
+          const hash = await crypto.subtle.digest('SHA-256', await png.arrayBuffer());
+          bitmapSha256 = Array.from(new Uint8Array(hash), byte => byte.toString(16).padStart(2, '0')).join('');
+        }
+      } catch {
+        // Includes origin-tainted canvases.
+      }
+    }
+    return { ...description, bitmapSha256 };
+  };
   const describeRegion = (regionSelector, region, group = null) => {
     const controls = [...(region.matches(CONTROLS) ? [region] : []), ...region.querySelectorAll(CONTROLS)];
-    return {
+    const description = {
       selector: regionSelector,
       group,
       count: 1,
@@ -256,6 +277,7 @@ function queryPage({ mode, selector, maxElements, maxTextChars, elementTextChars
       values: controls.map((control) => controlValue(control)),
       outline: outline ? renderOutline(region) : null,
     };
+    return region instanceof HTMLCanvasElement ? canvasRegion(region, description) : description;
   };
   const readRegion = (regionSelector) => {
     let matches;
@@ -283,7 +305,7 @@ function queryPage({ mode, selector, maxElements, maxTextChars, elementTextChars
     isTruncated: nodes.length > maxElements,
     elements: nodes.slice(0, maxElements).map((node) => ({ selector: stableSelector(node), handle: handles.get(node),
       role: roleOf(node), label: labelOf(node), inputType: node.tagName === 'INPUT' ? node.type : '', ...describe(node) })),
-    regions: [...regions.map(readRegion), ...regionGroups.flatMap(readGroup)],
+    regions: await Promise.all([...regions.map(readRegion), ...regionGroups.flatMap(readGroup)]),
   };
 }
 
@@ -321,9 +343,11 @@ function snapshotArgs(config, { regions = [], regionGroups = [], outline = false
   };
 }
 
-/** A region digest covers its markup and control values; a missing or ambiguous region has none. */
+/** A selected canvas also binds its bitmap. Unreadable regions cannot authorize an action. */
 function regionDigest(region) {
-  return region.count === 1 ? sha256Hex(canonicalJson({ html: region.html, values: region.values })) : null;
+  if (region.count !== 1 || region.bitmapSha256 === null) return null;
+  return sha256Hex(canonicalJson({ html: region.html, values: region.values,
+    ...(region.bitmapSha256 ? { bitmapSha256: region.bitmapSha256 } : {}) }));
 }
 
 function elementArgs(selector) {

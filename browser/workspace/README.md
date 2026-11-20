@@ -117,6 +117,11 @@ The contract's semantic names map to these concrete rules.
   `observation.maxAgeMs`. `observe` may name up to `observation.maxRegions`
   region selectors; the version records a digest of each region's markup and
   control values, or none when the selector does not match exactly one element.
+  When a selector names a canvas, its digest also covers the backing bitmap.
+  Chrome hashes the PNG on the page. An unreadable, empty, or over-budget canvas
+  yields no digest. Each observation can read up to 4,194,304 canvas pixels.
+  A region-scoped action can bind the digest to detect a repaint. Applications
+  with interchangeable cells also need a stable entity and revision at dispatch.
   Targetable elements are links, buttons, inputs, selects, textareas and elements
   with an ARIA widget role (button, link, checkbox, radio, switch, combobox,
   listbox, option, menu items, tab, textbox, searchbox, spinbutton, slider).
