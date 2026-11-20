@@ -1,0 +1,360 @@
+diff --git a/include/dawn/native/DawnNative.h b/include/dawn/native/DawnNative.h
+index 6863031f7569afe3b59ec174e929dcf201f0b3de..e9addcfd4cebe7c3b91559a84bdf1759e1b847ca 100644
+--- a/include/dawn/native/DawnNative.h
++++ b/include/dawn/native/DawnNative.h
+@@ -211,6 +211,30 @@ class DAWN_NATIVE_EXPORT Instance {
+ // Backend-agnostic API for dawn_native
+ DAWN_NATIVE_EXPORT const DawnProcTable& GetProcs();
+ 
++// Thread-scoped embedder context for one actual outer queue/command pair.
++// Only fixed opaque identities are retained across the ordinary completion.
++using ResidentWitnessReporter = void (*)(const char*, const char*, uint32_t, uint64_t,
++                                         WGPUQueueWorkDoneStatus, uintptr_t);
++struct ResidentCommandWitness {
++    WGPUQueue queue;
++    WGPUCommandBuffer command;
++    const char* document;
++    const char* submission;
++    ResidentWitnessReporter report;
++};
++class DAWN_NATIVE_EXPORT ScopedResidentCommandWitness {
++  public:
++    explicit ScopedResidentCommandWitness(const ResidentCommandWitness* context);
++    ~ScopedResidentCommandWitness();
++    ScopedResidentCommandWitness(const ScopedResidentCommandWitness&) = delete;
++    ScopedResidentCommandWitness& operator=(const ScopedResidentCommandWitness&) = delete;
++
++  private:
++    const ResidentCommandWitness* mPrevious;
++};
++DAWN_NATIVE_EXPORT const ResidentCommandWitness* ConsumeResidentCommandWitness(WGPUQueue queue,
++                                                                              WGPUCommandBuffer command);
++
+ // Query the names of all the toggles that are enabled in adapter
+ DAWN_NATIVE_EXPORT std::vector<const char*> GetTogglesUsed(const wgpu::Adapter& adapter);
+ 
+diff --git a/src/dawn/native/DawnNative.cpp b/src/dawn/native/DawnNative.cpp
+index 2314ae3d6de6896338b09eff241a1f2faab2df7a..a223ac61aee2646ec87ba9fb80fb708666191824 100644
+--- a/src/dawn/native/DawnNative.cpp
++++ b/src/dawn/native/DawnNative.cpp
+@@ -51,6 +51,25 @@ const char MemoryDump::kUnitsObjects[] = "objects";
+ 
+ const DawnProcTable& GetProcsAutogen();
+ 
++namespace {
++thread_local const ResidentCommandWitness* gResidentCommand = nullptr;
++}
++ScopedResidentCommandWitness::ScopedResidentCommandWitness(const ResidentCommandWitness* context)
++    : mPrevious(gResidentCommand) {
++    gResidentCommand = context;
++}
++ScopedResidentCommandWitness::~ScopedResidentCommandWitness() {
++    gResidentCommand = mPrevious;
++}
++const ResidentCommandWitness* ConsumeResidentCommandWitness(WGPUQueue queue,
++                                                           WGPUCommandBuffer command) {
++    const auto* current = gResidentCommand;
++    if (!current || current->queue != queue || current->command != command)
++        return nullptr;
++    gResidentCommand = nullptr;
++    return current;
++}
++
+ const DawnProcTable& GetProcs() {
+     return GetProcsAutogen();
+ }
+diff --git a/src/dawn/native/webgpu/BackendWGPU.cpp b/src/dawn/native/webgpu/BackendWGPU.cpp
+index 01e2f9701d73c77de95e8fd61a34a09c6dd6d9ae..f954fae83795396b6f15231410f83d65a666b84d 100644
+--- a/src/dawn/native/webgpu/BackendWGPU.cpp
++++ b/src/dawn/native/webgpu/BackendWGPU.cpp
+@@ -696,6 +696,12 @@ WGPUInstance Backend::GetInnerInstance() const {
+     return mInnerInstance;
+ }
+ 
++CommandWitnessProc Backend::GetExternalCommandWitnessProc() const {
++    if (!mExternalRuntimeLib.Valid()) return nullptr;
++    return reinterpret_cast<CommandWitnessProc>(
++        mExternalRuntimeLib.GetProc("doeNativeVulkanCommandWitnessV1"));
++}
++
+ DisablePersistentCacheProc Backend::GetExternalCacheDisableProc() const {
+     return mExternalCacheDisableProc;
+ }
+diff --git a/src/dawn/native/webgpu/BackendWGPU.h b/src/dawn/native/webgpu/BackendWGPU.h
+index a34ae2f0f54827dd38c9d5a647d31fb195701ca6..afd0777cddf51dba48b6a854410171be6e74ca1f 100644
+--- a/src/dawn/native/webgpu/BackendWGPU.h
++++ b/src/dawn/native/webgpu/BackendWGPU.h
+@@ -37,6 +37,7 @@
+ namespace dawn::native::webgpu {
+ 
+ class PhysicalDevice;
++using CommandWitnessProc = uint32_t (*)(WGPUQueue, WGPUCommandBuffer, uint32_t, uint64_t*);
+ 
+ class Backend : public BackendConnection {
+   public:
+@@ -49,6 +50,7 @@ class Backend : public BackendConnection {
+     const DawnProcTable& GetFunctions() const;
+     WGPUInstance GetInnerInstance() const;
+     DisablePersistentCacheProc GetExternalCacheDisableProc() const;
++    CommandWitnessProc GetExternalCommandWitnessProc() const;
+     ConfigurePipelineBlobStoreProc GetExternalPipelineBlobProc() const;
+     PipelineCacheInfoProc GetExternalPipelineCacheInfoProc() const;
+ 
+diff --git a/src/dawn/native/webgpu/QueueWGPU.cpp b/src/dawn/native/webgpu/QueueWGPU.cpp
+index 772f3e1e383c9cd94e6e67533087a4e8a2a2b2ca..ec94a3b38a725010a80f6ee627591e33f260c04b 100644
+--- a/src/dawn/native/webgpu/QueueWGPU.cpp
++++ b/src/dawn/native/webgpu/QueueWGPU.cpp
+@@ -28,12 +28,19 @@
+ #include "src/dawn/native/webgpu/QueueWGPU.h"
+ 
+ #include <limits>
++#include <map>
++#include <mutex>
++#include <string>
++
++#include "dawn/native/DawnNative.h"
+ #include <vector>
+ 
+ #include "src/dawn/common/Enumerator.h"
+ #include "src/dawn/native/EventManager.h"
+ #include "src/dawn/native/Instance.h"
+ #include "src/dawn/native/Queue.h"
++#include "src/dawn/native/webgpu/BackendWGPU.h"
++#include "src/dawn/native/webgpu/PhysicalDeviceWGPU.h"
+ #include "src/dawn/native/webgpu/BufferWGPU.h"
+ #include "src/dawn/native/webgpu/CaptureContext.h"
+ #include "src/dawn/native/webgpu/CommandBufferWGPU.h"
+@@ -46,6 +53,100 @@
+ 
+ namespace dawn::native::webgpu {
+ 
++namespace {
++// A callback may arrive synchronously, after retirement or after a failed
++// registration. Its opaque ticket carries no native handle. No callback
++// enters the backend, publishes a verdict, or touches an expired allocation.
++struct WitnessCallbacks {
++    std::mutex lock;
++    uintptr_t next = 1;
++    std::map<uintptr_t, uint32_t> status;
++};
++WitnessCallbacks& Registry() {
++    static auto* registry = new WitnessCallbacks;
++    return *registry;
++}
++uintptr_t ReserveCallback() {
++    auto& r = Registry();
++    std::lock_guard guard(r.lock);
++    if (!r.next || r.status.size() >= 256) return 0;
++    const auto id = r.next++;
++    r.status.emplace(id, 0);
++    return id;
++}
++void ObserveCallback(WGPUQueueWorkDoneStatus status, WGPUStringView, void* userdata, void*) {
++    auto& r = Registry();
++    std::lock_guard guard(r.lock);
++    auto found = r.status.find(reinterpret_cast<uintptr_t>(userdata));
++    if (found != r.status.end()) {
++        // A duplicated callback observed before retirement never qualifies.
++        found->second = found->second ? static_cast<uint32_t>(WGPUQueueWorkDoneStatus_Error)
++                                     : static_cast<uint32_t>(status);
++    }
++}
++}  // namespace
++
++class PendingResidentWitness {
++  public:
++    static std::shared_ptr<PendingResidentWitness> Arm(const ResidentCommandWitness& scope,
++            CommandWitnessProc probe, WGPUQueue queue, WGPUCommandBuffer command,
++            WGPUProcCommandBufferRelease release) {
++        if (!probe) return nullptr;
++        const auto ticket = ReserveCallback();
++        if (!ticket) return nullptr;
++        auto pending = std::shared_ptr<PendingResidentWitness>(
++            new PendingResidentWitness(scope, probe, queue, release, ticket));
++        uint64_t serial = 0;
++        if (probe(queue, command, 1, &serial) != 1) return nullptr;
++        // Transfer the encoder's original reference; keep it alive through the
++        // ordinary callback. A rejected arm never takes ownership.
++        pending->mCommand = command;
++        return pending;
++    }
++    ~PendingResidentWitness() {
++        {
++            auto& r = Registry();
++            std::lock_guard guard(r.lock);
++            r.status.erase(mTicket);
++        }
++        if (mCommand) mRelease(mCommand);
++    }
++    void* Userdata() const { return reinterpret_cast<void*>(mTicket); }
++    void Observe(bool retiring) {
++        if (!mCommand) return;
++        uint32_t raw = 0;
++        {
++            auto& r = Registry();
++            std::lock_guard guard(r.lock);
++            auto found = r.status.find(mTicket);
++            if (found != r.status.end()) raw = found->second;
++        }
++        if (!raw && !retiring) return;
++        // Query the exact retained inner command on its queue only from the
++        // outer owner's ordinary progress path and after callback delivery.
++        const auto status = static_cast<WGPUQueueWorkDoneStatus>(raw);
++        uint64_t serial = 0;
++        const uint32_t state = raw ? mProbe(mQueue, mCommand, 0, &serial) : 0;
++        mReport(mDocument.c_str(), mSubmission.c_str(), state, serial, status,
++                reinterpret_cast<uintptr_t>(mProbe));
++        mRelease(mCommand);
++        mCommand = nullptr;
++    }
++
++  private:
++    PendingResidentWitness(const ResidentCommandWitness& scope, CommandWitnessProc probe,
++                           WGPUQueue queue, WGPUProcCommandBufferRelease release, uintptr_t ticket)
++        : mDocument(scope.document), mSubmission(scope.submission), mReport(scope.report),
++          mProbe(probe), mQueue(queue), mRelease(release), mTicket(ticket) {}
++    const std::string mDocument, mSubmission;
++    const ResidentWitnessReporter mReport;
++    const CommandWitnessProc mProbe;
++    const WGPUQueue mQueue;
++    const WGPUProcCommandBufferRelease mRelease;
++    const uintptr_t mTicket;
++    WGPUCommandBuffer mCommand = nullptr;
++};
++
+ // static
+ ResultOrError<Ref<Queue>> Queue::Create(Device* device, const QueueDescriptor* descriptor) {
+     return AcquireRef(new Queue(device, descriptor));
+@@ -95,13 +196,25 @@ MaybeError Queue::SubmitImpl(Span<CommandBufferBase* const> commands) {
+     }
+ 
+     auto& wgpu = ToBackend(GetDevice())->wgpu.get();
++    std::shared_ptr<PendingResidentWitness> witness;
++    if (commands.size() == 1) {
++        auto* scope = ConsumeResidentCommandWitness(ToAPI(static_cast<QueueBase*>(this)),
++                                                    ToAPI(commands[0]));
++        if (scope) {
++            auto* backend = ToBackend(GetDevice()->GetPhysicalDevice())->GetBackend();
++            witness = PendingResidentWitness::Arm(*scope, backend->GetExternalCommandWitnessProc(),
++                mInnerHandle, innerCommandBuffers[0], wgpu.commandBufferRelease);
++        }
++    }
+     wgpu.queueSubmit(mInnerHandle, innerCommandBuffers.size(), innerCommandBuffers.data());
+ 
+-    for (WGPUCommandBuffer commandBuffer : innerCommandBuffers) {
+-        wgpu.commandBufferRelease(commandBuffer);
++    if (!witness) {
++        for (WGPUCommandBuffer commandBuffer : innerCommandBuffers) {
++            wgpu.commandBufferRelease(commandBuffer);
++        }
+     }
+ 
+-    DAWN_TRY(SubmitFutureSync());
++    DAWN_TRY(SubmitFutureSync(std::move(witness)));
+     return {};
+ }
+ 
+@@ -161,7 +274,7 @@ ResultOrError<ExecutionSerial> Queue::CheckAndUpdateCompletedSerials() {
+     return mFuturesInFlight.Use([&](auto futuresInFlight) -> ResultOrError<ExecutionSerial> {
+         ExecutionSerial fenceSerial(GetCompletedCommandSerial());
+         while (!futuresInFlight->empty()) {
+-            auto [future, tentativeSerial] = futuresInFlight->front();
++            auto& [future, tentativeSerial, witness] = futuresInFlight->front();
+ 
+             WGPUFutureWaitInfo waitInfo = {future, false};
+             WGPUWaitStatus status =
+@@ -174,6 +287,7 @@ ResultOrError<ExecutionSerial> Queue::CheckAndUpdateCompletedSerials() {
+ 
+             // Update fenceSerial since future is ready.
+             fenceSerial = tentativeSerial;
++            if (witness) witness->Observe(true);
+ 
+             futuresInFlight->pop_front();
+         }
+@@ -197,7 +311,7 @@ MaybeError Queue::SubmitPendingCommandsImpl() {
+     return {};
+ }
+ 
+-MaybeError Queue::SubmitFutureSync() {
++MaybeError Queue::SubmitFutureSync(std::shared_ptr<PendingResidentWitness> witness) {
+     // Call queueOnSubmittedWorkDone to get a future and maintain in mFuturesFlight.
+     // TODO(crbug.com/413053623): Essentially track only via callbacks spontaneously, move content
+     // from CheckAndUpdateCompletedSerials to WGPUQueueWorkDoneCallbackInfo::callback
+@@ -206,13 +320,16 @@ MaybeError Queue::SubmitFutureSync() {
+             ->wgpu->queueOnSubmittedWorkDone(
+                 mInnerHandle,
+                 {nullptr, WGPUCallbackMode_AllowSpontaneous,
+-                 [](WGPUQueueWorkDoneStatus, WGPUStringView, void*, void*) {}, nullptr, nullptr});
++                 witness ? ObserveCallback :
++                     +[](WGPUQueueWorkDoneStatus, WGPUStringView, void*, void*) {},
++                 witness ? witness->Userdata() : nullptr, nullptr});
+     if (future.id == kNullFutureID) {
+         return DAWN_UNRECOVERABLE_ERROR("inner queueOnSubmittedWorkDone returned a null future.");
+     }
++    if (witness) witness->Observe(false);
+     IncrementLastSubmittedCommandSerial();
+     mFuturesInFlight.Use([&](auto futuresInFlight) {
+-        futuresInFlight->emplace_back(future, GetLastSubmittedCommandSerial());
++        futuresInFlight->push_back({future, GetLastSubmittedCommandSerial(), std::move(witness)});
+     });
+     mHasPendingCommands = false;
+     return {};
+@@ -224,9 +341,9 @@ ResultOrError<ExecutionSerial> Queue::WaitForQueueSerialImpl(ExecutionSerial wai
+         WGPUFuture future = {kNullFutureID};
+         ExecutionSerial completedSerial = kWaitSerialTimeout;
+         for (const auto& f : *futuresInFlight) {
+-            if (f.second >= waitSerial) {
+-                future = f.first;
+-                completedSerial = f.second;
++            if (f.serial >= waitSerial) {
++                future = f.future;
++                completedSerial = f.serial;
+                 break;
+             }
+         }
+@@ -256,10 +373,13 @@ MaybeError Queue::WaitForIdleForDestructionImpl() {
+     auto& wgpu = ToBackend(GetDevice())->wgpu.get();
+     mFuturesInFlight.Use([&](auto futuresInFlight) {
+         while (!futuresInFlight->empty()) {
+-            WGPUFuture future = futuresInFlight->front().first;
++            auto& front = futuresInFlight->front();
++            WGPUFuture future = front.future;
+             WGPUFutureWaitInfo waitInfo = {future, false};
+-            wgpu.instanceWaitAny(ToBackend(GetDevice())->GetInnerInstance(), 1, &waitInfo,
+-                                 UINT64_MAX);
++            const auto waitStatus = wgpu.instanceWaitAny(
++                ToBackend(GetDevice())->GetInnerInstance(), 1, &waitInfo, UINT64_MAX);
++            if (front.witness && waitStatus == WGPUWaitStatus_Success && waitInfo.completed)
++                front.witness->Observe(true);
+ 
+             futuresInFlight->pop_front();
+         }
+diff --git a/src/dawn/native/webgpu/QueueWGPU.h b/src/dawn/native/webgpu/QueueWGPU.h
+index 5044e4e3402f520115c65550514ed9982f7bf6fe..bc8ce9a7e9b805994e7fbdb47d3321a40e367488 100644
+--- a/src/dawn/native/webgpu/QueueWGPU.h
++++ b/src/dawn/native/webgpu/QueueWGPU.h
+@@ -40,6 +40,7 @@
+ namespace dawn::native::webgpu {
+ 
+ class CaptureContext;
++class PendingResidentWitness;
+ 
+ class Queue final : public QueueBase, public ObjectWGPU<WGPUQueue> {
+   public:
+@@ -70,9 +71,14 @@ class Queue final : public QueueBase, public ObjectWGPU<WGPUQueue> {
+                                                           Nanoseconds timeout) override;
+     MaybeError WaitForIdleForDestructionImpl() override;
+     void DestroyImpl(DestroyReason reason) override;
+-    MaybeError SubmitFutureSync();
++    MaybeError SubmitFutureSync(std::shared_ptr<PendingResidentWitness> witness = nullptr);
+ 
+-    MutexProtected<std::deque<std::pair<WGPUFuture, ExecutionSerial>>> mFuturesInFlight;
++    struct InnerFuture {
++        WGPUFuture future;
++        ExecutionSerial serial;
++        std::shared_ptr<PendingResidentWitness> witness;
++    };
++    MutexProtected<std::deque<InnerFuture>> mFuturesInFlight;
+     Ref<SharedFence> mSharedFence;
+     bool mHasPendingCommands = false;
+ 

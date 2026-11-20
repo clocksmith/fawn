@@ -1,0 +1,57 @@
+diff --git a/gpu/command_buffer/service/webgpu_decoder_impl.cc b/gpu/command_buffer/service/webgpu_decoder_impl.cc
+index 9b0f82d9dcd54c298df88f8433dbb0c1787b7f60..cd4d5104154c6d4c99a5f6a7f1965602449809f0 100644
+--- a/gpu/command_buffer/service/webgpu_decoder_impl.cc
++++ b/gpu/command_buffer/service/webgpu_decoder_impl.cc
+@@ -33,6 +33,10 @@
+ #include "base/trace_event/trace_event.h"
+ #include "base/unguessable_token.h"
+ #include "build/build_config.h"
++#if BUILDFLAG(IS_LINUX)
++#include <dlfcn.h>
++#include "base/debug/elf_reader.h"
++#endif
+ #include "gpu/command_buffer/common/mailbox.h"
+ #include "gpu/command_buffer/common/shared_image_usage.h"
+ #include "gpu/command_buffer/common/webgpu_cmd_format.h"
+@@ -1287,6 +1291,33 @@ WebGPUDecoderImpl::WebGPUDecoderImpl(
+         return;
+       }
+       const auto submission = base::UnguessableToken::Create().ToString();
++      dawn::native::ResidentCommandWitness witness_context{
++          queue, commands[0], parent_decoder->resident_document_binding_.c_str(),
++          submission.c_str(),
++          [](const char* document, const char* token, uint32_t state, uint64_t serial,
++             WGPUQueueWorkDoneStatus status, uintptr_t proc_address) {
++            bool from_selected_image = false;
++            std::string image_build_id;
++#if BUILDFLAG(IS_LINUX)
++            Dl_info image = {};
++            const auto selected = base::CommandLine::ForCurrentProcess()->GetSwitchValuePath(
++                switches::kDoeWebGPULibraryPath);
++            from_selected_image = !selected.empty() &&
++                dladdr(reinterpret_cast<const void*>(proc_address), &image) && image.dli_fname &&
++                selected.value() == image.dli_fname && image.dli_sname &&
++                std::string_view(image.dli_sname) == "doeNativeVulkanCommandWitnessV1";
++            if (from_selected_image && image.dli_fbase)
++              image_build_id = base::debug::ReadElfBuildId(image.dli_fbase, false);
++#endif
++            TRACE_EVENT_INSTANT(TRACE_DISABLED_BY_DEFAULT("gpu.dawn"),
++                "FawnResidentCommandTerminal", "binding", std::string(document),
++                "submission", std::string(token), "state", state,
++                "serial", base::NumberToString(serial),
++                "fromSelectedImage", from_selected_image, "buildId", image_build_id,
++                "callbackStatus", static_cast<uint32_t>(status),
++                "callbackSuccess", status == WGPUQueueWorkDoneStatus_Success);
++          }};
++      std::optional<dawn::native::ScopedResidentCommandWitness> witness;
+       if (gpu::FawnResidentFrameProvenanceEnabled()) {
+         const uintptr_t start = parent_decoder->resident_wire_base_;
+         const uintptr_t instruction = reinterpret_cast<uintptr_t>(
+@@ -1295,6 +1326,7 @@ WebGPUDecoderImpl::WebGPUDecoderImpl(
+         // span. No raw addresses leave this process and no guess is made.
+         if (start && instruction >= start &&
+             instruction - start < parent_decoder->resident_wire_size_) {
++          witness.emplace(&witness_context);
+           TRACE_EVENT_INSTANT(TRACE_DISABLED_BY_DEFAULT("gpu.dawn"),
+               "FawnResidentDecodedSubmit", "submission", submission,
+               "binding", parent_decoder->resident_document_binding_,

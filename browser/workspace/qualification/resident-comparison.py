@@ -241,6 +241,71 @@ def source_for_browser(progress, receipt, owner_pid):
     return {k: receipt[k] for k in ("chromeSha256", "chromium", "dawn", "source", "product")}
 
 
+
+@functools.lru_cache(maxsize=8)
+def image_build_id(path, stamp):
+    # Run before the timed barrier, caching only an unchanged file identity.
+    try:
+        note = subprocess.run(["readelf", "--notes", "--wide", str(path)], timeout=5,
+                              check=True, capture_output=True, text=True,
+                              env={**os.environ, "LC_ALL": "C"})
+    except (OSError, subprocess.SubprocessError) as error:
+        raise ValueError("unable to read pinned library ELF build ID") from error
+    ids = re.findall(r"Build ID: ([0-9a-f]{8,128})\b", note.stdout)
+    if len(ids) != 1 or file_stamp(path.stat()) != stamp:
+        raise ValueError("ambiguous or changing ELF build ID")
+    return ids[0]
+
+
+def mapped_doe(progress, proc=Path("/proc")):
+    """Observe the pinned library's actual executable mapping in the CDP-selected GPU child."""
+    gpu, browser = progress["gpuProcessPid"], progress["browserPid"]
+    if type(gpu) is not int or type(browser) is not int or min(gpu, browser) < 2 or gpu == browser:
+        raise ValueError("owned browser and GPU child required")
+    root = proc / str(gpu)
+    if not chromium_gpu_process(root):
+        raise ValueError("GPU child type unavailable")
+    parent = gpu
+    seen = set()
+    while parent != browser:
+        if parent <= 1 or parent in seen:
+            raise ValueError("GPU process belongs to another browser")
+        seen.add(parent)
+        status = (proc / str(parent) / "status").read_text().splitlines()
+        parent = int(next((line.partition(":")[2] for line in status if line.startswith("PPid:")), "0"))
+    selected = progress["selection"]
+    proof = read(Path(__file__).with_name("resident-command-witness-pin.json"))
+    pin = selected["runtime"]["library"]
+    compiler = [dep for dep in selected["dependencies"] if dep.get("sha256") == proof["compilerSha256"]]
+    if selected["runtime"]["mode"] != "doe-c" or pin["sha256"] != proof["doeSha256"] or len(compiler) != 1:
+        raise ValueError("archived witness runtime and compiler pins required")
+    compiler_path = Path(compiler[0]["path"])
+    if not compiler_path.is_absolute() or image_digest(compiler_path, file_stamp(compiler_path.stat())) != proof["compilerSha256"]:
+        raise ValueError("pinned witness compiler bytes differ")
+    path = Path(pin["path"])
+    if not path.is_absolute() or not re.fullmatch("[0-9a-f]{64}", pin["sha256"]):
+        raise ValueError("invalid pinned Doe library")
+    stamp = file_stamp(path.stat())
+    def mapped():
+        for row in (root / "maps").read_text().splitlines():
+            columns = row.split(None, 5)
+            if len(columns) < 6 or "x" not in columns[1]:
+                continue
+            pathname = re.sub(r"\\([0-7]{3})", lambda m: chr(int(m.group(1), 8)), columns[5])
+            major, minor = (int(number, 16) for number in columns[3].split(":"))
+            if (os.makedev(major, minor), int(columns[4])) == stamp[:2] and pathname == str(path):
+                return True
+        return False
+    if not mapped() or image_digest(path, stamp) != pin["sha256"] or file_stamp(path.stat()) != stamp or not mapped():
+        raise ValueError("pinned Doe file and executable GPU mapping differ")
+    build_id = image_build_id(path, stamp)
+    if build_id != proof["doeBuildId"]:
+        raise ValueError("pinned witness ELF build ID differs")
+    return {"gpuPid": gpu, "sha256": pin["sha256"], "buildId": build_id,
+            "compilerSha256": proof["compilerSha256"],
+            "executableMappingVerified": True}
+
+
 def comparable_browsers(a, b):
     av, bv = a.get("browser") or {}, b.get("browser") or {}
     version = (av.get("product") or "").partition("/")[2]
@@ -304,6 +369,11 @@ def run_wave(out, wave, args):
                         for job in jobs:
                             progress = read(job["dir"] / "progress.json")
                             observed = source_for_browser(progress, source, job["child"].pid)
+                            if wave["arm"] == "fawn-doe" and getattr(args, "frame_import_evidence", False):
+                                try:
+                                    observed["doeMapping"] = mapped_doe(progress)
+                                except (OSError, TypeError, KeyError, ValueError) as error:
+                                    observed["doeMapping"] = {"executableMappingVerified": False, "reason": str(error)}
                             write(job["dir"] / "browser-source.json", observed)
                     if sys.platform.startswith("linux"):
                         for job in jobs:
@@ -430,6 +500,15 @@ def summarize_row(path, wave, slot):
                                 data["wireSubmit"] = checker["wire_submit"](
                                     events, scope, browser, p.get("gpuProcessPid"), command)
                                 reason = "GPU-process mask submit identified; backend acceptance and completion unproven"
+                                try:
+                                    source = data["browserSource"] or {}
+                                    data["commandTerminal"] = checker["command_terminal"](
+                                        events, data["wireSubmit"], source.get("doeMapping") or {},
+                                        p["selection"]["runtime"]["library"]["sha256"])
+                                    reason = "selected Doe command accepted and completed; traced diagnostic"
+                                except (KeyError, TypeError, ValueError) as error:
+                                    data["commandTerminal"] = dict(nativeBackendCompletionVerified=False, latencyQualified=False)
+                                    reason = f"GPU-process mask submit identified; command completion unproven: {error}"
                             except (KeyError, TypeError, ValueError) as error:
                                 data["wireSubmit"] = dict(nativeQueueSubmitInvoked=False, latencyQualified=False)
                                 reason = f"tile diff submitted and mask mapped; natural wire submit unproven: {error}"

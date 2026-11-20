@@ -107,18 +107,92 @@ def wire_submit(events: list[dict], scope: dict, browser: int, gpu: int, command
     )
 
 
-def check(row: Path) -> dict:
+def command_terminal(events: list[dict], wire: dict, mapping: dict, expected_sha: str) -> dict:
+    pin = json.loads(Path(__file__).with_name("resident-command-witness-pin.json").read_text())
+    require(
+        expected_sha == pin["doeSha256"]
+        and mapping.get("compilerSha256") == pin["compilerSha256"]
+        and mapping.get("buildId") == pin["doeBuildId"],
+        "unqualified runtime or compiler image",
+    )
+    require(
+        wire.get("nativeQueueSubmitInvoked") is True
+        and type(mapping.get("gpuPid")) is int
+        and mapping["gpuPid"] == wire["gpuPid"]
+        and mapping.get("executableMappingVerified") is True
+        and isinstance(expected_sha, str)
+        and re.fullmatch("[0-9a-f]{64}", expected_sha)
+        and mapping.get("sha256") == expected_sha,
+        "same-process pinned runtime mapping required",
+    )
+
+    def events_named(name):
+        return [
+            e
+            for e in events
+            if e.get("name") == name
+            and e.get("pid") == wire["gpuPid"]
+            and INPUT["CATEGORY"] in e.get("cat", "").split(",")
+            and e.get("ph") in ("i", "I")
+            and e.get("args", {}).get("submission") == wire["submission"]
+        ]
+
+    start = single(events_named("FawnResidentDecodedSubmit"), "decoded command")
+    terminal = single(events_named("FawnResidentCommandTerminal"), "retained inner command outcome")
+    a = terminal["args"]
+    require(
+        start["args"].get("binding") == wire["documentBinding"] == a.get("binding")
+        and all(type(e.get("ts")) in (float, int) and math.isfinite(e["ts"]) for e in (start, terminal))
+        and start["ts"] <= terminal["ts"],
+        "outcome belongs to another command or clock",
+    )
+    require(
+        a.get("fromSelectedImage") is True
+        and isinstance(a.get("buildId"), str)
+        and re.fullmatch("[0-9a-f]{8,128}", a["buildId"])
+        and a["buildId"] == mapping.get("buildId")
+        and a.get("callbackSuccess") is True
+        and type(a.get("callbackStatus")) is int
+        and a["callbackStatus"] == 1
+        and type(a.get("state")) is int
+        and a["state"] == 3
+        and isinstance(a.get("serial"), str)
+        and re.fullmatch("[1-9][0-9]{0,19}", a["serial"])
+        and int(a["serial"]) < 2**64,
+        "individual command acceptance and completed Vulkan serial required",
+    )
+    return dict(
+        nativeBackendCompletionVerified=True,
+        submission=wire["submission"],
+        vulkanSerial=a["serial"],
+        doeSha256=expected_sha,
+        doeBuildId=a["buildId"],
+        gpuPid=wire["gpuPid"],
+        latencyQualified=False,
+    )
+
+
+def check(row: Path, terminal_required: bool = False) -> dict:
     events, scope, browser = INPUT["read_row"](row)
     _, command = MASK["traced_mask"](events, scope, browser)
     progress = json.loads((row / "progress.json").read_text())
-    return wire_submit(events, scope, browser, progress["gpuProcessPid"], command)
+    wire = wire_submit(events, scope, browser, progress["gpuProcessPid"], command)
+    if terminal_required:
+        source = json.loads((row / "browser-source.json").read_text())
+        return command_terminal(
+            events, wire, source["doeMapping"], progress["selection"]["runtime"]["library"]["sha256"]
+        )
+    return wire
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("row", type=Path)
+    parser.add_argument(
+        "--terminal", action="store_true", help="require confirmed same-command Vulkan completion"
+    )
     options = parser.parse_args()
     try:
-        print(json.dumps(check(options.row)))
+        print(json.dumps(check(options.row, options.terminal)))
     except (OSError, TypeError, ValueError, KeyError) as error:
         parser.exit(1, f"wire submit unproven: {error}\n")

@@ -1,0 +1,8 @@
+{
+  "sourceRepository": "clocksmith/fawn",
+  "sourceCommit": "f47dcc3ee627d1c14cf486fbd2393fcdaf7ffedf",
+  "doeSha256": "ba7363614ecaf5f07d64957ebb66b9aab88ddfce3a84c85844b804302240d5a6",
+  "doeBuildId": "dba3dc9b5e39ea9d85a575895189c2a836b95b90",
+  "compilerSha256": "7495068534e5844050769b7e671890393c822351e260293cf7763b54dc70bb3c",
+  "abi": "doeNativeVulkanCommandWitnessV1"
+}

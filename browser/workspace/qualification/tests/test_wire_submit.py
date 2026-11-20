@@ -55,6 +55,81 @@ def fixture():
 
 
 class OrdinaryWireSubmitTest(unittest.TestCase):
+    def test_individual_vulkan_terminal_and_actual_binary_are_both_required(self):
+        import json
+
+        pin = json.loads((QUAL / "resident-command-witness-pin.json").read_text())
+
+        def sample():
+            events, scope, command, (client, gpu, doc, retired, earlier, other) = fixture()
+            issuer = wire["wire_submit"](events, scope, 9, 14, command)
+            terminal = copy.deepcopy(gpu)
+            terminal.update(name="FawnResidentCommandTerminal", ts=3.4)
+            terminal["args"] = dict(
+                binding=issuer["documentBinding"],
+                submission=issuer["submission"],
+                state=3,
+                serial="3",
+                callbackStatus=1,
+                callbackSuccess=True,
+                fromSelectedImage=True,
+                buildId=pin["doeBuildId"],
+            )
+            mapping = dict(
+                gpuPid=14,
+                sha256=pin["doeSha256"],
+                buildId=pin["doeBuildId"],
+                compilerSha256=pin["compilerSha256"],
+                executableMappingVerified=True,
+            )
+            events.append(terminal)
+            return events, issuer, terminal, mapping
+
+        events, issued, terminal, mapping = sample()
+        response = wire["command_terminal"](events, issued, mapping, pin["doeSha256"])
+        self.assertTrue(response["nativeBackendCompletionVerified"])
+        self.assertFalse(response["latencyQualified"])
+        for source, field, value in [
+            ("args", "state", 0),
+            ("args", "state", 1),
+            ("args", "state", 2),
+            ("args", "state", 4),
+            ("args", "callbackSuccess", False),
+            ("args", "callbackStatus", 2),
+            ("args", "callbackStatus", 3),
+            ("args", "callbackStatus", True),
+            ("args", "fromSelectedImage", False),
+            ("args", "buildId", "0" * 40),
+            ("args", "serial", "0"),
+            ("args", "serial", 3),
+            ("args", "serial", str(2**64)),
+            ("args", "submission", "D" * 32),
+            ("args", "binding", "B" * 32),
+            ("event", "pid", 18),
+            ("event", "ts", 3.2),
+            ("event", "cat", "blink.user_timing"),
+            ("mapping", "sha256", "1" * 64),
+            ("mapping", "buildId", "1" * 40),
+            ("mapping", "compilerSha256", "1" * 64),
+            ("mapping", "gpuPid", 22),
+            ("mapping", "executableMappingVerified", False),
+            ("trace", "missing", True),
+            ("trace", "duplicate", True),
+        ]:
+            with self.subTest(source=source, field=field, value=value):
+                events, issued, terminal, mapping = sample()
+                if source == "trace":
+                    if field == "missing":
+                        events.remove(terminal)
+                    else:
+                        events.append(copy.deepcopy(terminal))
+                else:
+                    {"args": terminal["args"], "event": terminal, "mapping": mapping}[source][field] = (
+                        value
+                    )
+                with self.assertRaises(ValueError):
+                    wire["command_terminal"](events, issued, mapping, pin["doeSha256"])
+
     def test_mixed_normal_batch_extracts_one_real_instruction(self):
         events, scope, command, _ = fixture()
         verdict = wire["wire_submit"](events, scope, 9, 14, command)

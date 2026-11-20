@@ -333,7 +333,7 @@ try {
   const finishFrameTrace = frameTracePrefix ? await startScopeTrace(page, frameTracePrefix, new Set([
     'FawnResidentTrackRestriction', 'FawnResidentBrowserRestriction', 'FawnResidentFrameImported', 'FawnResidentStreamClosed',
     'FawnResidentResourceEdge', 'FawnResidentEncodedSubmit', 'FawnResidentDecodedSubmit',
-    'FawnResidentDocumentValidated', 'FawnResidentDocumentRetired',
+    'FawnResidentDocumentValidated', 'FawnResidentDocumentRetired', 'FawnResidentCommandTerminal',
   ])) : null;
   let frameScope;
   let beforeChange = await evidence();
