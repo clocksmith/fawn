@@ -70,12 +70,28 @@ def run_id(wave, slot):
 
 
 
+def chromium_gpu_process(directory: Path) -> bool:
+    flag = b"--type=gpu-process"
+    try:
+        argv = (directory / "cmdline").read_bytes().rstrip(b"\0").split(b"\0")
+        if flag in argv[1:]:
+            return True
+        # Chromium on Linux can rewrite argv as one display string. Bind its
+        # leading executable to /proc/exe, including spaces in the real path.
+        if len(argv) == 1:
+            prefix = os.fsencode((directory / "exe").readlink()) + b" " + flag
+            return argv[0] == prefix or argv[0].startswith(prefix + b" ")
+    except OSError:
+        pass
+    return False
+
+
 def drm_residency(pid: int, proc: Path = Path("/proc")) -> dict | None:
     """Linux DRM fdinfo for one observed Chromium GPU subprocess."""
     directory = proc / str(pid)
+    if not chromium_gpu_process(directory):
+        return None
     try:
-        if b"--type=gpu-process" not in (directory / "cmdline").read_bytes().split(b"\0"):
-            return None
         descriptors = list((directory / "fd").iterdir())
     except OSError:
         return None

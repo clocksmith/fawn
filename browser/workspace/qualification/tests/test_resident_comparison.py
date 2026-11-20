@@ -96,6 +96,19 @@ class ResidentComparisonTest(unittest.TestCase):
             )
             self.assertEqual(module.summarize_row(root, wave, 1)["reason"], "wrong tile")
 
+    def test_gpu_process_title_from_sandboxed_chromium(self):
+        with tempfile.TemporaryDirectory() as folder:
+            directory = Path(folder)
+            (directory / "exe").symlink_to("/opt/Chromium Test/chrome")
+            title = directory / "cmdline"
+            title.write_bytes(b"/opt/Chromium Test/chrome --type=gpu-process --ozone-platform=headless\0")
+            self.assertTrue(module.chromium_gpu_process(directory))
+            for bad in (b"/different/chrome --type=gpu-process",
+                        b"/opt/Chromium Test/chrome --type=gpu-process-other",
+                        b"/opt/Chromium Test/chrome --type=renderer --comment=--type=gpu-process"):
+                title.write_bytes(bad + b"\0")
+                self.assertFalse(module.chromium_gpu_process(directory))
+
     def test_probe_overhead_is_never_a_latency_result(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
