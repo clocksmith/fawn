@@ -210,6 +210,8 @@ def summarize_row(path, wave, slot):
         data.update(
             status="incorrect", reason="image, application revision, or unique effect did not verify"
         )
+    elif o.get("diagnosticOnly") is True:
+        data.update(status="unqualified", reason="capture-authority diagnostic adds track observations and a fence wait")
     elif wave["arm"] == "fawn-doe":
         # A native producer must bind this target's active capture and diff command
         # to completed work on the loaded Doe device. Flags, adapter strings or a

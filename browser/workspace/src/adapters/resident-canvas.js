@@ -40,7 +40,7 @@ export function createResidentCanvasReader(surfaceId) {
   // The selected browser surface is consumed here. A compositor-owned
   // GPUTexture can enter compareTextures directly once the browser can
   // authorize its surface, lifetime and completion fence.
-  async function compareTextures(gpu, earlier, current, tileSize, sampleLabel = '') {
+  async function compareTextures(gpu, earlier, current, tileSize, sampleLabel = '', scopeBracket = null) {
     const { width, height } = current;
     if (earlier.width !== width || earlier.height !== height || earlier.format !== 'rgba8unorm'
       || current.format !== 'rgba8unorm' || !Number.isSafeInteger(tileSize) || tileSize < 1
@@ -70,7 +70,9 @@ export function createResidentCanvasReader(surfaceId) {
       pass.dispatchWorkgroups(Math.ceil(width / 8), Math.ceil(height / 8));
       pass.end();
       passEncoder.copyBufferToBuffer(dirty, 0, read, 0, size);
-      gpu.queue.submit([passEncoder.finish(sampleLabel ? { label: sampleLabel + '/diff' } : {})]);
+      const command = passEncoder.finish(sampleLabel ? { label: sampleLabel + '/diff' } : {});
+      if (scopeBracket) await scopeBracket(async () => { gpu.queue.submit([command]); await gpu.queue.onSubmittedWorkDone(); });
+      else gpu.queue.submit([command]);
       await read.mapAsync(GPUMapMode.READ);
       return new Uint32Array(read.getMappedRange().slice(0));
     } finally { dirty?.destroy(); read?.destroy(); parameters?.destroy(); }
@@ -102,7 +104,7 @@ export function createResidentCanvasReader(surfaceId) {
     pass.end();
     gpu.queue.submit([encoder.finish(sampleLabel ? { label: sampleLabel + '/import' } : {})]);
   }
-  async function read(region, surface, tileSize, hashTiles, width, height, fullRead = false, frameTransport = null) {
+  async function read(region, surface, tileSize, hashTiles, width, height, fullRead = false, frameTransport = null, scopeBracket = null) {
     await prepare();
     const gpu = device;
     const sampleLabel = commandLabel ? commandLabel + 'sample-' + (++sampleNumber) : '';
@@ -130,7 +132,7 @@ export function createResidentCanvasReader(surfaceId) {
       } else if (frameTransport === 'external-texture') await importFrame(gpu, surface, texture, sampleLabel);
       else gpu.queue.copyExternalImageToTexture({ source: surface },
         { texture, colorSpace: 'srgb', premultipliedAlpha: false }, [width, height]);
-      const dirty = base ? await compareTextures(gpu, base.texture, texture, tileSize, sampleLabel) : null;
+      const dirty = base ? await compareTextures(gpu, base.texture, texture, tileSize, sampleLabel, scopeBracket) : null;
       if (!dirty) await gpu.queue.onSubmittedWorkDone();
       const result = await hashTiles(dirty, base?.hashes, gpu, texture);
       const [validation, memory] = await collectErrors();
@@ -161,7 +163,7 @@ export function createResidentCanvasReader(surfaceId) {
   }
   // A VideoFrame returned by Chromium Element Capture is already restricted by
   // the browser. Its owner keeps it alive until the GPU transfer has completed.
-  async function readFrame(region, frame, fullRead, transport) {
+  async function readFrame(region, frame, fullRead, transport, scopeBracket = null) {
     const width = frame.displayWidth, height = frame.displayHeight;
     if (!width || !height || width * height > 4 * 1024 * 1024) throw Error('Capture exceeds pixel budget');
     let tileSize = 64;
@@ -203,7 +205,7 @@ export function createResidentCanvasReader(surfaceId) {
       }
       return { hashes, cpuPixelReadBytes: 0, tilePixelReadbackBytes, mappedReadbackBytes: bufferSize };
     }
-    const result = await lockedRead(region, frame, tileSize, hashTexture, width, height, fullRead, transport);
+    const result = await lockedRead(region, frame, tileSize, hashTexture, width, height, fullRead, transport, scopeBracket);
     return { width, height, tileSize, ...result };
   }
   function dispose() {

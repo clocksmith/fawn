@@ -15,6 +15,82 @@ const canvasBackend = process.env.BLITZEN_TEST_CANVAS_BACKEND ?? 'cpu';
 const compositor = process.env.BLITZEN_REVIEW_COMPOSITOR_TRANSPORT;
 const useCompositor = typeof compositor === 'string' && compositor.length > 0;
 if (useCompositor && process.env.BLITZEN_TEST_ELEMENT_CAPTURE !== '1') throw Error('Visible, authorized compositor capture required');
+// Private, correctness-only diagnostic. The browser supplies the trace and
+// loss indicator over CDP. The site cannot write the controller's output.
+async function startScopeTrace(page, prefix) {
+  const session = await page.context().newCDPSession(page);
+  const events = [];
+  let overflow = false;
+  session.on('Tracing.dataCollected', ({ value }) => {
+    for (const event of value) {
+      if (event.cat?.split(',').includes('disabled-by-default-gpu.dawn') &&
+          event.name?.startsWith('FawnResident')) {
+        if (events.length < 20000) events.push(event);
+        else overflow = true;
+      }
+    }
+  });
+  try { await session.send('Tracing.start', { categories: 'disabled-by-default-gpu.dawn', transferMode: 'ReportEvents' }); }
+  catch (error) { await session.detach(); throw error; }
+  return async request => {
+    let timer;
+    try {
+      const complete = new Promise((resolve, reject) => {
+        session.once('Tracing.tracingComplete', resolve);
+        timer = setTimeout(() => reject(Error('Browser trace did not complete')), 10000);
+      });
+      const [, params] = await Promise.all([session.send('Tracing.end'), complete]);
+      if (overflow || params.dataLossOccurred !== false) throw Error('Incomplete browser diagnostic trace');
+      for (const [suffix, value] of [['trace', { traceEvents: events }], ['complete', params], ['scope', request]]) {
+        writeFileSync(prefix + '.' + suffix + '.json', JSON.stringify(value) + '\n', { flag: 'wx', mode: 0o600 });
+      }
+    } finally { clearTimeout(timer); await session.detach(); }
+  };
+}
+
+// Fault control on the private fixture. A second ordinary page gets its own
+// browser chooser, restricts to the same element and copies the command label.
+async function exerciseLookalike(page, copiedLabel) {
+  const cdp = await page.context().newCDPSession(page);
+  try {
+    const controls = await cdp.send('Runtime.evaluate', { userGesture: true, awaitPromise: true,
+      returnByValue: true, expression: `(async () => {
+        const element = document.querySelector('#cell');
+        let stream, secondDisplayCapture, device;
+        try {
+          try {
+            stream = await navigator.mediaDevices.getDisplayMedia({ video: {displaySurface: 'browser'}, audio: false,
+              preferCurrentTab: true, surfaceSwitching: 'exclude' });
+            await stream.getVideoTracks()[0].restrictTo(await RestrictionTarget.fromElement(element));
+            secondDisplayCapture = 'restricted';
+          } catch (error) {
+            if (error.name !== 'NotReadableError' && error.name !== 'NotAllowedError') throw error;
+            stream?.getTracks().forEach(track => track.stop());
+            secondDisplayCapture = 'refused-' + error.name;
+            stream = element.captureStream(5);
+          }
+          const otherTrack = stream.getVideoTracks()[0];
+          if (otherTrack.readyState !== 'live') throw Error('Second track did not open');
+          const adapter = await navigator.gpu.requestAdapter();
+          device = await adapter.requestDevice();
+          const module = device.createShaderModule({code: '@compute @workgroup_size(1) fn main() {}'});
+          const pipe = await device.createComputePipelineAsync({layout:'auto', compute:{module, entryPoint:'main'}});
+          const encoder = device.createCommandEncoder(), pass = encoder.beginComputePass();
+          pass.setPipeline(pipe); pass.dispatchWorkgroups(1); pass.end();
+          device.queue.submit([encoder.finish({label:${JSON.stringify(copiedLabel)}})]);
+          await device.queue.onSubmittedWorkDone();
+          return { secondDisplayCapture, otherTrackLive:true, copiedLabelSubmitted:true,
+            privateCaptureVisible:!!globalThis.__blitzenSurface };
+        } finally { device?.destroy(); stream?.getTracks().forEach(track => track.stop()); }
+      })()` });
+    if (controls.exceptionDetails) throw Error(controls.exceptionDetails.exception?.description ?? controls.exceptionDetails.text);
+    const actual = controls.result.value;
+    assert.ok(['restricted', 'refused-NotReadableError', 'refused-NotAllowedError'].includes(actual.secondDisplayCapture));
+    assert.ok(actual.otherTrackLive && actual.copiedLabelSubmitted && !actual.privateCaptureVisible);
+    return controls.result.value;
+  } finally { await cdp.detach(); }
+}
+
 const captures = [];
 const root = mkdtempSync(join(tmpdir(), 'blitzen-canvas-review-'));
 const log = join(root, 'commits.jsonl');
@@ -197,6 +273,9 @@ try {
     return snapshot;
   };
   checkpoint({ phase: 'authorize-surface', knownEffects: committed().length });
+  const tracePrefix = process.env.BLITZEN_RESIDENT_SCOPE_TRACE_PREFIX;
+  if (tracePrefix && process.env.BLITZEN_RESIDENT_SCOPE_PROBE !== '1') throw Error('Scope trace requires diagnostic mode');
+  const finishTrace = tracePrefix ? await startScopeTrace(page, tracePrefix) : null;
   let beforeChange = await evidence();
   if (useCompositor) {
     for (let i = 0; i < 5; i++) {
@@ -244,6 +323,10 @@ try {
   // Select the application action only if the expected indicator tile changed.
   // Independent revision and authority checks still apply to the actual POST.
   const frame = valid.frameEvidence?.['#cell'] ?? { width: 130, height: 70 };
+  if (process.env.BLITZEN_RESIDENT_SCOPE_PROBE === '1' && useCompositor && compositor !== 'native-helper') {
+    assert.equal(frame.nativeScopeRequest?.captureId, session);
+    assert.ok(frame.nativeScopeRequest.executionContextId > 0 && frame.nativeScopeRequest.bracket > 0);
+  }
   const x = Math.floor((patch.x + patch.length / 2) * frame.width / 130);
   const y = Math.floor((patch.y + patch.length / 2) * frame.height / 70);
   const tile = changed[0];
@@ -251,9 +334,19 @@ try {
   const ruleMatched = changed.length === 1 && x >= tile.x && x < tile.x + tile.width && y >= tile.y && y < tile.y + tile.height;
   const accepted = ruleMatched ? proposal(valid, 'lost-ack') : null;
   assert.ok(accepted);
-  if (progressPath) checkpoint({ phase: 'dispatch', imageCorrect: true, commandLabel: captures.at(-1)?.diffCommandLabel ?? null, indicator: { expectedPixel: [x, y], changed } });
+  if (progressPath) checkpoint({ phase: 'dispatch', imageCorrect: true, nativeScopeRequest: frame.nativeScopeRequest ?? null, commandLabel: captures.at(-1)?.diffCommandLabel ?? null, indicator: { expectedPixel: [x, y], changed } });
+  let lookalike;
+  if (process.env.BLITZEN_RESIDENT_SCOPE_LOOKALIKE === '1') {
+    if (!finishTrace || !frame.nativeScopeRequest) throw Error('Lookalike control requires a private scope trace');
+    lookalike = await exerciseLookalike(page, captures.at(-1).diffCommandLabel);
+  }
+  if (finishTrace) {
+    // A page-authored event with copied values must never establish provenance.
+    await page.evaluate(request => performance.mark('FawnResidentWorldSubmit', { detail: request }), frame.nativeScopeRequest);
+    await finishTrace(frame.nativeScopeRequest);
+  }
   const lost = await submit(valid, accepted);
-  assert.equal(lost.isUncertain, true);
+  assert.equal(lost.isUncertain, true, JSON.stringify(lost));
   assert.deepEqual(committed(), [{ job: 'B', revision: 2 }]);
   const reconcile = () => service.reconcile({ ...owner, actionId: 'lost-ack', method: 'application-state',
     effectPresentWhen: [{ kind: 'url-equals', value: origin + '/records' }, ...accepted.completion.completedWhen] });
@@ -266,6 +359,8 @@ try {
   assert.equal(counters.plannerCalls, 0);
   assert.equal(counters.modelSpendUsd, 0);
   const receipt = { clock: 'request-repaint-through-authoritative-reconciliation', canvasBackend,
+    ...(frame.nativeScopeRequest ? { nativeScopeRequest: frame.nativeScopeRequest, diagnosticOnly: true } : {}),
+    ...(lookalike ? { mainWorldControl: lookalike } : {}),
     compositorTransport: compositor ?? null, selection: config.browser.fawnBuild ?? { channel: config.browser.channel },
     applicationHttpRequests: applicationHttpRequests - requestsBefore, indicator: { expectedPixel: [x, y], changed },
     knownEffects: committed().length, ...counters };

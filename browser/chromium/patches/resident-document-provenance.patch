@@ -71,7 +71,7 @@ index dc0d975f4f05c67359df87b0646c5bec0f276c7a..0673dcefc994e6fe0ad4d0f4202ff715
                         const blink::WebGPUExecutionContextToken& token,
                         GetIsolationKeyCallback cb) override;
 diff --git a/content/browser/gpu/gpu_process_host.cc b/content/browser/gpu/gpu_process_host.cc
-index d5f556ace7350f8048d82a0a914e7a262831a6b4..f42d1e56de79577540306406ffebe10a9b60d626 100644
+index d5f556ace7350f8048d82a0a914e7a262831a6b4..e66cc708b52248416968b92046bd099ade6be24c 100644
 --- a/content/browser/gpu/gpu_process_host.cc
 +++ b/content/browser/gpu/gpu_process_host.cc
 @@ -64,6 +64,9 @@
@@ -92,7 +92,7 @@ index d5f556ace7350f8048d82a0a914e7a262831a6b4..f42d1e56de79577540306406ffebe10a
      switches::kProfilingFile,
      switches::kProfilingFlush,
      switches::kRunAllCompositorStagesBeforeDraw,
-@@ -1132,6 +1136,83 @@ void GpuProcessHost::DidUpdateDXGIInfo(gfx::mojom::DXGIInfoPtr dxgi_info) {
+@@ -1132,6 +1136,84 @@ void GpuProcessHost::DidUpdateDXGIInfo(gfx::mojom::DXGIInfoPtr dxgi_info) {
  }
  #endif
  
@@ -168,7 +168,8 @@ index d5f556ace7350f8048d82a0a914e7a262831a6b4..f42d1e56de79577540306406ffebe10a
 +    TRACE_EVENT_INSTANT(
 +        TRACE_DISABLED_BY_DEFAULT("gpu.dawn"), "FawnResidentDocumentValidated",
 +        "binding", binding, "frame", frame->GetDevToolsFrameToken().ToString(),
-+        "loader", frame->GetDevToolsNavigationToken()->ToString());
++        "loader", frame->GetDevToolsNavigationToken()->ToString(),
++        "rendererPid", frame->GetProcess()->GetProcess().Pid());
 +  }
 +  return binding;
 +}
@@ -190,6 +191,137 @@ index 7e1e15d87a205d5c6c65d5e8faf0f43db24bb233..21eeb21fb5341c4495543143af352ca4
    std::string GetIsolationKey(
        int32_t process_id,
        const blink::WebGPUExecutionContextToken& token) override;
+diff --git a/content/browser/renderer_host/media/media_stream_dispatcher_host.cc b/content/browser/renderer_host/media/media_stream_dispatcher_host.cc
+index a2600d2e48205c5ee12ee6af4054606088318c81..10df10539842d678c7eea8ff9b930d2f5faa88b2 100644
+--- a/content/browser/renderer_host/media/media_stream_dispatcher_host.cc
++++ b/content/browser/renderer_host/media/media_stream_dispatcher_host.cc
+@@ -4,6 +4,9 @@
+ 
+ #include "content/browser/renderer_host/media/media_stream_dispatcher_host.h"
+ 
++#include "gpu/config/fawn_resident_provenance.h"
++#include "base/trace_event/trace_event.h"
++
+ #include <memory>
+ 
+ #include "base/check_op.h"
+@@ -767,6 +770,24 @@ void MediaStreamDispatcherHost::OnSubCaptureTargetValidationComplete(
+     return;
+   }
+ 
++  if (gpu::FawnResidentProvenanceEnabled()) {
++    // Only the validated browser-side control callback can declare success.
++    callback = base::BindOnce(
++        [](ApplySubCaptureTargetCallback original,
++           base::UnguessableToken stream, base::Token target, uint32_t version,
++           bool restriction, media::mojom::ApplySubCaptureTargetResult result) {
++          TRACE_EVENT_INSTANT(
++              TRACE_DISABLED_BY_DEFAULT("gpu.dawn"),
++              "FawnResidentBrowserRestriction", "stream",
++              gpu::FawnCaptureDigest(stream), "target",
++              gpu::FawnCaptureDigest(target), "version", version, "restriction",
++              restriction, "accepted",
++              result == media::mojom::ApplySubCaptureTargetResult::kSuccess);
++          std::move(original).Run(result);
++        },
++        std::move(callback), session_id, target, sub_capture_version,
++        type == media::mojom::SubCaptureTargetType::kRestrictionTarget);
++  }
+   media_stream_manager_->video_capture_manager()->ApplySubCaptureTarget(
+       session_id, type, target, sub_capture_version, std::move(callback));
+ }
+diff --git a/content/browser/renderer_host/media/media_stream_manager.cc b/content/browser/renderer_host/media/media_stream_manager.cc
+index 66e74578dd9182fcf9c9badc6b853ee54bd5e08d..99d130fc4b1feda1d304600043ee4c16db20d298 100644
+--- a/content/browser/renderer_host/media/media_stream_manager.cc
++++ b/content/browser/renderer_host/media/media_stream_manager.cc
+@@ -4,6 +4,9 @@
+ 
+ #include "content/browser/renderer_host/media/media_stream_manager.h"
+ 
++#include "gpu/config/fawn_resident_provenance.h"
++#include "base/trace_event/trace_event.h"
++
+ #include <stddef.h>
+ #include <stdint.h>
+ 
+@@ -2027,6 +2030,11 @@ base::UnguessableToken MediaStreamManager::VideoDeviceIdToSessionId(
+ void MediaStreamManager::StopDevice(MediaStreamType type,
+                                     const base::UnguessableToken& session_id) {
+   CHECK_CURRENTLY_ON(BrowserThread::IO, base::NotFatalUntil::M158);
++  if (gpu::FawnResidentProvenanceEnabled()) {
++    TRACE_EVENT_INSTANT(TRACE_DISABLED_BY_DEFAULT("gpu.dawn"),
++                        "FawnResidentStreamClosed", "stream",
++                        gpu::FawnCaptureDigest(session_id));
++  }
+   SendLogMessage(base::StringPrintf("StopDevice({type=%s}, {session_id=%s})",
+                                     StreamTypeToString(type),
+                                     session_id.ToString().c_str()));
+@@ -2093,6 +2101,11 @@ void MediaStreamManager::CloseDevice(MediaStreamType type,
+   SendLogMessage(base::StringPrintf("CloseDevice({type=%s}, {session_id=%s})",
+                                     StreamTypeToString(type),
+                                     session_id.ToString().c_str()));
++  if (gpu::FawnResidentProvenanceEnabled()) {
++    TRACE_EVENT_INSTANT(TRACE_DISABLED_BY_DEFAULT("gpu.dawn"),
++                        "FawnResidentStreamClosed", "stream",
++                        gpu::FawnCaptureDigest(session_id));
++  }
+   GetDeviceManager(type)->Close(session_id);
+ 
+   for (const LabeledDeviceRequest& labeled_request : requests_) {
+@@ -3940,6 +3953,16 @@ void MediaStreamManager::ChangeMediaStreamSourceFromBrowser(
+   if (!request) {
+     return;
+   }
++  if (gpu::FawnResidentProvenanceEnabled()) {
++    for (const auto& devices : request->stream_devices_set.stream_devices) {
++      if (devices->video_device) {
++        TRACE_EVENT_INSTANT(
++            TRACE_DISABLED_BY_DEFAULT("gpu.dawn"), "FawnResidentStreamClosed",
++            "stream",
++            gpu::FawnCaptureDigest(devices->video_device->session_id()));
++      }
++    }
++  }
+ 
+   CHECK_EQ(1u, request->stream_devices_set.stream_devices.size(),
+            base::NotFatalUntil::M158);
+diff --git a/content/browser/renderer_host/render_process_host_impl.cc b/content/browser/renderer_host/render_process_host_impl.cc
+index cf64747dbc2a2800d42a8993d8f0b856c7ba1822..3bc8bb11536b1fd07b601d2d28c9db46d2bfbf97 100644
+--- a/content/browser/renderer_host/render_process_host_impl.cc
++++ b/content/browser/renderer_host/render_process_host_impl.cc
+@@ -3956,6 +3956,7 @@ void RenderProcessHostImpl::PropagateBrowserCommandLineToRenderer(
+       switches::kEnablePreciseMemoryInfo,
+       switches::kEnableSkiaBenchmarking,
+       switches::kEnableUnsafeWebGPU,
++      switches::kResidentWebGPUProvenance,
+       switches::kEnableViewport,
+       switches::kEnableVtune,
+       switches::kEnableWebGLDeveloperExtensions,
+diff --git a/gpu/command_buffer/client/dawn_client_serializer.cc b/gpu/command_buffer/client/dawn_client_serializer.cc
+index 52d5bf07ebb15bf2982a4f2cf69f56ffbf46b3ec..343059910aad5710e0de4ada22cc0b02ab0a89bc 100644
+--- a/gpu/command_buffer/client/dawn_client_serializer.cc
++++ b/gpu/command_buffer/client/dawn_client_serializer.cc
+@@ -4,6 +4,8 @@
+ 
+ #include "gpu/command_buffer/client/dawn_client_serializer.h"
+ 
++#include "gpu/config/fawn_resident_provenance.h"
++
+ #include "base/compiler_specific.h"
+ #include "base/numerics/checked_math.h"
+ #include "base/trace_event/trace_event.h"
+@@ -97,6 +99,11 @@ void DawnClientSerializer::Commit() {
+     uint64_t trace_id;
+     if (is_tracing) {
+       trace_id = base::RandUint64();
++      if (FawnResidentProvenanceEnabled()) {
++        TRACE_EVENT_INSTANT(TRACE_DISABLED_BY_DEFAULT("gpu.dawn"),
++                            "FawnResidentRendererBatch", "batch",
++                            base::NumberToString(trace_id));
++      }
+       TRACE_EVENT(TRACE_DISABLED_BY_DEFAULT("gpu.dawn"), "DawnCommands",
+                   perfetto::Flow::Global(trace_id));
+     } else {
 diff --git a/gpu/command_buffer/service/isolation_key_provider.h b/gpu/command_buffer/service/isolation_key_provider.h
 index b4c362346de51a97efc06034616197cdc0bdabc0..8d864cf34adcb5cd55e37e6bbe0b4a422c17cafe 100644
 --- a/gpu/command_buffer/service/isolation_key_provider.h
@@ -223,10 +355,19 @@ index b4c362346de51a97efc06034616197cdc0bdabc0..8d864cf34adcb5cd55e37e6bbe0b4a42
                                 GetIsolationKeyCallback cb) = 0;
  
 diff --git a/gpu/command_buffer/service/webgpu_decoder_impl.cc b/gpu/command_buffer/service/webgpu_decoder_impl.cc
-index d9ec8819b71a8d73a2264a792382929027b3131b..36ada1d6649de8189bc5df5fbcdc3e4bd85afafa 100644
+index d9ec8819b71a8d73a2264a792382929027b3131b..612ab7835c7ee0ad2fe97b528bcdb9c79ff0e3a0 100644
 --- a/gpu/command_buffer/service/webgpu_decoder_impl.cc
 +++ b/gpu/command_buffer/service/webgpu_decoder_impl.cc
-@@ -21,6 +21,7 @@
+@@ -4,6 +4,8 @@
+ 
+ #include "gpu/command_buffer/service/webgpu_decoder_impl.h"
+ 
++#include "base/strings/string_number_conversions.h"
++
+ #include <algorithm>
+ #include <array>
+ #include <memory>
+@@ -21,6 +23,7 @@
  #include "base/memory/raw_ptr.h"
  #include "base/memory/raw_ref.h"
  #include "base/notimplemented.h"
@@ -234,7 +375,7 @@ index d9ec8819b71a8d73a2264a792382929027b3131b..36ada1d6649de8189bc5df5fbcdc3e4b
  #include "base/notreached.h"
  #include "base/numerics/checked_math.h"
  #include "base/power_monitor/power_monitor.h"
-@@ -140,6 +141,23 @@ WGPUStringView MakeStringView() {
+@@ -140,6 +143,23 @@ WGPUStringView MakeStringView() {
    return {nullptr, 0};
  }
  
@@ -258,7 +399,7 @@ index d9ec8819b71a8d73a2264a792382929027b3131b..36ada1d6649de8189bc5df5fbcdc3e4b
  // This variable is set to DawnWireServer's parent decoder during execution of
  // HandleCommands. It is cleared to nullptr after. This enables some of the
  // overridden procs to be overridden with a WebGPUDecoderImpl member function.
-@@ -447,6 +465,15 @@ class WebGPUDecoderImpl final : public WebGPUDecoder {
+@@ -447,6 +467,16 @@ class WebGPUDecoderImpl final : public WebGPUDecoder {
    // Device creation requires that an isolation key has been set for the
    // decoder. As a result, this callback also runs all queued device creation
    // calls that were requested and queued before the isolation key was ready.
@@ -270,11 +411,12 @@ index d9ec8819b71a8d73a2264a792382929027b3131b..36ada1d6649de8189bc5df5fbcdc3e4b
 +    OnGetIsolationKey(key);
 +  }
 +  std::string resident_document_binding_;
++  uint64_t resident_wire_batch_ = 0;
 +  bool resident_binding_requested_ = false;
    void OnGetIsolationKey(const std::string& isolation_key);
  
    bool use_blocklist() const;
-@@ -1243,6 +1270,24 @@ WebGPUDecoderImpl::WebGPUDecoderImpl(
+@@ -1243,6 +1273,28 @@ WebGPUDecoderImpl::WebGPUDecoderImpl(
          std::forward<decltype(args)>(args)...);
    };
  
@@ -289,6 +431,10 @@ index d9ec8819b71a8d73a2264a792382929027b3131b..36ada1d6649de8189bc5df5fbcdc3e4b
 +        return;
 +      }
 +      const auto submission = base::UnguessableToken::Create().ToString();
++      TRACE_EVENT_INSTANT(
++          TRACE_DISABLED_BY_DEFAULT("gpu.dawn"), "FawnResidentGpuBatch",
++          "batch", base::NumberToString(parent_decoder->resident_wire_batch_),
++          "submission", submission);
 +      FawnSubmitResidentDocumentCommandV1(
 +          submit, queue, count, commands,
 +          parent_decoder->resident_document_binding_.c_str(),
@@ -299,7 +445,17 @@ index d9ec8819b71a8d73a2264a792382929027b3131b..36ada1d6649de8189bc5df5fbcdc3e4b
    wire_server_ = DawnWireServer::Create(
        wire_serializer_.get(), memory_transfer_service_.get(), wire_procs);
  
-@@ -2794,6 +2839,21 @@ error::Error WebGPUDecoderImpl::HandleSetWebGPUExecutionContextToken(
+@@ -2126,6 +2178,9 @@ error::Error WebGPUDecoderImpl::HandleDawnCommands(
+ 
+   {
+     const auto resetter = ScopedParentDecoder(this);
++    std::optional<base::AutoReset<uint64_t>> current_batch;
++    if (!resident_document_binding_.empty())
++      current_batch.emplace(&resident_wire_batch_, trace_id);
+     if (!wire_server_->HandleCommands(*shm_commands)) {
+       return error::kLostContext;
+     }
+@@ -2794,6 +2849,21 @@ error::Error WebGPUDecoderImpl::HandleSetWebGPUExecutionContextToken(
      default:
        return error::kInvalidArguments;
    }
@@ -321,6 +477,51 @@ index d9ec8819b71a8d73a2264a792382929027b3131b..36ada1d6649de8189bc5df5fbcdc3e4b
    isolation_key_provider_->GetIsolationKey(
        execution_context_token,
        base::BindPostTask(base::SingleThreadTaskRunner::GetCurrentDefault(),
+diff --git a/gpu/config/BUILD.gn b/gpu/config/BUILD.gn
+index 494759a1d4f4f3f822f3cce75cc1bc07d855da8e..822c088ed5d70f2d10eb04e14ddd65c940b8c81b 100644
+--- a/gpu/config/BUILD.gn
++++ b/gpu/config/BUILD.gn
+@@ -110,6 +110,7 @@ component("config") {
+     "gpu_preferences.h",
+     "gpu_switches.cc",
+     "gpu_switches.h",
++    "fawn_resident_provenance.h",
+     "gpu_test_config.cc",
+     "gpu_test_config.h",
+     "gpu_test_expectations_parser.cc",
+diff --git a/gpu/config/fawn_resident_provenance.h b/gpu/config/fawn_resident_provenance.h
+new file mode 100644
+index 0000000000000000000000000000000000000000..eb3c2ed71a546c1ee9522426e0fea2db48f5adb1
+--- /dev/null
++++ b/gpu/config/fawn_resident_provenance.h
+@@ -0,0 +1,27 @@
++// Copyright 2026 The Chromium Authors
++// Use of this source code is governed by a BSD-style license that can be
++// found in the LICENSE file.
++#ifndef GPU_CONFIG_FAWN_RESIDENT_PROVENANCE_H_
++#define GPU_CONFIG_FAWN_RESIDENT_PROVENANCE_H_
++
++#include <string>
++#include "base/command_line.h"
++#include "base/hash/sha1.h"
++#include "base/strings/string_number_conversions.h"
++#include "gpu/config/gpu_switches.h"
++
++namespace gpu {
++inline bool FawnResidentProvenanceEnabled() {
++  static const bool enabled = base::CommandLine::ForCurrentProcess()->HasSwitch(
++      switches::kResidentWebGPUProvenance);
++  return enabled;
++}
++// The inputs are native random capture capabilities. Only their digests
++// cross into the private trace; possession of a digest confers no authority.
++template <typename Token>
++std::string FawnCaptureDigest(const Token& capability) {
++  return base::HexEncode(base::SHA1HashString(capability.ToString()));
++}
++}  // namespace gpu
++
++#endif  // GPU_CONFIG_FAWN_RESIDENT_PROVENANCE_H_
 diff --git a/gpu/config/gpu_switches.h b/gpu/config/gpu_switches.h
 index de14552fd6fbaee9dbc25f99b81a4b20bf495af0..09f6dc1f8a7b244b081bce4bd2ea0780dcde0575 100644
 --- a/gpu/config/gpu_switches.h
@@ -337,10 +538,18 @@ index de14552fd6fbaee9dbc25f99b81a4b20bf495af0..09f6dc1f8a7b244b081bce4bd2ea0780
  
  #endif  // GPU_CONFIG_GPU_SWITCHES_H_
 diff --git a/gpu/ipc/service/gpu_channel.cc b/gpu/ipc/service/gpu_channel.cc
-index 59c0415128160ff43ef6f093bf96e0a1df6f9cdc..7fa876c093a80c6ec7d2525f3eeede6c7075a8bd 100644
+index 59c0415128160ff43ef6f093bf96e0a1df6f9cdc..da399a67e3c281790d71b71d980013b5ef06dc3a 100644
 --- a/gpu/ipc/service/gpu_channel.cc
 +++ b/gpu/ipc/service/gpu_channel.cc
-@@ -808,6 +808,13 @@ void GpuChannel::OnChannelError() {
+@@ -9,7 +9,6 @@
+ 
+ #include "base/memory/ptr_util.h"
+ #include "base/memory/raw_ptr.h"
+-#include "base/task/single_thread_task_runner.h"
+ #include "build/build_config.h"
+ 
+ #if BUILDFLAG(IS_WIN)
+@@ -808,6 +807,13 @@ void GpuChannel::OnChannelError() {
    gpu_channel_manager_->RemoveChannel(client_id_);
  }
  
@@ -414,3 +623,143 @@ index 3444bff0ca3d233334b9e755a71fcee5db4d1586..b2f4d8aac7a61e84a277f94cda21d1ee
  
    // Tells the GPU host to store the blob on the given cache handle.
    StoreBlobToDisk(gpu.mojom.GpuDiskCacheHandle cache_handle,
+diff --git a/third_party/blink/renderer/modules/mediastream/browser_capture_media_stream_track.cc b/third_party/blink/renderer/modules/mediastream/browser_capture_media_stream_track.cc
+index 37826b6f5a9f49e95c73f828e766e38c512b69df..a0bae55e303ecb4ab29908f71df8f865d0394643 100644
+--- a/third_party/blink/renderer/modules/mediastream/browser_capture_media_stream_track.cc
++++ b/third_party/blink/renderer/modules/mediastream/browser_capture_media_stream_track.cc
+@@ -4,6 +4,12 @@
+ 
+ #include "third_party/blink/renderer/modules/mediastream/browser_capture_media_stream_track.h"
+ 
++#include "gpu/config/fawn_resident_provenance.h"
++#include "third_party/blink/renderer/core/execution_context/execution_context.h"
++#include "base/trace_event/trace_event.h"
++#include "third_party/blink/renderer/platform/bindings/script_state.h"
++#include "v8/include/v8-inspector.h"
++
+ #include <optional>
+ 
+ #include "base/feature_list.h"
+@@ -155,6 +161,27 @@ ScriptPromise<IDLUndefined> BrowserCaptureMediaStreamTrack::restrictTo(
+                                target, exception_state);
+ }
+ 
++MediaTrackSettings* BrowserCaptureMediaStreamTrack::getSettings() const {
++  if (gpu::FawnResidentProvenanceEnabled() && !resident_track_id_.is_empty() &&
++      GetExecutionContext()) {
++    v8::Isolate* isolate = GetExecutionContext()->GetIsolate();
++    if (isolate->InContext()) {
++      auto ctx = isolate->GetCurrentContext();
++      const auto* world = ScriptState::MaybeFrom(isolate, ctx);
++      const auto source = device();
++      if (world && world->World().IsIsolatedWorld() && source &&
++          source->serializable_session_id()) {
++        TRACE_EVENT_INSTANT(
++            TRACE_DISABLED_BY_DEFAULT("gpu.dawn"), "FawnResidentTrackState",
++            "context", v8_inspector::V8ContextInfo::executionContextId(ctx),
++            "track", resident_track_id_.ToString(), "stream",
++            gpu::FawnCaptureDigest(source->session_id()), "live", !Ended());
++      }
++    }
++  }
++  return MediaStreamTrackImpl::getSettings();
++}
++
+ BrowserCaptureMediaStreamTrack* BrowserCaptureMediaStreamTrack::clone(
+     ExecutionContext* execution_context) {
+   // Instantiate the clone.
+@@ -258,6 +285,23 @@ BrowserCaptureMediaStreamTrack::ApplySubCaptureTarget(
+       BindOnce(&BrowserCaptureMediaStreamTrack::OnCaptureVersionObserved,
+                WrapWeakPersistent(this), capture_version));
+ 
++  if (gpu::FawnResidentProvenanceEnabled() &&
++      script_state->World().IsIsolatedWorld() &&
++      type == SubCaptureTarget::Type::kRestrictionTarget && !token->is_zero()) {
++    const auto source = device();
++    if (source && source->serializable_session_id()) {
++      if (resident_track_id_.is_empty())
++        resident_track_id_ = base::UnguessableToken::Create();
++      TRACE_EVENT_INSTANT(TRACE_DISABLED_BY_DEFAULT("gpu.dawn"),
++                          "FawnResidentTrackRestriction", "context",
++                          v8_inspector::V8ContextInfo::executionContextId(
++                              script_state->GetContext()),
++                          "track", resident_track_id_.ToString(), "stream",
++                          gpu::FawnCaptureDigest(source->session_id()),
++                          "target", gpu::FawnCaptureDigest(token.value()),
++                          "version", capture_version.sub_capture);
++    }
++  }
+   native_source->ApplySubCaptureTarget(
+       native_track, type, token.value(), capture_version.sub_capture,
+       BindOnce(&BrowserCaptureMediaStreamTrack::OnResultFromBrowserProcess,
+diff --git a/third_party/blink/renderer/modules/mediastream/browser_capture_media_stream_track.h b/third_party/blink/renderer/modules/mediastream/browser_capture_media_stream_track.h
+index d5a24dd34e74d19298f656b39470d44fbb9f5b8f..05538c3ad6a4d6a1c7df26ec65e3e36c06cc8e01 100644
+--- a/third_party/blink/renderer/modules/mediastream/browser_capture_media_stream_track.h
++++ b/third_party/blink/renderer/modules/mediastream/browser_capture_media_stream_track.h
+@@ -5,6 +5,7 @@
+ #ifndef THIRD_PARTY_BLINK_RENDERER_MODULES_MEDIASTREAM_BROWSER_CAPTURE_MEDIA_STREAM_TRACK_H_
+ #define THIRD_PARTY_BLINK_RENDERER_MODULES_MEDIASTREAM_BROWSER_CAPTURE_MEDIA_STREAM_TRACK_H_
+ 
++#include "base/unguessable_token.h"
+ #include "third_party/blink/renderer/bindings/core/v8/script_promise_resolver_with_tracker.h"
+ #include "third_party/blink/renderer/modules/mediastream/crop_target.h"
+ #include "third_party/blink/renderer/modules/mediastream/media_stream_track_impl.h"
+@@ -49,6 +50,7 @@ class MODULES_EXPORT BrowserCaptureMediaStreamTrack
+                                          ExceptionState&);
+ 
+   BrowserCaptureMediaStreamTrack* clone(ExecutionContext*) override;
++  MediaTrackSettings* getSettings() const override;
+ 
+   // These values are persisted to logs. Entries should not be renumbered and
+   // numeric values should never be reused.
+@@ -137,6 +139,7 @@ class MODULES_EXPORT BrowserCaptureMediaStreamTrack
+   //
+   // Note that frames before the first call to cropTo() will be associated
+   // with a version of 0, both here and in Viz.
++  base::UnguessableToken resident_track_id_;
+   SubCaptureVersionToPromiseInfoMap pending_promises_;
+ };
+ 
+diff --git a/third_party/blink/renderer/modules/webgpu/gpu_queue.cc b/third_party/blink/renderer/modules/webgpu/gpu_queue.cc
+index 76017b74b8cb8c87f88336346742031a89a260e4..2488f6959589147eee7228e1136540511110f016 100644
+--- a/third_party/blink/renderer/modules/webgpu/gpu_queue.cc
++++ b/third_party/blink/renderer/modules/webgpu/gpu_queue.cc
+@@ -4,6 +4,11 @@
+ 
+ #include "third_party/blink/renderer/modules/webgpu/gpu_queue.h"
+ 
++#include "gpu/config/fawn_resident_provenance.h"
++#include "base/trace_event/trace_event.h"
++#include "third_party/blink/renderer/platform/bindings/script_state.h"
++#include "v8/include/v8-inspector.h"
++
+ #include <cmath>
+ 
+ #include "build/build_config.h"
+@@ -113,11 +118,21 @@ void GPUQueue::submit(ScriptState* script_state,
+                       const HeapVector<Member<GPUCommandBuffer>>& buffers) {
+   std::unique_ptr<wgpu::CommandBuffer[]> commandBuffers = AsDawnType(buffers);
+ 
+-  GetHandle().Submit(buffers.size(), commandBuffers.get());
+-  // WebGPU guarantees that submitted commands finish in finite time so we
+-  // need to ensure commands are flushed. Flush immediately so the GPU process
+-  // eagerly processes commands to maximize throughput.
+-  FlushNow();
++  if (gpu::FawnResidentProvenanceEnabled() && buffers.size() == 1 &&
++      script_state->World().IsIsolatedWorld()) {
++    // A Dawn batch may contain older commands, including work queued by the
++    // page's main world. Empty it before scoping this synchronous submit.
++    FlushNow();
++    TRACE_EVENT(TRACE_DISABLED_BY_DEFAULT("gpu.dawn"),
++                "FawnResidentWorldSubmit", "context",
++                v8_inspector::V8ContextInfo::executionContextId(
++                    script_state->GetContext()));
++    GetHandle().Submit(buffers.size(), commandBuffers.get());
++    FlushNow();
++  } else {
++    GetHandle().Submit(buffers.size(), commandBuffers.get());
++    FlushNow();
++  }
+ 
+   ExecutionContext* execution_context = ExecutionContext::From(script_state);
+   UseCounter::Count(execution_context, WebFeature::kWebGPUQueueSubmit);

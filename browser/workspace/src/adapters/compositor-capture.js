@@ -4,9 +4,10 @@ import { createResidentCanvasReader } from './resident-canvas.js';
 import { NativeFrameHelper } from './native-frame-helper.js';
 import { queryPage } from './page-query.js';
 
-function createElementCapture(id, resident, capture, leaseMs) {
+function createElementCapture(id, resident, capture, leaseMs, scopeProbe = false) {
   const { selector, origin } = capture;
   let element, stream, track, reader, observer, watchdog, expiry, ended = false;
+  let verifiedBrackets = 0;
   const stop = () => {
     if (ended) return;
     ended = true;
@@ -64,7 +65,7 @@ function createElementCapture(id, resident, capture, leaseMs) {
   }
   async function sample(selected, verify, timeoutMs) {
     const newStream = !element;
-    let timer;
+    let timer, diagnosticPhase = 'open';
     async function read() {
       if (newStream) await start(selected);
       if (element !== selected) throw Error('The selected element was replaced');
@@ -73,10 +74,12 @@ function createElementCapture(id, resident, capture, leaseMs) {
       // the queued frame and consume the next restricted compositor update.
       let closedFrames = 0;
       if (!newStream) {
+        diagnosticPhase = 'discard prior frame';
         const queued = await reader.read();
         if (queued.done) throw Error('Sharing ended');
         queued.value.close(); closedFrames++;
       }
+      diagnosticPhase = 'fresh restricted frame';
       const next = await reader.read();
       if (next.done) throw Error('Sharing ended');
       const frame = next.value;
@@ -99,7 +102,21 @@ function createElementCapture(id, resident, capture, leaseMs) {
           Object.assign(bitmapMetrics, { path: 'element-capture-native-helper', cpuPixelReadBytes: 0, frameHostCopyBytes: pixels.length,
             cdpPixelPayloadBytes: evidence.restrictedRgba.length, nativeHelperInputBytes: pixels.length });
         } else {
-          const result = await resident.readFrame(element, frame, verify, capture.transport);
+          // Chromium's native getSettings instrumentation can witness the
+          // actual track and calling world. This read cannot change the crop.
+          const bracket = scopeProbe ? async submit => {
+            const witness = () => {
+              assertCurrent();
+              if (track.getSettings().displaySurface !== 'browser') throw Error('Capture source changed');
+            };
+            witness();
+            diagnosticPhase = 'GPU queue completion';
+            await submit();
+            witness();
+            evidence.frame.captureProofBracket = ++verifiedBrackets;
+          } : null;
+          diagnosticPhase = 'process restricted frame';
+          const result = await resident.readFrame(element, frame, verify, capture.transport, bracket);
           const { width, height, tileSize, hashes, ...metrics } = result;
           evidence.bitmap = { format: 'compositor-element-srgb-rgba8-v1/' + capture.transport, width, height, tileSize, hashes };
           Object.assign(bitmapMetrics, { path: 'element-capture-webgpu', ...metrics });
@@ -111,7 +128,7 @@ function createElementCapture(id, resident, capture, leaseMs) {
     try {
       if (ended) throw Error('Sharing ended; authorize a new capture');
       return await Promise.race([read(), new Promise((_, reject) => {
-        timer = setTimeout(() => { stop(); reject(Error('Timed out waiting for restricted compositor evidence')); }, timeoutMs);
+        timer = setTimeout(() => { stop(); reject(Error('Timed out waiting for restricted compositor evidence' + (scopeProbe ? ' at ' + diagnosticPhase : ''))); }, timeoutMs);
       })]);
     } catch (error) { stop(); throw error; } finally { clearTimeout(timer); }
   }
@@ -167,9 +184,12 @@ export class CompositorSessions {
     }
     if (start) {
       if (entry) await this.end(entry);
-      const { executionContextId } = await send('Page.createIsolatedWorld', { frameId, worldName: 'Blitzen selected compositor surface' });
+      const id = randomUUID();
+      const scopeProbe = process.env.BLITZEN_RESIDENT_SCOPE_PROBE === '1';
+      const worldName = scopeProbe ? 'Blitzen restricted capture ' + id : 'Blitzen selected compositor surface';
+      const { executionContextId } = await send('Page.createIsolatedWorld', { frameId, worldName });
       signal?.throwIfAborted();
-      entry = { key, workspaceId, grantId: capture.grantId, scope, id: randomUUID(), send, contextId: executionContextId };
+      entry = { key, workspaceId, grantId: capture.grantId, scope, id, scopeProbe, proofBracket: 0, send, contextId: executionContextId };
       this.entries.set(key, entry);
     }
     const abort = () => { void this.end(entry); };
@@ -181,7 +201,7 @@ export class CompositorSessions {
         const init = await send('Runtime.evaluate', { contextId: entry.contextId, returnByValue: true, expression: `(() => {
           globalThis.__blitzenSurface?.stop();
           globalThis.__blitzenSurface = (${createElementCapture.toString()})(${JSON.stringify(entry.id)},
-            (${createResidentCanvasReader.toString()})(${JSON.stringify(entry.id)}), ${JSON.stringify(capture)}, ${leaseMs}); return true;
+            (${createResidentCanvasReader.toString()})(${JSON.stringify(entry.id)}), ${JSON.stringify(capture)}, ${leaseMs}, ${entry.scopeProbe}); return true;
         })()` });
         if (signal?.aborted || this.entries.get(key) !== entry) {
           await this.control(entry, 'stop').catch(() => {});
@@ -229,6 +249,14 @@ export class CompositorSessions {
         if (this.entries.get(key) !== entry || state?.ended || state?.trackState !== 'live') throw Error('Capture ended during native processing');
         selected.bitmap = { format: 'compositor-element-srgb-rgba8-v1/' + capture.transport, width, height, tileSize, hashes };
         Object.assign(selected.bitmapMetrics, { nativeHashedBytes: hashedBytes, nativeRetainedRgbaBytes: width * height * 4, nativePeakRgbaBufferBytes: peakRgbaBytes });
+      }
+      if (entry.scopeProbe && selected.frame.captureProofBracket !== undefined) {
+        const ordinal = selected.frame.captureProofBracket;
+        if (!Number.isSafeInteger(ordinal) || ordinal !== entry.proofBracket + 1) throw Error('Capture diagnostic bracket changed');
+        entry.proofBracket = ordinal;
+        selected.frame.nativeScopeRequest = { frameId, loaderId, executionContextId: entry.contextId,
+          captureId: entry.id, grantId: entry.grantId, grantRevision: capture.grantRevision, bracket: ordinal };
+        delete selected.frame.captureProofBracket;
       }
       Object.assign(selected.frame, { loaderId, grantId: capture.grantId, grantRevision: capture.grantRevision });
       return raw;

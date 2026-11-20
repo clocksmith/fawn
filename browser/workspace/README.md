@@ -760,13 +760,46 @@ python3 qualification/correlate-document-submit.py --browser-trace "$BROWSER_TRA
   --doe-sha256 "$DOE_C_SHA256"
 ```
 
-The software-only test compiles the exact stack wrapper from the Chromium patch,
-shimming tracing and the anti-tail-call operation. It sends two same-label
-commands through real software Vulkan, checks the observed document/command
-pairs, interrupts a command before its fence, and repeats with an unpinned
-wrapper. The browser-side Mojo, frame lifecycle and Dawn stack still require
-an integrated Chromium build. A document can submit work from multiple JS
-worlds. The remaining ownership check must bind the live browser capture grant
-and the exact authorized sample to that document's queue or command from
-a trusted boundary. Document correlation alone never qualifies an action or
-publishes a forced Doe latency.
+**Capture and world qualification.** For a separate correctness run, enable
+`BLITZEN_RESIDENT_SCOPE_PROBE=1` in the trusted workspace service and point
+`BLITZEN_RESIDENT_SCOPE_TRACE_PREFIX` at a fresh private file prefix for
+`test/browser/canvas-review.test.js`. The adapter creates a fresh CDP isolated
+world for the one authorized session. It records the browser-returned context
+number, frame, loader, grant revision and bracket number. The world name and
+visible command label carry no authority. Stock Chrome can run the full
+workflow and return that scope request while emitting zero Fawn native records.
+
+The diagnostic samples `getSettings()` on the *same live restricted track*
+immediately before the diff submission and after the queue reports completion.
+It leaves the selected element and track alone. The patch observes the actual
+Blink track, realm and native media session. The browser independently records
+the approved element restriction, the version and any later change or close
+of that media session. Trace payloads hash the native media and target
+capabilities. The correlator rejects a second track in the same world, changed
+restrictions, ambiguous command batches and missing fences.
+
+At the real Blink queue submit the patch flushes earlier wire work, scopes one
+command in the isolated world and joins the serializer's existing random batch
+ID to the GPU decoder's received batch. The separately pinned native observer
+must see its unique scoped submission complete on Doe. The ordinary web API
+gains no privileges or methods. These extra flushes, witnesses, tracing and
+the GDB observer change timings. Four-arm reporting excludes this diagnostic.
+
+The fixture's CDP session writes `.trace.json`, `.complete.json` and
+`.scope.json` prior to dispatch, then verifies the actual application outcome.
+Pass `--scope-request "$PREFIX.scope.json"` in addition to the correlation
+arguments above. In an isolated test, `BLITZEN_RESIDENT_SCOPE_LOOKALIKE=1`
+requests a second share from the main world. If granted, it restricts that
+stream to the same element. A refused second share is recorded and only the
+same fixture canvas is captured by the independent control. In both cases the
+main world submits real GPU work using the copied label and stops its stream. The original grant must still serve its own verified action. An
+ordinary page cannot manufacture the native trace category using a user
+timing mark.
+
+The native software test compiles the exact scoped C++ submit function,
+shimming tracing and the anti-tail-call operation. Synthetic trace tests cover
+separate documents and worlds, concurrent streams, a changed target, missing
+fences, closure and forged labels. The full positive capture-to-fence result
+requires an instrumented, sandboxed Chromium build emitting these events on
+the same run as the independent GPU collector. A workspace receipt, stock
+browser completion or synthetic trace cannot substitute for that evidence.

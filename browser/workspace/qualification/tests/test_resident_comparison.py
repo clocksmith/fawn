@@ -58,6 +58,26 @@ class ResidentComparisonTest(unittest.TestCase):
             )
             self.assertEqual(module.summarize_row(root, wave, 1)["reason"], "wrong tile")
 
+    def test_probe_overhead_is_never_a_latency_result(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            module.write(root / "exit.json", {"exit": 0, "allReady": True})
+            module.write(
+                root / "outcome.json",
+                {
+                    "verified": True,
+                    "imageCorrect": True,
+                    "knownEffects": 1,
+                    "committedRevision": "B-r2",
+                    "diagnosticOnly": True,
+                },
+            )
+            row = module.summarize_row(
+                root, {"arm": "stock-dawn", "width": 1, "repeat": 1}, 1
+            )
+            self.assertEqual(row["status"], "unqualified")
+            self.assertIsNone(row["pageChangeToVerifiedMidpointMs"])
+
     def test_missing_refusals_source_and_page_ownership(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
