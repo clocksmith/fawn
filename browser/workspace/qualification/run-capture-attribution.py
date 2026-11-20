@@ -151,8 +151,8 @@ for name in NAMES:
 def proc(pid):
     try:
         # comm may contain spaces or parentheses.
-        words = Path(f"/proc/{pid}/stat").read_text().rsplit(")", 1)[1].split()
-        return int(words[1]), int(words[19]), words[0]
+        words = Path(f"/proc/{pid}/stat").read_bytes().rsplit(b")", 1)[1].split()
+        return int(words[1]), int(words[19]), words[0].decode("ascii")
     except (FileNotFoundError, ProcessLookupError):
         return None
 
@@ -291,27 +291,39 @@ def observe_fixture():
                 child.terminate()
 
 
+def task_children(pid):
+    for entry in Path(f"/proc/{pid}/task").glob("*/children"):
+        try:
+            yield from map(int, entry.read_bytes().split())
+        except (FileNotFoundError, ProcessLookupError):
+            continue
+
+
 def descendants(root):
-    # Linux can parent subprocesses to any thread. Walk only this fixture's
-    # child lists, including descendants reparented to our own subreaper.
+    # Some Linux kernels omit the per-thread children files. The process
+    # parent IDs still include children adopted by the fixture's subreaper.
+    children_of = task_children
+    if not Path(f"/proc/{root}/task/{root}/children").is_file():
+        by_parent = {}
+        for entry in Path("/proc").iterdir():
+            if entry.name.isdecimal():
+                pid = int(entry.name)
+                try:
+                    info = proc(pid)
+                except PermissionError:
+                    continue
+                if info:
+                    by_parent.setdefault(info[0], []).append(pid)
+        children_of = lambda pid: by_parent.get(pid, ())
+
     stack = [root]
     seen = {root}
     while stack:
-        owner = stack.pop()
-        try:
-            child_lists = list(Path(f"/proc/{owner}/task").glob("*/children"))
-        except (FileNotFoundError, ProcessLookupError):
-            continue
-        for entry in child_lists:
-            try:
-                children = [int(text) for text in entry.read_text().split()]
-            except (FileNotFoundError, ProcessLookupError):
-                continue
-            for pid in children:
-                if pid not in seen:
-                    seen.add(pid)
-                    stack.append(pid)
-                    yield pid
+        for pid in children_of(stack.pop()):
+            if pid not in seen:
+                seen.add(pid)
+                stack.append(pid)
+                yield pid
 
 
 def cleanup_owned():
@@ -320,18 +332,20 @@ def cleanup_owned():
     for sig, limit in ((signal.SIGTERM, 3), (signal.SIGKILL, 2)):
         until = time.monotonic() + limit
         while time.monotonic() < until:
+            has_children = True
             while True:
                 try:
                     if os.waitpid(-1, os.WNOHANG)[0] == 0:
                         break
                 except ChildProcessError:
+                    has_children = False
                     break
             children = []
             for pid in descendants(os.getpid()):
                 info = proc(pid)
                 if info and info[2] != "Z":
                     children.append((pid, info[1]))
-            if not children:
+            if not children and not has_children:
                 return
             for pid, start in children:
                 current = proc(pid)

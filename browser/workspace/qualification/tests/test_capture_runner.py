@@ -119,17 +119,24 @@ class CaptureRunTest(unittest.TestCase):
         sentinel = subprocess.Popen([sys.executable, "-c", "import time; time.sleep(15)"])
         try:
             code = """import ctypes, os, runpy, subprocess, sys
+from contextlib import nullcontext
+from pathlib import Path
+from unittest.mock import patch
 m = runpy.run_path(sys.argv[1])
 assert ctypes.CDLL(None).prctl(36,1,0,0,0) == 0
 worker = subprocess.Popen([sys.executable, "-c", "import os,sys,time; p=os.fork(); print(p,flush=True) if p else (os.setsid(),time.sleep(12)); os._exit(0)"], stdout=subprocess.PIPE, text=True)
 pid = int(worker.stdout.readline())
 worker.wait()
 assert m["belongs"](pid, os.getpid())
-m["cleanup_owned"]()
+force_stat = sys.argv[2] == "parent-stat"
+with patch.object(Path, "is_file", return_value=False) if force_stat else nullcontext():
+    m["cleanup_owned"]()
 assert m["proc"](pid) is None
 """
-            subprocess.run([sys.executable, "-c", code, str(path)], check=True, timeout=9)
-            self.assertIsNone(sentinel.poll())
+            for mode in ("kernel", "parent-stat"):
+                with self.subTest(mode=mode):
+                    subprocess.run([sys.executable, "-c", code, str(path), mode], check=True, timeout=9)
+                    self.assertIsNone(sentinel.poll())
         finally:
             sentinel.terminate()
             sentinel.wait(timeout=3)
