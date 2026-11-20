@@ -27,6 +27,12 @@ COUNTERS = (
     "logicalTextureWriteBytes",
     "mappedTileReadbackBytes",
     "gpuMaskReadbackBytes",
+    "tilePixelReadbackBytes",
+    "rehashedTiles",
+    "mappedTileAndMaskReadbacks",
+    "digestReadbackBytes",
+    "digestJobUploadBytes",
+    "digestComputePasses",
     "cpuPixelReadBytes",
     "plannerCalls",
     "modelSpendUsd",
@@ -189,6 +195,7 @@ def run_wave(out, wave, args):
                 env["BLITZEN_RESIDENT_OBSERVE_BROWSER_PID"] = "1"
             env.update(
                 BLITZEN_TEST_ELEMENT_CAPTURE="1",
+                BLITZEN_TEST_COMPOSITOR_DIGEST="cpu" if wave["arm"] == "stock-helper" else args.compositor_digest,
                 BLITZEN_RESIDENT_PHYSICAL="1",
                 BLITZEN_REVIEW_COMPOSITOR_TRANSPORT="native-helper"
                 if wave["arm"] == "stock-helper"
@@ -268,6 +275,7 @@ def summarize_row(path, wave, slot):
         "nodeTimeOriginMs": p.get("nodeTimeOriginMs"),
         "browser": p.get("browser"),
         "browserSource": read(path / "browser-source.json") or None,
+        "compositorDigest": o.get("digestMode"),
         "gpu": p.get("gpu"),
         "surfaceId": p.get("surfaceId"),
         "targetId": p.get("targetId"),
@@ -453,6 +461,8 @@ def main():
             p.add_argument("--doe", type=Path, required=True)
             p.add_argument("--source-receipts", nargs=2, type=Path, metavar=("STOCK", "FAWN"),
                            help="bind both Linux browser images to their operator-verified source receipts")
+            p.add_argument("--compositor-digest", choices=["cpu", "webgpu"], default="cpu",
+                           help="digest for the three browser GPU arms; the native helper retains its own CPU digest")
             p.add_argument("--stock-channel", choices=["chrome", "chromium"], default="chrome")
             p.add_argument("--timeout", type=int, default=175)
     args = parser.parse_args()

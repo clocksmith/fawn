@@ -6,5 +6,6 @@ export function testBrowserSelection(directory, { headless = true, compositorTra
   const browserConfig = process.env.BLITZEN_TEST_BROWSER_CONFIG ?? process.env.FAWN_WORKSPACE_TEST_BROWSER_CONFIG;
   const selection = browserConfig ? { browserConfig, browserChannel: 'fawn' }
     : { browserChannel: process.env.BLITZEN_TEST_BROWSER_CHANNEL ?? process.env.FAWN_WORKSPACE_TEST_BROWSER_CHANNEL ?? 'chrome' };
-  return { selection, config: loadClientServiceConfig({ directory, ...selection, headless, compositorTransport }) };
+  return { selection, config: loadClientServiceConfig({ directory, ...selection, headless, compositorTransport,
+    compositorDigest: compositorTransport ? process.env.BLITZEN_TEST_COMPOSITOR_DIGEST : undefined }) };
 }

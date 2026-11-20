@@ -10,10 +10,13 @@ try {
   assert.equal(first.hashes.length, 6);
   assert.equal(first.hashedBytes, pixels.length);
   assert.equal(same.hashedBytes, 0);
+  assert.equal(same.rehashedTiles, 0);
+  assert.equal(first.rehashedTiles, first.hashes.length);
   pixels[pixels.length - 1] = 0x88;
   const rotated = await sample(false);
   assert.deepEqual(rotated.hashes.slice(0, -1), first.hashes.slice(0, -1));
   assert.equal(rotated.hashedBytes, 8);
+  assert.equal(rotated.rehashedTiles, 1);
   assert.equal(rotated.hashes.at(-1), createHash('sha256').update(pixels.subarray(-8)).digest('hex'));
   assert.equal((await sample(true)).hashedBytes, pixels.length);
   assert.equal((await helper.sample(65,130,pixels.toString('base64'),false)).hashedBytes, pixels.length);

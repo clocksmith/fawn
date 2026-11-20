@@ -1,6 +1,6 @@
 // Sent by value into a browser document. Only the adapter retains the returned
 // function. Navigation discards its device, previous texture and tile hashes.
-export function createResidentCanvasReader(surfaceId) {
+export function createResidentCanvasReader(surfaceId, gpuTileDigest) {
   let device, previous, busy = false, disposed = false;
   let adapterInfo = null, sampleNumber = 0;
   const commandLabel = surfaceId ? "blitzen-surface/" + surfaceId + "/" : "";
@@ -171,7 +171,7 @@ export function createResidentCanvasReader(surfaceId) {
     async function hashTexture(dirty, previousHashes, gpu, texture) {
       const copies = [];
       const hashes = previousHashes ? [...previousHashes] : [];
-      let bufferSize = 0, tilePixelReadbackBytes = 0, index = 0;
+      let bufferSize = 0, mappedReadbackBytes = 0, tilePixelReadbackBytes = 0, index = 0;
       for (let y = 0; y < height; y += tileSize) {
         for (let x = 0; x < width; x += tileSize, index++) {
           if (dirty && !(dirty[index >>> 5] & (1 << (index % 32)))) continue;
@@ -182,6 +182,7 @@ export function createResidentCanvasReader(surfaceId) {
           bufferSize += stride * h;
         }
       }
+      if (gpuTileDigest) return gpuTileDigest(gpu, texture, copies, hashes);
       if (bufferSize > 32 * 1024 * 1024) throw Error('Padded tile readback exceeds 32 MiB');
       if (bufferSize) {
         const buffer = gpu.createBuffer({ size: bufferSize, usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ });
@@ -192,6 +193,7 @@ export function createResidentCanvasReader(surfaceId) {
           gpu.queue.submit([encoder.finish()]);
           await buffer.mapAsync(GPUMapMode.READ);
           const bytes = new Uint8Array(buffer.getMappedRange());
+          mappedReadbackBytes = bytes.byteLength;
           await Promise.all(copies.map(async t => {
             const packed = new Uint8Array(t.w * t.h * 4);
             for (let row = 0; row < t.h; row++) {
@@ -203,7 +205,7 @@ export function createResidentCanvasReader(surfaceId) {
           }));
         } finally { buffer.destroy(); }
       }
-      return { hashes, cpuPixelReadBytes: 0, tilePixelReadbackBytes, mappedReadbackBytes: bufferSize };
+      return { hashes, cpuPixelReadBytes: 0, tilePixelReadbackBytes, mappedReadbackBytes, rehashedTiles: copies.length };
     }
     const result = await lockedRead(region, frame, tileSize, hashTexture, width, height, fullRead, transport, scopeBracket);
     return { width, height, tileSize, ...result };

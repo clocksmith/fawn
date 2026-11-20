@@ -78,6 +78,12 @@ function validateServiceConfig(config, { platform = process.platform } = {}) {
   if (config.observation.compositorTransport !== undefined && !['external-texture', 'rgba-upload', 'native-helper'].includes(config.observation.compositorTransport)) {
     throw invalid('observation.compositorTransport', 'external-texture, rgba-upload or native-helper', config.observation.compositorTransport);
   }
+  if (config.observation.compositorDigest !== undefined && !['cpu', 'webgpu'].includes(config.observation.compositorDigest)) {
+    throw invalid('observation.compositorDigest', 'cpu or webgpu', config.observation.compositorDigest);
+  }
+  if (config.observation.compositorDigest === 'webgpu' && config.observation.compositorTransport === 'native-helper') {
+    throw invalid('observation.compositorDigest', 'cpu for native-helper transport', config.observation.compositorDigest);
+  }
   if (config.observation.compositorCapture !== undefined && typeof config.observation.compositorCapture !== 'boolean') {
     throw invalid('observation.compositorCapture', 'boolean', config.observation.compositorCapture);
   }

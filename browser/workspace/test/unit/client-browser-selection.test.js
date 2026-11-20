@@ -23,6 +23,12 @@ try {
   const native = loadClientServiceConfig({ directory, browserChannel: 'chrome', headless: false, compositorTransport: 'native-helper' });
   assert.equal(native.observation.compositorCapture, true);
   assert.equal(native.observation.compositorTransport, 'native-helper');
+  const digest = loadClientServiceConfig({ directory, browserChannel: 'chrome', headless: false,
+    compositorTransport: 'external-texture', compositorDigest: 'webgpu' });
+  assert.equal(digest.observation.compositorDigest, 'webgpu');
+  assert.throws(() => loadClientServiceConfig({ directory, headless: false, compositorDigest: 'other' }), /compositorDigest/);
+  assert.throws(() => loadClientServiceConfig({ directory, headless: false, compositorTransport: 'native-helper',
+    compositorDigest: 'webgpu' }), /compositorDigest/);
   assert.throws(() => loadClientServiceConfig({ directory, headless: true, compositorTransport: 'native-helper' }), /visible/);
   assert.throws(() => loadClientServiceConfig({ directory, headless: false, compositorTransport: 'unconfigured' }), /compositorTransport/);
   assert.throws(() => loadClientServiceConfig({ directory, browserChannel: 'unknown' }));

@@ -58,6 +58,13 @@ function summarizeResidentOutcome({ elapsedMs, verified, ruleEvaluations, modelC
     nativeHashedBytes: captures.reduce((total, sample) => total + (sample.nativeHashedBytes ?? 0), 0),
     logicalTextureWriteBytes: captures.reduce((total, sample) => total + (sample.externalTextureCopyBytes ?? 0), 0),
     mappedTileReadbackBytes: captures.reduce((total, sample) => total + (sample.mappedReadbackBytes ?? 0), 0),
+    rehashedTiles: captures.reduce((total, sample) => total + (sample.rehashedTiles ?? 0), 0),
+    mappedTileAndMaskReadbacks: captures.reduce((total, sample) =>
+      total + Number(sample.mappedReadbackBytes > 0) + Number(sample.gpuMaskReadbackBytes > 0), 0),
+    tilePixelReadbackBytes: captures.reduce((total, sample) => total + (sample.tilePixelReadbackBytes ?? 0), 0),
+    digestReadbackBytes: captures.reduce((total, sample) => total + (sample.digestReadbackBytes ?? 0), 0),
+    digestJobUploadBytes: captures.reduce((total, sample) => total + (sample.digestJobUploadBytes ?? 0), 0),
+    digestComputePasses: captures.reduce((total, sample) => total + (sample.digestComputePasses ?? 0), 0),
     gpuMaskReadbackBytes: captures.reduce((total, sample) => total + (sample.gpuMaskReadbackBytes ?? 0), 0),
   };
 }

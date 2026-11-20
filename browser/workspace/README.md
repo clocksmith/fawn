@@ -145,6 +145,20 @@ The contract's semantic names map to these concrete rules.
   the evidence and session identifier survive a restart. `frameEvidence` records the selected
   surface ID, document loader, grant revision, media timestamp and captured
   dimensions. Rectangles in this mode use captured-frame pixels.
+
+  For GPU capture, select `--compositor-digest webgpu` or set
+  `observation.compositorDigest` to `webgpu`. The default `cpu` maps the
+  changed tiles and hashes their packed RGBA bytes with Web Crypto.
+  The WebGPU mode runs the same SHA-256 over each changed rectangle in its
+  resident texture. Each selected tile uploads a 16-byte job and maps a
+  32-byte digest. The comparison mask has its own readback. Both modes rehash
+  the full selected frame before a write. Both conservatively revisit
+  translucent tiles. A GPU digest failure stops the observation. The receipt
+  reports mapped tile bytes, their digest or pixel payload, job uploads and
+  compute passes. Use `--compositor-transport external-texture` to avoid the
+  explicit host upload used by `rgba-upload`.
+
+
   `observation.compositorTransport` selects `external-texture` (direct WebGPU
   import), the default `rgba-upload` (WebCodecs RGBA read into host memory
   and upload), or `native-helper`. The helper sends the granted element’s
@@ -841,3 +855,24 @@ events and the independently verified application outcome when available.
 Only a matching run, capture world, live grant, queue submission and fence
 with one verified effect can pass. Every result excludes timing and hardware
 performance qualification. The timeout includes preflight and the chooser.
+
+**Qualify compositor digest modes.** From `browser/workspace`, run
+`node test/browser/gpu-tile-sha256.test.js` on a WebGPU-enabled stock browser
+to check both readers against packed-row Node SHA-256. To compare through a
+verified write, give the private fixture a fresh output directory and approve
+its restricted share once for each browser. The comparison checks the exact
+reviewed tile hashes, localized target and reconciled application revision.
+
+```sh
+out=$(mktemp -d)
+for mode in cpu webgpu; do
+  BLITZEN_TEST_ELEMENT_CAPTURE=1 BLITZEN_REVIEW_COMPOSITOR_TRANSPORT=external-texture \
+    BLITZEN_TEST_COMPOSITOR_DIGEST="$mode" BLITZEN_RESIDENT_PROGRESS_FILE="$out/$mode.progress.json" \
+    BLITZEN_RESIDENT_RECEIPT_FILE="$out/$mode.json" node test/browser/canvas-review.test.js || break
+done
+node qualification/compare-compositor-digests.js "$out/cpu.json" "$out/webgpu.json"
+```
+
+For a separately authorized four-arm run, `resident-comparison.py run
+--compositor-digest webgpu` selects the GPU digest on the three browser GPU
+arms and keeps the native helper's CPU path.

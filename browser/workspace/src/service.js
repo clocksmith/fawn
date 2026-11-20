@@ -107,6 +107,7 @@ function compositorRequest(workspace, permission, selector, url, config, now, ve
   return { selector, origin: new URL(url).origin, ownerGeneration: workspace.ownerGeneration,
     grantId: permission.grantId, grantRevision: permission.grantRevision,
     readRoots: permission.readRegions, verify, session, transport: config.observation.compositorTransport ?? 'rgba-upload',
+    digest: config.observation.compositorDigest ?? 'cpu',
     ttlMs: Number.isFinite(expires) ? Math.max(0, expires) : null,
     timeoutMs: Math.max(1, Math.min(config.dispatch.actionTimeoutMs - 100, expires)) };
 }

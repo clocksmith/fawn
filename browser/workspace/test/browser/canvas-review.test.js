@@ -133,6 +133,7 @@ async function exerciseLookalike(page, copiedLabel) {
 }
 
 const captures = [];
+let latestFixtureBitmap;
 const root = mkdtempSync(join(tmpdir(), 'blitzen-canvas-review-'));
 const log = join(root, 'commits.jsonl');
 const committed = () => existsSync(log) ? readFileSync(log, 'utf8').trim().split('\n').map(line => JSON.parse(line)) : [];
@@ -198,7 +199,10 @@ try {
       const snapshot = adapter.snapshot.bind(adapter);
       adapter.snapshot = async (...args) => {
         const result = await snapshot(...args);
-        if (result.regionBitmapMetrics?.['#cell']) captures.push(result.regionBitmapMetrics['#cell']);
+        if (result.regionBitmapMetrics?.['#cell']) {
+          captures.push(result.regionBitmapMetrics['#cell']);
+          latestFixtureBitmap = result.regionBitmaps['#cell'];
+        }
         return result;
       };
       const execute = adapter.execute.bind(adapter);
@@ -375,6 +379,7 @@ try {
   if (progressPath) checkpoint({ phase: 'observe-change', requestMonotonicMs: started, mutationReturnedMonotonicMs: mutationReturned, browserMutationEpochMs });
   const valid = await evidence(beforeChange.observationVersion);
   const changed = valid.visualChanges['#cell']?.changed ?? [];
+  const reviewedBitmap = latestFixtureBitmap;
   // Select the application action only if the expected indicator tile changed.
   // Independent revision and authority checks still apply to the actual POST.
   const frame = valid.frameEvidence?.['#cell'] ?? { width: 130, height: 70 };
@@ -416,6 +421,7 @@ try {
   const receipt = { clock: 'request-repaint-through-authoritative-reconciliation', canvasBackend,
     ...(frame.nativeScopeRequest ? { nativeScopeRequest: frame.nativeScopeRequest, diagnosticOnly: true } : {}),
     ...(lookalike ? { mainWorldControl: lookalike } : {}),
+    ...(useCompositor ? { digestMode: config.observation.compositorDigest ?? 'cpu', reviewedBitmap } : {}),
     compositorTransport: compositor ?? null, selection: config.browser.fawnBuild ?? { channel: config.browser.channel },
     applicationHttpRequests: applicationHttpRequests - requestsBefore, indicator: { expectedPixel: [x, y], changed },
     knownEffects: committed().length, ...counters };

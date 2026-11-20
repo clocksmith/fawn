@@ -1,6 +1,7 @@
 // Browser-only closure. Only the isolated world owns the MediaStream or frames.
 import { randomUUID } from 'node:crypto';
 import { createResidentCanvasReader } from './resident-canvas.js';
+import { createGpuTileDigest } from './gpu-tile-sha256.js';
 import { NativeFrameHelper } from './native-frame-helper.js';
 import { queryPage } from './page-query.js';
 
@@ -171,7 +172,7 @@ export class CompositorSessions {
     signal?.throwIfAborted();
     const { loaderId, id: frameId } = frameTree.frame;
     const scope = JSON.stringify([loaderId, capture.origin, capture.ownerGeneration, capture.grantId, capture.grantRevision,
-      capture.readRoots, capture.selector, capture.transport]);
+      capture.readRoots, capture.selector, capture.transport, capture.digest]);
     let entry = this.entries.get(key);
     let start = capture.session === 'start';
     if (start && entry?.scope === scope) {
@@ -201,7 +202,8 @@ export class CompositorSessions {
         const init = await send('Runtime.evaluate', { contextId: entry.contextId, returnByValue: true, expression: `(() => {
           globalThis.__blitzenSurface?.stop();
           globalThis.__blitzenSurface = (${createElementCapture.toString()})(${JSON.stringify(entry.id)},
-            (${createResidentCanvasReader.toString()})(${JSON.stringify(entry.id)}), ${JSON.stringify(capture)}, ${leaseMs}, ${entry.scopeProbe}); return true;
+            (${createResidentCanvasReader.toString()})(${JSON.stringify(entry.id)},
+              ${capture.digest === 'webgpu' ? '(' + createGpuTileDigest.toString() + ')()' : 'null'}), ${JSON.stringify(capture)}, ${leaseMs}, ${entry.scopeProbe}); return true;
         })()` });
         if (signal?.aborted || this.entries.get(key) !== entry) {
           await this.control(entry, 'stop').catch(() => {});
@@ -244,11 +246,11 @@ export class CompositorSessions {
         entry.helper ??= new NativeFrameHelper();
         const processing = entry.helper.sample(width, height, selected.restrictedRgba, capture.verify);
         delete selected.restrictedRgba;
-        const { hashes, tileSize, hashedBytes, peakRgbaBytes } = await processing;
+        const { hashes, tileSize, hashedBytes, rehashedTiles, peakRgbaBytes } = await processing;
         const state = (await this.control(entry, 'status')).result?.value;
         if (this.entries.get(key) !== entry || state?.ended || state?.trackState !== 'live') throw Error('Capture ended during native processing');
         selected.bitmap = { format: 'compositor-element-srgb-rgba8-v1/' + capture.transport, width, height, tileSize, hashes };
-        Object.assign(selected.bitmapMetrics, { nativeHashedBytes: hashedBytes, nativeRetainedRgbaBytes: width * height * 4, nativePeakRgbaBufferBytes: peakRgbaBytes });
+        Object.assign(selected.bitmapMetrics, { nativeHashedBytes: hashedBytes, rehashedTiles, nativeRetainedRgbaBytes: width * height * 4, nativePeakRgbaBufferBytes: peakRgbaBytes });
       }
       if (entry.scopeProbe && selected.frame.captureProofBracket !== undefined) {
         const ordinal = selected.frame.captureProofBracket;

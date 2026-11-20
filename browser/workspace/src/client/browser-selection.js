@@ -5,11 +5,12 @@ import { isDeepStrictEqual } from 'node:util';
 import { loadServiceConfig, validateServiceConfig } from '../config.js';
 import { prepareFawnLaunch } from '../browser-launch.js';
 
-export function loadClientServiceConfig({ directory, browserConfig, browserChannel, headless, compositorTransport }) {
+export function loadClientServiceConfig({ directory, browserConfig, browserChannel, headless, compositorTransport, compositorDigest }) {
   const configureCapture = config => {
-    if (compositorTransport === undefined) return config;
+    if (compositorTransport === undefined && compositorDigest === undefined) return config;
     if (config.browser.headless || config.browser.channel === 'chromium-headless-shell') throw Error('Compositor capture requires a visible browser');
-    return validateServiceConfig({ ...config, observation: { ...config.observation, compositorCapture: true, compositorTransport } });
+    return validateServiceConfig({ ...config, observation: { ...config.observation, compositorCapture: true,
+      ...(compositorTransport === undefined ? {} : { compositorTransport }), ...(compositorDigest === undefined ? {} : { compositorDigest }) } });
   };
   const effectiveChannel = browserChannel ?? (browserConfig ? 'fawn' : 'chrome');
   if (effectiveChannel !== 'fawn') {

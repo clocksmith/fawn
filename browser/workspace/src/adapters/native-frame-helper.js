@@ -9,10 +9,10 @@ const maxPixels = 4 * 1024 * 1024;
 function compareTiles(current, prior, width, height, verify) {
   let tileSize = 64;
   while (Math.ceil(width / tileSize) * Math.ceil(height / tileSize) > 256) tileSize *= 2;
-  let hashedBytes = 0;
+  let hashedBytes = 0, rehashedTiles = 0;
   const hashes = [], stride = width * 4;
   const sameImage = !verify && prior && current.equals(prior.pixels);
-  if (sameImage) return { hashes: prior.hashes, tileSize, hashedBytes };
+  if (sameImage) return { hashes: prior.hashes, tileSize, hashedBytes, rehashedTiles };
   for (let top = 0; top < height; top += tileSize) {
     const bottom = Math.min(height, top + tileSize);
     for (let x = 0; x < width; x += tileSize) {
@@ -23,6 +23,7 @@ function compareTiles(current, prior, width, height, verify) {
         unchanged = current.subarray(offset, offset + bytes).equals(prior.pixels.subarray(offset, offset + bytes));
       }
       if (unchanged) { hashes.push(prior.hashes[hashes.length]); continue; }
+      rehashedTiles++;
       const hash = createHash('sha256');
       for (let y = top; y < bottom; y++) {
         const offset = y * stride + x * 4;
@@ -32,7 +33,7 @@ function compareTiles(current, prior, width, height, verify) {
       hashes.push(hash.digest('hex'));
     }
   }
-  return { hashes, tileSize, hashedBytes };
+  return { hashes, tileSize, hashedBytes, rehashedTiles };
 }
 
 if (workerData?.blitzenNativeFrameHelper === true) {
