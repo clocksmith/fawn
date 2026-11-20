@@ -460,6 +460,17 @@ def stats(values):
     }
 
 
+def bounded_stats(intervals):
+    midpoints = stats([(low + high) / 2 for low, high in intervals])
+    lower = stats([low for low, _ in intervals])
+    upper = stats([high for _, high in intervals])
+    return {
+        **midpoints,
+        "p50BoundsMs": [lower["p50Ms"], upper["p50Ms"]] if intervals else None,
+        "p95BoundsMs": [lower["p95Ms"], upper["p95Ms"]] if intervals else None,
+    }
+
+
 def summarize(out):
     plan = read(out / "plan.json")
     if not isinstance(plan, list) or not plan:
@@ -492,7 +503,7 @@ def summarize(out):
                     "excludedIncompleteWaves": sum(
                         r["status"] == "verified" and not r["fullMeasuredOverlap"] for r in items
                     ),
-                    **stats([r["pageChangeToVerifiedMidpointMs"] for r in samples]),
+                    **bounded_stats([r["pageChangeToVerifiedBoundsMs"] for r in samples]),
                 }
             )
         for left, right in PAIRS:
@@ -512,21 +523,21 @@ def summarize(out):
                     if not comparable_browsers(a, b):
                         skipped["browser source/version unmatched"] += 1
                         continue
-                    deltas.append(
-                        b["pageChangeToVerifiedMidpointMs"] - a["pageChangeToVerifiedMidpointMs"]
-                    )
+                    baseline_min, baseline_max = a["pageChangeToVerifiedBoundsMs"]
+                    candidate_min, candidate_max = b["pageChangeToVerifiedBoundsMs"]
+                    deltas.append((candidate_min - baseline_max, candidate_max - baseline_min))
             pairs.append(
                 {
                     "baseline": left,
                     "candidate": right,
                     "concurrency": width,
                     "omitted": dict(skipped),
-                    **stats(deltas),
+                    **bounded_stats(deltas),
                 }
             )
     return {
         "clock": "Host monotonic bounds bracket the page canvas mutation, ending at authoritative application reconciliation. Midpoint is an estimate. No compositor frame-commit stamp.",
-        "aggregation": "Nearest-rank p95 per completed process, median p50. Paired values are candidate minus baseline milliseconds in matching repeat and slot. Report every planned attempt; incomplete overlapping cohorts excluded.",
+        "aggregation": "Nearest-rank p95 and median p50 of the qualified observations. Paired deltas subtract the baseline from the candidate in the same repeat and slot. Bounds carry the observed mutation-time uncertainty through each quantile. A delta interval containing zero leaves the direction unresolved. Sampling uncertainty is separate. Every planned attempt is reported and incomplete overlapping cohorts are excluded.",
         "memoryScope": "Process-tree RSS is sampled about every 250 ms. From browser readiness, Linux DRM counts resident bytes reported for the fixture GPU process. The peak contains one sample across regions, deduplicated by device and DRM client. Separate clients can count shared buffers twice. Missing samples are unknown. Whole-device VRAM is unmeasured.",
         "attribution": "Matching source revisions and versions permits a whole-browser comparison only. Build options and renderer paths may differ. Fawn/Doe timings stay withheld pending native per-page provenance.",
         "byArm": by_arm,

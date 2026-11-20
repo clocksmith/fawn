@@ -245,10 +245,16 @@ class ResidentComparisonTest(unittest.TestCase):
             self.assertEqual(
                 (row["n"], row["p95Ms"], row["omitted"]), (1, 0, {"browser source/version unmatched": 1})
             )
+            self.assertEqual(row["p95BoundsMs"], [-2, 2])
+            baseline = next(
+                r for r in report["byArm"] if r["arm"] == "stock-dawn" and r["concurrency"] == 1
+            )
+            self.assertEqual(baseline["p95BoundsMs"], [11, 13])
             row = next(
                 r for r in report["byArm"] if r["arm"] == "stock-helper" and r["concurrency"] == 2
             )
             self.assertEqual(row["n"], 0)
+            self.assertIsNone(row["p95BoundsMs"])
             self.assertEqual(module.stats(range(1, 21))["p95Ms"], 19)
             self.assertFalse(
                 module.hardware_adapter(
@@ -256,6 +262,13 @@ class ResidentComparisonTest(unittest.TestCase):
                 )
             )
             self.assertFalse(module.hardware_adapter({"vendor": "apple", "isFallbackAdapter": None}))
+
+    def test_quantiles_bound_observations_even_when_sample_order_changes(self):
+        intervals = [(0, 100)] + [(i, i + 2) for i in range(1, 20)]
+        result = module.bounded_stats(intervals)
+        self.assertEqual(result["p95Ms"], 20)
+        self.assertEqual(result["p95BoundsMs"], [18, 21])
+        self.assertEqual(result["p50BoundsMs"], [9.5, 12.5])
 
 
 if __name__ == "__main__":
