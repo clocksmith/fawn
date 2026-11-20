@@ -143,7 +143,16 @@ async function exerciseLookalike(page, copiedLabel) {
 }
 
 const captures = [];
-let latestFixtureBitmap;
+let latestFixtureBitmap, latestCapture;
+function captureReceipt(frame, bitmap, metrics) {
+  assert.equal(frame.pixelRepresentation, 'video-frame-copy-to-srgb-rgba8');
+  assert.equal(bitmap.format, 'compositor-element-canonical-srgb-rgba8-v2');
+  return { sessionId: frame.sessionId, grantId: frame.grantId, grantRevision: frame.grantRevision,
+    mediaTimestampUs: frame.mediaTimestampUs, sourcePixelFormat: frame.sourcePixelFormat,
+    width: bitmap.width, height: bitmap.height, tileSize: bitmap.tileSize, tileHashes: bitmap.hashes,
+    frameHostCopyBytes: metrics.frameHostCopyBytes, canonicalHashedBytes: metrics.canonicalHashedBytes,
+    canonicalRehashedTiles: metrics.canonicalRehashedTiles, externalHintMissedChange: metrics.externalHintMissedChange === true };
+}
 const root = mkdtempSync(join(tmpdir(), 'blitzen-canvas-review-'));
 const log = join(root, 'commits.jsonl');
 const committed = () => existsSync(log) ? readFileSync(log, 'utf8').trim().split('\n').map(line => JSON.parse(line)) : [];
@@ -224,6 +233,8 @@ try {
         if (result.regionBitmapMetrics?.['#cell']) {
           captures.push(result.regionBitmapMetrics['#cell']);
           latestFixtureBitmap = result.regionBitmaps['#cell'];
+          const frame = result.frameEvidence?.['#cell'];
+          if (frame) latestCapture = captureReceipt(frame, latestFixtureBitmap, captures.at(-1));
         }
         return result;
       };
@@ -350,6 +361,45 @@ try {
   if (process.env.BLITZEN_CAPTURE_RUN_DIRECTORY) {
     await awaitNativeObserver(page, process.env.BLITZEN_CAPTURE_RUN_DIRECTORY, config.browser.fawnBuild.runtime.library.path);
   }
+  let stalePixelControl;
+  if (useCompositor) {
+    const paint = color => cell.evaluate((el, value) => {
+      const ctx = el.getContext('2d'); ctx.fillStyle = value; ctx.fillRect(0, 0, el.width, el.height);
+    }, color);
+    // Let the restricted stream settle before pairing frames. This control runs outside the timed interval.
+    await paint('rgb(113,5,0)');
+    let base = await evidence();
+    for (let i = 0; i < 5; i++) {
+      base = await evidence(base.observationVersion);
+      if (base.visualChanges['#cell']?.baseline === 'compared') break;
+    }
+    const first = latestCapture;
+    let changedColor = 'rgb(114,6,0)';
+    await paint(changedColor);
+    let changed = await evidence(base.observationVersion);
+    if (!changed.visualChanges['#cell']?.changed.length) {
+      // Display capture itself may quantize away the source change. Record which pair the frame actually resolves.
+      changedColor = 'lime'; await paint(changedColor);
+      changed = await evidence(base.observationVersion);
+    }
+    assert.ok(changed.visualChanges['#cell']?.changed.length, 'restricted frame must contain the control change');
+    await paint('rgb(113,5,0)');
+    const staleBase = await evidence(), reviewed = latestCapture;
+    assert.deepEqual(reviewed.tileHashes, first.tileHashes);
+    await paint(changedColor);
+    const effectsBefore = committed().length, attemptsBefore = attempts.length;
+    const refusal = await submit(staleBase, proposal(staleBase, 'canonical-color-refusal'));
+    const checked = latestCapture, effectsAfter = committed().length;
+    const changedTiles = reviewed.tileHashes.flatMap((hash, i) => hash === checked.tileHashes[i] ? [] : [i]);
+    assert.equal(refusal.neverDispatched?.code, 'stale-observation');
+    assert.ok(changedTiles.length > 0 && checked.mediaTimestampUs > reviewed.mediaTimestampUs);
+    assert.equal(checked.sessionId, reviewed.sessionId);
+    assert.equal(attemptsBefore, attempts.length);
+    assert.equal(effectsBefore, effectsAfter);
+    stalePixelControl = { reviewed, checked, changedTiles, sourceColor: changedColor, refusal: refusal.neverDispatched.code,
+      effectsBefore, effectsAfter };
+    await paint('red');
+  }
   const finishTrace = tracePrefix ? await startScopeTrace(page, tracePrefix) : null;
   const finishFrameTrace = frameTracePrefix ? await startScopeTrace(page, frameTracePrefix, frameEventNames) : null;
   const finishStockTrace = stockTracePrefix ? await startScopeTrace(page, stockTracePrefix, frameEventNames) : null;
@@ -440,7 +490,7 @@ try {
   if (progressPath) checkpoint({ phase: 'observe-change', requestMonotonicMs: started, mutationReturnedMonotonicMs: mutationReturned, browserMutationEpochMs });
   const valid = await evidence(beforeChange.observationVersion);
   const changed = valid.visualChanges['#cell']?.changed ?? [];
-  const reviewedBitmap = latestFixtureBitmap;
+  const reviewedBitmap = latestFixtureBitmap, freshReviewed = latestCapture;
   // Select the application action only if the expected indicator tile changed.
   // Independent revision and authority checks still apply to the actual POST.
   const frame = valid.frameEvidence?.['#cell'] ?? { width: 130, height: 70 };
@@ -455,6 +505,7 @@ try {
   const ruleMatched = changed.length === 1 && x >= tile.x && x < tile.x + tile.width && y >= tile.y && y < tile.y + tile.height;
   const accepted = ruleMatched ? proposal(valid, 'lost-ack') : null;
   assert.ok(accepted);
+  if (stalePixelControl) accepted.resubmissionOf = 'canonical-color-refusal';
   if (progressPath) checkpoint({ phase: 'dispatch', imageCorrect: true, nativeScopeRequest: frame.nativeScopeRequest ?? null, commandLabel: captures.at(-1)?.diffCommandLabel ?? null, indicator: { expectedPixel: [x, y], changed } });
   let lookalike;
   if (process.env.BLITZEN_RESIDENT_SCOPE_LOOKALIKE === '1') {
@@ -467,6 +518,7 @@ try {
     await finishTrace(frame.nativeScopeRequest);
   }
   const lost = await submit(valid, accepted);
+  const freshChecked = latestCapture;
   assert.equal(lost.isUncertain, true, JSON.stringify(lost));
   assert.deepEqual(committed(), [{ job: 'B', revision: 2 }]);
   const reconcile = () => service.reconcile({ ...owner, actionId: 'lost-ack', method: 'application-state',
@@ -492,7 +544,15 @@ try {
     ruleEvaluations, modelCalls: [], captures: captures.slice(captureStart) });
   assert.equal(counters.plannerCalls, 0);
   assert.equal(counters.modelSpendUsd, 0);
-  const receipt = { clock: 'request-repaint-through-authoritative-reconciliation', canvasBackend,
+  let pixelAuthority;
+  if (useCompositor) {
+    assert.deepEqual(freshChecked.tileHashes, freshReviewed.tileHashes);
+    assert.equal(freshChecked.sessionId, freshReviewed.sessionId);
+    assert.ok(freshChecked.mediaTimestampUs > freshReviewed.mediaTimestampUs);
+    pixelAuthority = { schema: 'blitzen.canonical-capture/v1', representation: frame.pixelRepresentation, stale: stalePixelControl,
+      fresh: { reviewed: freshReviewed, checked: freshChecked, effectCount: committed().length, reconciliation: 'effect-present' } };
+  }
+  const receipt = { clock: 'request-repaint-through-authoritative-reconciliation', canvasBackend, ...(pixelAuthority ? { pixelAuthority } : {}),
     ...(observer ? { observer } : {}),
     ...(frameScope ? { diagnosticOnly: true, diagnosticKind: 'frame-import', frameImportTimestampUs: frame.mediaTimestampUs, frameImportOrdinal: frame.frameImportOrdinal,
       frameImportDimensions: [frame.width, frame.height] } : {}),
