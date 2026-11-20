@@ -257,9 +257,9 @@ node browser/workspace/qualification/overlapping-requests-reuse.js --arm-schedul
   `120` calls / `$4.00` equal per-arm share inside `--max-calls 240 --max-cost-usd 8 --max-call-usd 0.15`);
   `paired-plus-fresh-1` adds one `fresh-planning` baseline pass in Repeat 1 (`226`
   equivalents, `14` calls headroom); `all-three` (`366` equivalents) is rejected
-  before launch under a `240`-call cap. Speed and model-cost comparisons wait on
-  owner approval of the [one-page paid-run spec](./overlapping-requests-approval.md),
-  which also binds [`measure-stock-authoring-cost.js`](./measure-stock-authoring-cost.js)
+  before launch under a `240`-call cap. The live paired comparison passed the faster-latency,
+  lower-cost and correctness gates for this fixture family. [Paired results](../../../reports/fawn-workspace/20261120-overlapping-requests-live/decision.json)
+  The [paid-run specification](./overlapping-requests-approval.md) also binds [`measure-stock-authoring-cost.js`](./measure-stock-authoring-cost.js)
   ([receipt](../../../reports/fawn-workspace/20261118-overlapping-requests-approval/authoring-cost-summary.json)):
   a hand-written Playwright script across `R1..R8` runs in `4.200 s` verified
   (`4.660 s` end-to-end, `0` calls) using `72` SLOC (`31` Playwright ops) and breaks

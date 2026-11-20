@@ -1,6 +1,6 @@
 # Overlapping-request paid Sonnet pilot — pre-declared approval spec
 
-Status: **pre-declared pilot contract ready; `$0` spend held pending owner go-ahead** (`0` paid calls spent; `TraceDag` frozen; `$8.00` ceiling is an enforced budget guard, not approval to spend).
+The owner approved the $8 ceiling. The live paired run finished on November 20 with all gates passed and $1.623316 of CLI-reported usage. The contract below is the one frozen before measurement. [Live decision](../../../reports/fawn-workspace/20261120-overlapping-requests-live/decision.json)
 
 ## 1. Exact command to approve (bounded 3-repeat pilot)
 
