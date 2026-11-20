@@ -669,3 +669,53 @@ timestamps remain private inputs. Backend failure or uncertain execution is a
 recorded outcome.
 
 Verify the report offline with `python3 -m unittest discover -s qualification/tests -p 'test_resident_comparison.py'`.
+
+#### Independent native Vulkan completion
+
+For a Linux diagnostic, `qualification/trace-doe-vulkan-queue.py` reads a
+fresh child under GDB. It checks the supplied SHA-256 of the linked Doe C image
+and the mapped image's device and inode at each breakpoint. It observes entry
+into the actual public queue submit, a direct compute dispatch encoded by that
+queue, and the matching native Vulkan command in the terminal poll or wait.
+The collector emits completion only when Doe's accepted native command enters
+its successful fence/timeline completion branch. A timeout, release attempt,
+killed process or page-authored label supplies no such evidence. The observer
+changes scheduling and its timestamps cannot be used for a speed comparison.
+
+The focused test requires GCC, GDB with Python and the image's matching DWARF,
+Bubblewrap, and Mesa Lavapipe. It runs a child in a private network namespace without
+a GPU device. Two live Doe devices receive the same command label; the test
+requires distinct native queue receipts and eight correct readback words.
+A second child is interrupted while Doe has accepted the compute command and
+the observer has yet to see its fence. Its receipt must remain unresolved.
+
+```sh
+qualification/tests/check-native-queue-observer.sh "$DOE_C_LIBRARY" "$DOE_C_SHA256" "$NEW_OUTPUT_DIR"
+```
+
+**Where the browser link ends at the pinned revisions.** The browser process
+can validate a Blink document token and renderer process against the live
+`RenderFrameHostImpl`. Its existing GPU-host reply returns the network
+isolation key. Several documents share a cache partition. This reply cannot
+identify the tab, grant, or isolated world that issued a WebGPU command. The
+GPU decoder scopes wire handling to itself and tracks known devices; an exact
+mapping from a browser-authorized target/document generation and isolated
+context to the submitted wire device/queue/command is absent from these
+receipts. Workers have separate token types and cannot be assigned to a tab by
+matching their origin or renderer PID.
+[Browser lookup](https://chromium.googlesource.com/chromium/src/+/4a6fb38567da21dc86f8ba468ac0ca9002f4f606/content/browser/gpu/gpu_process_host.cc#1132)
+· [GPU decoder](https://chromium.googlesource.com/chromium/src/+/4a6fb38567da21dc86f8ba468ac0ca9002f4f606/gpu/command_buffer/service/webgpu_decoder_impl.cc#2571)
+
+Dawn's WebGPU backend records an outer command into an inner encoder. At the
+pinned revision it finishes that encoder with a null descriptor, then submits
+the resulting inner handles to the selected queue. Fawn's patch changes pass
+lifetimes here but does not forward the page label at inner finish. Even if
+forwarded, a label is page-controlled. A native receipt needs a trusted,
+browser-originated mapping plus a submission identity allocated outside the
+page, carried through that outer-to-inner conversion, retired on teardown and
+joined to the actual backend command's terminal result. Navigation, a changed
+grant, recycled handles and cancelled work must invalidate any stale join.
+The software native observer proves only the backend half; the four-arm report
+continues to withhold Doe timings.
+[Outer-to-inner conversion](https://dawn.googlesource.com/dawn/+/758e5e6a974e8ca8039b1d7b209646dabccbcb7f/src/dawn/native/webgpu/CommandBufferWGPU.cpp#1144)
+· [Queue submission](https://dawn.googlesource.com/dawn/+/758e5e6a974e8ca8039b1d7b209646dabccbcb7f/src/dawn/native/webgpu/QueueWGPU.cpp#69)
