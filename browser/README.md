@@ -1,6 +1,7 @@
 # Browser
 
-`browser/` contains Fawn's workspace service and its separate Doe GPU integration.
+`browser/` owns Fawn's Chromium browser and its Doe GPU integration. See the
+[Gamma extraction boundary](workspace-extraction.md) for the workspace transition.
 Both belong to [clocksmith/fawn](https://github.com/clocksmith/fawn):
 
 - `browser/workspace/`

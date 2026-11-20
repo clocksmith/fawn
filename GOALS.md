@@ -10,11 +10,12 @@ DoeLab tests improvements; DoeProof records evidence.**
 Doe also runs outside the browser, through Node, Bun and Deno and through native
 embedding, with the independently usable WGSL compiler keeping GPU programs
 executable, inspectable and portable across hardware. Standalone Doe use does not
-require the Fawn browser. Browser workspaces, where agents and people carry an
-investigation across interruptions and handoffs, are central to what Fawn
-delivers and optional for standalone Doe use: one shared observation, action
-and recovery service with narrow CDP/Playwright adapters, which can also run
-above stock Chromium. Doe remains Fawn's central technical ambition.
+require the Fawn browser. Fawn owns the Chromium browser and browser-native
+capabilities, including capture integration. Doe owns WebGPU and WGSL execution.
+Gamma owns the production workspace and its workflow compiler, browser and desktop
+adapters, permission checks, dispatch, recovery and synchronization. Fawn exposes
+browser-native capabilities without depending on Gamma, and Gamma can execute its
+core browser workflows on stock Chromium. Doe remains independently usable.
 This file owns the product goals, constraints, and exclusions. These are desired
 outcomes, not claims of qualified support or completed adoption.
 [The thesis](docs/thesis.md) owns the technical rationale and the proofs that
@@ -79,26 +80,12 @@ for its acceptance. Fawn workspace acceptance remains separate.
 
 ## Desired outcomes
 
-Fawn provides one reusable workspace contract spanning observation, action,
-ownership and recovery. The service persists ownership generations, rejects stale
-commands, and retains completed, failed, or unknown outcomes across restart.
-Research, form-submission, and export workflow adapters share this machinery and
-must behave consistently. Durable authority and honest uncertainty precede
-product-value claims. Chromium hooks and browser-runtime integration are added
-only when measured benefits justify their compatibility and maintenance costs.
-[The workspace contract](docs/fawn-workspace-contract.md) owns its
-requirements; `fawnWorkspace` in the [strategy contract](config/doe-product-strategy.json)
-binds its acceptance steps to admitted evidence. These are intended outcomes, not
-implemented service claims.
-
-The workspace retains evidence, task context, permissions, actions, unresolved
-outcomes and handoffs. An investigation continues across sessions, crashes, days
-and changes of operator: a person can inspect or take over, and another agent can
-resume. When an action's outcome is uncertain, Fawn establishes what happened
-rather than blindly repeating it. Verified workflows and repairs are reusable,
-with evidence that reuse makes subsequent work better or faster. Synthetic
-workflow reuse does not establish multi-day recovery, real-world handoff, or a
-competitive win; those remain open.
+Fawn provides independently usable browser-native capabilities. Chromium hooks are
+added only when measured benefits justify compatibility and maintenance costs.
+Gamma owns durable work, authority, and recovery. The historical
+[workspace contract](docs/fawn-workspace-contract.md) and `fawnWorkspace` evidence
+keys remain bound to their original versions; they do not make the Fawn browser
+or Doe runtime depend on the workspace.
 
 After Doe-owned webpage execution passes its gate, the integrated product target
 is one useful durable workflow with ownership and task state preserved across
@@ -108,7 +95,7 @@ task, then establish an external user who keeps the replacement enabled. Fixture
 qualification and internal use do not establish retained external adoption.
 Compare against competent stock Chromium automation and competitors such as
 Cloudflare's Kitesurf; using another engine as a backend is an investigation, not
-a decision. Fawn's agent-browser goal is met when real agent work is measurably
+a decision. Fawn's browser-native integration goal is met when real agent work is measurably
 better in completion, recovery, speed, cost or control, not when synthetic demos
 pass or components are merely integrated.
 
@@ -193,8 +180,8 @@ The independent compiler and runtime retain these outcomes:
   [initial qualification target](config/doe-product-strategy.json) until the
   applicable acceptance passes. It is an engineering target, not a qualified
   configuration, a mandatory dependency, or a universal performance claim.
-  Fawn's goal stays durable browser workspaces; Doe enters only through explicit
-  integration with independent qualification.
+  Fawn's browser and Doe's integration require independent qualification;
+  Gamma is an optional product-level workload, not a runtime prerequisite.
 - Supported scope: qualify a bounded matrix of real workloads, runtimes,
   platforms, adapters, drivers, and backends. Each additional tuple earns support
   separately; iOS and Android require implemented paths and physical tests.
