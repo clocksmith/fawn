@@ -5,13 +5,59 @@ import { createGpuTileDigest } from './gpu-tile-sha256.js';
 import { NativeFrameHelper } from './native-frame-helper.js';
 import { queryPage } from './page-query.js';
 
-function createElementCapture(id, resident, capture, leaseMs, scopeProbe = false) {
+// Serialized into the isolated capture world. An external texture can discard visible color
+// distinctions during conversion. Only canonical RGBA or its verified digest can clear a tile.
+export async function canonicalRgbaTiles(bytes, width, height, tileSize, previous) {
+  if (!Number.isSafeInteger(width) || !Number.isSafeInteger(height) || width < 1 || height < 1
+      || width * height > 4 * 1024 * 1024 || bytes.length !== width * height * 4
+      || !Number.isSafeInteger(tileSize) || tileSize < 1 || Math.ceil(width / tileSize) * Math.ceil(height / tileSize) > 256) {
+    throw Error('Invalid restricted RGBA tile geometry');
+  }
+  const digest = async input => Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', input)),
+    value => value.toString(16).padStart(2, '0')).join('');
+  const frameDigest = await digest(bytes);
+  const kept = previous?.width === width && previous.height === height && previous.tileSize === tileSize
+    && previous.frameDigest === frameDigest;
+  if (kept) return { record: previous, hashedBytes: bytes.length, tilesHashed: 0 };
+  const hashes = [];
+  let hashedBytes = bytes.length;
+  if (width <= tileSize && height <= tileSize) hashes.push(frameDigest);
+  else {
+    for (let y = 0; y < height; y += tileSize) {
+      const row = [];
+      for (let x = 0; x < width; x += tileSize) {
+        const w = Math.min(tileSize, width - x), h = Math.min(tileSize, height - y);
+        const packed = new Uint8Array(w * h * 4);
+        for (let dy = 0; dy < h; dy++) {
+          const start = ((y + dy) * width + x) * 4;
+          packed.set(bytes.subarray(start, start + w * 4), dy * w * 4);
+        }
+        hashedBytes += packed.byteLength;
+        row.push(digest(packed));
+      }
+      hashes.push(...await Promise.all(row));
+    }
+  }
+  return { record: { width, height, tileSize, frameDigest, hashes }, hashedBytes, tilesHashed: hashes.length };
+}
+
+function createElementCapture(id, resident, capture, leaseMs, scopeProbe, canonicalTiles) {
   const { selector, origin } = capture;
   let element, stream, track, reader, observer, watchdog, expiry, ended = false;
-  let verifiedBrackets = 0;
+  let verifiedBrackets = 0, previousCanonical = null;
+  async function copyRgba(frame, width, height) {
+    const rect = frame.visibleRect;
+    if (width < 1 || height < 1 || width * height > 4 * 1024 * 1024
+      || rect.width !== width || rect.height !== height || frame.rotation || frame.flip) {
+      throw Error('RGBA evidence requires a bounded, unrotated restricted frame at native scale');
+    }
+    const pixels = new Uint8Array(width * height * 4);
+    await frame.copyTo(pixels, { rect, format: 'RGBA', colorSpace: 'srgb', layout: [{ offset: 0, stride: width * 4 }] });
+    return pixels;
+  }
   const stop = () => {
     if (ended) return;
-    ended = true;
+    ended = true; previousCanonical = null;
     clearTimeout(watchdog); clearTimeout(expiry); observer?.disconnect();
     removeEventListener('pagehide', stop); document.removeEventListener('freeze', stop);
     globalThis.navigation?.removeEventListener('navigate', stop);
@@ -90,15 +136,9 @@ function createElementCapture(id, resident, capture, leaseMs, scopeProbe = false
         const bitmapMetrics = { permissionRequests: newStream ? permissionRequests : 0,
           consumedFrames: closedFrames + 1, discardedFrames: closedFrames };
         const evidence = { bitmapMetrics, frame: { source: 'element-capture', surfaceId: id, sessionId: id,
-          transport: capture.transport, mediaTimestampUs: frame.timestamp, width, height } };
+          transport: capture.transport, pixelRepresentation: 'video-frame-copy-to-srgb-rgba8', sourcePixelFormat: frame.format ?? null, mediaTimestampUs: frame.timestamp, width, height } };
         if (capture.transport === 'native-helper') {
-          const rect = frame.visibleRect;
-          if (width < 1 || height < 1 || width * height > 4 * 1024 * 1024
-            || rect.width !== width || rect.height !== height || frame.rotation || frame.flip) {
-            throw Error('Native helper requires a bounded, unrotated restricted frame at native scale');
-          }
-          const pixels = new Uint8Array(width * height * 4);
-          await frame.copyTo(pixels, { rect, format: 'RGBA', colorSpace: 'srgb', layout: [{ offset: 0, stride: width * 4 }] });
+          const pixels = await copyRgba(frame, width, height);
           evidence.restrictedRgba = pixels.toBase64();
           Object.assign(bitmapMetrics, { path: 'element-capture-native-helper', cpuPixelReadBytes: 0, frameHostCopyBytes: pixels.length,
             cdpPixelPayloadBytes: evidence.restrictedRgba.length, nativeHelperInputBytes: pixels.length });
@@ -119,8 +159,27 @@ function createElementCapture(id, resident, capture, leaseMs, scopeProbe = false
           diagnosticPhase = 'process restricted frame';
           const result = await resident.readFrame(element, frame, verify, capture.transport, bracket);
           const { width, height, tileSize, hashes, ...metrics } = result;
-          evidence.bitmap = { format: 'compositor-element-srgb-rgba8-v1/' + capture.transport, width, height, tileSize, hashes };
+          let authority = hashes;
           Object.assign(bitmapMetrics, { path: 'element-capture-webgpu', ...metrics });
+          if (capture.transport === 'external-texture') {
+            // Both reads use this same immutable permission-restricted frame. The GPU
+            // mask remains a hint; even an empty mask must check canonical color bytes.
+            const pixels = await copyRgba(frame, width, height);
+            const canonical = await canonicalTiles(pixels, width, height, tileSize, previousCanonical);
+            assertCurrent();
+            const hintMissedChange = Boolean(previousCanonical && metrics.comparedOnGpu && metrics.rehashedTiles === 0
+              && previousCanonical.frameDigest !== canonical.record.frameDigest);
+            previousCanonical = canonical.record;
+            authority = previousCanonical.hashes;
+            Object.assign(bitmapMetrics, { externalHintMissedChange: hintMissedChange,
+              frameHostCopyBytes: pixels.length, canonicalHashedBytes: canonical.hashedBytes,
+              canonicalRehashedTiles: canonical.tilesHashed });
+          }
+          if (capture.transport === 'rgba-upload') {
+            bitmapMetrics.canonicalHashedBytes = metrics.logicalTileHashBytes;
+            bitmapMetrics.canonicalRehashedTiles = metrics.rehashedTiles;
+          }
+          evidence.bitmap = { format: 'compositor-element-canonical-srgb-rgba8-v2', width, height, tileSize, hashes: authority };
         }
         assertCurrent();
         return evidence;
@@ -204,7 +263,7 @@ export class CompositorSessions {
           globalThis.__blitzenSurface?.stop();
           globalThis.__blitzenSurface = (${createElementCapture.toString()})(${JSON.stringify(entry.id)},
             (${createResidentCanvasReader.toString()})(${JSON.stringify(entry.id)},
-              ${capture.digest === 'webgpu' ? '(' + createGpuTileDigest.toString() + ')()' : 'null'}), ${JSON.stringify(capture)}, ${leaseMs}, ${entry.scopeProbe}); return true;
+              ${capture.digest === 'webgpu' ? '(' + createGpuTileDigest.toString() + ')()' : 'null'}), ${JSON.stringify(capture)}, ${leaseMs}, ${entry.scopeProbe}, (${canonicalRgbaTiles.toString()})); return true;
         })()` });
         if (signal?.aborted || this.entries.get(key) !== entry) {
           await this.control(entry, 'stop').catch(() => {});
@@ -250,8 +309,8 @@ export class CompositorSessions {
         const { hashes, tileSize, hashedBytes, rehashedTiles, peakRgbaBytes } = await processing;
         const state = (await this.control(entry, 'status')).result?.value;
         if (this.entries.get(key) !== entry || state?.ended || state?.trackState !== 'live') throw Error('Capture ended during native processing');
-        selected.bitmap = { format: 'compositor-element-srgb-rgba8-v1/' + capture.transport, width, height, tileSize, hashes };
-        Object.assign(selected.bitmapMetrics, { nativeHashedBytes: hashedBytes, rehashedTiles, nativeRetainedRgbaBytes: width * height * 4, nativePeakRgbaBufferBytes: peakRgbaBytes });
+        selected.bitmap = { format: 'compositor-element-canonical-srgb-rgba8-v2', width, height, tileSize, hashes };
+        Object.assign(selected.bitmapMetrics, { nativeHashedBytes: hashedBytes, rehashedTiles, canonicalHashedBytes: hashedBytes, canonicalRehashedTiles: rehashedTiles, nativeRetainedRgbaBytes: width * height * 4, nativePeakRgbaBufferBytes: peakRgbaBytes });
       }
       if (entry.scopeProbe && selected.frame.captureProofBracket !== undefined) {
         const ordinal = selected.frame.captureProofBracket;

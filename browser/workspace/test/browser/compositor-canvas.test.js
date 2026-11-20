@@ -94,7 +94,7 @@ try {
       assert.equal(original.frameEvidence['#surface'].transport, transport);
       const { width, height } = original.frameEvidence['#surface'];
       assert.ok(width > 0 && width <= 256 && width === height * 2);
-      assert.equal(lastMetric.frameHostCopyBytes, transport === 'external-texture' ? 0 : width * height * 4);
+      assert.equal(lastMetric.frameHostCopyBytes, width * height * 4);
       assert.ok(original.frameEvidence['#surface'].loaderId);
       assert.ok(Number.isSafeInteger(original.frameEvidence['#surface'].mediaTimestampUs));
       // The sibling occludes half the chosen canvas on the compositor. Its
@@ -134,6 +134,33 @@ try {
       await evaluate(() => { document.body.classList.remove('tint'); });
       const stale = await submit(timely, 'stale-tint');
       assert.equal((await stale.result).neverDispatched?.code, 'stale-observation');
+      if (process.env.BLITZEN_TEST_CAPTURE_COLOR_COLLISION === '1') {
+        // Under this stock I420/SwiftShader profile these colors differ after copyTo RGBA,
+        // while the external texture performs a conversion that maps them to identical bytes.
+        const paintA = () => { ctx.fillStyle = 'rgb(113,5,0)'; ctx.fillRect(0, 0, 128, 64); };
+        const paintB = () => { ctx.fillStyle = 'rgb(114,6,0)'; ctx.fillRect(0, 0, 128, 64); };
+        await evaluate(paintA);
+        const prior = await observe();
+        await evaluate(paintB);
+        const update = await observe(prior.observationVersion);
+        const observedChanges = update.visualChanges['#surface'].changed.length;
+        const importedRehashed = lastMetric.rehashedTiles, hintMiss = lastMetric.externalHintMissedChange;
+        const copied = lastMetric.frameHostCopyBytes, hashed = lastMetric.canonicalHashedBytes;
+        const changedFrame = update.frameEvidence['#surface'];
+        await evaluate(paintA);
+        const reviewed = await observe();
+        await evaluate(paintB);
+        // No observation between mutation and dispatch. The independent check inside submit must find it.
+        const action = await submit(reviewed, 'stale-canonical-color');
+        const result = await action.result;
+        const buttonText = await evaluate(() => document.querySelector('#ack').textContent);
+        console.log(JSON.stringify({ event: 'canonical-color-change', name, transport, width, height,
+          sourcePixelFormat: changedFrame.sourcePixelFormat, frameHostCopyBytes: copied, canonicalHashedBytes: hashed,
+          observedChanges, importedRehashed, hintMiss, outcome: result.outcome, refusal: result.neverDispatched?.code ?? null, buttonText }));
+        assert.equal(observedChanges, Math.ceil(width / 64) * Math.ceil(height / 64));
+        assert.equal(result.neverDispatched?.code, 'stale-observation');
+        assert.equal(buttonText, 'ack');
+      }
       const beforeReplacement = await observe();
       await evaluate(() => {
         const old = document.querySelector('canvas'), copy = old.cloneNode();

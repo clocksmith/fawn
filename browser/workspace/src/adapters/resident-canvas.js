@@ -185,7 +185,7 @@ export function createResidentCanvasReader(surfaceId, gpuTileDigest) {
           bufferSize += stride * h;
         }
       }
-      if (gpuTileDigest) return gpuTileDigest(gpu, texture, copies, hashes);
+      if (gpuTileDigest) return { ...await gpuTileDigest(gpu, texture, copies, hashes), logicalTileHashBytes: tilePixelReadbackBytes };
       if (bufferSize > 32 * 1024 * 1024) throw Error('Padded tile readback exceeds 32 MiB');
       if (bufferSize) {
         const buffer = gpu.createBuffer({ size: bufferSize, usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ });
@@ -208,10 +208,11 @@ export function createResidentCanvasReader(surfaceId, gpuTileDigest) {
           }));
         } finally { buffer.destroy(); }
       }
-      return { hashes, cpuPixelReadBytes: 0, tilePixelReadbackBytes, mappedReadbackBytes, rehashedTiles: copies.length };
+      return { hashes, cpuPixelReadBytes: 0, logicalTileHashBytes: tilePixelReadbackBytes, tilePixelReadbackBytes, mappedReadbackBytes, rehashedTiles: copies.length };
     }
     const result = await lockedRead(region, frame, tileSize, hashTexture, width, height, fullRead, transport, scopeBracket);
-    return { width, height, tileSize, ...result };
+    return { width, height, tileSize, ...result,
+      residentEvidenceRole: transport === 'external-texture' ? 'imported-color-hint' : 'canonical-rgba' };
   }
   function dispose() {
     disposed = true;
