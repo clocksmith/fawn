@@ -1,0 +1,316 @@
+diff --git a/content/browser/renderer_host/media/media_stream_dispatcher_host.cc b/content/browser/renderer_host/media/media_stream_dispatcher_host.cc
+index 10df10539842d678c7eea8ff9b930d2f5faa88b2..ffd549540491e46a1ec8f36f54c5faec75e4902a 100644
+--- a/content/browser/renderer_host/media/media_stream_dispatcher_host.cc
++++ b/content/browser/renderer_host/media/media_stream_dispatcher_host.cc
+@@ -770,7 +770,8 @@ void MediaStreamDispatcherHost::OnSubCaptureTargetValidationComplete(
+     return;
+   }
+ 
+-  if (gpu::FawnResidentProvenanceEnabled()) {
++  if (gpu::FawnResidentProvenanceEnabled() ||
++      gpu::FawnResidentFrameProvenanceEnabled()) {
+     // Only the validated browser-side control callback can declare success.
+     callback = base::BindOnce(
+         [](ApplySubCaptureTargetCallback original,
+diff --git a/content/browser/renderer_host/media/media_stream_manager.cc b/content/browser/renderer_host/media/media_stream_manager.cc
+index 99d130fc4b1feda1d304600043ee4c16db20d298..60228146b9001bd64d887e99eb601c3811aa2117 100644
+--- a/content/browser/renderer_host/media/media_stream_manager.cc
++++ b/content/browser/renderer_host/media/media_stream_manager.cc
+@@ -2030,7 +2030,8 @@ base::UnguessableToken MediaStreamManager::VideoDeviceIdToSessionId(
+ void MediaStreamManager::StopDevice(MediaStreamType type,
+                                     const base::UnguessableToken& session_id) {
+   CHECK_CURRENTLY_ON(BrowserThread::IO, base::NotFatalUntil::M158);
+-  if (gpu::FawnResidentProvenanceEnabled()) {
++  if (gpu::FawnResidentProvenanceEnabled() ||
++      gpu::FawnResidentFrameProvenanceEnabled()) {
+     TRACE_EVENT_INSTANT(TRACE_DISABLED_BY_DEFAULT("gpu.dawn"),
+                         "FawnResidentStreamClosed", "stream",
+                         gpu::FawnCaptureDigest(session_id));
+@@ -2101,7 +2102,8 @@ void MediaStreamManager::CloseDevice(MediaStreamType type,
+   SendLogMessage(base::StringPrintf("CloseDevice({type=%s}, {session_id=%s})",
+                                     StreamTypeToString(type),
+                                     session_id.ToString().c_str()));
+-  if (gpu::FawnResidentProvenanceEnabled()) {
++  if (gpu::FawnResidentProvenanceEnabled() ||
++      gpu::FawnResidentFrameProvenanceEnabled()) {
+     TRACE_EVENT_INSTANT(TRACE_DISABLED_BY_DEFAULT("gpu.dawn"),
+                         "FawnResidentStreamClosed", "stream",
+                         gpu::FawnCaptureDigest(session_id));
+@@ -3953,7 +3955,8 @@ void MediaStreamManager::ChangeMediaStreamSourceFromBrowser(
+   if (!request) {
+     return;
+   }
+-  if (gpu::FawnResidentProvenanceEnabled()) {
++  if (gpu::FawnResidentProvenanceEnabled() ||
++      gpu::FawnResidentFrameProvenanceEnabled()) {
+     for (const auto& devices : request->stream_devices_set.stream_devices) {
+       if (devices->video_device) {
+         TRACE_EVENT_INSTANT(
+diff --git a/content/browser/renderer_host/render_process_host_impl.cc b/content/browser/renderer_host/render_process_host_impl.cc
+index 3bc8bb11536b1fd07b601d2d28c9db46d2bfbf97..79f36b8659110b085add1f64233955d989f5f76f 100644
+--- a/content/browser/renderer_host/render_process_host_impl.cc
++++ b/content/browser/renderer_host/render_process_host_impl.cc
+@@ -3957,6 +3957,7 @@ void RenderProcessHostImpl::PropagateBrowserCommandLineToRenderer(
+       switches::kEnableSkiaBenchmarking,
+       switches::kEnableUnsafeWebGPU,
+       switches::kResidentWebGPUProvenance,
++      switches::kResidentFrameProvenance,
+       switches::kEnableViewport,
+       switches::kEnableVtune,
+       switches::kEnableWebGLDeveloperExtensions,
+diff --git a/gpu/config/fawn_resident_provenance.h b/gpu/config/fawn_resident_provenance.h
+index eb3c2ed71a546c1ee9522426e0fea2db48f5adb1..85d7962a5e3c5e94bd614d67e8057ac4e0bcd47f 100644
+--- a/gpu/config/fawn_resident_provenance.h
++++ b/gpu/config/fawn_resident_provenance.h
+@@ -16,6 +16,12 @@ inline bool FawnResidentProvenanceEnabled() {
+       switches::kResidentWebGPUProvenance);
+   return enabled;
+ }
++// Frame attribution never enables the diagnostic Dawn flush or queue wrapper.
++inline bool FawnResidentFrameProvenanceEnabled() {
++  static const bool enabled = base::CommandLine::ForCurrentProcess()->HasSwitch(
++      switches::kResidentFrameProvenance);
++  return enabled;
++}
+ // The inputs are native random capture capabilities. Only their digests
+ // cross into the private trace; possession of a digest confers no authority.
+ template <typename Token>
+diff --git a/gpu/config/gpu_switches.h b/gpu/config/gpu_switches.h
+index 09f6dc1f8a7b244b081bce4bd2ea0780dcde0575..a068b8141da4c8e28bc7b2ef027059a9786e5c8c 100644
+--- a/gpu/config/gpu_switches.h
++++ b/gpu/config/gpu_switches.h
+@@ -69,6 +69,8 @@ GPU_CONFIG_EXPORT extern const char kSuppressPerformanceLogs[];
+ // Qualification-only. Never enabled by a web origin.
+ inline constexpr char kResidentWebGPUProvenance[] =
+     "fawn-resident-command-provenance";
++inline constexpr char kResidentFrameProvenance[] =
++    "fawn-resident-frame-provenance";
+ 
+ }  // namespace switches
+ 
+diff --git a/third_party/blink/renderer/modules/breakout_box/frame_queue_underlying_source.cc b/third_party/blink/renderer/modules/breakout_box/frame_queue_underlying_source.cc
+index bf63fc2c500ea4abbcca1b98655b6bbcebdb1fa2..d83aedf04613c619e2739d2c04d5a16668734b2e 100644
+--- a/third_party/blink/renderer/modules/breakout_box/frame_queue_underlying_source.cc
++++ b/third_party/blink/renderer/modules/breakout_box/frame_queue_underlying_source.cc
+@@ -615,9 +615,11 @@ FrameQueueUnderlyingSource<scoped_refptr<media::VideoFrame>>::MakeBlinkFrame(
+     }
+   }
+ 
+-  return MakeGarbageCollected<VideoFrame>(std::move(media_frame), ec,
+-                                          device_id_,
+-                                          /*sk_image=*/nullptr, timestamp);
++  auto* wrapper = MakeGarbageCollected<VideoFrame>(
++      std::move(media_frame), ec, device_id_, /*sk_image=*/nullptr, timestamp);
++  wrapper->fawn_capture_component_ = fawn_component_;
++  wrapper->fawn_capture_world_ = fawn_world_;
++  return wrapper;
+ }
+ 
+ template <>
+diff --git a/third_party/blink/renderer/modules/breakout_box/frame_queue_underlying_source.h b/third_party/blink/renderer/modules/breakout_box/frame_queue_underlying_source.h
+index bbea110e5b148b7d28dd7daa29c772cc96862ce3..4189df52a81503f75b53c737d1f92ddcbe45cc87 100644
+--- a/third_party/blink/renderer/modules/breakout_box/frame_queue_underlying_source.h
++++ b/third_party/blink/renderer/modules/breakout_box/frame_queue_underlying_source.h
+@@ -62,6 +62,12 @@ class FrameQueueUnderlyingSource : public UnderlyingSourceBase {
+   // Must be called on |realm_task_runner_|.
+   virtual void Close();
+ 
++  // Private renderer attribution. Transferred queues use the default empty scope.
++  void SetFawnCaptureSource(int component, int world) {
++    fawn_component_ = component;
++    fawn_world_ = world;
++  }
++
+   bool IsClosed() { return is_closed_; }
+ 
+   // Start or stop the delivery of frames via QueueFrame().
+@@ -171,6 +177,8 @@ class FrameQueueUnderlyingSource : public UnderlyingSourceBase {
+ 
+   void EnqueueBlinkFrame(ScriptWrappable* blink_frame) const;
+ 
++  int fawn_component_ = 0;
++  int fawn_world_ = 0;
+   bool is_closed_ = false;
+ 
+   // Main task runner for the window or worker context this source runs on.
+diff --git a/third_party/blink/renderer/modules/breakout_box/media_stream_track_processor.cc b/third_party/blink/renderer/modules/breakout_box/media_stream_track_processor.cc
+index 970ba6be031969088c3a0edad64aedf7d25b0785..57f3ff13121bf7d119cca1ecb5fc5de2d41a0800 100644
+--- a/third_party/blink/renderer/modules/breakout_box/media_stream_track_processor.cc
++++ b/third_party/blink/renderer/modules/breakout_box/media_stream_track_processor.cc
+@@ -4,6 +4,9 @@
+ 
+ #include "third_party/blink/renderer/modules/breakout_box/media_stream_track_processor.h"
+ 
++#include "gpu/config/fawn_resident_provenance.h"
++#include "third_party/blink/renderer/modules/mediastream/browser_capture_media_stream_track.h"
++#include "v8/include/v8-inspector.h"
+ #include "third_party/blink/public/mojom/use_counter/metrics/web_feature.mojom-blink.h"
+ #include "third_party/blink/renderer/bindings/modules/v8/v8_media_stream_track_processor_init.h"
+ #include "third_party/blink/renderer/bindings/modules/v8/v8_media_stream_track_state.h"
+@@ -81,6 +84,16 @@ void MediaStreamTrackProcessor::CreateVideoSourceStream(
+   video_underlying_source_ =
+       MakeGarbageCollected<MediaStreamVideoTrackUnderlyingSource>(
+           script_state, input_track_->Component(), this, buffer_size_);
++  if (gpu::FawnResidentFrameProvenanceEnabled() &&
++      script_state->World().IsIsolatedWorld() &&
++      input_track_->GetWrapperTypeInfo() ==
++          BrowserCaptureMediaStreamTrack::GetStaticWrapperTypeInfo() &&
++      static_cast<BrowserCaptureMediaStreamTrack*>(input_track_.Get())
++          ->HasResidentRestriction()) {
++    video_underlying_source_->SetFawnCaptureSource(
++        input_track_->Component()->UniqueId(),
++        v8_inspector::V8ContextInfo::executionContextId(script_state->GetContext()));
++  }
+   source_stream_ = ReadableStream::CreateWithCountQueueingStrategy(
+       script_state, video_underlying_source_,
+       /*high_water_mark=*/0, AllowPerChunkTransferring(true),
+diff --git a/third_party/blink/renderer/modules/mediastream/browser_capture_media_stream_track.cc b/third_party/blink/renderer/modules/mediastream/browser_capture_media_stream_track.cc
+index 1317e782f040cf97f3789e91db981949ebfe8dbe..45a55d5dd7b581dd3a2b2a70aa293ae0df5f41ec 100644
+--- a/third_party/blink/renderer/modules/mediastream/browser_capture_media_stream_track.cc
++++ b/third_party/blink/renderer/modules/mediastream/browser_capture_media_stream_track.cc
+@@ -285,7 +285,8 @@ BrowserCaptureMediaStreamTrack::ApplySubCaptureTarget(
+       BindOnce(&BrowserCaptureMediaStreamTrack::OnCaptureVersionObserved,
+                WrapWeakPersistent(this), capture_version));
+ 
+-  if (gpu::FawnResidentProvenanceEnabled() &&
++  if ((gpu::FawnResidentProvenanceEnabled() ||
++       gpu::FawnResidentFrameProvenanceEnabled()) &&
+       script_state->World().IsIsolatedWorld() &&
+       type == SubCaptureTarget::Type::kRestrictionTarget && !token->is_zero()) {
+     const auto capture_device = device();
+@@ -299,7 +300,8 @@ BrowserCaptureMediaStreamTrack::ApplySubCaptureTarget(
+                           "track", resident_track_id_.ToString(), "stream",
+                           gpu::FawnCaptureDigest(capture_device->session_id()),
+                           "target", gpu::FawnCaptureDigest(token.value()),
+-                          "version", capture_version.sub_capture);
++                          "version", capture_version.sub_capture, "sourceEpoch",
++                          capture_version.source, "component", Component()->UniqueId());
+     }
+   }
+   native_source->ApplySubCaptureTarget(
+diff --git a/third_party/blink/renderer/modules/mediastream/browser_capture_media_stream_track.h b/third_party/blink/renderer/modules/mediastream/browser_capture_media_stream_track.h
+index 05538c3ad6a4d6a1c7df26ec65e3e36c06cc8e01..231f1a6cdb790e2d6d5a69cc82dd90b5d93b9b68 100644
+--- a/third_party/blink/renderer/modules/mediastream/browser_capture_media_stream_track.h
++++ b/third_party/blink/renderer/modules/mediastream/browser_capture_media_stream_track.h
+@@ -51,6 +51,7 @@ class MODULES_EXPORT BrowserCaptureMediaStreamTrack
+ 
+   BrowserCaptureMediaStreamTrack* clone(ExecutionContext*) override;
+   MediaTrackSettings* getSettings() const override;
++  bool HasResidentRestriction() const { return !resident_track_id_.is_empty(); }
+ 
+   // These values are persisted to logs. Entries should not be renumbered and
+   // numeric values should never be reused.
+diff --git a/third_party/blink/renderer/modules/webcodecs/video_frame.h b/third_party/blink/renderer/modules/webcodecs/video_frame.h
+index 53898e8ba9cc7abb0e6b3aba25d566eda76cae97..ad491d28034986e783065e2e29ac4249a77097c5 100644
+--- a/third_party/blink/renderer/modules/webcodecs/video_frame.h
++++ b/third_party/blink/renderer/modules/webcodecs/video_frame.h
+@@ -37,6 +37,9 @@ class VideoFrame;
+ 
+ namespace blink {
+ 
++template <typename NativeFrameType>
++class FrameQueueUnderlyingSource;
++
+ class CanvasImageSource;
+ class DOMRectReadOnly;
+ class ExceptionState;
+@@ -125,6 +128,11 @@ class MODULES_EXPORT VideoFrame final : public ScriptWrappable,
+   scoped_refptr<VideoFrameHandle> handle() const { return handle_; }
+   scoped_refptr<media::VideoFrame> frame() const { return handle_->frame(); }
+ 
++  // Native-only, on this wrapper. Clones, transfers and script-created frames
++  // default to zero even when their underlying media::VideoFrame is shared.
++  int FawnCaptureComponent() const { return fawn_capture_component_; }
++  int FawnCaptureWorld() const { return fawn_capture_world_; }
++
+   bool WouldTaintOrigin() const override;
+ 
+   // GarbageCollected override
+@@ -165,6 +173,10 @@ class MODULES_EXPORT VideoFrame final : public ScriptWrappable,
+       const ImageBitmapOptions*,
+       ExceptionState&) override;
+ 
++  friend class FrameQueueUnderlyingSource<scoped_refptr<media::VideoFrame>>;
++  int fawn_capture_component_ = 0;
++  int fawn_capture_world_ = 0;
++
+   // Underlying frame
+   scoped_refptr<VideoFrameHandle> handle_;
+ 
+diff --git a/third_party/blink/renderer/modules/webgpu/gpu_external_texture.cc b/third_party/blink/renderer/modules/webgpu/gpu_external_texture.cc
+index aae1d0b3b7e1dbb425b551ab0e5ee7b917f14a33..a7c938d963ede7020e73f08358e3489186de95ce 100644
+--- a/third_party/blink/renderer/modules/webgpu/gpu_external_texture.cc
++++ b/third_party/blink/renderer/modules/webgpu/gpu_external_texture.cc
+@@ -4,7 +4,15 @@
+ 
+ #include "third_party/blink/renderer/modules/webgpu/gpu_external_texture.h"
+ 
++#include "base/trace_event/trace_event.h"
++#include "gpu/config/fawn_resident_provenance.h"
+ #include "media/base/video_frame.h"
++#include "third_party/blink/renderer/core/execution_context/execution_context.h"
++#include "third_party/blink/renderer/core/frame/local_dom_window.h"
++#include "third_party/blink/renderer/core/frame/local_frame.h"
++#include "third_party/blink/renderer/core/loader/document_loader.h"
++#include "third_party/blink/renderer/platform/bindings/script_state.h"
++#include "v8/include/v8-inspector.h"
+ #include "third_party/blink/renderer/bindings/modules/v8/v8_gpu_external_texture_descriptor.h"
+ #include "third_party/blink/renderer/bindings/modules/v8/v8_gpu_texture_view_descriptor.h"
+ #include "third_party/blink/renderer/bindings/modules/v8/v8_union_htmlvideoelement_videoframe.h"
+@@ -71,6 +79,9 @@ GPUExternalTexture* ExternalTextureCache::Import(
+         external_texture = GPUExternalTexture::FromVideoFrame(
+             this, frame, descriptor, exception_state);
+       }
++      if (external_texture && gpu::FawnResidentFrameProvenanceEnabled() &&
++          frame->FawnCaptureComponent() > 0)
++        external_texture->TraceFawnFrameImport(frame);
+       break;
+     }
+   }
+@@ -482,6 +493,34 @@ void GPUExternalTexture::OnVideoFrameClosed() {
+                              WrapCrossThreadWeakPersistent(this))));
+ }
+ 
++// The caller sees both fresh imports and cache hits. Only a tagged original
++// wrapper in its producing isolated world can emit this private event.
++void GPUExternalTexture::TraceFawnFrameImport(VideoFrame* frame) const {
++  auto media_frame = frame->frame();
++  if (!IsActive() || !media_frame || !cache_ || !cache_->device()->GetExecutionContext())
++    return;
++  auto* isolate = cache_->device()->GetExecutionContext()->GetIsolate();
++  if (!isolate->InContext())
++    return;
++  auto context = isolate->GetCurrentContext();
++  auto* state = ScriptState::MaybeFrom(isolate, context);
++  int world = v8_inspector::V8ContextInfo::executionContextId(context);
++  if (!state || !state->World().IsIsolatedWorld() || world != frame->FawnCaptureWorld())
++    return;
++  auto* window = LocalDOMWindow::From(state);
++  auto* local = window ? window->GetFrame() : nullptr;
++  auto* loader = local ? local->Loader().GetDocumentLoader() : nullptr;
++  const auto& version = media_frame->metadata().version;
++  if (loader && version.sub_capture > 0) {
++    TRACE_EVENT_INSTANT(TRACE_DISABLED_BY_DEFAULT("gpu.dawn"),
++        "FawnResidentFrameImported", "context", world,
++        "component", frame->FawnCaptureComponent(), "sourceEpoch", version.source,
++        "version", version.sub_capture, "mediaTimestampUs", frame->timestamp(),
++        "frame", local->GetDevToolsFrameToken().ToString(),
++        "loader", loader->GetDevToolsNavigationToken().ToString());
++  }
++}
++
+ bool GPUExternalTexture::IsActive() const {
+   return status_ == Status::Active;
+ }
+diff --git a/third_party/blink/renderer/modules/webgpu/gpu_external_texture.h b/third_party/blink/renderer/modules/webgpu/gpu_external_texture.h
+index 4fe1be27efcdf82e0e0dd415c51a0327782a1304..3a1022371f4d8e416e623a57d3efe6e20ff3f8e5 100644
+--- a/third_party/blink/renderer/modules/webgpu/gpu_external_texture.h
++++ b/third_party/blink/renderer/modules/webgpu/gpu_external_texture.h
+@@ -115,6 +115,7 @@ class GPUExternalTexture : public DawnObject<wgpu::ExternalTexture> {
+   bool isZeroCopy() const;
+   // }}} End of WebIDL binding implementation.
+ 
++  void TraceFawnFrameImport(VideoFrame* frame) const;
+   bool IsReadLockFenceEnabled() const;
+   void Destroy();
+   void Expire();

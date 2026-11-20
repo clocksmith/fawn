@@ -10,6 +10,7 @@ import math
 import os
 from pathlib import Path
 import re
+import runpy
 import signal
 import statistics
 import subprocess
@@ -265,8 +266,11 @@ def run_wave(out, wave, args):
                 k: v
                 for k, v in os.environ.items()
                 if not k.startswith(("BLITZEN_TEST_", "FAWN_WORKSPACE_TEST_"))
+                and k != "BLITZEN_RESIDENT_FRAME_TRACE_PREFIX"
             }
             if wave["arm"].startswith("fawn"):
+                if getattr(args, "frame_import_evidence", False):
+                    env["BLITZEN_RESIDENT_FRAME_TRACE_PREFIX"] = str(row / "frame-import")
                 env["BLITZEN_TEST_BROWSER_CONFIG"] = str(
                     args.doe if wave["arm"] == "fawn-doe" else args.dawn
                 )
@@ -340,6 +344,11 @@ def run_wave(out, wave, args):
             )
 
 
+@functools.lru_cache(maxsize=1)
+def frame_import_checker():
+    return runpy.run_path(str(Path(__file__).with_name("check-frame-import.py")))["check"]
+
+
 def summarize_row(path, wave, slot):
     p, e, o = (read(path / file) for file in ("progress.json", "exit.json", "outcome.json"))
     partial = p.get("partial") or {}
@@ -403,7 +412,16 @@ def summarize_row(path, wave, slot):
             status="incorrect", reason="image, application revision, or unique effect did not verify"
         )
     elif o.get("diagnosticOnly") is True:
-        data.update(status="unqualified", reason="capture-authority diagnostic adds track observations and a fence wait")
+        if o.get("diagnosticKind") == "frame-import":
+            try:
+                data["frameImport"] = frame_import_checker()(path)
+                reason = "restricted frame import verified; native GPU completion unproven"
+            except (OSError, TypeError, KeyError, ValueError) as error:
+                data["frameImport"] = {"restrictedFrameImportVerified": False, "latencyQualified": False}
+                reason = f"restricted frame import unproven: {error}"
+        else:
+            reason = "capture-authority diagnostic adds track observations and a fence wait"
+        data.update(status="unqualified", reason=reason)
     elif wave["arm"] == "fawn-doe":
         # A native producer must bind this target's active capture and diff command
         # to completed work on the loaded Doe device. Flags, adapter strings or a
@@ -588,6 +606,8 @@ def main():
                            help="bind both Linux browser images to their operator-verified source receipts")
             p.add_argument("--compositor-digest", choices=["cpu", "webgpu"], default="cpu",
                            help="digest for the three browser GPU arms; the native helper retains its own CPU digest")
+            p.add_argument("--frame-import-evidence", action="store_true",
+                           help="record the restricted VideoFrame import on both Fawn arms; traced rows are diagnostic")
             p.add_argument("--stock-channel", choices=["chrome", "chromium"], default="chrome")
             p.add_argument("--timeout", type=int, default=175)
     args = parser.parse_args()
@@ -621,6 +641,8 @@ def main():
             args.sources = dict(zip(("stock", "fawn"), map(source_receipt, args.source_receipts), strict=True))
             if args.sources["fawn"]["chromeSha256"] != d["executable"]["sha256"]:
                 parser.error("Fawn source receipt differs from the selected build")
+        if args.frame_import_evidence and not args.sources:
+            parser.error("frame import evidence requires process-bound source receipts")
         plan = read(out / "plan.json")
         if not plan:
             parser.error("create the plan first")

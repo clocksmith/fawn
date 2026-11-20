@@ -18,14 +18,15 @@ import { closeWithin } from './bounded-close.js';
 const UNSAFE_FILENAME_CHARS = /[^A-Za-z0-9._-]/g;
 
 class PlaywrightWorkspaceAdapter {
-  constructor({ config, profileRoot, artifactRoot, requireSandbox = false, captureAttribution = false }) {
+  constructor({ config, profileRoot, artifactRoot, requireSandbox = false, captureAttribution = false, frameImportEvidence = false }) {
     this._config = config;
     this._requireSandbox = requireSandbox;
     this._captureAttribution = captureAttribution;
+    this._frameImportEvidence = frameImportEvidence;
     this._profileRoot = profileRoot;
     this._artifactRoot = artifactRoot;
     this._workspaces = new Map();
-    this.compositor = new CompositorSessions();
+    this.compositor = new CompositorSessions({ privateWorldPerCapture: frameImportEvidence });
     this._canvasReaders = new WeakMap();
     this._surfaceSessions = new WeakMap();
   }
@@ -34,6 +35,12 @@ class PlaywrightWorkspaceAdapter {
     if (this._workspaces.has(workspaceId)) return;
     const profileDir = join(this._profileRoot, workspaceId);
     const launchOptions = playwrightLaunchOptions(this._config.browser, this._requireSandbox);
+    if (this._frameImportEvidence) {
+      if (this._captureAttribution || !launchOptions.chromiumSandbox || !this._config.browser.fawnBuild) {
+        throw Error('Frame import evidence requires a separate, sandboxed, pinned Fawn run');
+      }
+      launchOptions.args.push('--fawn-resident-frame-provenance');
+    }
     if (this._captureAttribution) {
       if (!launchOptions.chromiumSandbox || this._config.browser.fawnBuild?.runtime.mode !== 'doe-c') {
         throw Error('Capture attribution requires pinned, sandboxed Fawn/Doe');

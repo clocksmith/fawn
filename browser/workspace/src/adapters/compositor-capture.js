@@ -140,6 +140,7 @@ function createElementCapture(id, resident, capture, leaseMs, scopeProbe = false
 // absent from disk. Replaying an old id after a restart cannot open a chooser.
 export class CompositorSessions {
   entries = new Map();
+  constructor({ privateWorldPerCapture = false } = {}) { this.privateWorldPerCapture = privateWorldPerCapture; }
 
   async end(entry) {
     if (this.entries.get(entry.key) !== entry) return;
@@ -187,7 +188,7 @@ export class CompositorSessions {
       if (entry) await this.end(entry);
       const id = randomUUID();
       const scopeProbe = process.env.BLITZEN_RESIDENT_SCOPE_PROBE === '1';
-      const worldName = scopeProbe ? 'Blitzen restricted capture ' + id : 'Blitzen selected compositor surface';
+      const worldName = (scopeProbe || this.privateWorldPerCapture) ? 'Blitzen restricted capture ' + id : 'Blitzen selected compositor surface';
       const { executionContextId } = await send('Page.createIsolatedWorld', { frameId, worldName });
       signal?.throwIfAborted();
       entry = { key, workspaceId, grantId: capture.grantId, scope, id, scopeProbe, proofBracket: 0, send, contextId: executionContextId };
@@ -259,6 +260,10 @@ export class CompositorSessions {
         selected.frame.nativeScopeRequest = { frameId, loaderId, executionContextId: entry.contextId,
           captureId: entry.id, grantId: entry.grantId, grantRevision: capture.grantRevision, bracket: ordinal };
         delete selected.frame.captureProofBracket;
+      }
+      if (this.privateWorldPerCapture) {
+        entry.frameSample = (entry.frameSample ?? 0) + 1;
+        selected.frame.frameImportOrdinal = entry.frameSample;
       }
       Object.assign(selected.frame, { loaderId, grantId: capture.grantId, grantRevision: capture.grantRevision });
       return raw;
