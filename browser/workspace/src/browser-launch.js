@@ -70,12 +70,13 @@ function prepareFawnLaunch(browser) {
       fallbackAllowed: false }) });
 }
 
-function playwrightLaunchOptions(browser) {
+function playwrightLaunchOptions(browser, requireSandbox = false) {
   const launch = prepareFawnLaunch(browser);
   if (launch) return { executablePath: launch.executablePath, args: launch.args, chromiumSandbox: true,
     ignoreDefaultArgs: ['--enable-unsafe-swiftshader'] };
   if (!Object.hasOwn(STOCK_CHANNELS, browser.channel)) throw new Error(`unsupported browser channel: ${browser.channel}`);
-  return { channel: STOCK_CHANNELS[browser.channel] };
+  return { channel: STOCK_CHANNELS[browser.channel],
+    ...(requireSandbox ? { chromiumSandbox: true, ignoreDefaultArgs: ['--enable-unsafe-swiftshader'] } : {}) };
 }
 
 export { BROWSER_CHANNELS, validateFawnBuild, prepareFawnLaunch, playwrightLaunchOptions };

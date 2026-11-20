@@ -1,7 +1,9 @@
 // Sent by value into a browser document. Only the adapter retains the returned
 // function. Navigation discards its device, previous texture and tile hashes.
-export function createResidentCanvasReader() {
+export function createResidentCanvasReader(surfaceId) {
   let device, previous, busy = false, disposed = false;
+  let adapterInfo = null, sampleNumber = 0;
+  const commandLabel = surfaceId ? "blitzen-surface/" + surfaceId + "/" : "";
   const pipelines = new WeakMap(), framePipelines = new WeakMap();
   const shader = `
     @group(0) @binding(0) var earlier: texture_2d<f32>;
@@ -30,12 +32,15 @@ export function createResidentCanvasReader() {
     const opened = await adapter.requestDevice();
     if (disposed) { opened.destroy(); throw Error('Canvas reader scope ended'); }
     device = opened;
+    const info = adapter.info;
+    if (info) adapterInfo = { vendor: info.vendor, architecture: info.architecture, device: info.device,
+      description: info.description, isFallbackAdapter: info.isFallbackAdapter ?? adapter.isFallbackAdapter ?? null };
     opened.lost.then(() => { if (device === opened) { device = null; previous = null; } });
   }
   // The selected browser surface is consumed here. A compositor-owned
   // GPUTexture can enter compareTextures directly once the browser can
   // authorize its surface, lifetime and completion fence.
-  async function compareTextures(gpu, earlier, current, tileSize) {
+  async function compareTextures(gpu, earlier, current, tileSize, sampleLabel = '') {
     const { width, height } = current;
     if (earlier.width !== width || earlier.height !== height || earlier.format !== 'rgba8unorm'
       || current.format !== 'rgba8unorm' || !Number.isSafeInteger(tileSize) || tileSize < 1
@@ -65,12 +70,12 @@ export function createResidentCanvasReader() {
       pass.dispatchWorkgroups(Math.ceil(width / 8), Math.ceil(height / 8));
       pass.end();
       passEncoder.copyBufferToBuffer(dirty, 0, read, 0, size);
-      gpu.queue.submit([passEncoder.finish()]);
+      gpu.queue.submit([passEncoder.finish(sampleLabel ? { label: sampleLabel + '/diff' } : {})]);
       await read.mapAsync(GPUMapMode.READ);
       return new Uint32Array(read.getMappedRange().slice(0));
     } finally { dirty?.destroy(); read?.destroy(); parameters?.destroy(); }
   }
-  async function importFrame(gpu, frame, texture) {
+  async function importFrame(gpu, frame, texture, sampleLabel) {
     let pipe = framePipelines.get(gpu);
     if (!pipe) {
       const code = `
@@ -95,11 +100,12 @@ export function createResidentCanvasReader() {
     ] }));
     pass.dispatchWorkgroups(Math.ceil(texture.width / 8), Math.ceil(texture.height / 8));
     pass.end();
-    gpu.queue.submit([encoder.finish()]);
+    gpu.queue.submit([encoder.finish(sampleLabel ? { label: sampleLabel + '/import' } : {})]);
   }
   async function read(region, surface, tileSize, hashTiles, width, height, fullRead = false, frameTransport = null) {
     await prepare();
     const gpu = device;
+    const sampleLabel = commandLabel ? commandLabel + 'sample-' + (++sampleNumber) : '';
     const base = !fullRead && previous?.region === region && previous.width === width && previous.height === height
       && previous.tileSize === tileSize ? previous : null;
     let texture, errorScopesOpen = true;
@@ -121,10 +127,10 @@ export function createResidentCanvasReader() {
         const bytes = new Uint8Array(width * height * 4);
         await surface.copyTo(bytes, { rect, format: 'RGBA', colorSpace: 'srgb', layout: [{ offset: 0, stride: width * 4 }] });
         gpu.queue.writeTexture({ texture }, bytes, { bytesPerRow: width * 4 }, [width, height]);
-      } else if (frameTransport === 'external-texture') await importFrame(gpu, surface, texture);
+      } else if (frameTransport === 'external-texture') await importFrame(gpu, surface, texture, sampleLabel);
       else gpu.queue.copyExternalImageToTexture({ source: surface },
         { texture, colorSpace: 'srgb', premultipliedAlpha: false }, [width, height]);
-      const dirty = base ? await compareTextures(gpu, base.texture, texture, tileSize) : null;
+      const dirty = base ? await compareTextures(gpu, base.texture, texture, tileSize, sampleLabel) : null;
       if (!dirty) await gpu.queue.onSubmittedWorkDone();
       const result = await hashTiles(dirty, base?.hashes, gpu, texture);
       const [validation, memory] = await collectErrors();
@@ -133,7 +139,8 @@ export function createResidentCanvasReader() {
       previous?.texture.destroy();
       previous = { region, width, height, tileSize, texture, hashes: result.hashes };
       texture = null;
-      return { ...result, frameHostCopyBytes: frameTransport === 'rgba-upload' ? width * height * 4 : 0, externalTextureCopyBytes: width * height * 4, gpuMaskReadbackBytes: dirty?.byteLength ?? 0, comparedOnGpu: Boolean(dirty) };
+      return { ...result, ...(sampleLabel && dirty ? { diffCommandLabel: sampleLabel + '/diff' } : {}),
+        frameHostCopyBytes: frameTransport === 'rgba-upload' ? width * height * 4 : 0, externalTextureCopyBytes: width * height * 4, gpuMaskReadbackBytes: dirty?.byteLength ?? 0, comparedOnGpu: Boolean(dirty) };
     } finally {
       // The compositor releases its VideoFrame immediately upon return. Even a
       // later validation failure must wait for work already submitted with it.
@@ -206,5 +213,5 @@ export function createResidentCanvasReader() {
     device?.destroy();
     device = null;
   }
-  return Object.assign(observe, { compareTextures, readFrame, dispose });
+  return Object.assign(observe, { compareTextures, readFrame, dispose, adapterInfo: () => device ? adapterInfo : null });
 }

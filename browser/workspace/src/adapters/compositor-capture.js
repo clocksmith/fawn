@@ -115,7 +115,7 @@ function createElementCapture(id, resident, capture, leaseMs) {
       })]);
     } catch (error) { stop(); throw error; } finally { clearTimeout(timer); }
   }
-  return { id, sample, renew, stop, status: () => ({ ended, trackState: track?.readyState, permissionRequests }) };
+  return { id, sample, renew, stop, adapterInfo: resident.adapterInfo, status: () => ({ ended, trackState: track?.readyState, permissionRequests }) };
 }
 
 // One restricted capture per workspace page. The live authority is deliberately
@@ -181,7 +181,7 @@ export class CompositorSessions {
         const init = await send('Runtime.evaluate', { contextId: entry.contextId, returnByValue: true, expression: `(() => {
           globalThis.__blitzenSurface?.stop();
           globalThis.__blitzenSurface = (${createElementCapture.toString()})(${JSON.stringify(entry.id)},
-            (${createResidentCanvasReader.toString()})(), ${JSON.stringify(capture)}, ${leaseMs}); return true;
+            (${createResidentCanvasReader.toString()})(${JSON.stringify(entry.id)}), ${JSON.stringify(capture)}, ${leaseMs}); return true;
         })()` });
         if (signal?.aborted || this.entries.get(key) !== entry) {
           await this.control(entry, 'stop').catch(() => {});

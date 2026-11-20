@@ -23,6 +23,8 @@ try {
   assert.equal(prepareFawnLaunch(config.browser), null);
   assert.deepEqual(playwrightLaunchOptions(config.browser), { channel: undefined });
   assert.deepEqual(playwrightLaunchOptions({ ...config.browser, channel: 'chrome' }), { channel: 'chrome' });
+  assert.deepEqual(playwrightLaunchOptions({ ...config.browser, channel: 'chrome' }, true), {
+    channel: 'chrome', chromiumSandbox: true, ignoreDefaultArgs: ['--enable-unsafe-swiftshader'] });
   assert.throws(() => playwrightLaunchOptions({ ...config.browser, channel: 'unrecognized' }));
   config.browser.channel = 'fawn';
   config.browser.fawnBuild = { executable: artifact('Chromium ü image'),

@@ -1,7 +1,7 @@
 // A canvas supplies the only status signal. The site's revision-conditional form
 // and its durable review record establish which job can be queued and recovered.
 import assert from 'node:assert/strict';
-import { appendFileSync, existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { appendFileSync, existsSync, mkdtempSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs';
 import { createServer } from 'node:http';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -55,13 +55,28 @@ const server = createServer((req, res) => {
 });
 await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
 const origin = `http://127.0.0.1:${server.address().port}`;
-let service, adapter;
+// Qualification publishes only phase metadata and counters. A refusal can occur
+// before a page, a grant, or a repaint exists; those timestamps stay absent.
+const progressPath = process.env.BLITZEN_RESIDENT_PROGRESS_FILE;
+const progress = { phase: 'setup', pid: process.pid, nodeTimeOriginMs: performance.timeOrigin };
+function checkpoint(fields) {
+  Object.assign(progress, fields);
+  if (!progressPath) return;
+  writeFileSync(progressPath + '.partial', JSON.stringify(progress));
+  renameSync(progressPath + '.partial', progressPath);
+}
+checkpoint({});
+let service, adapter, captureStart, requestsBefore, ruleEvaluations = 0;
+if (progressPath) process.once('SIGTERM', async () => {
+  const deadline = setTimeout(() => process.exit(143), 5000);
+  try { await service?.close(); } finally { clearTimeout(deadline); process.exit(143); }
+});
 try {
   const baseConfig = testBrowserSelection(root, { headless: !useCompositor, compositorTransport: compositor }).config;
   const config = { ...baseConfig, observation: { ...baseConfig.observation, canvasBackend } };
   service = await WorkspaceService.open({ stateDir: join(root, 'service'), config,
     createAdapter: options => {
-      adapter = createPlaywrightAdapter(options);
+      adapter = createPlaywrightAdapter({ ...options, requireSandbox: process.env.BLITZEN_RESIDENT_PHYSICAL === '1' });
       const snapshot = adapter.snapshot.bind(adapter);
       adapter.snapshot = async (...args) => {
         const result = await snapshot(...args);
@@ -181,6 +196,7 @@ try {
     if (useCompositor) session = snapshot.frameEvidence['#cell'].sessionId;
     return snapshot;
   };
+  checkpoint({ phase: 'authorize-surface', knownEffects: committed().length });
   let beforeChange = await evidence();
   if (useCompositor) {
     for (let i = 0; i < 5; i++) {
@@ -189,9 +205,40 @@ try {
     }
     assert.equal(beforeChange.visualChanges['#cell']?.baseline, 'compared');
   }
-  const captureStart = captures.length, requestsBefore = applicationHttpRequests, started = performance.now();
+  if (progressPath) {
+    const sessionCdp = await page.context().newCDPSession(page);
+    try {
+      const { targetInfo } = await sessionCdp.send('Target.getTargetInfo');
+      const version = await sessionCdp.send('Browser.getVersion');
+      if (process.env.BLITZEN_RESIDENT_PHYSICAL === '1') {
+        const flags = (await sessionCdp.send('Browser.getBrowserCommandLine')).arguments;
+        if (flags.some(flag => /--(?:no-sandbox|disable-gpu(?:-sandbox)?|auto-accept-this-tab-capture|auto-select-desktop-capture-source|use-fake-ui-for-media-stream)(?:=|$)|^--enable-unsafe-swiftshader$|^--(?:use-angle|use-gl|use-vulkan)=.*(?:swiftshader|llvmpipe|lavapipe)/i.test(flag))) {
+          throw Error('Physical browser qualification refused its launch flags');
+        }
+      }
+      const entry = [...adapter.compositor.entries.values()].find(e => e.id === session);
+      const gpu = (await adapter.compositor.control(entry, 'adapterInfo')).result?.value ?? null;
+      checkpoint({ phase: 'ready', targetId: targetInfo.targetId, surfaceId: session, browser: version,
+        gpu, commandLabel: null,
+        selection: config.browser.fawnBuild ?? { channel: config.browser.channel } });
+    } finally { await sessionCdp.detach(); }
+    const barrier = process.env.BLITZEN_RESIDENT_BARRIER_FILE;
+    const deadline = performance.now() + 150000;
+    while (barrier && !existsSync(barrier)) {
+      if (performance.now() >= deadline) throw Error('Matched run did not release this process');
+      await new Promise(resolve => setTimeout(resolve, 25));
+    }
+  }
+  captureStart = captures.length; requestsBefore = applicationHttpRequests;
+  checkpoint({ phase: 'measure' });
+  const started = performance.now();
   const patch = useCompositor ? { x: 84, y: 40, length: 5 } : { x: 129, y: 69, length: 1 };
-  await cell.evaluate((el, p) => { const ctx = el.getContext('2d'); ctx.fillStyle = 'blue'; ctx.fillRect(p.x, p.y, p.length, p.length); }, patch);
+  const browserMutationEpochMs = await cell.evaluate((el, p) => {
+    const ctx = el.getContext('2d'); ctx.fillStyle = 'blue'; ctx.fillRect(p.x, p.y, p.length, p.length);
+    return performance.timeOrigin + performance.now();
+  }, patch);
+  const mutationReturned = performance.now();
+  if (progressPath) checkpoint({ phase: 'observe-change', requestMonotonicMs: started, mutationReturnedMonotonicMs: mutationReturned, browserMutationEpochMs });
   const valid = await evidence(beforeChange.observationVersion);
   const changed = valid.visualChanges['#cell']?.changed ?? [];
   // Select the application action only if the expected indicator tile changed.
@@ -200,9 +247,11 @@ try {
   const x = Math.floor((patch.x + patch.length / 2) * frame.width / 130);
   const y = Math.floor((patch.y + patch.length / 2) * frame.height / 70);
   const tile = changed[0];
+  ruleEvaluations++;
   const ruleMatched = changed.length === 1 && x >= tile.x && x < tile.x + tile.width && y >= tile.y && y < tile.y + tile.height;
   const accepted = ruleMatched ? proposal(valid, 'lost-ack') : null;
   assert.ok(accepted);
+  if (progressPath) checkpoint({ phase: 'dispatch', imageCorrect: true, commandLabel: captures.at(-1)?.diffCommandLabel ?? null, indicator: { expectedPixel: [x, y], changed } });
   const lost = await submit(valid, accepted);
   assert.equal(lost.isUncertain, true);
   assert.deepEqual(committed(), [{ job: 'B', revision: 2 }]);
@@ -211,14 +260,20 @@ try {
   assert.equal((await reconcile()).reconciliation.result, 'inconclusive');
   await navigate('lookup', '/records');
   assert.equal((await reconcile()).reconciliation.result, 'effect-present');
-  const counters = summarizeResidentOutcome({ elapsedMs: performance.now() - started, verified: true,
-    ruleEvaluations: 1, modelCalls: [], captures: captures.slice(captureStart) });
+  const verifiedAt = performance.now();
+  const counters = summarizeResidentOutcome({ elapsedMs: verifiedAt - started, verified: true,
+    ruleEvaluations, modelCalls: [], captures: captures.slice(captureStart) });
   assert.equal(counters.plannerCalls, 0);
   assert.equal(counters.modelSpendUsd, 0);
   const receipt = { clock: 'request-repaint-through-authoritative-reconciliation', canvasBackend,
     compositorTransport: compositor ?? null, selection: config.browser.fawnBuild ?? { channel: config.browser.channel },
     applicationHttpRequests: applicationHttpRequests - requestsBefore, indicator: { expectedPixel: [x, y], changed },
     knownEffects: committed().length, ...counters };
+  if (progressPath) {
+    Object.assign(receipt, { requestMonotonicMs: started, mutationReturnedMonotonicMs: mutationReturned,
+      browserMutationEpochMs, outcomeVerifiedMonotonicMs: verifiedAt, imageCorrect: true, committedRevision: key(committed()[0]) });
+    checkpoint({ phase: 'reconciled', knownEffects: committed().length, outcomeVerifiedMonotonicMs: verifiedAt });
+  }
   if (process.env.BLITZEN_RESIDENT_RECEIPT_FILE) {
     writeFileSync(process.env.BLITZEN_RESIDENT_RECEIPT_FILE, JSON.stringify(receipt, null, 2) + '\n', { flag: 'wx' });
   }
@@ -229,6 +284,12 @@ try {
   assert.deepEqual(attempts, ['/queue/B-r1', '/queue/B-r2']);
   assert.deepEqual(committed(), [{ job: 'B', revision: 2 }]);
   console.log('ok: canvas-only repaint and identical-pixel job swap refused before POST, revision race rejected at site, one committed review recovered without repeat POST');
+} catch (error) {
+  const partial = captureStart === undefined ? { plannerCalls: 0, modelSpendUsd: 0 } :
+    { ...summarizeResidentOutcome({ elapsedMs: null, verified: false, ruleEvaluations, modelCalls: [], captures: captures.slice(captureStart) }),
+      applicationHttpRequests: applicationHttpRequests - requestsBefore };
+  checkpoint({ failure: error.message, failureType: error.name, knownEffects: committed().length, totalApplicationHttpRequests: applicationHttpRequests, partial });
+  throw error;
 } finally {
   await service?.close();
   await new Promise(resolve => server.close(resolve));

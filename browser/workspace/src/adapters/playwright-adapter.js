@@ -18,8 +18,9 @@ import { closeWithin } from './bounded-close.js';
 const UNSAFE_FILENAME_CHARS = /[^A-Za-z0-9._-]/g;
 
 class PlaywrightWorkspaceAdapter {
-  constructor({ config, profileRoot, artifactRoot }) {
+  constructor({ config, profileRoot, artifactRoot, requireSandbox = false }) {
     this._config = config;
+    this._requireSandbox = requireSandbox;
     this._profileRoot = profileRoot;
     this._artifactRoot = artifactRoot;
     this._workspaces = new Map();
@@ -31,7 +32,7 @@ class PlaywrightWorkspaceAdapter {
   async openWorkspace(workspaceId, { pages = [] } = {}) {
     if (this._workspaces.has(workspaceId)) return;
     const profileDir = join(this._profileRoot, workspaceId);
-    const launchOptions = playwrightLaunchOptions(this._config.browser);
+    const launchOptions = playwrightLaunchOptions(this._config.browser, this._requireSandbox);
     mkdirSync(profileDir, { recursive: true });
     const context = await chromium.launchPersistentContext(profileDir, {
       ...launchOptions,

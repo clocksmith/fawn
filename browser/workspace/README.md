@@ -604,3 +604,68 @@ establish neither semantic answer quality nor a product advantage. Historical
 workflow comparisons and frozen promotion criteria remain independently required.
 
 Private cross-client workflow storage and deployment: [shared registry](workflow-registry.md).
+
+### Physical Resident Process comparison
+
+`qualification/resident-comparison.py` uses the ordinary Blitzen service and the
+same canvas, browser-granted element, journal, deterministic decision and
+revision-checked write on every arm. It runs stock Dawn, stock with native CPU
+helper, Fawn/Dawn and forced Fawn/Doe. The two Fawn profiles must pin the same
+executable and dependencies. Use a reserved Linux or macOS GPU with a visible
+desktop, Python 3.10+ and the browser/workspace Node dependencies installed.
+The reserved run requests Chromium sandboxing on all arms and checks actual
+launch flags for disabled GPU/sandbox, forced software or automated consent.
+Close unrelated GPU work before running. The fixture opens its own temporary
+profiles and loopback site. Approve only its current-tab chooser for each live
+process. Existing browser profiles and their grants are unnecessary.
+
+From `browser/workspace`, set `FAWN_CHROME` to the packaged browser executable
+and `DOE_C_LIBRARY` to its matching Doe library. Use optional repeated
+`--dependency FILE` arguments consistently for any extra pinned build members.
+
+```sh
+physical_run=$(mktemp -d)
+node qualification/create-browser-profile.js --executable "$FAWN_CHROME" --runtime dawn --out "$physical_run/dawn.json"
+node qualification/create-browser-profile.js --executable "$FAWN_CHROME" --runtime doe-c --library "$DOE_C_LIBRARY" --out "$physical_run/doe.json"
+python3 qualification/resident-comparison.py plan --repeats 20 --concurrency 1 2 --out "$physical_run/results"
+python3 qualification/resident-comparison.py run --out "$physical_run/results" --dawn "$physical_run/dawn.json" --doe "$physical_run/doe.json" --stock-channel chrome
+python3 qualification/resident-comparison.py report --out "$physical_run/results"
+```
+
+The offline `plan` command freezes the arm order and concurrency sweep. A repeat
+rotates the first arm. At concurrency two, two independent Resident Processes
+each have their own browser, page and grant. Every process waits at the same
+pre-repaint barrier. If their measured work does not actually overlap, that
+wave is excluded from paired latency. Run `report` on a partial directory to
+list missing, refused, incorrect, and unattributed attempts alongside wins.
+A new run takes a fresh output directory.
+
+`report.json` gives the host clock bracket around the actual canvas mutation,
+the browser mutation timestamp, and the host timestamp of verified reconciliation.
+Per-process latency is the interval from the mutation to verification; the
+host midpoint is an estimate and both bounds are retained. A compositor frame
+commit timestamp is still unavailable. P95 is nearest rank. Pairing is by
+repeat, concurrency and worker slot. The stock-Dawn/Fawn-Dawn pair additionally
+requires matching observed browser revision and version; comparing build options
+is necessary before attributing a difference to Fawn. The Fawn-Dawn/Fawn-Doe
+pair isolates the selectable runtime in the identical pinned browser.
+
+Each receipt includes the oracle tile, final application revision and effect
+count, measured bytes at the copy/readback boundaries, planner calls and spend,
+and sampled process-tree RSS. This is one deterministic rules workload; the zero
+model calls and spend say nothing about adaptive planners. Whole-tree summed RSS
+counts shared pages multiple times. Actual GPU memory and physical bus traffic
+are unmeasured. Refusals retain reached phases and known costs; missing fields
+mean unknown.
+
+**Doe timing eligibility.** A selector, an adapter string or a page-authored
+success cannot prove who handled a command. The restricted page labels its
+diff command buffers with the live capture ID and per-sample sequence, and each trial binds its target
+ID and capture ID. Timing eligibility requires an independent native trace of
+that target's labeled submission and completion on the pinned Doe library, with
+fallback excluded and the verified effect intact. The current collector cannot
+produce that proof, so the report always withholds Doe timings. Raw diagnostic
+timestamps remain private inputs. Backend failure or uncertain execution is a
+recorded outcome.
+
+Verify the report offline with `python3 -m unittest discover -s qualification/tests -p 'test_resident_comparison.py'`.
