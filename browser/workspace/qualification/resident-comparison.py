@@ -173,6 +173,7 @@ def sample_tree_rss(jobs):
                 job["drmAttempts"] += 1
                 if observed is not None:
                     job["drmSamples"] += 1
+                    job["drmDevices"].update(observed["byDeviceAndRegion"])
                     if job["drmPeak"] is None or observed["bytes"] > job["drmPeak"]["bytes"]:
                         job["drmPeak"] = observed
             total += sizes[pid]
@@ -370,7 +371,7 @@ def run_wave(out, wave, args):
                 child = subprocess.Popen(
                     ["node", str(FIXTURE)], env=env, stdout=log, stderr=subprocess.STDOUT
                 )
-            jobs.append({"dir": row, "child": child, "peak": 0, "samples": 0,
+            jobs.append({"dir": row, "child": child, "peak": 0, "samples": 0, "drmDevices": set(),
                          "drmPeak": None, "drmSamples": 0, "drmAttempts": 0})
         while any(j["child"].poll() is None for j in jobs):
             if not admitted:
@@ -381,6 +382,11 @@ def run_wave(out, wave, args):
                         for job in jobs:
                             progress = read(job["dir"] / "progress.json")
                             observed = source_for_browser(progress, source, job["child"].pid)
+                            if mode:
+                                boot = Path("/proc/sys/kernel/random/boot_id").read_bytes().strip()
+                                if not re.fullmatch(rb"[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}", boot):
+                                    raise ValueError("missing physical host boot identity")
+                                observed["hostBootSha256"] = hashlib.sha256(boot).hexdigest()
                             if wave["arm"] == "fawn-doe" and (mode == "on" or getattr(args, "frame_import_evidence", False)):
                                 try:
                                     observed["doeMapping"] = mapped_doe(progress)
@@ -421,6 +427,7 @@ def run_wave(out, wave, args):
                     "rssSamples": job["samples"],
                     "physicalGpuMemoryBytes": None,
                     "gpuProcessDrm": {"peak": job["drmPeak"], "samples": job["drmSamples"],
+                                      "devicesSeen": sorted(job["drmDevices"]),
                                       "attempts": job["drmAttempts"]},
                 },
             )
@@ -681,6 +688,24 @@ def usage_totals(rows, field):
             "total": observed if complete == len(rows) else None}
 
 
+def physical_pair_mismatch(left, right):
+    a, b = left["browserSource"], right["browserSource"]
+    identity = a.get("hostBootSha256", "")
+    if not re.fullmatch(r"[0-9a-f]{64}", identity) or identity != b.get("hostBootSha256"):
+        return "host boot differs or is unobserved"
+    if left["arm"].startswith("fawn") and right["arm"].startswith("fawn") and a["chromeSha256"] != b["chromeSha256"]:
+        return "Fawn executable differs"
+    if "stock-helper" in (left["arm"], right["arm"]):
+        return None  # The native CPU helper has no WebGPU device requirement.
+    if left["compositorDigest"] != right["compositorDigest"]:
+        return "digest mode differs"
+    devices = (left["gpuProcessDrm"] or {}).get("devicesSeen", [])
+    if (len(devices) != 1 or not re.fullmatch(r"[\w-]+@[0-9a-f]{4}:[0-9a-f]{2}:[0-9a-f]{2}\.[0-7]", devices[0])
+            or devices != (right["gpuProcessDrm"] or {}).get("devicesSeen")):
+        return "a single matching kernel DRM device was not observed"
+    return None
+
+
 def summarize_plan(out, plan):
     rows = [summarize_row(out / run_id(w, s), w, s) for w in plan for s in range(1, w["width"] + 1)]
     # An incomplete concurrency wave is still retained, but cannot establish matched load.
@@ -732,6 +757,11 @@ def summarize_plan(out, plan):
                     if not comparable_browsers(a, b):
                         skipped["browser source/version unmatched"] += 1
                         continue
+                    if "observer" in a:
+                        reason = physical_pair_mismatch(a, b)
+                        if reason:
+                            skipped[reason] += 1
+                            continue
                     baseline_min, baseline_max = a["pageChangeToVerifiedBoundsMs"]
                     candidate_min, candidate_max = b["pageChangeToVerifiedBoundsMs"]
                     deltas.append((candidate_min - baseline_max, candidate_max - baseline_min))
@@ -782,7 +812,8 @@ def summarize(out):
                     continue
                 if (not comparable_browsers(bare, traced)
                         or bare["browserSource"]["chromeSha256"] != traced["browserSource"]["chromeSha256"]
-                        or bare["compositorDigest"] != traced["compositorDigest"] or bare["gpu"] != traced["gpu"]):
+                        or bare["compositorDigest"] != traced["compositorDigest"] or bare["gpu"] != traced["gpu"]
+                        or physical_pair_mismatch(bare, traced)):
                     omitted["image, GPU or digest mode differs"] += 1
                     continue
                 low, high = traced["pageChangeToVerifiedBoundsMs"]

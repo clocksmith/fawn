@@ -19,7 +19,7 @@ def make_row(path, wave, pid):
     proof = wire["wire"]["wire_submit"](events, scope, 9, 14, command)
     on = wave["observer"] == "on"
     arm = wave["arm"]
-    source = dict(chromeSha256="9" * 64, chromium="a" * 40, dawn="b" * 40)
+    source = dict(chromeSha256="9" * 64, chromium="a" * 40, dawn="b" * 40, hostBootSha256="c" * 64)
     if arm.startswith("fawn"):
         pid = 9  # The test trace has browser 9, renderer 10 and GPU 14.
         select = dict(executable={"sha256": source["chromeSha256"]},
@@ -59,7 +59,8 @@ def make_row(path, wave, pid):
     record(path, "progress", progress)
     record(path, "outcome", outcome)
     record(path, "browser-source", source)
-    record(path, "exit", {"exit": 0, "allReady": True, "waveTimeout": False})
+    record(path, "exit", {"exit": 0, "allReady": True, "waveTimeout": False,
+                          "gpuProcessDrm": {"devicesSeen": ["amdgpu@0000:03:00.0"]}})
 
 
 class ObserverPairTest(unittest.TestCase):
@@ -93,6 +94,19 @@ class ObserverPairTest(unittest.TestCase):
             self.assertIsNone(refused["requestMonotonicMs"])
             pair = runner["summarize"](root)["traceOn"]["paired"][-1]
             self.assertEqual(pair["n"], 1)
+
+    def test_same_image_can_use_another_card_or_host(self):
+        source = dict(chromeSha256="9" * 64, hostBootSha256="c" * 64)
+        a = dict(arm="fawn-dawn", browserSource=source, compositorDigest="cpu",
+                 gpuProcessDrm={"devicesSeen": ["i915@0000:00:02.0"]})
+        b = dict(a, arm="fawn-doe")
+        match = runner["physical_pair_mismatch"]
+        self.assertIsNone(match(a, b))
+        for devices in ([], ["i915"], ["i915@0000:00:02.1"], ["i915@0000:00:02.0", "amdgpu@0000:03:00.0"]):
+            self.assertIsNotNone(match(a, dict(b, gpuProcessDrm={"devicesSeen": devices})))
+        self.assertIsNotNone(match(a, dict(b, browserSource=dict(source, hostBootSha256="d" * 64))))
+        self.assertIsNotNone(match(a, dict(b, browserSource=dict(source, chromeSha256="a" * 64))))
+        self.assertIsNone(match(dict(a, arm="stock-dawn"), dict(b, arm="stock-helper", gpuProcessDrm=None)))
 
     def test_wrong_target_trace_loss_software_and_unbalanced_plan(self):
         wave = dict(arm="stock-dawn", width=1, repeat=1, observer="on")
