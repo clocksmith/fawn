@@ -41,6 +41,8 @@ export function navigationNotice(input, result) {
 export function plannerView(observation, pageId) {
   return { pageId, url: observation.url, title: observation.title, observationVersion: observation.observationVersion,
     isTruncated: observation.isTruncated, text: observation.text,
+    ...(observation.visualChanges ? { visualChanges: observation.visualChanges } : {}),
+    ...(observation.frameEvidence ? { frameEvidence: observation.frameEvidence } : {}),
     elements: (observation.elements ?? []).filter(element => element.handle).map(({ handle, selector, role, label, value, inputType, href, formAction, actionability }) =>
       ({ handle, selector, role, label, ...(value ? { value } : {}), ...(inputType ? { inputType } : {}), ...(href ? { href } : {}),
         // Admission rejects a click on a control that submits a form; say so before the planner spends a turn finding out.
@@ -110,15 +112,19 @@ export class WorkspaceController {
     this.store.activity(id, { event: 'human-control', outstanding: owner.outstanding });
     return { outstanding: owner.outstanding, boundary: owner.boundary };
   }
-  async humanPage(id, pageId, extraOrigins = []) {
+  async humanPage(id, pageId, extraOrigins = [], readRegions = null) {
     if (this.owner(id).ownerId !== 'human') throw Error('Take over before issuing a human action');
     const state = await this.service.inspect(this.admin(id));
     const page = state.pages.find(value => value.pageId === pageId && !value.closed);
     if (!page) throw Error('Select an open page');
     const origin = page.url === 'about:blank' ? [] : [new URL(page.url).origin];
+    const existing = readRegions && state.grants?.find(grant => grant.grantId === `human-${pageId}`);
+    if (readRegions && existing?.ownerId === 'human' && !existing.expiresAt
+      && existing.targetOrigins.length === 1 && existing.targetOrigins[0] === origin[0]
+      && JSON.stringify(existing.readRegions) === JSON.stringify(readRegions)) return this.owner(id);
     await this.service.grantAuthorization({ ...this.admin(id), grantId: `human-${pageId}`, ownerId: 'human',
       intents: ['human'], actionKinds: ['navigate', 'click', 'fill', 'select', 'submit', 'download'],
-      targetOrigins: [...new Set([...origin, ...extraOrigins, ...(origin.length || extraOrigins.length ? [] : ['about:blank'])])], pageIds: [pageId], readRegions: null });
+      targetOrigins: [...new Set([...origin, ...extraOrigins, ...(origin.length || extraOrigins.length ? [] : ['about:blank'])])], pageIds: [pageId], readRegions });
     return this.owner(id);
   }
   async navigate(id, { pageId, url }) {
@@ -130,17 +136,27 @@ export class WorkspaceController {
       kind: 'navigate', target: { url: target.href }, observationVersion: observation.observationVersion });
     return admitted.result;
   }
-  async capture(id, { pageId, regions = [], artifactId, expectedRevision = 0 }, owner = null, onObservation = null) {
-    const identity = owner ?? await this.humanPage(id, pageId);
-    const observation = await this.service.observe({ ...identity, pageId, ...(regions.length ? { regions } : {}) });
-    onObservation?.(observation);
-    const content = observation.text;
-    const source = { kind: 'page', pageId, url: observation.url, observationVersion: observation.observationVersion,
-      capturedAt: new Date().toISOString(), regions: observation.readScope?.regions ?? null, content, sha256: sha256Hex(content) };
+  async capture(id, { pageId, regions = [], compositorRegion, sinceVersion, artifactId, expectedRevision = 0 }, owner = null, onObservation = null) {
     const previous = artifactId ? this.store.get(id).artifacts[artifactId] : null;
-    if (artifactId && (previous?.source?.kind !== 'page' || previous.source.pageId !== pageId)) throw Error('Source identity does not match this page');
+    const previousSelector = previous?.source?.compositor?.selector;
+    if (artifactId && (previous?.source?.kind !== 'page' || previous.source.pageId !== pageId
+      || (compositorRegion && previousSelector !== compositorRegion))) throw Error('Source identity does not match this page or surface');
+    const selector = compositorRegion ?? previousSelector;
+    const selected = selector ? [...new Set([...regions, selector])] : regions;
+    const identity = owner ?? await this.humanPage(id, pageId, [], selector ? selected : null);
+    const observation = await this.service.observe({ ...identity, pageId, ...(selected.length ? { regions: selected } : {}),
+      ...(selector ? { compositorRegion: selector, sinceVersion: sinceVersion ?? previous?.source?.observationVersion } : {}) });
+    onObservation?.(observation);
+    const frame = observation.frameEvidence?.[selector];
+    if (selector && !frame) throw Error('Browser supplied no evidence for the selected surface');
+    const content = frame ? JSON.stringify({ text: observation.text, selector, regionDigest: observation.regions[selector],
+      width: frame.width, height: frame.height, transport: frame.transport }) : observation.text;
+    const source = { kind: 'page', pageId, url: observation.url, observationVersion: observation.observationVersion,
+      capturedAt: new Date().toISOString(), regions: observation.readScope?.regions ?? null, content, sha256: sha256Hex(content),
+      ...(frame ? { compositor: { selector, ...frame }, visualChanges: observation.visualChanges?.[selector] } : {}) };
     if (previous && observation.url === 'about:blank') throw Error('Reopen the source page before refreshing its evidence');
-    if (previous?.source.sha256 === source.sha256 && previous.source.url === source.url) return previous;
+    if (previous?.source.sha256 === source.sha256 && previous.source.url === source.url
+      && (!frame || previous.source.compositor?.surfaceId === frame.surfaceId)) return previous;
     return this.store.revise(id, { id: artifactId, expectedRevision, kind: 'evidence', text: `Page evidence: ${observation.title || observation.url}`, source });
   }
   async readRepository(id, { path, artifactId, expectedRevision = 0 }) {
@@ -347,7 +363,9 @@ export class WorkspaceController {
       const pageId = input.pageId ?? pageIds[0];
       if (['observe', 'act', 'capture'].includes(tool) && !pageIds.includes(pageId)) throw Error('Page exceeds this delegation');
       if (tool === 'observe') {
-        const observation = await this.service.observe({ ...owner, pageId }); observations.set(pageId, observation); return plannerView(observation, pageId);
+        const observation = await this.service.observe({ ...owner, pageId, regions: input.regions, sinceVersion: input.sinceVersion,
+          ...(input.compositorRegion ? { compositorRegion: input.compositorRegion, regions: input.regions ?? [input.compositorRegion] } : {}) });
+        observations.set(pageId, observation); return plannerView(observation, pageId);
       }
       if (input.artifactId && !visibleArtifacts.has(input.artifactId)) throw Error('Source record was not shared with this task');
       if (tool === 'handoff_read') {
@@ -361,7 +379,7 @@ export class WorkspaceController {
         // Saving a page reads it again, which supersedes the observation the planner last saw. Keep the
         // newer one as current so the next action is not refused as stale; handles and digests are still
         // checked against it, so a page that changed in between is refused there instead.
-        const artifact = await this.capture(id, { ...input, pageId }, owner, observation => { if (!input.regions?.length) observations.set(pageId, observation); });
+        const artifact = await this.capture(id, { ...input, pageId }, owner, observation => { if (!input.regions?.length || observation.frameEvidence) observations.set(pageId, observation); });
         visibleArtifacts.add(artifact.id); return artifact;
       }
       if (tool === 'repository_files') return repositoryFiles(this.store.get(id).repositoryRoot, this.config.maxRepositoryFiles);

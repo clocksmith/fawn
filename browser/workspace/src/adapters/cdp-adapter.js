@@ -1,3 +1,4 @@
+import { snapshotCompositor } from './compositor-capture.js';
 import { createResidentCanvasReader } from './resident-canvas.js';
 import { pickRegion } from './region-picker.js';
 // Fawn workspace — narrow raw-CDP adapter over stock Chromium
@@ -254,7 +255,10 @@ class CdpWorkspaceAdapter {
     const { cdp } = this._entry(workspaceId);
     const args = snapshotArgs(this._config, read), pageId = read.pageId ?? 'main';
     let raw;
-    if (!read.verifyCanvas && this._config.observation.canvasBackend === 'webgpu' && (args.regions.length || args.regionGroups.length)) {
+    if (read.capture) {
+      const { sessionId } = this._entry({ workspaceId, pageId });
+      raw = await snapshotCompositor((method, params) => cdp.send(method, params, sessionId), args, read.capture);
+    } else if (!read.verifyCanvas && this._config.observation.canvasBackend === 'webgpu' && (args.regions.length || args.regionGroups.length)) {
       const page = this._workspaces.get(workspaceId).pages.get(pageId);
       const { frameTree } = await cdp.send('Page.getFrameTree', {}, page.sessionId);
       const scope = JSON.stringify([frameTree.frame.loaderId, read.ownerGeneration, args.readRoots]);

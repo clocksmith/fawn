@@ -48,6 +48,9 @@ function summarizeResidentOutcome({ elapsedMs, verified, ruleEvaluations, modelC
     modelSpendUsd: priced ? modelCalls.reduce((total, call) => total + call.usage.costUsd, 0) : null,
     canvasObservations: captures.length,
     cpuPixelReadBytes: captures.reduce((total, sample) => total + sample.cpuPixelReadBytes, 0),
+    frameHostCopyBytes: captures.reduce((total, sample) => total + (sample.frameHostCopyBytes ?? 0), 0),
+    logicalTextureWriteBytes: captures.reduce((total, sample) => total + (sample.externalTextureCopyBytes ?? 0), 0),
+    mappedTileReadbackBytes: captures.reduce((total, sample) => total + (sample.mappedReadbackBytes ?? 0), 0),
     gpuMaskReadbackBytes: captures.reduce((total, sample) => total + (sample.gpuMaskReadbackBytes ?? 0), 0),
   };
 }

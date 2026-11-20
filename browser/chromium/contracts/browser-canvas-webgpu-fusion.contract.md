@@ -77,9 +77,21 @@ stable output hashes, declared timing scopes, and no hidden fallback.
 
 Blitzen's optional WebGPU reader accepts two ready RGBA8 textures on the same
 device and returns a tile bitmask of at most 32 bytes. In stock Chrome the
-adapter copies each authorized canvas into a renderer-owned texture. Accepting
-a Fawn compositor surface still requires a browser-issued grant, document and
-surface revision, compatible format, ownership lifetime and producer fence.
+adapter copies each authorized canvas into a renderer-owned texture.
+The optional compositor input uses browser-mediated Element Capture in an
+isolated scripting world. After the browser acknowledges a self-tab restriction,
+Blitzen holds a compositor-produced VideoFrame through GPU submission and
+completion. Its external-texture transport imports the frame and writes a
+canonical RGBA8 texture. An explicitly selected WebCodecs upload control copies
+RGBA through host memory. The receipt identifies the transport. Verify actual
+shared-image backing, fences, copies, and selected backend on the target Fawn
+build before claiming zero-copy execution. In the pinned Chromium patch,
+`AssociateMailboxForDoe` may use a native shared image or select Skia staging.
+The backend's device fence and the final GPU queue completion serve different
+roles. A successful JavaScript API call cannot establish which native path ran.
+[Chromium frame-sink capture](https://chromium.googlesource.com/chromium/src/+/4a6fb38567da21dc86f8ba468ac0ca9002f4f606/services/viz/privileged/mojom/compositing/frame_sink_video_capture.mojom)
+and [Blink external-texture lifetime](https://chromium.googlesource.com/chromium/src/+/4a6fb38567da21dc86f8ba468ac0ca9002f4f606/third_party/blink/renderer/modules/webgpu/gpu_external_texture.cc)
+describe the two boundaries at the pinned revision.
 
 Compare stock Chromium/Dawn, stock with a native helper, Fawn/Dawn and forced
 Fawn/Doe on the same permitted observations, planner, actions and journal.

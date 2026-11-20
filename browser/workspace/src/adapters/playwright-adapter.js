@@ -1,3 +1,4 @@
+import { snapshotCompositor } from './compositor-capture.js';
 import { createResidentCanvasReader } from './resident-canvas.js';
 import { pickRegion } from './region-picker.js';
 // Fawn workspace — narrow Playwright adapter over stock Chromium
@@ -23,6 +24,7 @@ class PlaywrightWorkspaceAdapter {
     this._artifactRoot = artifactRoot;
     this._workspaces = new Map();
     this._canvasReaders = new WeakMap();
+    this._surfaceSessions = new WeakMap();
   }
 
   async openWorkspace(workspaceId, { pages = [] } = {}) {
@@ -66,6 +68,15 @@ class PlaywrightWorkspaceAdapter {
 
   async snapshot(workspaceId, read = {}) {
     const page = this._page(workspaceId, read.pageId), args = snapshotArgs(this._config, read);
+    if (read.capture) {
+      let session = this._surfaceSessions.get(page);
+      if (!session) {
+        session = await page.context().newCDPSession(page);
+        this._surfaceSessions.set(page, session);
+      }
+      const raw = await snapshotCompositor((method, params) => session.send(method, params), args, read.capture);
+      return buildSnapshot(raw, this._workspaces.get(workspaceId).context.pages().length);
+    }
     if (!read.verifyCanvas && this._config.observation.canvasBackend === 'webgpu' && (args.regions.length || args.regionGroups.length)) {
       const scope = JSON.stringify([read.ownerGeneration, args.readRoots]);
       let entry = this._canvasReaders.get(page);

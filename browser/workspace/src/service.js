@@ -84,11 +84,36 @@ function validateObservationRead(command, config) {
   if (read.sinceVersion !== undefined && !Number.isInteger(read.sinceVersion)) {
     throw workspaceError(REJECTION_CODES.INVALID_COMMAND, 'sinceVersion: expected integer', { path: 'sinceVersion' });
   }
+  if (command.compositorRegion !== undefined && (!command.regions?.includes(command.compositorRegion)
+      || typeof command.compositorRegion !== 'string' || command.regionGroups?.length)) {
+    throw workspaceError(REJECTION_CODES.INVALID_COMMAND, 'Name one requested region for compositor capture');
+  }
   return read;
+}
+
+function compositorRequest(workspace, permission, selector, url, config, now, verify) {
+  if (!selector) return null;
+  if (!config.observation.compositorCapture || config.browser.headless) {
+    throw workspaceError(REJECTION_CODES.INVALID_CONFIG, 'Compositor capture requires an enabled browser with a visible permission chooser');
+  }
+  if (!workspace.scopedReads || !permission?.readRegions?.includes(selector)
+    || !permission.targetOrigins.includes(new URL(url).origin)) {
+    throw workspaceError(REJECTION_CODES.UNAUTHORIZED_TARGET, 'Compositor capture needs a grant naming the selected element and origin');
+  }
+  const expires = permission.expiresAt ? Date.parse(permission.expiresAt) - now : Infinity;
+  return { selector, origin: new URL(url).origin, ownerGeneration: workspace.ownerGeneration,
+    grantId: permission.grantId, grantRevision: permission.grantRevision,
+    readRoots: permission.readRegions, verify, transport: config.observation.compositorTransport ?? 'rgba-upload',
+    timeoutMs: Math.max(1, Math.min(config.dispatch.actionTimeoutMs - 100, expires)) };
 }
 
 function observationBase(workspace, recorded, sinceVersion) {
   const previous = workspace.observations.get(sinceVersion);
+  for (const [selector, frame] of Object.entries(recorded.frameEvidence ?? {})) {
+    const prior = previous?.frameEvidence?.[selector];
+    if (!prior || prior.loaderId !== frame.loaderId || prior.surfaceId !== frame.surfaceId
+      || prior.grantRevision !== frame.grantRevision || prior.transport !== frame.transport) return null;
+  }
   return previous && previous.url === recorded.url && previous.ownerGeneration === recorded.ownerGeneration
     && (previous.pageId ?? MAIN_PAGE) === (recorded.pageId ?? MAIN_PAGE) ? previous : null;
 }
@@ -129,6 +154,7 @@ function outlineView(workspace, recorded, snapshot, sinceVersion) {
     baseVersion: base ? sinceVersion : null,
     regions,
     regionGroups: snapshot.regionGroups ?? {},
+    ...(recorded.frameEvidence ? { frameEvidence: recorded.frameEvidence } : {}),
     boundary: { isAtomic: false },
   };
 }
@@ -331,6 +357,7 @@ class WorkspaceService {
       ...(passwordTargets.length ? { passwordTargets } : {}),
       handles,
       regions: snapshot.regionDigests,
+      ...(Object.keys(snapshot.frameEvidence ?? {}).length ? { frameEvidence: snapshot.frameEvidence } : {}),
       ...(Object.keys(snapshot.regionBitmaps ?? {}).length ? { regionBitmaps: snapshot.regionBitmaps } : {}),
     });
     const { regionBitmaps, ...observation } = workspace.observation;
@@ -490,6 +517,8 @@ class WorkspaceService {
       const read = scopedRead(workspace, command, url, requested, this.#config, this.#nowMs());
       const snapshot = await this.#snapshot(command.workspaceId, {
         ...read, outline: read.view === OUTLINE_VIEW,
+        capture: command.compositorRegion ? compositorRequest(workspace, readGrant(workspace, command, url, this.#nowMs()),
+          command.compositorRegion, url, this.#config, this.#nowMs(), false) : null,
       }, pageId);
       readGrant(workspace, command, snapshot.url, this.#nowMs());
       const recorded = this.#recordObservation(workspace, snapshot, 'observe', pageId);
@@ -562,10 +591,24 @@ class WorkspaceService {
     const request = action.request;
     checkDispatchAuthority(pageView(workspace, request.pageId), request, this.#nowMs());
     const scope = request.observationScope;
-    const regions = scope?.kind === REGIONS_SCOPE ? scope.selectors : [];
     const current = pageView(workspace, request.pageId);
-    const permission = readGrant(workspace, request, await this.#probe(workspaceId, request.pageId).url(), this.#nowMs());
-    const snapshot = await this.#snapshot(workspaceId, { regions, verifyCanvas: true, readRoots: permission?.readRegions ?? null }, request.pageId);
+    const url = await this.#probe(workspaceId, request.pageId).url();
+    const permission = readGrant(workspace, request, url, this.#nowMs());
+    const cited = current.observations.get(request.observationVersion);
+    const captured = Object.keys(cited?.frameEvidence ?? {});
+    const selected = captured[0];
+    const regions = scope?.kind === REGIONS_SCOPE ? scope.selectors : captured;
+    const earlier = cited?.frameEvidence?.[selected];
+    if (selected && earlier.grantRevision !== permission?.grantRevision) {
+      throw workspaceError(REJECTION_CODES.STALE_OBSERVATION, 'The selected surface grant changed before dispatch');
+    }
+    const capture = compositorRequest(workspace, permission, selected, url, this.#config, this.#nowMs(), true);
+    const snapshot = await this.#snapshot(workspaceId, { regions, verifyCanvas: true, capture,
+      readRoots: permission?.readRegions ?? null }, request.pageId);
+    const latest = snapshot.frameEvidence?.[selected];
+    if (selected && (earlier.loaderId !== latest?.loaderId || earlier.surfaceId !== latest?.surfaceId)) {
+      throw workspaceError(REJECTION_CODES.STALE_OBSERVATION, 'The captured surface changed before dispatch');
+    }
     readGrant(workspace, request, snapshot.url, this.#nowMs());
     if (snapshot.contentHash !== current.observation?.contentHash || snapshot.url !== current.observation?.url) {
       this.#recordObservation(workspace, snapshot, 'page-change', request.pageId);

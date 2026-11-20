@@ -128,6 +128,29 @@ The contract's semantic names map to these concrete rules.
   changed or translucent tiles need fresh CPU pixel reads. At action dispatch
   the service independently reads the scoped pixels again on CPU. CSS overlays
   and other compositor layers fall outside this canvas-bitmap observation.
+- **Composited element evidence.** An administrator can enable
+  `observation.compositorCapture` on a visible Chromium browser. Call
+  `observe({ regions: ['#surface'], compositorRegion: '#surface', sinceVersion })`
+  on a scoped workspace with a live grant naming that canvas and origin. The
+  user selects the current tab in Chromium's sharing chooser. The service
+  attaches its frame reader only after the browser confirms element restriction.
+  Rendering includes the target's CSS. Occluding sibling elements are excluded.
+  The stream and its frame close after each sample. A new sample, including
+  action revalidation, opens the browser's chooser again. Denial, timeout and
+  unsupported layouts stop the sample. `frameEvidence` records the selected
+  surface ID, document loader, grant revision, media timestamp and captured
+  dimensions. Rectangles in this mode use captured-frame pixels.
+  `observation.compositorTransport` selects `external-texture` (direct WebGPU
+  import) or the default `rgba-upload` (WebCodecs RGBA read into host memory
+  and upload). The investigation client's `capture` accepts the same
+  `compositorRegion`, saves a digest-bound evidence record, and reuses its
+  selected region when refreshing that record. A changed rendered surface can
+  therefore revise the evidence while the page text stays identical.
+  Transport failures stop the observation. A region-scoped action citing this
+  evidence recaptures the surface, reads every canonical pixel and refuses a
+  new document, replacement element, revised grant or changed digest. An
+  application revision check can still cover the interval between revalidation
+  and an external write.
   A region-scoped action can bind the digest to detect a repaint. Applications
   with interchangeable cells also need a stable entity and revision at dispatch.
   Targetable elements are links, buttons, inputs, selects, textareas and elements
@@ -376,6 +399,23 @@ frozen browser and rejects these overrides; no profile is silently ignored.
 Schema 3 stock-browser configurations remain readable. To select a Fawn build,
 start with the schema 4 canonical config; protocol 3 and existing journal records
 are unchanged. Existing stock-browser evidence retains its recorded scope.
+
+For the selected compositor surface check, run the following from
+`browser/workspace` in a disposable, visible browser session. Select the
+current **Blitzen ephemeral compositor fixture** tab when prompted. Choose
+`rgba-upload` or `external-texture` explicitly. To exercise a pinned Fawn
+executable, set `BLITZEN_TEST_BROWSER_CONFIG` to its browser profile.
+
+```bash
+BLITZEN_TEST_ELEMENT_CAPTURE=1 BLITZEN_TEST_COMPOSITOR_TRANSPORT=external-texture \
+  node test/browser/compositor-canvas.test.js
+```
+
+`BLITZEN_COMPOSITOR_RECEIPT_PREFIX` optionally writes a new JSON receipt for
+each adapter. Each includes actual planner-call count and reported model spend,
+along with explicit host-copy, GPU tile-mask and padded tile-readback bytes.
+A software Vulkan run checks behavior. Native backend selection and transfer
+ownership still require the corresponding Chromium lane identity and trace.
 
 For the focused dispatcher-to-GPU development control, run:
 

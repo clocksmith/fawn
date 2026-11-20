@@ -75,6 +75,12 @@ function validateServiceConfig(config, { platform = process.platform } = {}) {
       throw invalid(field, 'plain file name', value);
     }
   }
+  if (config.observation.compositorTransport !== undefined && !['external-texture', 'rgba-upload'].includes(config.observation.compositorTransport)) {
+    throw invalid('observation.compositorTransport', 'external-texture or rgba-upload', config.observation.compositorTransport);
+  }
+  if (config.observation.compositorCapture !== undefined && typeof config.observation.compositorCapture !== 'boolean') {
+    throw invalid('observation.compositorCapture', 'boolean', config.observation.compositorCapture);
+  }
   if (config.observation.canvasBackend !== undefined && !['cpu', 'webgpu'].includes(config.observation.canvasBackend)) {
     throw invalid('observation.canvasBackend', 'cpu or webgpu', config.observation.canvasBackend);
   }

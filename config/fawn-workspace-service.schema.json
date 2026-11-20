@@ -60,7 +60,9 @@
         "maxTextChars": { "type": "integer", "minimum": 1 },
         "maxElements": { "type": "integer", "minimum": 1 },
         "maxRegions": { "type": "integer", "minimum": 1 },
-        "canvasBackend": { "enum": ["cpu", "webgpu"] }
+        "canvasBackend": { "enum": ["cpu", "webgpu"] },
+        "compositorCapture": { "type": "boolean" },
+        "compositorTransport": { "enum": ["external-texture", "rgba-upload"] }
       }
     },
     "dispatch": {

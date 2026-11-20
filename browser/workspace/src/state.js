@@ -75,7 +75,7 @@ const REDUCERS = Object.freeze({
   },
   [RECORD_TYPES.AUTHORIZATION_GRANTED]: (state, body, record) => {
     const workspace = requireWorkspace(state, body.workspaceId, record);
-    workspace.grants.set(body.grantId, { ...body.grant, grantId: body.grantId });
+    workspace.grants.set(body.grantId, { ...body.grant, grantId: body.grantId, grantRevision: record.seq });
   },
   [RECORD_TYPES.AUTHORIZATION_REVOKED]: (state, body, record) => {
     requireWorkspace(state, body.workspaceId, record).grants.delete(body.grantId);

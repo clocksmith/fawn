@@ -272,6 +272,11 @@ function checkObservation(workspace, command, nowMs, live = null) {
     reject(REJECTION_CODES.EXPIRED_OBSERVATION, `observation ${version} expired`, { expiresAt: cited.expiresAt });
   }
   const scope = command.observationScope ?? PAGE_SCOPE;
+  const captured = Object.keys(cited.frameEvidence ?? {});
+  if (scope.kind === REGIONS_SCOPE && captured.some(selector => !scope.selectors.includes(selector))) {
+    reject(REJECTION_CODES.STALE_OBSERVATION, 'A regional action using compositor evidence must bind the selected surface');
+  }
+  if (captured.length && scope.kind !== REGIONS_SCOPE) checkRegions(workspace, cited, { selectors: captured }, live);
   if (scope.kind === REGIONS_SCOPE) {
     checkRegions(workspace, cited, scope, live);
   } else if (version !== workspace.observationVersion) {

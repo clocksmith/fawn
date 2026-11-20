@@ -10,7 +10,7 @@ const ELEMENT_MODE = 'element';
 const ELEMENT_TEXT_CHARS = 200;
 
 // Runs inside the page; must stay self-contained.
-async function queryPage({ mode, selector, maxElements, maxTextChars, elementTextChars, regions = [], regionGroups = [], outline = false, readRoots = null, canvasReader = null }) {
+async function queryPage({ mode, selector, maxElements, maxTextChars, elementTextChars, regions = [], regionGroups = [], outline = false, readRoots = null, canvasReader = null, captureSelector = null, captureFrame = null }) {
   // A typed password never leaves the page: observations, evidence and digests see only whether
   // the field is filled. A person enters credentials; agents and journals do not read them.
   const controlValue = (node) => node.tagName === 'INPUT' && node.type === 'password' ? (node.value ? '[hidden]' : '') : String(node.value);
@@ -258,6 +258,9 @@ async function queryPage({ mode, selector, maxElements, maxTextChars, elementTex
       return { ...description, bitmap: null };
     }
     remainingCanvasPixels -= pixels;
+    if (captureFrame && description.selector === captureSelector) {
+      return { ...description, ...await captureFrame(region) };
+    }
     try {
       const surface = new OffscreenCanvas(width, height);
       const readResident = residentReader;
@@ -406,6 +409,8 @@ function buildSnapshot(raw, pageCount) {
       ...(elements.some(element => element.actionability) ? {
         actionability: elements.map(element => [element.selector, element.actionability ?? null]),
       } : {}) })),
+    frameEvidence: Object.fromEntries((raw.regions ?? []).filter(region => region.frame)
+      .map(region => [region.selector, region.frame])),
     regionDigests: Object.fromEntries((raw.regions ?? []).map((region) => [region.selector, regionDigest(region)])),
     regionBitmapMetrics: Object.fromEntries((raw.regions ?? []).filter(region => region.bitmapMetrics)
       .map(region => [region.selector, region.bitmapMetrics])),

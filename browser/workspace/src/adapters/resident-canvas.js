@@ -2,7 +2,7 @@
 // function. Navigation discards its device, previous texture and tile hashes.
 export function createResidentCanvasReader() {
   let device, previous, busy = false, disposed = false;
-  const pipelines = new WeakMap();
+  const pipelines = new WeakMap(), framePipelines = new WeakMap();
   const shader = `
     @group(0) @binding(0) var earlier: texture_2d<f32>;
     @group(0) @binding(1) var current: texture_2d<f32>;
@@ -70,11 +70,37 @@ export function createResidentCanvasReader() {
       return new Uint32Array(read.getMappedRange().slice(0));
     } finally { dirty?.destroy(); read?.destroy(); parameters?.destroy(); }
   }
-  async function read(region, surface, tileSize, hashTiles) {
+  async function importFrame(gpu, frame, texture) {
+    let pipe = framePipelines.get(gpu);
+    if (!pipe) {
+      const code = `
+        @group(0) @binding(0) var src: texture_external;
+        @group(0) @binding(1) var dest: texture_storage_2d<rgba8unorm, write>;
+        @compute @workgroup_size(8, 8)
+        fn main(@builtin(global_invocation_id) id: vec3u) {
+          if (all(id.xy < textureDimensions(dest))) {
+            textureStore(dest, id.xy, textureLoad(src, vec2i(id.xy)));
+          }
+        }`;
+      pipe = await gpu.createComputePipelineAsync({ layout: 'auto',
+        compute: { module: gpu.createShaderModule({ code }), entryPoint: 'main' } });
+      framePipelines.set(gpu, pipe);
+    }
+    const src = gpu.importExternalTexture({ source: frame, colorSpace: 'srgb' });
+    const encoder = gpu.createCommandEncoder();
+    const pass = encoder.beginComputePass();
+    pass.setPipeline(pipe);
+    pass.setBindGroup(0, gpu.createBindGroup({ layout: pipe.getBindGroupLayout(0), entries: [
+      { binding: 0, resource: src }, { binding: 1, resource: texture.createView() },
+    ] }));
+    pass.dispatchWorkgroups(Math.ceil(texture.width / 8), Math.ceil(texture.height / 8));
+    pass.end();
+    gpu.queue.submit([encoder.finish()]);
+  }
+  async function read(region, surface, tileSize, hashTiles, width, height, fullRead = false, frameTransport = null) {
     await prepare();
     const gpu = device;
-    const { width, height } = surface;
-    const base = previous?.region === region && previous.width === width && previous.height === height
+    const base = !fullRead && previous?.region === region && previous.width === width && previous.height === height
       && previous.tileSize === tileSize ? previous : null;
     let texture, errorScopesOpen = true;
     gpu.pushErrorScope('out-of-memory');
@@ -85,30 +111,93 @@ export function createResidentCanvasReader() {
     }
     try {
       texture = gpu.createTexture({ size: [width, height], format: 'rgba8unorm',
-        usage: GPUTextureUsage.COPY_DST | GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.RENDER_ATTACHMENT });
-      gpu.queue.copyExternalImageToTexture({ source: surface },
+        usage: GPUTextureUsage.COPY_DST | GPUTextureUsage.COPY_SRC | GPUTextureUsage.TEXTURE_BINDING
+          | GPUTextureUsage.RENDER_ATTACHMENT | (frameTransport === 'external-texture' ? GPUTextureUsage.STORAGE_BINDING : 0) });
+      if (frameTransport === 'rgba-upload') {
+        const rect = surface.visibleRect;
+        if (rect.width !== width || rect.height !== height || surface.rotation || surface.flip) {
+          throw Error('Explicit RGBA upload requires an unrotated frame at native scale');
+        }
+        const bytes = new Uint8Array(width * height * 4);
+        await surface.copyTo(bytes, { rect, format: 'RGBA', colorSpace: 'srgb', layout: [{ offset: 0, stride: width * 4 }] });
+        gpu.queue.writeTexture({ texture }, bytes, { bytesPerRow: width * 4 }, [width, height]);
+      } else if (frameTransport === 'external-texture') await importFrame(gpu, surface, texture);
+      else gpu.queue.copyExternalImageToTexture({ source: surface },
         { texture, colorSpace: 'srgb', premultipliedAlpha: false }, [width, height]);
       const dirty = base ? await compareTextures(gpu, base.texture, texture, tileSize) : null;
       if (!dirty) await gpu.queue.onSubmittedWorkDone();
+      const result = await hashTiles(dirty, base?.hashes, gpu, texture);
       const [validation, memory] = await collectErrors();
       if (validation || memory || gpu !== device) throw Error(validation?.message ?? memory?.message ?? 'Canvas GPU device lost');
-      const result = await hashTiles(dirty, base?.hashes);
       if (gpu !== device || disposed) throw Error('Canvas reader scope ended');
       previous?.texture.destroy();
       previous = { region, width, height, tileSize, texture, hashes: result.hashes };
       texture = null;
-      return { ...result, gpuMaskReadbackBytes: dirty?.byteLength ?? 0, comparedOnGpu: Boolean(dirty) };
+      return { ...result, frameHostCopyBytes: frameTransport === 'rgba-upload' ? width * height * 4 : 0, externalTextureCopyBytes: width * height * 4, gpuMaskReadbackBytes: dirty?.byteLength ?? 0, comparedOnGpu: Boolean(dirty) };
     } finally {
+      // The compositor releases its VideoFrame immediately upon return. Even a
+      // later validation failure must wait for work already submitted with it.
+      if (frameTransport === 'external-texture') await gpu.queue.onSubmittedWorkDone().catch(() => {});
       texture?.destroy();
-      if (errorScopesOpen) await collectErrors();
+      if (errorScopesOpen) await collectErrors().catch(() => {});
     }
   }
   // The texture-producing browser owns authorization, device selection and the
   // producer fence. Both textures must already be ready on this device/queue.
-  async function observe(...args) {
+  async function lockedRead(...args) {
     if (busy || disposed) throw Error('Canvas reader unavailable');
     busy = true;
     try { return await read(...args); } finally { busy = false; }
+  }
+  function observe(region, surface, tileSize, hashTiles) {
+    return lockedRead(region, surface, tileSize, hashTiles, surface.width, surface.height);
+  }
+  // A VideoFrame returned by Chromium Element Capture is already restricted by
+  // the browser. Its owner keeps it alive until the GPU transfer has completed.
+  async function readFrame(region, frame, fullRead, transport) {
+    const width = frame.displayWidth, height = frame.displayHeight;
+    if (!width || !height || width * height > 4 * 1024 * 1024) throw Error('Capture exceeds pixel budget');
+    let tileSize = 64;
+    while (Math.ceil(width / tileSize) * Math.ceil(height / tileSize) > 256) tileSize *= 2;
+    async function hashTexture(dirty, previousHashes, gpu, texture) {
+      const copies = [];
+      const hashes = previousHashes ? [...previousHashes] : [];
+      let bufferSize = 0, tilePixelReadbackBytes = 0, index = 0;
+      for (let y = 0; y < height; y += tileSize) {
+        for (let x = 0; x < width; x += tileSize, index++) {
+          if (dirty && !(dirty[index >>> 5] & (1 << (index % 32)))) continue;
+          const w = Math.min(tileSize, width - x), h = Math.min(tileSize, height - y);
+          const stride = Math.ceil(w * 4 / 256) * 256;
+          copies.push({ x, y, w, h, stride, offset: bufferSize, index });
+          tilePixelReadbackBytes += w * h * 4;
+          bufferSize += stride * h;
+        }
+      }
+      if (bufferSize > 32 * 1024 * 1024) throw Error('Padded tile readback exceeds 32 MiB');
+      if (bufferSize) {
+        const buffer = gpu.createBuffer({ size: bufferSize, usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ });
+        try {
+          const encoder = gpu.createCommandEncoder();
+          for (const t of copies) encoder.copyTextureToBuffer({ texture, origin: [t.x, t.y] },
+            { buffer, offset: t.offset, bytesPerRow: t.stride }, [t.w, t.h]);
+          gpu.queue.submit([encoder.finish()]);
+          await buffer.mapAsync(GPUMapMode.READ);
+          const bytes = new Uint8Array(buffer.getMappedRange());
+          await Promise.all(copies.map(async t => {
+            const packed = new Uint8Array(t.w * t.h * 4);
+            for (let row = 0; row < t.h; row++) {
+              const start = t.offset + row * t.stride;
+              packed.set(bytes.subarray(start, start + t.w * 4), row * t.w * 4);
+            }
+            const hash = await crypto.subtle.digest('SHA-256', packed);
+            hashes[t.index] = Array.from(new Uint8Array(hash), b => b.toString(16).padStart(2, '0')).join('');
+          }));
+        } finally { buffer.destroy(); }
+      }
+      return { hashes, cpuPixelReadBytes: 0, tilePixelReadbackBytes, mappedReadbackBytes: bufferSize };
+    }
+    const result = await lockedRead(region, frame, tileSize, hashTexture, width, height, fullRead, transport);
+    return { width, height, tileSize, ...result };
   }
   function dispose() {
     disposed = true;
@@ -117,5 +206,5 @@ export function createResidentCanvasReader() {
     device?.destroy();
     device = null;
   }
-  return Object.assign(observe, { compareTextures, dispose });
+  return Object.assign(observe, { compareTextures, readFrame, dispose });
 }
