@@ -1,0 +1,99 @@
+{
+  "schema": "blitzen.same-frame-color/v1",
+  "browser": {
+    "protocolVersion": "1.3",
+    "product": "Chrome/158.0.8108.0",
+    "revision": "@0000000000000000000000000000000000000000",
+    "userAgent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/158.0.0.0 Safari/537.36",
+    "jsVersion": "15.8.17"
+  },
+  "adapter": {
+    "vendor": "google",
+    "architecture": "swiftshader",
+    "device": "",
+    "description": "",
+    "isFallbackAdapter": true
+  },
+  "rows": [
+    {
+      "nativeUniformPlanes": [
+        40,
+        115,
+        176
+      ],
+      "planeSerial": null,
+      "repeatSerial": null,
+      "cloneSerial": null,
+      "sourceRgb": [
+        113,
+        5,
+        0
+      ],
+      "nativeFormat": "I420",
+      "nativePlaneSha256": "ca0ad07b834f4fb6eaabf397e6f1cff3be20ee080e568c28ca6b89c37cfbc080",
+      "colorSpace": {
+        "fullRange": false,
+        "matrix": "bt709",
+        "primaries": "bt709",
+        "transfer": "bt709"
+      },
+      "width": 512,
+      "height": 256,
+      "mediaTimestampUs": 173768652100,
+      "canonicalRgba": [
+        114,
+        5,
+        2,
+        255
+      ],
+      "canonicalSha256": "6e8d9f4feb9ccc6bce5b045558fb211ec21826c5bdf364ab8afd166bdee2f7d0",
+      "tileCount": 32,
+      "canonicalTileSha256": "d2ae2a5dba2bf3cc40928b497a782a16fcc8090a77f2afeda937edacf7a8e3ba",
+      "externalTileSha256": [
+        "6b91861d5515d91568a35f6f1b2672ad4f4ebf19fa4bcdb0d3d733cffb537b90"
+      ],
+      "externalRehashed": 32,
+      "explicitRehashed": 32
+    },
+    {
+      "nativeUniformPlanes": [
+        40,
+        114,
+        176
+      ],
+      "planeSerial": null,
+      "repeatSerial": null,
+      "cloneSerial": null,
+      "sourceRgb": [
+        114,
+        6,
+        0
+      ],
+      "nativeFormat": "I420",
+      "nativePlaneSha256": "ba85f2001b7755a4a8fd4911cdd148eb16b16615642e16679714fdcca94ee865",
+      "colorSpace": {
+        "fullRange": false,
+        "matrix": "bt709",
+        "primaries": "bt709",
+        "transfer": "bt709"
+      },
+      "width": 512,
+      "height": 256,
+      "mediaTimestampUs": 173769403400,
+      "canonicalRgba": [
+        114,
+        5,
+        0,
+        255
+      ],
+      "canonicalSha256": "1bc639f8788829db0fde2df67d2a9b869852cd10bdd930937e3c65b508339737",
+      "tileCount": 32,
+      "canonicalTileSha256": "6b91861d5515d91568a35f6f1b2672ad4f4ebf19fa4bcdb0d3d733cffb537b90",
+      "externalTileSha256": [
+        "6b91861d5515d91568a35f6f1b2672ad4f4ebf19fa4bcdb0d3d733cffb537b90"
+      ],
+      "externalRehashed": 0,
+      "explicitRehashed": 32
+    }
+  ]
+}

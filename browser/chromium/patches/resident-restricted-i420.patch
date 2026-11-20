@@ -1,0 +1,363 @@
+diff --git a/third_party/blink/renderer/modules/breakout_box/frame_queue_underlying_source.cc b/third_party/blink/renderer/modules/breakout_box/frame_queue_underlying_source.cc
+index d83aedf04613c619e2739d2c04d5a16668734b2e..fe8d955f1bee685dfce6d2bdaa6ff29c235f8ad4 100644
+--- a/third_party/blink/renderer/modules/breakout_box/frame_queue_underlying_source.cc
++++ b/third_party/blink/renderer/modules/breakout_box/frame_queue_underlying_source.cc
+@@ -182,6 +182,9 @@ void FrameQueueUnderlyingSource<NativeFrameType>::Close() {
+     return;
+ 
+   is_closed_ = true;
++  if (restricted_plane_cache_)
++    restricted_plane_cache_->Retire();
++  restricted_plane_cache_.reset();
+   realm_thread_type_lease_ = std::nullopt;
+   if (GetExecutionContext()) {
+     StopFrameDelivery();
+@@ -617,6 +620,7 @@ FrameQueueUnderlyingSource<scoped_refptr<media::VideoFrame>>::MakeBlinkFrame(
+ 
+   auto* wrapper = MakeGarbageCollected<VideoFrame>(
+       std::move(media_frame), ec, device_id_, /*sk_image=*/nullptr, timestamp);
++  wrapper->restricted_plane_cache_ = restricted_plane_cache_;
+   wrapper->fawn_capture_component_ = fawn_component_;
+   wrapper->fawn_capture_world_ = fawn_world_;
+   return wrapper;
+diff --git a/third_party/blink/renderer/modules/breakout_box/frame_queue_underlying_source.h b/third_party/blink/renderer/modules/breakout_box/frame_queue_underlying_source.h
+index 4189df52a81503f75b53c737d1f92ddcbe45cc87..0528bf31a1a295465e1875ec13872f241c806217 100644
+--- a/third_party/blink/renderer/modules/breakout_box/frame_queue_underlying_source.h
++++ b/third_party/blink/renderer/modules/breakout_box/frame_queue_underlying_source.h
+@@ -5,6 +5,7 @@
+ #ifndef THIRD_PARTY_BLINK_RENDERER_MODULES_BREAKOUT_BOX_FRAME_QUEUE_UNDERLYING_SOURCE_H_
+ #define THIRD_PARTY_BLINK_RENDERER_MODULES_BREAKOUT_BOX_FRAME_QUEUE_UNDERLYING_SOURCE_H_
+ 
++#include "third_party/blink/renderer/modules/webcodecs/fawn_restricted_plane_cache.h"
+ #include <optional>
+ 
+ #include "base/feature_list.h"
+@@ -63,6 +64,9 @@ class FrameQueueUnderlyingSource : public UnderlyingSourceBase {
+   virtual void Close();
+ 
+   // Private renderer attribution. Transferred queues use the default empty scope.
++  void SetFawnPlaneCache(scoped_refptr<FawnRestrictedPlaneCache> cache) {
++    restricted_plane_cache_ = std::move(cache);
++  }
+   void SetFawnCaptureSource(int component, int world) {
+     fawn_component_ = component;
+     fawn_world_ = world;
+@@ -177,6 +181,7 @@ class FrameQueueUnderlyingSource : public UnderlyingSourceBase {
+ 
+   void EnqueueBlinkFrame(ScriptWrappable* blink_frame) const;
+ 
++  scoped_refptr<FawnRestrictedPlaneCache> restricted_plane_cache_;
+   int fawn_component_ = 0;
+   int fawn_world_ = 0;
+   bool is_closed_ = false;
+diff --git a/third_party/blink/renderer/modules/breakout_box/media_stream_track_processor.cc b/third_party/blink/renderer/modules/breakout_box/media_stream_track_processor.cc
+index 57f3ff13121bf7d119cca1ecb5fc5de2d41a0800..a65905614e10b5b8747f43cb92bbf93cf45ed90f 100644
+--- a/third_party/blink/renderer/modules/breakout_box/media_stream_track_processor.cc
++++ b/third_party/blink/renderer/modules/breakout_box/media_stream_track_processor.cc
+@@ -5,6 +5,7 @@
+ #include "third_party/blink/renderer/modules/breakout_box/media_stream_track_processor.h"
+ 
+ #include "gpu/config/fawn_resident_provenance.h"
++#include "third_party/blink/renderer/platform/runtime_enabled_features.h"
+ #include "third_party/blink/renderer/modules/mediastream/browser_capture_media_stream_track.h"
+ #include "v8/include/v8-inspector.h"
+ #include "third_party/blink/public/mojom/use_counter/metrics/web_feature.mojom-blink.h"
+@@ -84,6 +85,12 @@ void MediaStreamTrackProcessor::CreateVideoSourceStream(
+   video_underlying_source_ =
+       MakeGarbageCollected<MediaStreamVideoTrackUnderlyingSource>(
+           script_state, input_track_->Component(), this, buffer_size_);
++  if (RuntimeEnabledFeatures::FawnRestrictedPlaneEvidenceEnabled() &&
++      script_state->World().IsIsolatedWorld() &&
++      input_track_->GetWrapperTypeInfo() == BrowserCaptureMediaStreamTrack::GetStaticWrapperTypeInfo()) {
++    video_underlying_source_->SetFawnPlaneCache(
++        static_cast<BrowserCaptureMediaStreamTrack*>(input_track_.Get())->RestrictedPlaneCache());
++  }
+   if (gpu::FawnResidentFrameProvenanceEnabled() &&
+       script_state->World().IsIsolatedWorld() &&
+       input_track_->GetWrapperTypeInfo() ==
+diff --git a/third_party/blink/renderer/modules/mediastream/browser_capture_media_stream_track.cc b/third_party/blink/renderer/modules/mediastream/browser_capture_media_stream_track.cc
+index 45a55d5dd7b581dd3a2b2a70aa293ae0df5f41ec..cd32208bf194e0dc7ff8c0c1cb2d7fb23cc4ee30 100644
+--- a/third_party/blink/renderer/modules/mediastream/browser_capture_media_stream_track.cc
++++ b/third_party/blink/renderer/modules/mediastream/browser_capture_media_stream_track.cc
+@@ -8,6 +8,7 @@
+ #include "third_party/blink/renderer/core/execution_context/execution_context.h"
+ #include "base/trace_event/trace_event.h"
+ #include "third_party/blink/renderer/platform/bindings/script_state.h"
++#include "third_party/blink/renderer/platform/runtime_enabled_features.h"
+ #include "v8/include/v8-inspector.h"
+ 
+ #include <optional>
+@@ -206,6 +207,14 @@ BrowserCaptureMediaStreamTrack::ApplySubCaptureTarget(
+   CHECK(type == SubCaptureTarget::Type::kCropTarget ||
+         type == SubCaptureTarget::Type::kRestrictionTarget);
+ 
++  // Even a failed or overlapping retarget must not reuse authority from the
++  // previous crop. A fresh successful restriction can create a new lease.
++  if (restricted_plane_cache_)
++    restricted_plane_cache_->Retire();
++  restricted_plane_cache_.reset();
++  pending_plane_version_.reset();
++  pending_plane_world_ = 0;
++
+   const String metric_name_prefix =
+       (type == SubCaptureTarget::Type::kCropTarget)
+           ? "Media.RegionCapture.CropTo"
+@@ -285,6 +294,14 @@ BrowserCaptureMediaStreamTrack::ApplySubCaptureTarget(
+       BindOnce(&BrowserCaptureMediaStreamTrack::OnCaptureVersionObserved,
+                WrapWeakPersistent(this), capture_version));
+ 
++  if (RuntimeEnabledFeatures::FawnRestrictedPlaneEvidenceEnabled() &&
++      script_state->World().IsIsolatedWorld() && type == SubCaptureTarget::Type::kRestrictionTarget &&
++      !token->is_zero() && device() && device()->serializable_session_id()) {
++    pending_plane_world_ = v8_inspector::V8ContextInfo::executionContextId(
++        script_state->GetContext());
++    pending_plane_version_ = capture_version;
++  }
++
+   if ((gpu::FawnResidentProvenanceEnabled() ||
+        gpu::FawnResidentFrameProvenanceEnabled()) &&
+       script_state->World().IsIsolatedWorld() &&
+@@ -377,6 +394,15 @@ void BrowserCaptureMediaStreamTrack::MaybeFinalizeSubCapturePromise(
+   ScriptPromiseResolverWithTracker<ApplySubCaptureTargetResult,
+                                    IDLUndefined>* const resolver =
+       info->promise_resolver;
++  if (pending_plane_version_ == iter->key) {
++    if (result == media::mojom::ApplySubCaptureTargetResult::kSuccess &&
++        info->capture_version_observed && pending_plane_world_ > 0) {
++      restricted_plane_cache_ = base::MakeRefCounted<FawnRestrictedPlaneCache>(
++          pending_plane_world_, iter->key);
++    }
++    pending_plane_version_.reset();
++    pending_plane_world_ = 0;
++  }
+   pending_promises_.erase(iter);
+   ResolveApplySubCaptureTargetPromiseHelper(resolver, result);
+ }
+diff --git a/third_party/blink/renderer/modules/mediastream/browser_capture_media_stream_track.h b/third_party/blink/renderer/modules/mediastream/browser_capture_media_stream_track.h
+index 231f1a6cdb790e2d6d5a69cc82dd90b5d93b9b68..da0300b104c4ac486a45f51fc155e273a0b7ec81 100644
+--- a/third_party/blink/renderer/modules/mediastream/browser_capture_media_stream_track.h
++++ b/third_party/blink/renderer/modules/mediastream/browser_capture_media_stream_track.h
+@@ -5,6 +5,7 @@
+ #ifndef THIRD_PARTY_BLINK_RENDERER_MODULES_MEDIASTREAM_BROWSER_CAPTURE_MEDIA_STREAM_TRACK_H_
+ #define THIRD_PARTY_BLINK_RENDERER_MODULES_MEDIASTREAM_BROWSER_CAPTURE_MEDIA_STREAM_TRACK_H_
+ 
++#include "third_party/blink/renderer/modules/webcodecs/fawn_restricted_plane_cache.h"
+ #include "base/unguessable_token.h"
+ #include "third_party/blink/renderer/bindings/core/v8/script_promise_resolver_with_tracker.h"
+ #include "third_party/blink/renderer/modules/mediastream/crop_target.h"
+@@ -51,6 +52,9 @@ class MODULES_EXPORT BrowserCaptureMediaStreamTrack
+ 
+   BrowserCaptureMediaStreamTrack* clone(ExecutionContext*) override;
+   MediaTrackSettings* getSettings() const override;
++  scoped_refptr<FawnRestrictedPlaneCache> RestrictedPlaneCache() const {
++    return restricted_plane_cache_;
++  }
+   bool HasResidentRestriction() const { return !resident_track_id_.is_empty(); }
+ 
+   // These values are persisted to logs. Entries should not be renumbered and
+@@ -140,6 +144,9 @@ class MODULES_EXPORT BrowserCaptureMediaStreamTrack
+   //
+   // Note that frames before the first call to cropTo() will be associated
+   // with a version of 0, both here and in Viz.
++  scoped_refptr<FawnRestrictedPlaneCache> restricted_plane_cache_;
++  std::optional<media::CaptureVersion> pending_plane_version_;
++  int pending_plane_world_ = 0;
+   base::UnguessableToken resident_track_id_;
+   SubCaptureVersionToPromiseInfoMap pending_promises_;
+ };
+diff --git a/third_party/blink/renderer/modules/webcodecs/fawn_restricted_plane_cache.h b/third_party/blink/renderer/modules/webcodecs/fawn_restricted_plane_cache.h
+new file mode 100644
+index 0000000000000000000000000000000000000000..4e89162b8f2b68393f7c028b6f49133d04d31e18
+--- /dev/null
++++ b/third_party/blink/renderer/modules/webcodecs/fawn_restricted_plane_cache.h
+@@ -0,0 +1,104 @@
++// Copyright 2026 The Chromium Authors
++// Use of this source code is governed by a BSD-style license that can be
++// found in the LICENSE file.
++#ifndef THIRD_PARTY_BLINK_RENDERER_MODULES_WEBCODECS_FAWN_RESTRICTED_PLANE_CACHE_H_
++#define THIRD_PARTY_BLINK_RENDERER_MODULES_WEBCODECS_FAWN_RESTRICTED_PLANE_CACHE_H_
++
++#include <algorithm>
++#include <array>
++#include <cstdint>
++#include <limits>
++#include "base/containers/heap_array.h"
++
++#include "base/memory/ref_counted.h"
++#include "media/base/video_frame.h"
++
++namespace blink {
++
++// One bounded, owned copy of the three native planes for a browser-confirmed
++// element restriction. All accesses occur on its renderer sequence. No capture
++// buffer stays checked out while the reader waits for another frame.
++class FawnRestrictedPlaneCache
++    : public base::RefCounted<FawnRestrictedPlaneCache> {
++ public:
++  FawnRestrictedPlaneCache(int world, media::CaptureVersion version)
++      : world_(world), version_(version) {}
++
++  void Retire() {
++    active_ = false;
++    baseline_ = {};
++  }
++
++  // Zero means the caller must do a canonical RGBA read. A nonzero serial
++  // may be reused only in the same reader and after its earlier canonical
++  // digest was actually accepted. A changed native byte is never ignored.
++  uint32_t Observe(int world, const media::VideoFrame& frame) {
++    if (!active_ || !world_ || world != world_ || version_.sub_capture == 0 ||
++        frame.metadata().capture.version != version_ ||
++        frame.format() != media::PIXEL_FORMAT_I420 ||
++        frame.storage_type() != media::VideoFrame::STORAGE_SHMEM ||
++        !frame.HasDirectCpuAccess() || frame.HasSharedImage() ||
++        frame.metadata().transformation.value_or(media::VideoTransformation()) !=
++            media::VideoTransformation() ||
++        frame.hdr_metadata() != gfx::HDRMetadata() ||
++        !frame.ColorSpace().IsValid() || frame.ColorSpace().IsHDR() ||
++        frame.visible_rect() != gfx::Rect(frame.coded_size()) ||
++        frame.natural_size() != frame.coded_size()) {
++      return 0;
++    }
++    const int w = frame.coded_size().width(), h = frame.coded_size().height();
++    if (w <= 0 || h <= 0 || (w & 1) || (h & 1) ||
++        static_cast<uint64_t>(w) * h > 4u * 1024u * 1024u)
++      return 0;
++
++    std::array<base::span<const uint8_t>, 3> planes;
++    size_t total = 0;
++    for (size_t i = 0; i < planes.size(); ++i) {
++      const size_t width = i == 0 ? w : w / 2;
++      const size_t length = width * (i == 0 ? h : h / 2);
++      auto data = frame.data_span(i);
++      if (frame.stride(i) != width || data.size() < length)
++        return 0;
++      planes[i] = data.first(length);
++      total += length;
++    }
++    bool same = baseline_.size() == total && size_ == frame.coded_size() &&
++                color_ == frame.ColorSpace();
++    size_t offset = 0;
++    for (auto plane : planes) {
++      if (same && !std::ranges::equal(plane, base::span(baseline_).subspan(offset, plane.size())))
++        same = false;
++      offset += plane.size();
++    }
++    if (same)
++      return serial_;
++    if (serial_ == std::numeric_limits<uint32_t>::max()) {
++      Retire();
++      return 0;
++    }
++    if (baseline_.size() != total)
++      baseline_ = base::HeapArray<uint8_t>::Uninit(total);
++    offset = 0;
++    for (auto plane : planes) {
++      base::span(baseline_).subspan(offset, plane.size()).copy_from(plane);
++      offset += plane.size();
++    }
++    size_ = frame.coded_size();
++    color_ = frame.ColorSpace();
++    return ++serial_;
++  }
++
++ private:
++  friend class base::RefCounted<FawnRestrictedPlaneCache>;
++  ~FawnRestrictedPlaneCache() = default;
++  const int world_;
++  const media::CaptureVersion version_;
++  bool active_ = true;
++  uint32_t serial_ = 0;
++  gfx::Size size_;
++  gfx::ColorSpace color_;
++  base::HeapArray<uint8_t> baseline_;
++};
++
++}  // namespace blink
++#endif  // THIRD_PARTY_BLINK_RENDERER_MODULES_WEBCODECS_FAWN_RESTRICTED_PLANE_CACHE_H_
+diff --git a/third_party/blink/renderer/modules/webcodecs/video_frame.cc b/third_party/blink/renderer/modules/webcodecs/video_frame.cc
+index 6bc42029b41907939a917428dcf684fd412bebd8..08862522338b8798fb1ada50acc32ba17da5b4da 100644
+--- a/third_party/blink/renderer/modules/webcodecs/video_frame.cc
++++ b/third_party/blink/renderer/modules/webcodecs/video_frame.cc
+@@ -28,6 +28,7 @@
+ #include "media/base/video_types.h"
+ #include "media/base/video_util.h"
+ #include "media/gfx/paint_canvas_video_renderer.h"
++#include "v8/include/v8-inspector.h"
+ #include "third_party/blink/public/mojom/frame/lifecycle.mojom-blink.h"
+ #include "third_party/blink/public/mojom/use_counter/metrics/web_feature.mojom-blink.h"
+ #include "third_party/blink/public/platform/platform.h"
+@@ -1255,6 +1256,16 @@ VideoFrameMetadata* VideoFrame::metadata(ExceptionState& exception_state) {
+   return metadata;
+ }
+ 
++uint32_t VideoFrame::fawnRestrictedPlaneVersion(ScriptState* state) const {
++  auto media_frame = frame();
++  if (!media_frame || !restricted_plane_cache_ ||
++      !state->World().IsIsolatedWorld() || !state->ContextIsValid())
++    return 0;
++  const int world = v8_inspector::V8ContextInfo::executionContextId(
++      state->GetContext());
++  return restricted_plane_cache_->Observe(world, *media_frame);
++}
++
+ uint32_t VideoFrame::allocationSize(VideoFrameCopyToOptions* options,
+                                     ExceptionState& exception_state) {
+   auto local_frame = handle_->frame();
+diff --git a/third_party/blink/renderer/modules/webcodecs/video_frame.h b/third_party/blink/renderer/modules/webcodecs/video_frame.h
+index ad491d28034986e783065e2e29ac4249a77097c5..054bd326cca3eb69463998810aac4bdc9787cbee 100644
+--- a/third_party/blink/renderer/modules/webcodecs/video_frame.h
++++ b/third_party/blink/renderer/modules/webcodecs/video_frame.h
+@@ -5,6 +5,7 @@
+ #ifndef THIRD_PARTY_BLINK_RENDERER_MODULES_WEBCODECS_VIDEO_FRAME_H_
+ #define THIRD_PARTY_BLINK_RENDERER_MODULES_WEBCODECS_VIDEO_FRAME_H_
+ 
++#include "third_party/blink/renderer/modules/webcodecs/fawn_restricted_plane_cache.h"
+ #include <stdint.h>
+ 
+ #include <optional>
+@@ -130,6 +131,7 @@ class MODULES_EXPORT VideoFrame final : public ScriptWrappable,
+ 
+   // Native-only, on this wrapper. Clones, transfers and script-created frames
+   // default to zero even when their underlying media::VideoFrame is shared.
++  uint32_t fawnRestrictedPlaneVersion(ScriptState*) const;
+   int FawnCaptureComponent() const { return fawn_capture_component_; }
+   int FawnCaptureWorld() const { return fawn_capture_world_; }
+ 
+@@ -174,6 +176,7 @@ class MODULES_EXPORT VideoFrame final : public ScriptWrappable,
+       ExceptionState&) override;
+ 
+   friend class FrameQueueUnderlyingSource<scoped_refptr<media::VideoFrame>>;
++  scoped_refptr<FawnRestrictedPlaneCache> restricted_plane_cache_;
+   int fawn_capture_component_ = 0;
+   int fawn_capture_world_ = 0;
+ 
+diff --git a/third_party/blink/renderer/modules/webcodecs/video_frame.idl b/third_party/blink/renderer/modules/webcodecs/video_frame.idl
+index 0a2fb443f47dea21448edf0b8f1e48b59e6f4db5..da2f6720aeefa7dcccac695444965a0816ade58d 100644
+--- a/third_party/blink/renderer/modules/webcodecs/video_frame.idl
++++ b/third_party/blink/renderer/modules/webcodecs/video_frame.idl
+@@ -68,5 +68,9 @@ typedef ([AllowShared] ArrayBuffer or [AllowShared] ArrayBufferView) AllowShared
+   // Creates a copy of this VideoFrame, which needs to be independently closed.
+   [RaisesException] VideoFrame clone();
+ 
++  // Diagnostic Fawn capability; page-created frames have no capture lease.
++  [CallWith=ScriptState, RuntimeEnabled=FawnRestrictedPlaneEvidence]
++  unsigned long fawnRestrictedPlaneVersion();
++
+   void close();
+ };
+diff --git a/third_party/blink/renderer/platform/runtime_enabled_features.json5 b/third_party/blink/renderer/platform/runtime_enabled_features.json5
+index 245236fc0a50e5f011f1eef05106b2e89e9d4654..bfcd48ddbbed648413692d2f19c683e9270c9e0e 100644
+--- a/third_party/blink/renderer/platform/runtime_enabled_features.json5
++++ b/third_party/blink/renderer/platform/runtime_enabled_features.json5
+@@ -3040,6 +3040,10 @@
+       public: true,
+       base_feature: "none",
+     },
++    {
++      name: "FawnRestrictedPlaneEvidence",
++      base_feature: "none",
++    },
+     {
+       name: "FedCmNavigationInterception",
+       depends_on: ["FedCm"],

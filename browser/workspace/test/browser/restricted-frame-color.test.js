@@ -22,7 +22,13 @@ let context;
 try {
   await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
   const { config } = testBrowserSelection(dir, { headless: false });
-  context = await chromium.launchPersistentContext(dir, { ...playwrightLaunchOptions(config.browser, false),
+  const requirePlanes = process.env.BLITZEN_TEST_FAWN_PLANE_EVIDENCE === '1';
+  const launch = playwrightLaunchOptions(config.browser, requirePlanes);
+  if (requirePlanes) {
+    assert.ok(config.browser.fawnBuild && launch.chromiumSandbox,'Pinned sandboxed Fawn required');
+    launch.args.push('--enable-blink-features=FawnRestrictedPlaneEvidence');
+  }
+  context = await chromium.launchPersistentContext(dir, { ...launch,
     headless: false, viewport: { width: 512, height: 520 }, deviceScaleFactor: 1 });
   const page = context.pages()[0];
   await page.goto('http://127.0.0.1:' + server.address().port);
@@ -34,6 +40,18 @@ try {
   if (read.exceptionDetails) throw Error(read.exceptionDetails.exception?.description ?? read.exceptionDetails.text);
   const result = read.result.value, [first, second] = result.rows;
   assert.ok(second.mediaTimestampUs > first.mediaTimestampUs);
+  if (requirePlanes) {
+    const mainWorld = await page.evaluate(() => {
+      const sample = new VideoFrame(document.querySelector('canvas'),{timestamp:0});
+      try { return sample.fawnRestrictedPlaneVersion(); } finally { sample.close(); }
+    });
+    assert.equal(mainWorld,0,'A page-created frame cannot claim the isolated reader');
+    for (const row of result.rows) {
+      assert.equal(row.cloneSerial,0,'A cloned frame cannot claim the original restricted wrapper');
+      assert.ok(row.planeSerial > 0 && row.repeatSerial === row.planeSerial,'Real read-only I420 repeat must qualify');
+    }
+    assert.notEqual(first.planeSerial,second.planeSerial,'Different restricted planes must produce a different version');
+  }
   if (process.env.BLITZEN_TEST_CAPTURE_COLOR_COLLISION === '1') {
     assert.equal(first.nativeFormat, 'I420');
     assert.notEqual(first.nativePlaneSha256, second.nativePlaneSha256);

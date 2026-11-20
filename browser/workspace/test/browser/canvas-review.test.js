@@ -15,6 +15,7 @@ const canvasBackend = process.env.BLITZEN_TEST_CANVAS_BACKEND ?? 'cpu';
 const compositor = process.env.BLITZEN_REVIEW_COMPOSITOR_TRANSPORT;
 const sandboxedSoftware = process.env.BLITZEN_RESIDENT_SANDBOXED_SOFTWARE === '1';
 const frameTracePrefix = process.env.BLITZEN_RESIDENT_FRAME_TRACE_PREFIX;
+const expectPlaneEvidence = process.env.BLITZEN_TEST_FAWN_PLANE_EVIDENCE === '1';
 const observerMode = process.env.BLITZEN_RESIDENT_OBSERVER;
 const stockTracePrefix = process.env.BLITZEN_RESIDENT_STOCK_TRACE_PREFIX;
 const traceCategory = 'disabled-by-default-gpu.dawn';
@@ -151,7 +152,8 @@ function captureReceipt(frame, bitmap, metrics) {
     mediaTimestampUs: frame.mediaTimestampUs, sourcePixelFormat: frame.sourcePixelFormat,
     width: bitmap.width, height: bitmap.height, tileSize: bitmap.tileSize, tileHashes: bitmap.hashes,
     frameHostCopyBytes: metrics.frameHostCopyBytes, canonicalHashedBytes: metrics.canonicalHashedBytes,
-    canonicalRehashedTiles: metrics.canonicalRehashedTiles, externalHintMissedChange: metrics.externalHintMissedChange === true };
+    canonicalRehashedTiles: metrics.canonicalRehashedTiles, nativePlaneEqualityReused: metrics.nativePlaneEqualityReused === true,
+    externalHintMissedChange: metrics.externalHintMissedChange === true };
 }
 const root = mkdtempSync(join(tmpdir(), 'blitzen-canvas-review-'));
 const log = join(root, 'commits.jsonl');
@@ -224,7 +226,7 @@ try {
   } else if (stockTracePrefix) throw Error('Stock trace requires a matched observer run');
   service = await WorkspaceService.open({ stateDir: join(root, 'service'), config,
     createAdapter: options => {
-      adapter = createPlaywrightAdapter({ ...options, requireSandbox: sandboxedSoftware || process.env.BLITZEN_RESIDENT_PHYSICAL === '1',
+      adapter = createPlaywrightAdapter({ ...options, restrictedPlaneEvidence: expectPlaneEvidence, requireSandbox: expectPlaneEvidence || sandboxedSoftware || process.env.BLITZEN_RESIDENT_PHYSICAL === '1',
         captureAttribution: Boolean(process.env.BLITZEN_CAPTURE_RUN_DIRECTORY), frameImportEvidence: Boolean(frameTracePrefix),
         privateWorldPerCapture: observerMode === 'on' });
       const snapshot = adapter.snapshot.bind(adapter);
@@ -547,6 +549,14 @@ try {
   let pixelAuthority;
   if (useCompositor) {
     assert.deepEqual(freshChecked.tileHashes, freshReviewed.tileHashes);
+    if (expectPlaneEvidence) {
+      assert.equal(compositor,'external-texture');
+      assert.ok(freshChecked.nativePlaneEqualityReused && !stalePixelControl.checked.nativePlaneEqualityReused,
+        'Both the exact repeat and a newly changed real frame must reach the native eligibility check');
+      assert.equal(freshChecked.frameHostCopyBytes,0);
+      assert.equal(freshChecked.canonicalHashedBytes,0);
+      assert.ok(stalePixelControl.checked.frameHostCopyBytes > 0);
+    }
     assert.equal(freshChecked.sessionId, freshReviewed.sessionId);
     assert.ok(freshChecked.mediaTimestampUs > freshReviewed.mediaTimestampUs);
     pixelAuthority = { schema: 'blitzen.canonical-capture/v1', representation: frame.pixelRepresentation, stale: stalePixelControl,

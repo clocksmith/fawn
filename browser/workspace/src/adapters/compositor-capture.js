@@ -41,7 +41,20 @@ export async function canonicalRgbaTiles(bytes, width, height, tileSize, previou
   return { record: { width, height, tileSize, frameDigest, hashes }, hashedBytes, tilesHashed: hashes.length };
 }
 
-function createElementCapture(id, resident, capture, leaseMs, scopeProbe, canonicalTiles) {
+// The optional native witness is issued by the current restricted reader. Its serial
+// names byte-identical I420 conversion inputs within that reader, never an image.
+export async function canonicalRestrictedFrame(frame, width, height, tileSize, prior, copyRgba, canonicalTiles) {
+  const serial = frame.fawnRestrictedPlaneVersion?.() ?? 0;
+  if (Number.isSafeInteger(serial) && serial > 0 && serial === prior?.serial &&
+      prior.record.width === width && prior.record.height === height && prior.record.tileSize === tileSize) {
+    return { serial, record: prior.record, copiedBytes: 0, hashedBytes: 0, tilesHashed: 0, usedNativeEquality: true };
+  }
+  const pixels = await copyRgba(frame, width, height);
+  const result = await canonicalTiles(pixels, width, height, tileSize, prior?.record);
+  return { ...result, serial, copiedBytes: pixels.length, usedNativeEquality: false };
+}
+
+function createElementCapture(id, resident, capture, leaseMs, scopeProbe, canonicalTiles, restrictedFrame) {
   const { selector, origin } = capture;
   let element, stream, track, reader, observer, watchdog, expiry, ended = false;
   let verifiedBrackets = 0, previousCanonical = null;
@@ -162,17 +175,18 @@ function createElementCapture(id, resident, capture, leaseMs, scopeProbe, canoni
           let authority = hashes;
           Object.assign(bitmapMetrics, { path: 'element-capture-webgpu', ...metrics });
           if (capture.transport === 'external-texture') {
-            // Both reads use this same immutable permission-restricted frame. The GPU
-            // mask remains a hint; even an empty mask must check canonical color bytes.
-            const pixels = await copyRgba(frame, width, height);
-            const canonical = await canonicalTiles(pixels, width, height, tileSize, previousCanonical);
+            // The GPU mask is a hint. Only an exact scope-bound native-plane
+            // witness can reuse the prior digest without a canonical RGBA read.
+            const canonical = await restrictedFrame(frame, width, height, tileSize, previousCanonical, copyRgba, canonicalTiles);
             assertCurrent();
             const hintMissedChange = Boolean(previousCanonical && metrics.comparedOnGpu && metrics.rehashedTiles === 0
-              && previousCanonical.frameDigest !== canonical.record.frameDigest);
-            previousCanonical = canonical.record;
-            authority = previousCanonical.hashes;
+              && previousCanonical.record.frameDigest !== canonical.record.frameDigest);
+            previousCanonical = canonical;
+            authority = canonical.record.hashes;
             Object.assign(bitmapMetrics, { externalHintMissedChange: hintMissedChange,
-              frameHostCopyBytes: pixels.length, canonicalHashedBytes: canonical.hashedBytes,
+              nativePlaneEqualitySupported: canonical.serial > 0, nativePlaneEqualityReused: canonical.usedNativeEquality,
+              nativePlaneLogicalBytesComparedOnReuse: canonical.usedNativeEquality ? 3 * width * height : 0,
+              frameHostCopyBytes: canonical.copiedBytes, canonicalHashedBytes: canonical.hashedBytes,
               canonicalRehashedTiles: canonical.tilesHashed });
           }
           if (capture.transport === 'rgba-upload') {
@@ -263,7 +277,7 @@ export class CompositorSessions {
           globalThis.__blitzenSurface?.stop();
           globalThis.__blitzenSurface = (${createElementCapture.toString()})(${JSON.stringify(entry.id)},
             (${createResidentCanvasReader.toString()})(${JSON.stringify(entry.id)},
-              ${capture.digest === 'webgpu' ? '(' + createGpuTileDigest.toString() + ')()' : 'null'}), ${JSON.stringify(capture)}, ${leaseMs}, ${entry.scopeProbe}, (${canonicalRgbaTiles.toString()})); return true;
+              ${capture.digest === 'webgpu' ? '(' + createGpuTileDigest.toString() + ')()' : 'null'}), ${JSON.stringify(capture)}, ${leaseMs}, ${entry.scopeProbe}, (${canonicalRgbaTiles.toString()}), (${canonicalRestrictedFrame.toString()})); return true;
         })()` });
         if (signal?.aborted || this.entries.get(key) !== entry) {
           await this.control(entry, 'stop').catch(() => {});

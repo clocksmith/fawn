@@ -1,0 +1,32 @@
+{
+  "schema": "blitzen.native-restricted-planes/v1",
+  "chromium": "4a6fb38567da21dc86f8ba468ac0ca9002f4f606",
+  "dawn": "758e5e6a974e8ca8039b1d7b209646dabccbcb7f",
+  "instrumentationPrerequisite": "38224c1fe8f33e970bd73010f514c92045a6b6e3",
+  "patchSha256": "ae100a34d4d612e3947fc29be462ac6c4977394d0c04d5695155fc362e436d50",
+  "forwardAndReversePatchCount": 9,
+  "compiledObjects": {
+    "video_frame": "663564dfdcafe4b244fec9d5347f2e54504c78142846d8271108e44425dcf204",
+    "media_stream_track_processor": "000186e413d97aeb3e47d54b3708a7f2c7d63a954e80ac4bdedf9a0822852fce",
+    "frame_queue_underlying_source": "9d05c23981b1504328e115e2bc481076f6fabd704d71ccd31c4c0c622a26672f",
+    "browser_capture_media_stream_track": "ce53a224b62c8ae448dd4bd876988628c28c1cc06dc5eef12f5a09ae9aa96643",
+    "v8_video_frame": "516d27dd2cc5ad8e0c8bb66deb5660964b093e08f37396f6266d390a473ac4e2",
+    "runtime_enabled_features": "edf654880f747aed188197c2e97996c9904f65faf8b977ca8ce75288fe708b8f"
+  },
+  "nativeExecutableSha256": "bfdfffdc4b27dc245581cda2a3766cbe59cd8e83464e25685803b76c8dbe9c65",
+  "nativeTestPassed": true,
+  "twoDistinctBuffersEqual": true,
+  "exactCpuSkiaOracle": "Each of 131072 RGBA pixels per frame equals the stock browser color for baseline, independent unchanged allocation, and the chroma-only change.",
+  "softwareStockCapture": "75e8a98aeb8ea5f8e90a7afed1ed3088877ef00f9491e3fd138a9c0ec5177e58",
+  "unchangedNativePayloadBytes": 196608,
+  "logicalInputBytesOnAnExactRepeat": 393216,
+  "oneCanonicalRgbaCopyBytesFor512x256": 524288,
+  "retainedNativeBytesPerMaximalEligibleCapture": 6291456,
+  "softwareStockWorkflow": "c03a45f3b3921ceb41e02aa466924ad8ec7e56e0859058c68c9c5948eb9c6d05",
+  "stockTimedRgbaCopyBytes": 291200,
+  "stockPlannerCalls": 0,
+  "stockModelSpendUsd": 0,
+  "stockNativeDigestReuses": 0,
+  "linkedNativeBrowserExercised": false,
+  "physicalGpuWork": false
+}

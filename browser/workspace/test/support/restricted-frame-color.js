@@ -41,7 +41,29 @@ export async function compareCapturedColorPair(makeReader, selector) {
         const explicit = await upload.readFrame(canvas, frame, false, 'rgba-upload');
         const tileDigest = await hash(pixels.subarray(0, 64 * 64 * 4));
         if (explicit.hashes.length !== 32 || !explicit.hashes.every(value => value === tileDigest)) throw Error('RGBA upload differs from canonical tiles');
-        rows.push({ sourceRgb: rgb, nativeFormat: frame.format, nativePlaneSha256: await hash(planes), colorSpace: frame.colorSpace.toJSON(),
+        const nativeUniformPlanes = [];
+        if (frame.format === 'I420' && planes.length === width*height*3/2) {
+          let offset = 0;
+          for (const n of [width*height,width*height/4,width*height/4]) {
+            const plane = planes.subarray(offset,offset+n);
+            nativeUniformPlanes.push(plane.every(value => value === plane[0]) ? plane[0] : null);
+            offset += n;
+          }
+        }
+        const planeSerial = frame.fawnRestrictedPlaneVersion?.() ?? null;
+        let repeatSerial = null, cloneSerial = null;
+        if (planeSerial !== null) {
+          const clone = frame.clone();
+          try { cloneSerial = clone.fawnRestrictedPlaneVersion(); } finally { clone.close(); }
+          const {value: repeat} = await processor.read();
+          try {
+            const check = new Uint8Array(repeat.allocationSize());
+            await repeat.copyTo(check);
+            if (await hash(check) !== await hash(planes)) throw Error('Repeat capture pixels differ');
+            repeatSerial = repeat.fawnRestrictedPlaneVersion();
+          } finally { repeat.close(); }
+        }
+        rows.push({ nativeUniformPlanes, planeSerial, repeatSerial, cloneSerial, sourceRgb: rgb, nativeFormat: frame.format, nativePlaneSha256: await hash(planes), colorSpace: frame.colorSpace.toJSON(),
           width, height, mediaTimestampUs: frame.timestamp, canonicalRgba: color, canonicalSha256: await hash(pixels),
           tileCount: explicit.hashes.length, canonicalTileSha256: tileDigest, externalTileSha256: [...new Set(imported.hashes)],
           externalRehashed: imported.rehashedTiles, explicitRehashed: explicit.rehashedTiles });

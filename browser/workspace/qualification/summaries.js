@@ -52,6 +52,8 @@ function summarizeResidentOutcome({ elapsedMs, verified, ruleEvaluations, modelC
     discardedFrames: captures.reduce((total, sample) => total + (sample.discardedFrames ?? 0), 0),
     cpuPixelReadBytes: captures.reduce((total, sample) => total + sample.cpuPixelReadBytes, 0),
     frameHostCopyBytes: captures.reduce((total, sample) => total + (sample.frameHostCopyBytes ?? 0), 0),
+    nativePlaneDigestReuses: captures.filter(sample => sample.nativePlaneEqualityReused).length,
+    nativePlaneLogicalBytesComparedOnReuse: captures.reduce((sum,sample) => sum + (sample.nativePlaneLogicalBytesComparedOnReuse ?? 0),0),
     canonicalHashedBytes: captures.reduce((total, sample) => total + (sample.canonicalHashedBytes ?? 0), 0),
     canonicalRehashedTiles: captures.reduce((total, sample) => total + (sample.canonicalRehashedTiles ?? 0), 0),
     externalHintMissedChanges: captures.filter(sample => sample.externalHintMissedChange === true).length,
