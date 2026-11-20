@@ -49,7 +49,7 @@ def write(path, value):
     path.write_text(json.dumps(value, indent=2, allow_nan=False) + "\n")
 
 
-def make_plan(repeats, widths):
+def make_plan(repeats, widths, paired_observer=False):
     if (
         not (1 <= repeats <= 100)
         or not widths
@@ -62,12 +62,18 @@ def make_plan(repeats, widths):
         for width in widths:
             order = ARMS[repeat % 4 :] + ARMS[: repeat % 4]
             for arm in order:
-                plan.append({"arm": arm, "repeat": repeat + 1, "width": width})
+                wave = {"arm": arm, "repeat": repeat + 1, "width": width}
+                if paired_observer:
+                    modes = ("on", "off") if (repeat + ARMS.index(arm)) % 2 else ("off", "on")
+                    plan.extend(dict(wave, observer=mode) for mode in modes)
+                else:
+                    plan.append(wave)
     return plan
 
 
 def run_id(wave, slot):
-    return f"r{wave['repeat']:03}-c{wave['width']:02}-{wave['arm']}-p{slot:02}"
+    suffix = "-" + wave["observer"] if "observer" in wave else ""
+    return f"r{wave['repeat']:03}-c{wave['width']:02}-{wave['arm']}-p{slot:02}{suffix}"
 
 
 
@@ -331,16 +337,22 @@ def run_wave(out, wave, args):
                 k: v
                 for k, v in os.environ.items()
                 if not k.startswith(("BLITZEN_TEST_", "FAWN_WORKSPACE_TEST_"))
-                and k != "BLITZEN_RESIDENT_FRAME_TRACE_PREFIX"
+                and k not in ("BLITZEN_RESIDENT_FRAME_TRACE_PREFIX", "BLITZEN_RESIDENT_STOCK_TRACE_PREFIX",
+                              "BLITZEN_RESIDENT_OBSERVER")
             }
+            mode = wave.get("observer")
+            if mode:
+                env["BLITZEN_RESIDENT_OBSERVER"] = mode
             if wave["arm"].startswith("fawn"):
-                if getattr(args, "frame_import_evidence", False):
+                if getattr(args, "frame_import_evidence", False) or mode == "on":
                     env["BLITZEN_RESIDENT_FRAME_TRACE_PREFIX"] = str(row / "frame-import")
                 env["BLITZEN_TEST_BROWSER_CONFIG"] = str(
                     args.doe if wave["arm"] == "fawn-doe" else args.dawn
                 )
             else:
                 env["BLITZEN_TEST_BROWSER_CHANNEL"] = args.stock_channel
+                if mode == "on":
+                    env["BLITZEN_RESIDENT_STOCK_TRACE_PREFIX"] = str(row / "stock-observer")
             if sources or sys.platform.startswith("linux"):
                 env["BLITZEN_RESIDENT_OBSERVE_BROWSER_PID"] = "1"
             env.update(
@@ -369,7 +381,7 @@ def run_wave(out, wave, args):
                         for job in jobs:
                             progress = read(job["dir"] / "progress.json")
                             observed = source_for_browser(progress, source, job["child"].pid)
-                            if wave["arm"] == "fawn-doe" and getattr(args, "frame_import_evidence", False):
+                            if wave["arm"] == "fawn-doe" and (mode == "on" or getattr(args, "frame_import_evidence", False)):
                                 try:
                                     observed["doeMapping"] = mapped_doe(progress)
                                 except (OSError, TypeError, KeyError, ValueError) as error:
@@ -417,6 +429,55 @@ def run_wave(out, wave, args):
 @functools.lru_cache(maxsize=1)
 def frame_import_checker():
     return runpy.run_path(str(Path(__file__).with_name("check-wire-submit.py")))
+
+
+def observer_evidence(path, wave, progress, outcome, source):
+    """Validate the collector and its process before counting an instrumented workflow."""
+    mode, arm = wave["observer"], wave["arm"]
+    pid = progress.get("browserPid")
+    if type(pid) is not int or pid < 2 or not source or not progress.get("targetId") or not progress.get("surfaceId"):
+        raise ValueError("missing process-bound browser, target or capture")
+    if (not re.fullmatch(r"[0-9a-f]{64}", source.get("chromeSha256", "")) or
+            not all(git_revision(source.get(key)) for key in ("chromium", "dawn"))):
+        raise ValueError("missing pinned browser sources")
+    selection = progress["selection"]
+    if selection != outcome.get("selection") or outcome.get("clock") != "request-repaint-through-authoritative-reconciliation":
+        raise ValueError("selected browser or workflow clock differs")
+    if arm.startswith("fawn"):
+        forced = "doe-c" if arm == "fawn-doe" else "dawn"
+        if selection["runtime"]["mode"] != forced or selection["executable"]["sha256"] != source["chromeSha256"]:
+            raise ValueError("selected runtime or browser image differs")
+    elif selection.get("channel") not in ("chrome", "chromium") or "runtime" in selection:
+        raise ValueError("stock browser required")
+    gpu_pid = progress.get("gpuProcessPid")
+    selectors = ["--use-webgpu-runtime=" + arm.split("-")[-1]] if arm.startswith("fawn") else []
+    if (type(gpu_pid) is not int or gpu_pid < 2 or gpu_pid == pid or progress.get("observedRuntime") !=
+            dict(gpuProcessPid=gpu_pid, sandboxed=True, selectors=selectors,
+                 frameObserver=mode == "on" and arm.startswith("fawn"))):
+        raise ValueError("observed sandbox, GPU process or runtime flags differ")
+    expected = dict(mode=mode, browserPid=pid, targetId=progress["targetId"], captureId=progress["surfaceId"],
+                    category="disabled-by-default-gpu.dawn" if mode == "on" else None)
+    if outcome.get("observer") != expected or progress.get("phase") != "reconciled":
+        raise ValueError("collector belongs to a different workflow")
+    if progress.get("softwareSandbox") or outcome.get("nativeScopeRequest") or outcome.get("mainWorldControl"):
+        raise ValueError("software or diagnostic-only observers cannot enter the physical comparison")
+    if mode == "off":
+        if (outcome.get("diagnosticOnly") or (path / "stock-observer.complete.json").exists()
+                or (path / "frame-import.complete.json").exists()):
+            raise ValueError("trace activity in the observer-off control")
+        return {}
+    if mode != "on":
+        raise ValueError("unexpected observer mode")
+    if arm.startswith("stock"):
+        if (outcome.get("diagnosticOnly") or read(path / "stock-observer.scope.json") != expected
+                or read(path / "stock-observer.complete.json").get("dataLossOccurred") is not False
+                or not isinstance(read(path / "stock-observer.trace.json").get("traceEvents"), list)):
+            raise ValueError("missing complete stock-browser control trace")
+        return {}
+    checker = frame_import_checker()
+    if arm == "fawn-doe":
+        return {"commandTerminal": checker["check"](path, True)}
+    return {"maskReadback": checker["MASK"]["check"](path)}
 
 
 def summarize_row(path, wave, slot):
@@ -481,7 +542,7 @@ def summarize_row(path, wave, slot):
         data.update(
             status="incorrect", reason="image, application revision, or unique effect did not verify"
         )
-    elif o.get("diagnosticOnly") is True:
+    elif o.get("diagnosticOnly") is True and "observer" not in wave:
         if o.get("diagnosticKind") == "frame-import":
             try:
                 checker = frame_import_checker()
@@ -521,7 +582,7 @@ def summarize_row(path, wave, slot):
         else:
             reason = "capture-authority diagnostic adds track observations and a fence wait"
         data.update(status="unqualified", reason=reason)
-    elif wave["arm"] == "fawn-doe":
+    elif wave["arm"] == "fawn-doe" and wave.get("observer") != "on":
         # A native producer must bind this target's active capture and diff command
         # to completed work on the loaded Doe device. Flags, adapter strings or a
         # neighboring page's marker cannot discharge this gate.
@@ -532,12 +593,21 @@ def summarize_row(path, wave, slot):
     elif wave["arm"] != "stock-helper" and not hardware_adapter(data.get("gpu")):
         data.update(status="unqualified", reason="working hardware adapter unconfirmed")
     else:
+        if "observer" in wave:
+            try:
+                data.update(observer_evidence(path, wave, p, o, data["browserSource"]))
+            except (OSError, TypeError, ValueError, KeyError) as error:
+                data.update(status="unqualified", reason=str(error))
+                for field in ("requestMonotonicMs", "mutationReturnedMonotonicMs",
+                              "outcomeVerifiedMonotonicMs", "browserMutationEpochMs"):
+                    data[field] = None
+                return data
         start, changed, finish = (
             data[k]
             for k in ("requestMonotonicMs", "mutationReturnedMonotonicMs", "outcomeVerifiedMonotonicMs")
         )
         if (
-            not all(isinstance(n, (float, int)) and math.isfinite(n) for n in (start, changed, finish))
+            not all(type(n) in (float, int) and math.isfinite(n) for n in (start, changed, finish))
             or not start <= changed <= finish
         ):
             data.update(status="unqualified", reason="missing or inconsistent monotonic phase stamps")
@@ -548,8 +618,8 @@ def summarize_row(path, wave, slot):
                 pageChangeToVerifiedMidpointMs=(low + high) / 2,
                 pageChangeToVerifiedBoundsMs=[low, high],
             )
-    if wave["arm"] == "fawn-doe":
-        # No Doe timings are published, even as reconstructible phase timestamps.
+    if wave["arm"] == "fawn-doe" and data["status"] != "verified":
+        # Withhold timings when backend completion on the actual page is unknown.
         for k in (
             "requestMonotonicMs",
             "mutationReturnedMonotonicMs",
@@ -611,10 +681,7 @@ def usage_totals(rows, field):
             "total": observed if complete == len(rows) else None}
 
 
-def summarize(out):
-    plan = read(out / "plan.json")
-    if not isinstance(plan, list) or not plan:
-        raise ValueError("missing frozen comparison plan")
+def summarize_plan(out, plan):
     rows = [summarize_row(out / run_id(w, s), w, s) for w in plan for s in range(1, w["width"] + 1)]
     # An incomplete concurrency wave is still retained, but cannot establish matched load.
     waves = collections.defaultdict(list)
@@ -682,11 +749,48 @@ def summarize(out):
         "usageScope": "Per-arm usage includes all planned attempts, including refusals and incorrect outcomes. The observed sum includes partial receipts. A total requires a final measured value for every attempt.",
         "aggregation": "Nearest-rank p95 and median p50 of the qualified observations. Paired deltas subtract the baseline from the candidate in the same repeat and slot. Bounds carry the observed mutation-time uncertainty through each quantile. A delta interval containing zero leaves the direction unresolved. Sampling uncertainty is separate. Every planned attempt is reported and incomplete overlapping cohorts are excluded.",
         "memoryScope": "Process-tree RSS is sampled about every 250 ms. From browser readiness, Linux DRM counts resident bytes reported for the fixture GPU process. The peak contains one sample across regions, deduplicated by device and DRM client. Separate clients can count shared buffers twice. Missing samples are unknown. Whole-device VRAM is unmeasured.",
-        "attribution": "Matching source revisions and versions permits a whole-browser comparison only. Build options and renderer paths may differ. Fawn/Doe timings stay withheld pending native per-page provenance.",
+        "attribution": "Matched source revisions and versions permit a whole-browser comparison. Fawn/Doe observations enter timing only in the matched trace-on cohort after the same page command completes on the pinned native runtime.",
         "byArm": by_arm,
         "paired": pairs,
         "rows": rows,
     }
+
+
+def summarize(out):
+    plan = read(out / "plan.json")
+    if not isinstance(plan, list) or not plan:
+        raise ValueError("missing frozen comparison plan")
+    if not any("observer" in wave for wave in plan):
+        return summarize_plan(out, plan)
+    cohorts = {mode: [wave for wave in plan if wave.get("observer") == mode] for mode in ("off", "on")}
+    def keys(waves):
+        return [(wave["arm"], wave["repeat"], wave["width"]) for wave in waves]
+    off_keys, on_keys = (keys(cohorts[mode]) for mode in ("off", "on"))
+    if (len(off_keys) + len(on_keys) != len(plan) or sorted(off_keys) != sorted(on_keys)
+            or len(set(off_keys)) != len(off_keys)):
+        raise ValueError("observer plan must pair each arm, repeat and concurrency exactly once")
+    off, on = (summarize_plan(out, cohorts[mode]) for mode in ("off", "on"))
+    by_key = {(r["arm"], r["width"], r["repeat"], r["slot"]): r for r in off["rows"]}
+    effect = []
+    for width in sorted({w["width"] for w in plan}):
+        for arm in ARMS:
+            bounds, omitted = [], collections.Counter()
+            for traced in (r for r in on["rows"] if r["width"] == width and r["arm"] == arm):
+                bare = by_key[arm, width, traced["repeat"], traced["slot"]]
+                if not (traced["fullMeasuredOverlap"] and bare["fullMeasuredOverlap"]):
+                    omitted[f"off={bare['status']}, on={traced['status']}"] += 1
+                    continue
+                if (not comparable_browsers(bare, traced)
+                        or bare["browserSource"]["chromeSha256"] != traced["browserSource"]["chromeSha256"]
+                        or bare["compositorDigest"] != traced["compositorDigest"] or bare["gpu"] != traced["gpu"]):
+                    omitted["image, GPU or digest mode differs"] += 1
+                    continue
+                low, high = traced["pageChangeToVerifiedBoundsMs"]
+                base_low, base_high = bare["pageChangeToVerifiedBoundsMs"]
+                bounds.append((low - base_high, high - base_low))
+            effect.append(dict(arm=arm, concurrency=width, omitted=dict(omitted), **bounded_stats(bounds)))
+    return {"scope": "Trace-on and trace-off measurements are separate. Observer-effect bounds subtract the same image and arm with tracing off. A missing backend witness leaves that comparison unresolved. No overhead is subtracted from cross-arm results.",
+            "traceOn": on, "traceOff": off, "observerEffect": effect}
 
 
 def main():
@@ -697,6 +801,8 @@ def main():
         p.add_argument("--out", type=Path, required=True)
         if command == "plan":
             p.add_argument("--repeats", type=int, default=20)
+            p.add_argument("--paired-observer", action="store_true",
+                           help="interleave a common CDP trace and an unchanged control per arm and repeat")
             p.add_argument("--concurrency", type=int, nargs="+", default=[1, 2])
         if command == "run":
             p.add_argument("--dawn", type=Path, required=True)
@@ -712,7 +818,7 @@ def main():
     args = parser.parse_args()
     out = args.out.resolve()
     if args.op == "plan":
-        plan = make_plan(args.repeats, args.concurrency)
+        plan = make_plan(args.repeats, args.concurrency, args.paired_observer)
         out.mkdir(exist_ok=False, parents=True)
         write(out / "plan.json", plan)
     elif args.op == "run":
@@ -745,6 +851,8 @@ def main():
         plan = read(out / "plan.json")
         if not plan:
             parser.error("create the plan first")
+        if any("observer" in wave for wave in plan) and (not args.sources or args.frame_import_evidence):
+            parser.error("paired observers require both process-bound source receipts and select tracing from the plan")
         with (out / "run-started").open("x") as f:
             f.write(str(os.getpid()))
         signal.signal(signal.SIGTERM, lambda *_: sys.exit(143))

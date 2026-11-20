@@ -15,6 +15,14 @@ const canvasBackend = process.env.BLITZEN_TEST_CANVAS_BACKEND ?? 'cpu';
 const compositor = process.env.BLITZEN_REVIEW_COMPOSITOR_TRANSPORT;
 const sandboxedSoftware = process.env.BLITZEN_RESIDENT_SANDBOXED_SOFTWARE === '1';
 const frameTracePrefix = process.env.BLITZEN_RESIDENT_FRAME_TRACE_PREFIX;
+const observerMode = process.env.BLITZEN_RESIDENT_OBSERVER;
+const stockTracePrefix = process.env.BLITZEN_RESIDENT_STOCK_TRACE_PREFIX;
+const traceCategory = 'disabled-by-default-gpu.dawn';
+const frameEventNames = new Set([
+  'FawnResidentTrackRestriction', 'FawnResidentBrowserRestriction', 'FawnResidentFrameImported', 'FawnResidentStreamClosed',
+  'FawnResidentResourceEdge', 'FawnResidentEncodedSubmit', 'FawnResidentDecodedSubmit',
+  'FawnResidentDocumentValidated', 'FawnResidentDocumentRetired', 'FawnResidentCommandTerminal',
+]);
 const useCompositor = typeof compositor === 'string' && compositor.length > 0;
 if (useCompositor && process.env.BLITZEN_TEST_ELEMENT_CAPTURE !== '1') throw Error('Visible, authorized compositor capture required');
 // Private, correctness-only diagnostic. The browser supplies the trace and
@@ -25,14 +33,14 @@ async function startScopeTrace(page, prefix, names = null) {
   let overflow = false;
   session.on('Tracing.dataCollected', ({ value }) => {
     for (const event of value) {
-      if (event.cat?.split(',').includes('disabled-by-default-gpu.dawn') &&
+      if (event.cat?.split(',').includes(traceCategory) &&
           event.name?.startsWith('FawnResident') && (!names || names.has(event.name))) {
         if (events.length < 20000) events.push(event);
         else overflow = true;
       }
     }
   });
-  try { await session.send('Tracing.start', { categories: 'disabled-by-default-gpu.dawn', transferMode: 'ReportEvents' }); }
+  try { await session.send('Tracing.start', { categories: traceCategory, transferMode: 'ReportEvents' }); }
   catch (error) { await session.detach(); throw error; }
   return async request => {
     let timer;
@@ -194,10 +202,22 @@ if (progressPath) process.once('SIGTERM', async () => {
 try {
   const baseConfig = testBrowserSelection(root, { headless: !useCompositor, compositorTransport: compositor }).config;
   const config = { ...baseConfig, observation: { ...baseConfig.observation, canvasBackend } };
+  if (observerMode !== undefined) {
+    const traced = observerMode === 'on';
+    if ((!traced && observerMode !== 'off') || !progressPath || sandboxedSoftware ||
+        process.env.BLITZEN_RESIDENT_PHYSICAL !== '1' || !useCompositor ||
+        process.env.BLITZEN_RESIDENT_SCOPE_PROBE || process.env.BLITZEN_RESIDENT_SCOPE_TRACE_PREFIX ||
+        process.env.BLITZEN_CAPTURE_RUN_DIRECTORY || process.env.BLITZEN_RESIDENT_SCOPE_LOOKALIKE ||
+        Boolean(frameTracePrefix) !== (traced && Boolean(config.browser.fawnBuild)) ||
+        Boolean(stockTracePrefix) !== (traced && !config.browser.fawnBuild)) {
+      throw Error('Matched observation requires a separate physical run with the planned trace mode');
+    }
+  } else if (stockTracePrefix) throw Error('Stock trace requires a matched observer run');
   service = await WorkspaceService.open({ stateDir: join(root, 'service'), config,
     createAdapter: options => {
       adapter = createPlaywrightAdapter({ ...options, requireSandbox: sandboxedSoftware || process.env.BLITZEN_RESIDENT_PHYSICAL === '1',
-        captureAttribution: Boolean(process.env.BLITZEN_CAPTURE_RUN_DIRECTORY), frameImportEvidence: Boolean(frameTracePrefix) });
+        captureAttribution: Boolean(process.env.BLITZEN_CAPTURE_RUN_DIRECTORY), frameImportEvidence: Boolean(frameTracePrefix),
+        privateWorldPerCapture: observerMode === 'on' });
       const snapshot = adapter.snapshot.bind(adapter);
       adapter.snapshot = async (...args) => {
         const result = await snapshot(...args);
@@ -331,11 +351,8 @@ try {
     await awaitNativeObserver(page, process.env.BLITZEN_CAPTURE_RUN_DIRECTORY, config.browser.fawnBuild.runtime.library.path);
   }
   const finishTrace = tracePrefix ? await startScopeTrace(page, tracePrefix) : null;
-  const finishFrameTrace = frameTracePrefix ? await startScopeTrace(page, frameTracePrefix, new Set([
-    'FawnResidentTrackRestriction', 'FawnResidentBrowserRestriction', 'FawnResidentFrameImported', 'FawnResidentStreamClosed',
-    'FawnResidentResourceEdge', 'FawnResidentEncodedSubmit', 'FawnResidentDecodedSubmit',
-    'FawnResidentDocumentValidated', 'FawnResidentDocumentRetired', 'FawnResidentCommandTerminal',
-  ])) : null;
+  const finishFrameTrace = frameTracePrefix ? await startScopeTrace(page, frameTracePrefix, frameEventNames) : null;
+  const finishStockTrace = stockTracePrefix ? await startScopeTrace(page, stockTracePrefix, frameEventNames) : null;
   let frameScope;
   let beforeChange = await evidence();
   if (useCompositor) {
@@ -350,7 +367,7 @@ try {
     try {
       const { targetInfo } = await sessionCdp.send('Target.getTargetInfo');
       const version = await sessionCdp.send('Browser.getVersion');
-      let browserPid, gpuProcessPid, softwareSandbox;
+      let browserPid, gpuProcessPid, softwareSandbox, observedRuntime;
       if (process.env.BLITZEN_RESIDENT_OBSERVE_BROWSER_PID === '1') {
         const control = await page.context().browser().newBrowserCDPSession();
         try {
@@ -360,6 +377,18 @@ try {
           browserPid = roots[0].id;
           const gpuProcesses = processInfo.filter(row => row.type.toLowerCase() === 'gpu');
           if (gpuProcesses.length === 1) gpuProcessPid = gpuProcesses[0].id;
+          if (observerMode) {
+            const { gpu } = await control.send('SystemInfo.getInfo');
+            const flags = (await control.send('Browser.getBrowserCommandLine')).arguments;
+            const selectors = flags.filter(flag => flag.startsWith('--use-webgpu-runtime='));
+            const mode = config.browser.fawnBuild?.runtime.mode;
+            const expected = mode ? ['--use-webgpu-runtime=' + (mode === 'doe-c' ? 'doe' : 'dawn')] : [];
+            assert.deepEqual(selectors, expected);
+            assert.equal(flags.includes('--fawn-resident-frame-provenance'), Boolean(frameTracePrefix));
+            assert.equal(flags.includes('--fawn-resident-command-provenance'), false);
+            assert.ok(gpuProcessPid && gpu.auxAttributes?.sandboxed === true, 'Observed sandboxed GPU process required');
+            observedRuntime = { gpuProcessPid, sandboxed: true, selectors, frameObserver: Boolean(frameTracePrefix) };
+          }
           if (sandboxedSoftware) {
             const { gpu } = await control.send('SystemInfo.getInfo');
             const flags = (await control.send('Browser.getBrowserCommandLine')).arguments;
@@ -388,7 +417,8 @@ try {
       }
       const gpu = (await adapter.compositor.control(entry, 'adapterInfo')).result?.value ?? null;
       checkpoint({ phase: 'ready', targetId: targetInfo.targetId, surfaceId: session, browser: version, browserPid, gpuProcessPid,
-        ...(frameScope ? { frameImportScope: frameScope } : {}), ...(softwareSandbox ? { softwareSandbox } : {}), gpu, commandLabel: null,
+        ...(frameScope ? { frameImportScope: frameScope } : {}), ...(softwareSandbox ? { softwareSandbox } : {}),
+        ...(observedRuntime ? { observedRuntime } : {}), gpu, commandLabel: null,
         selection: config.browser.fawnBuild ?? { channel: config.browser.channel } });
     } finally { await sessionCdp.detach(); }
     const barrier = process.env.BLITZEN_RESIDENT_BARRIER_FILE;
@@ -445,6 +475,9 @@ try {
   await navigate('lookup', '/records');
   assert.equal((await reconcile()).reconciliation.result, 'effect-present');
   const verifiedAt = performance.now();
+  const observer = observerMode ? { mode: observerMode, targetId: progress.targetId, captureId: session,
+    browserPid: progress.browserPid, category: observerMode === 'on' ? traceCategory : null } : undefined;
+  if (finishStockTrace) await finishStockTrace(observer);
   if (finishFrameTrace) {
     assert.equal(frame.sessionId, frameScope.captureId);
     assert.equal(frame.loaderId, frameScope.loaderId);
@@ -460,6 +493,7 @@ try {
   assert.equal(counters.plannerCalls, 0);
   assert.equal(counters.modelSpendUsd, 0);
   const receipt = { clock: 'request-repaint-through-authoritative-reconciliation', canvasBackend,
+    ...(observer ? { observer } : {}),
     ...(frameScope ? { diagnosticOnly: true, diagnosticKind: 'frame-import', frameImportTimestampUs: frame.mediaTimestampUs, frameImportOrdinal: frame.frameImportOrdinal,
       frameImportDimensions: [frame.width, frame.height] } : {}),
     ...(frame.nativeScopeRequest ? { nativeScopeRequest: frame.nativeScopeRequest, diagnosticOnly: true } : {}),

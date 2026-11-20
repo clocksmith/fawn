@@ -18,7 +18,7 @@ import { closeWithin } from './bounded-close.js';
 const UNSAFE_FILENAME_CHARS = /[^A-Za-z0-9._-]/g;
 
 class PlaywrightWorkspaceAdapter {
-  constructor({ config, profileRoot, artifactRoot, requireSandbox = false, captureAttribution = false, frameImportEvidence = false }) {
+  constructor({ config, profileRoot, artifactRoot, requireSandbox = false, captureAttribution = false, frameImportEvidence = false, privateWorldPerCapture = false }) {
     this._config = config;
     this._requireSandbox = requireSandbox;
     this._captureAttribution = captureAttribution;
@@ -26,7 +26,7 @@ class PlaywrightWorkspaceAdapter {
     this._profileRoot = profileRoot;
     this._artifactRoot = artifactRoot;
     this._workspaces = new Map();
-    this.compositor = new CompositorSessions({ privateWorldPerCapture: frameImportEvidence });
+    this.compositor = new CompositorSessions({ privateWorldPerCapture: frameImportEvidence || privateWorldPerCapture });
     this._canvasReaders = new WeakMap();
     this._surfaceSessions = new WeakMap();
   }
