@@ -36,4 +36,20 @@ function summarizeError(error) {
   return { rejection: error.code ?? null, message: error.message, ...(error.exit ? { exit: error.exit } : {}) };
 }
 
-export { summarizeAction, summarizeError, summarizeWorkflow };
+/** Per-outcome counters use the actual model-provider call log. An unavailable
+ * log or a call without measured usage makes spend unknown. Rules are counted
+ * separately so a local model call is still charged as a planner call. */
+function summarizeResidentOutcome({ elapsedMs, verified, ruleEvaluations, modelCalls, captures }) {
+  const priced = Array.isArray(modelCalls) && modelCalls.every(call =>
+    typeof call?.usage?.costUsd === 'number' && Number.isFinite(call.usage.costUsd) && call.usage.costUsd >= 0);
+  return {
+    elapsedMs, verified, ruleEvaluations,
+    plannerCalls: Array.isArray(modelCalls) ? modelCalls.length : null,
+    modelSpendUsd: priced ? modelCalls.reduce((total, call) => total + call.usage.costUsd, 0) : null,
+    canvasObservations: captures.length,
+    cpuPixelReadBytes: captures.reduce((total, sample) => total + sample.cpuPixelReadBytes, 0),
+    gpuMaskReadbackBytes: captures.reduce((total, sample) => total + (sample.gpuMaskReadbackBytes ?? 0), 0),
+  };
+}
+
+export { summarizeAction, summarizeError, summarizeWorkflow, summarizeResidentOutcome };

@@ -1,3 +1,4 @@
+import { createResidentCanvasReader } from './resident-canvas.js';
 import { pickRegion } from './region-picker.js';
 // Fawn workspace — narrow Playwright adapter over stock Chromium
 //
@@ -21,6 +22,7 @@ class PlaywrightWorkspaceAdapter {
     this._profileRoot = profileRoot;
     this._artifactRoot = artifactRoot;
     this._workspaces = new Map();
+    this._canvasReaders = new WeakMap();
   }
 
   async openWorkspace(workspaceId, { pages = [] } = {}) {
@@ -63,7 +65,30 @@ class PlaywrightWorkspaceAdapter {
   }
 
   async snapshot(workspaceId, read = {}) {
-    const raw = await this._page(workspaceId, read.pageId).evaluate(queryPage, snapshotArgs(this._config, read));
+    const page = this._page(workspaceId, read.pageId), args = snapshotArgs(this._config, read);
+    if (!read.verifyCanvas && this._config.observation.canvasBackend === 'webgpu' && (args.regions.length || args.regionGroups.length)) {
+      const scope = JSON.stringify([read.ownerGeneration, args.readRoots]);
+      let entry = this._canvasReaders.get(page);
+      if (!entry || entry.scope !== scope) {
+        if (entry) {
+          page.removeListener('framenavigated', entry.invalidate);
+          await entry.handle.evaluate(reader => reader.dispose()).finally(() => entry.handle.dispose());
+        }
+        const handle = await page.evaluateHandle(createResidentCanvasReader);
+        const invalidate = frame => {
+          if (frame === page.mainFrame()) {
+            this._canvasReaders.delete(page);
+            page.removeListener('framenavigated', invalidate);
+            handle.dispose().catch(() => {});
+          }
+        };
+        page.on('framenavigated', invalidate);
+        entry = { scope, handle, invalidate };
+        this._canvasReaders.set(page, entry);
+      }
+      args.canvasReader = entry.handle;
+    }
+    const raw = await page.evaluate(queryPage, args);
     return buildSnapshot(raw, this._workspaces.get(workspaceId).context.pages().length);
   }
 

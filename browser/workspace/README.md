@@ -118,8 +118,16 @@ The contract's semantic names map to these concrete rules.
   region selectors; the version records a digest of each region's markup and
   control values, or none when the selector does not match exactly one element.
   When a selector names a canvas, its digest also covers the backing bitmap.
-  Chrome hashes the PNG on the page. An unreadable, empty, or over-budget canvas
-  yields no digest. Each observation can read up to 4,194,304 canvas pixels.
+  Chrome computes SHA-256 over tiles of the selected canvas in sRGB RGBA8.
+  The service journals hashes, dimensions, and tile size. Each observation can
+  read up to 4,194,304 canvas pixels, with at most 256 tiles per canvas.
+  An unreadable, empty, tainted, or over-budget canvas yields no digest.
+  `observation.canvasBackend` defaults to `cpu`. Selecting `webgpu` copies the
+  first selected raster to a renderer-owned texture, retains one prior texture
+  per document and read scope, and compares them in one compute pass. Only
+  changed or translucent tiles need fresh CPU pixel reads. At action dispatch
+  the service independently reads the scoped pixels again on CPU. CSS overlays
+  and other compositor layers fall outside this canvas-bitmap observation.
   A region-scoped action can bind the digest to detect a repaint. Applications
   with interchangeable cells also need a stable entity and revision at dispatch.
   Targetable elements are links, buttons, inputs, selects, textareas and elements
@@ -150,7 +158,12 @@ The contract's semantic names map to these concrete rules.
     the regions it produced, so a scope can cite a group's members
 
   With `sinceVersion`, a region whose digest matches that version is returned
-  as `unchanged`. Digests, element tables and handle tables stay in the journal.
+  as `unchanged`. Changed canvases include a `pixels.changed` list of
+  rectangles in intrinsic bitmap coordinates. In the default full view,
+  `visualChanges[selector].changed` provides the same rectangles alongside
+  current action handles. A missing or incompatible baseline covers the whole
+  current canvas with `baseline: 'new'`. Consumers should use the version
+  returned with those rectangles when proposing an action on the same surface.
 - **Handles.** A handle names an element by a hash of its stable selector, so it
   survives unrelated page changes. An action target `{handle}` resolves through
   the cited observation's handle table to that observation's selector and

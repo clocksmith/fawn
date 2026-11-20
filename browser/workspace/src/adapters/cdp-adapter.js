@@ -1,3 +1,4 @@
+import { createResidentCanvasReader } from './resident-canvas.js';
 import { pickRegion } from './region-picker.js';
 // Fawn workspace — narrow raw-CDP adapter over stock Chromium
 //
@@ -251,7 +252,36 @@ class CdpWorkspaceAdapter {
 
   async snapshot(workspaceId, read = {}) {
     const { cdp } = this._entry(workspaceId);
-    const raw = await this._query({ workspaceId, pageId: read.pageId }, snapshotArgs(this._config, read));
+    const args = snapshotArgs(this._config, read), pageId = read.pageId ?? 'main';
+    let raw;
+    if (!read.verifyCanvas && this._config.observation.canvasBackend === 'webgpu' && (args.regions.length || args.regionGroups.length)) {
+      const page = this._workspaces.get(workspaceId).pages.get(pageId);
+      const { frameTree } = await cdp.send('Page.getFrameTree', {}, page.sessionId);
+      const scope = JSON.stringify([frameTree.frame.loaderId, read.ownerGeneration, args.readRoots]);
+      if (page.canvasScope !== scope) {
+        if (page.readerId) {
+          if (page.canvasLoader === frameTree.frame.loaderId) {
+            await cdp.send('Runtime.callFunctionOn', { objectId: page.readerId,
+              functionDeclaration: 'function() { this.dispose(); }' }, page.sessionId);
+          }
+          await cdp.send('Runtime.releaseObjectGroup', { objectGroup: 'blitzen-canvas' }, page.sessionId);
+        }
+        const handle = await cdp.send('Runtime.evaluate', {
+          expression: `(${createResidentCanvasReader.toString()})()`, objectGroup: 'blitzen-canvas',
+        }, page.sessionId);
+        if (!handle.result?.objectId) throw Error('Canvas comparison context unavailable');
+        page.readerId = handle.result.objectId;
+        page.canvasLoader = frameTree.frame.loaderId;
+        page.canvasScope = scope;
+      }
+      const response = await cdp.send('Runtime.callFunctionOn', { objectId: page.readerId,
+        functionDeclaration: `function(args) { return (${queryPage.toString()})({...args, canvasReader: this}); }`,
+        arguments: [{ value: args }], returnByValue: true, awaitPromise: true }, page.sessionId);
+      if (response.exceptionDetails) throw Error(response.exceptionDetails.exception?.description ?? response.exceptionDetails.text);
+      raw = response.result.value;
+    } else {
+      raw = await this._query({ workspaceId, pageId }, args);
+    }
     const { targetInfos } = await cdp.send('Target.getTargets');
     return buildSnapshot(raw, targetInfos.filter((target) => target.type === 'page').length);
   }

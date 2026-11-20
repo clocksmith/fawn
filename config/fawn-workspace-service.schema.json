@@ -59,7 +59,8 @@
         "maxAgeMs": { "type": "integer", "minimum": 1000 },
         "maxTextChars": { "type": "integer", "minimum": 1 },
         "maxElements": { "type": "integer", "minimum": 1 },
-        "maxRegions": { "type": "integer", "minimum": 1 }
+        "maxRegions": { "type": "integer", "minimum": 1 },
+        "canvasBackend": { "enum": ["cpu", "webgpu"] }
       }
     },
     "dispatch": {

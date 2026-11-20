@@ -87,17 +87,41 @@ function validateObservationRead(command, config) {
   return read;
 }
 
+function observationBase(workspace, recorded, sinceVersion) {
+  const previous = workspace.observations.get(sinceVersion);
+  return previous && previous.url === recorded.url && previous.ownerGeneration === recorded.ownerGeneration
+    && (previous.pageId ?? MAIN_PAGE) === (recorded.pageId ?? MAIN_PAGE) ? previous : null;
+}
+
+// Rectangles use intrinsic bitmap pixels, including partial right/bottom tiles.
+function changedCanvasTiles(base, current) {
+  const { width, height, tileSize } = current;
+  if (!base || base.format !== current.format || base.width !== width || base.height !== height || base.tileSize !== tileSize) {
+    return { width, height, baseline: 'new', changed: [{ x: 0, y: 0, width, height }] };
+  }
+  const columns = Math.ceil(width / tileSize);
+  const changed = [];
+  for (const [index, hash] of current.hashes.entries()) {
+    if (base.hashes[index] === hash) continue;
+    const x = (index % columns) * tileSize, y = Math.floor(index / columns) * tileSize;
+    changed.push({ x, y, width: Math.min(tileSize, width - x), height: Math.min(tileSize, height - y) });
+  }
+  return { width, height, baseline: 'compared', changed };
+}
+
 /**
  * Compact view for agents: each requested region's outline, or `unchanged` when its digest
  * matches the base version from the same owner generation. A missing base yields full outlines.
  * Digests, handle tables and element lists stay in the journal for admission.
  */
 function outlineView(workspace, recorded, snapshot, sinceVersion) {
-  const base = sinceVersion === undefined ? null : workspace.observations.get(sinceVersion) ?? null;
+  const base = observationBase(workspace, recorded, sinceVersion);
   const regions = Object.fromEntries(Object.entries(snapshot.regionDigests).map(([selector, digest]) => {
     if (digest === null) return [selector, { missing: true }];
     if (base?.regions?.[selector] === digest) return [selector, { unchanged: true }];
-    return [selector, { outline: snapshot.regionOutlines[selector] ?? '' }];
+    const bitmap = snapshot.regionBitmaps?.[selector];
+    return [selector, { outline: snapshot.regionOutlines[selector] ?? '',
+      ...(bitmap ? { pixels: changedCanvasTiles(base?.regionBitmaps?.[selector], bitmap) } : {}) }];
   }));
   return {
     observationVersion: recorded.observationVersion,
@@ -249,7 +273,7 @@ class WorkspaceService {
   }
 
   #snapshot(workspaceId, read = {}, pageId = MAIN_PAGE) {
-    return this.#bounded(this.#adapter.snapshot(workspaceId, { ...read, pageId }));
+    return this.#bounded(this.#adapter.snapshot(workspaceId, { ...read, pageId, ownerGeneration: this.#workspace(workspaceId).ownerGeneration }));
   }
 
   #nowMs() {
@@ -307,8 +331,10 @@ class WorkspaceService {
       ...(passwordTargets.length ? { passwordTargets } : {}),
       handles,
       regions: snapshot.regionDigests,
+      ...(Object.keys(snapshot.regionBitmaps ?? {}).length ? { regionBitmaps: snapshot.regionBitmaps } : {}),
     });
-    return { ...workspace.observation, title: snapshot.title, text: snapshot.text, elements: snapshot.elements,
+    const { regionBitmaps, ...observation } = workspace.observation;
+    return { ...observation, title: snapshot.title, text: snapshot.text, elements: snapshot.elements,
       structuralHash: snapshot.structuralHash, isTruncated: snapshot.isTruncated };
   }
 
@@ -468,7 +494,11 @@ class WorkspaceService {
       readGrant(workspace, command, snapshot.url, this.#nowMs());
       const recorded = this.#recordObservation(workspace, snapshot, 'observe', pageId);
       if (read.view === OUTLINE_VIEW) return { ...outlineView(workspace, recorded, snapshot, read.sinceVersion), ...(command.pageId ? { pageId } : {}) };
-      return structuredClone({ ...recorded, ...(workspace.scopedReads ? { readScope: { pageId, regions: read.readRoots ?? null } } : {}), boundary: NONATOMIC_BOUNDARY });
+      const base = observationBase(workspace, recorded, read.sinceVersion);
+      const visualChanges = read.sinceVersion === undefined ? null : Object.fromEntries(
+        Object.entries(snapshot.regionBitmaps ?? {}).map(([selector, bitmap]) =>
+          [selector, changedCanvasTiles(base?.regionBitmaps?.[selector], bitmap)]));
+      return structuredClone({ ...recorded, ...(visualChanges ? { visualChanges } : {}), ...(workspace.scopedReads ? { readScope: { pageId, regions: read.readRoots ?? null } } : {}), boundary: NONATOMIC_BOUNDARY });
     });
   }
 
@@ -535,7 +565,7 @@ class WorkspaceService {
     const regions = scope?.kind === REGIONS_SCOPE ? scope.selectors : [];
     const current = pageView(workspace, request.pageId);
     const permission = readGrant(workspace, request, await this.#probe(workspaceId, request.pageId).url(), this.#nowMs());
-    const snapshot = await this.#snapshot(workspaceId, { regions, readRoots: permission?.readRegions ?? null }, request.pageId);
+    const snapshot = await this.#snapshot(workspaceId, { regions, verifyCanvas: true, readRoots: permission?.readRegions ?? null }, request.pageId);
     readGrant(workspace, request, snapshot.url, this.#nowMs());
     if (snapshot.contentHash !== current.observation?.contentHash || snapshot.url !== current.observation?.url) {
       this.#recordObservation(workspace, snapshot, 'page-change', request.pageId);

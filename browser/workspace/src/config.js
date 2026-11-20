@@ -75,6 +75,9 @@ function validateServiceConfig(config, { platform = process.platform } = {}) {
       throw invalid(field, 'plain file name', value);
     }
   }
+  if (config.observation.canvasBackend !== undefined && !['cpu', 'webgpu'].includes(config.observation.canvasBackend)) {
+    throw invalid('observation.canvasBackend', 'cpu or webgpu', config.observation.canvasBackend);
+  }
   if (config.browser?.engine !== 'chromium') throw invalid('browser.engine', 'chromium', config.browser?.engine);
   if (typeof config.browser?.headless !== 'boolean') throw invalid('browser.headless', 'boolean', config.browser?.headless);
   if (config.browser?.transport !== 'pipe') throw invalid('browser.transport', 'pipe', config.browser?.transport);

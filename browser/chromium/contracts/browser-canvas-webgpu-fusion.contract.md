@@ -72,3 +72,19 @@ diagnostic unless browser claim policy accepts the fallback class.
 
 Promotion requires a generated Chromium artifact with the same graph shape,
 stable output hashes, declared timing scopes, and no hidden fallback.
+
+## Resident visual evidence
+
+Blitzen's optional WebGPU reader accepts two ready RGBA8 textures on the same
+device and returns a tile bitmask of at most 32 bytes. In stock Chrome the
+adapter copies each authorized canvas into a renderer-owned texture. Accepting
+a Fawn compositor surface still requires a browser-issued grant, document and
+surface revision, compatible format, ownership lifetime and producer fence.
+
+Compare stock Chromium/Dawn, stock with a native helper, Fawn/Dawn and forced
+Fawn/Doe on the same permitted observations, planner, actions and journal.
+Record change-to-verified-outcome p50/p95, correct and missed changes, duplicate
+effects, peak RSS/GPU memory, copies and readbacks, planner calls and measured
+model spend. Missing model usage stays unknown. Separate calls or CPU bytes
+requested through browser APIs from driver-level transfers. Record whether the
+start clock came from compositor commit or the fixture's request to repaint.

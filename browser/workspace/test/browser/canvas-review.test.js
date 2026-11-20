@@ -1,15 +1,18 @@
 // A canvas supplies the only status signal. The site's revision-conditional form
 // and its durable review record establish which job can be queued and recovered.
 import assert from 'node:assert/strict';
-import { appendFileSync, existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { appendFileSync, existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { createServer } from 'node:http';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { summarizeResidentOutcome } from '../../qualification/summaries.js';
 import { WorkspaceService } from '../../src/service.js';
 import { createPlaywrightAdapter } from '../../src/adapters/playwright-adapter.js';
 import { testBrowserSelection } from '../support/browser-selection.js';
 import { assertSolidPixels } from '../support/gpu-presentation-oracle.js';
 
+const canvasBackend = process.env.BLITZEN_TEST_CANVAS_BACKEND ?? 'cpu';
+const captures = [];
 const root = mkdtempSync(join(tmpdir(), 'blitzen-canvas-review-'));
 const log = join(root, 'commits.jsonl');
 const committed = () => existsSync(log) ? readFileSync(log, 'utf8').trim().split('\n').map(line => JSON.parse(line)) : [];
@@ -49,9 +52,17 @@ await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
 const origin = `http://127.0.0.1:${server.address().port}`;
 let service, adapter;
 try {
-  service = await WorkspaceService.open({ stateDir: join(root, 'service'), config: testBrowserSelection(root).config,
+  const baseConfig = testBrowserSelection(root).config;
+  const config = { ...baseConfig, observation: { ...baseConfig.observation, canvasBackend } };
+  service = await WorkspaceService.open({ stateDir: join(root, 'service'), config,
     createAdapter: options => {
       adapter = createPlaywrightAdapter(options);
+      const snapshot = adapter.snapshot.bind(adapter);
+      adapter.snapshot = async (...args) => {
+        const result = await snapshot(...args);
+        if (result.regionBitmapMetrics?.['#cell']) captures.push(result.regionBitmapMetrics['#cell']);
+        return result;
+      };
       const execute = adapter.execute.bind(adapter);
       adapter.execute = async (id, request, files) => {
         // A new revision lands after Blitzen's final check, before site commit.
@@ -103,10 +114,35 @@ try {
   await cell.evaluate(el => { const ctx = el.getContext('2d'); ctx.fillStyle = 'blue'; ctx.fillRect(0, 0, 8, 8); });
   const pixelRefusal = await submit(original, proposal(original, 'repainted'));
   assert.equal(pixelRefusal.neverDispatched?.code, 'stale-observation');
+  assert.equal(captures.at(-1).path, 'cpu', 'dispatch independently re-reads the selected pixels');
   const blue = await observe();
   assert.equal(blue.contentHash, original.contentHash, 'canvas-only repaint preserves markup and control values');
   assert.notEqual(blue.regions['#cell'], original.regions['#cell']);
   assertSolidPixels(await cell.screenshot(), [0, 0, 255, 255]);
+
+  await cell.evaluate(el => {
+    el.width = 130; el.height = 70;
+    const ctx = el.getContext('2d'); ctx.fillStyle = 'red'; ctx.fillRect(0, 0, el.width, el.height);
+  });
+  const tiled = await observe();
+  const unchanged = await service.observe({ ...owner, regions: ['#cell'], view: 'outline', sinceVersion: tiled.observationVersion });
+  assert.deepEqual(unchanged.regions['#cell'], { unchanged: true });
+  if (canvasBackend === 'webgpu') {
+    assert.equal(captures.at(-1).comparedOnGpu, true);
+    assert.equal(captures.at(-1).cpuPixelReadBytes, 0);
+    assert.equal(captures.at(-1).gpuMaskReadbackBytes, 4);
+  }
+  await cell.evaluate(el => { const ctx = el.getContext('2d'); ctx.fillStyle = 'blue'; ctx.fillRect(129, 69, 1, 1); });
+  const updated = await service.observe({ ...owner, regions: ['#cell'], view: 'outline', sinceVersion: tiled.observationVersion });
+  assert.deepEqual(updated.regions['#cell'].pixels, { width: 130, height: 70, baseline: 'compared',
+    changed: [{ x: 128, y: 64, width: 2, height: 6 }] });
+  if (canvasBackend === 'webgpu') assert.equal(captures.at(-1).cpuPixelReadBytes, 2 * 6 * 4);
+  const beforeAlpha = await observe();
+  await cell.evaluate(el => { el.getContext('2d').clearRect(70, 5, 1, 1); });
+  const alpha = await service.observe({ ...owner, regions: ['#cell'], view: 'outline', sinceVersion: beforeAlpha.observationVersion });
+  assert.deepEqual(alpha.regions['#cell'].pixels.changed, [{ x: 64, y: 0, width: 64, height: 64 }]);
+  assert.equal((await service.observe({ ...owner, regions: ['#cell'], view: 'outline',
+    sinceVersion: alpha.observationVersion })).regions['#cell'].unchanged, true);
 
   await cell.evaluate(el => { el.width = 0; });
   assert.equal((await observe()).regions['#cell'], null, 'an empty bitmap cannot bind a region');
@@ -129,8 +165,20 @@ try {
   assert.deepEqual(committed(), []);
 
   await navigate('reopen', '/schedule');
-  const valid = await observe();
-  const accepted = proposal(valid, 'lost-ack');
+  await cell.evaluate(el => {
+    el.width = 130; el.height = 70;
+    const ctx = el.getContext('2d'); ctx.fillStyle = 'red'; ctx.fillRect(0, 0, 130, 70);
+  });
+  const beforeChange = await observe();
+  const captureStart = captures.length, started = performance.now();
+  await cell.evaluate(el => { const ctx = el.getContext('2d'); ctx.fillStyle = 'blue'; ctx.fillRect(129, 69, 1, 1); });
+  const valid = await service.observe({ ...owner, regions: ['#cell'], sinceVersion: beforeChange.observationVersion });
+  const changed = valid.visualChanges['#cell']?.changed ?? [];
+  // This routine accepts exactly the expected indicator tile and still has to
+  // bind an authorized, current application target before it can submit.
+  const ruleMatched = changed.length === 1 && changed[0].x === 128 && changed[0].y === 64;
+  const accepted = ruleMatched ? proposal(valid, 'lost-ack') : null;
+  assert.ok(accepted);
   const lost = await submit(valid, accepted);
   assert.equal(lost.isUncertain, true);
   assert.deepEqual(committed(), [{ job: 'B', revision: 2 }]);
@@ -139,6 +187,16 @@ try {
   assert.equal((await reconcile()).reconciliation.result, 'inconclusive');
   await navigate('lookup', '/records');
   assert.equal((await reconcile()).reconciliation.result, 'effect-present');
+  const counters = summarizeResidentOutcome({ elapsedMs: performance.now() - started, verified: true,
+    ruleEvaluations: 1, modelCalls: [], captures: captures.slice(captureStart) });
+  assert.equal(counters.plannerCalls, 0);
+  assert.equal(counters.modelSpendUsd, 0);
+  const receipt = { clock: 'request-repaint-through-authoritative-reconciliation', canvasBackend,
+    knownEffects: committed().length, ...counters };
+  if (process.env.BLITZEN_RESIDENT_RECEIPT_FILE) {
+    writeFileSync(process.env.BLITZEN_RESIDENT_RECEIPT_FILE, JSON.stringify(receipt, null, 2) + '\n', { flag: 'wx' });
+  }
+  console.log(JSON.stringify(receipt));
   await navigate('return', '/schedule');
   const after = await observe();
   await assert.rejects(submit(after, proposal(after, 'duplicate')), { code: 'effect-already-completed' });

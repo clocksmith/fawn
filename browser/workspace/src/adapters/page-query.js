@@ -10,7 +10,7 @@ const ELEMENT_MODE = 'element';
 const ELEMENT_TEXT_CHARS = 200;
 
 // Runs inside the page; must stay self-contained.
-async function queryPage({ mode, selector, maxElements, maxTextChars, elementTextChars, regions = [], regionGroups = [], outline = false, readRoots = null }) {
+async function queryPage({ mode, selector, maxElements, maxTextChars, elementTextChars, regions = [], regionGroups = [], outline = false, readRoots = null, canvasReader = null }) {
   // A typed password never leaves the page: observations, evidence and digests see only whether
   // the field is filled. A person enters credentials; agents and journals do not read them.
   const controlValue = (node) => node.tagName === 'INPUT' && node.type === 'password' ? (node.value ? '[hidden]' : '') : String(node.value);
@@ -246,26 +246,61 @@ async function queryPage({ mode, selector, maxElements, maxTextChars, elementTex
     visit(root);
     return parts.join(' | ').slice(0, maxTextChars);
   };
-  // Snapshot only canvases selected as regions. Take each bitmap snapshot in
-  // the same page turn as its markup and controls, then hash it on the page.
-  // An unreadable or over-budget bitmap cannot establish a dispatch binding.
+  // Copy the selected bitmap synchronously with its markup. Reading it through
+  // a separate 2D surface leaves the application's original context alone.
+  // Tile hashes are retained by the workspace. No pixel bytes cross the pipe.
   let remainingCanvasPixels = 4 * 1024 * 1024;
+  let residentReader = canvasReader;
   const canvasRegion = async (region, description) => {
-    const pixels = region.width * region.height;
-    let bitmapSha256 = null;
-    if (pixels > 0 && pixels <= remainingCanvasPixels && globalThis.crypto?.subtle) {
-      remainingCanvasPixels -= pixels;
-      try {
-        const png = await new Promise(resolve => region.toBlob(resolve, 'image/png'));
-        if (png) {
-          const hash = await crypto.subtle.digest('SHA-256', await png.arrayBuffer());
-          bitmapSha256 = Array.from(new Uint8Array(hash), byte => byte.toString(16).padStart(2, '0')).join('');
-        }
-      } catch {
-        // Includes origin-tainted canvases.
-      }
+    const { width, height } = region;
+    const pixels = width * height;
+    if (!pixels || pixels > remainingCanvasPixels || !globalThis.crypto?.subtle) {
+      return { ...description, bitmap: null };
     }
-    return { ...description, bitmapSha256 };
+    remainingCanvasPixels -= pixels;
+    try {
+      const surface = new OffscreenCanvas(width, height);
+      const readResident = residentReader;
+      residentReader = null; // At most one persistent texture per page.
+      const reader = surface.getContext('2d', { willReadFrequently: !readResident, colorSpace: 'srgb' });
+      reader.drawImage(region, 0, 0);
+      // Limit digest count for extreme aspect ratios as well as ordinary grids.
+      let tileSize = 64;
+      while (Math.ceil(width / tileSize) * Math.ceil(height / tileSize) > 256) tileSize *= 2;
+      const hashTiles = async (dirty = null, previous = null) => {
+        const image = dirty ? null : reader.getImageData(0, 0, width, height);
+        const hashes = [];
+        let cpuPixelReadBytes = image?.data.byteLength ?? 0;
+        for (let y = 0; y < height; y += tileSize) {
+          for (let x = 0; x < width; x += tileSize) {
+            const i = hashes.length;
+            if (dirty && !(dirty[i >>> 5] & (1 << (i % 32)))) { hashes.push(previous[i]); continue; }
+            const w = Math.min(tileSize, width - x), h = Math.min(tileSize, height - y);
+            let bytes;
+            if (image) {
+              bytes = new Uint8Array(w * h * 4);
+              for (let row = 0; row < h; row++) {
+                const start = 4 * ((y + row) * width + x);
+                bytes.set(image.data.subarray(start, start + 4 * w), row * w * 4);
+              }
+            } else {
+              bytes = reader.getImageData(x, y, w, h).data;
+              cpuPixelReadBytes += bytes.byteLength;
+            }
+            hashes.push(crypto.subtle.digest('SHA-256', bytes).then(hash =>
+              Array.from(new Uint8Array(hash), byte => byte.toString(16).padStart(2, '0')).join('')));
+          }
+        }
+        return { hashes: await Promise.all(hashes), cpuPixelReadBytes };
+      };
+      const result = readResident ? await readResident(region, surface, tileSize, hashTiles) : await hashTiles();
+      const { hashes, ...metrics } = result;
+      return { ...description, bitmap: { format: 'srgb-rgba8-tiles-v1', width, height, tileSize, hashes },
+        bitmapMetrics: { path: readResident ? 'webgpu' : 'cpu', ...metrics } };
+    } catch {
+      // An origin-tainted or unreadable bitmap cannot bind a later dispatch.
+      return { ...description, bitmap: null };
+    }
   };
   const describeRegion = (regionSelector, region, group = null) => {
     const controls = [...(region.matches(CONTROLS) ? [region] : []), ...region.querySelectorAll(CONTROLS)];
@@ -345,9 +380,9 @@ function snapshotArgs(config, { regions = [], regionGroups = [], outline = false
 
 /** A selected canvas also binds its bitmap. Unreadable regions cannot authorize an action. */
 function regionDigest(region) {
-  if (region.count !== 1 || region.bitmapSha256 === null) return null;
+  if (region.count !== 1 || region.bitmap === null) return null;
   return sha256Hex(canonicalJson({ html: region.html, values: region.values,
-    ...(region.bitmapSha256 ? { bitmapSha256: region.bitmapSha256 } : {}) }));
+    ...(region.bitmap ? { bitmap: region.bitmap } : {}) }));
 }
 
 function elementArgs(selector) {
@@ -372,6 +407,10 @@ function buildSnapshot(raw, pageCount) {
         actionability: elements.map(element => [element.selector, element.actionability ?? null]),
       } : {}) })),
     regionDigests: Object.fromEntries((raw.regions ?? []).map((region) => [region.selector, regionDigest(region)])),
+    regionBitmapMetrics: Object.fromEntries((raw.regions ?? []).filter(region => region.bitmapMetrics)
+      .map(region => [region.selector, region.bitmapMetrics])),
+    regionBitmaps: Object.fromEntries((raw.regions ?? []).filter(region => region.bitmap)
+      .map(region => [region.selector, region.bitmap])),
     regionOutlines: Object.fromEntries((raw.regions ?? []).filter((region) => region.outline !== null)
       .map((region) => [region.selector, region.outline])),
     regionGroups: (raw.regions ?? []).filter((region) => region.group !== undefined && region.group !== null)
