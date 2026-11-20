@@ -22,6 +22,9 @@ PAIRS = (("stock-dawn", "stock-helper"), ("stock-dawn", "fawn-dawn"), ("fawn-daw
 FIXTURE = Path(__file__).resolve().parents[1] / "test/browser/canvas-review.test.js"
 COUNTERS = (
     "frameHostCopyBytes",
+    "canonicalHashedBytes",
+    "canonicalRehashedTiles",
+    "externalHintMissedChanges",
     "cdpPixelPayloadBytes",
     "nativeHelperInputBytes",
     "nativeHashedBytes",
@@ -487,6 +490,65 @@ def observer_evidence(path, wave, progress, outcome, source):
     return {"maskReadback": checker["MASK"]["check"](path)}
 
 
+def canonical_pixel_evidence(progress, outcome):
+    evidence = outcome.get("pixelAuthority")
+    if not isinstance(evidence, dict) or evidence.get("schema") != "blitzen.canonical-capture/v1" or (
+        evidence.get("representation") != "video-frame-copy-to-srgb-rgba8"
+    ):
+        raise ValueError("missing canonical restricted-frame evidence")
+    stale, fresh = evidence["stale"], evidence["fresh"]
+    measured = ("frameHostCopyBytes", "canonicalHashedBytes", "canonicalRehashedTiles")
+    for name, pair in (("stale", stale), ("fresh", fresh)):
+        if not isinstance(pair, dict):
+            raise ValueError(name + " evidence is not a frame pair")
+        before, checked = pair["reviewed"], pair["checked"]
+        if not isinstance(before, dict) or not isinstance(checked, dict):
+            raise ValueError(name + " canonical frame is missing")
+        binding = ("sessionId", "grantId", "grantRevision", "width", "height", "tileSize", "sourcePixelFormat")
+        if any(before.get(k) is None or before[k] != checked.get(k) for k in binding):
+            raise ValueError(name + " frame pair changed grant, representation or geometry")
+        if not all(isinstance(before[k], str) and before[k] for k in ("sessionId", "grantId", "sourcePixelFormat")):
+            raise ValueError("missing restricted frame binding")
+        if any(type(before[k]) is not int or before[k] <= 0 for k in ("width", "height", "tileSize", "grantRevision")):
+            raise ValueError("invalid canonical tile geometry")
+        width, height, tile = (before[k] for k in ("width", "height", "tileSize"))
+        tiles = ((width + tile - 1) // tile) * ((height + tile - 1) // tile)
+        if (type(before["mediaTimestampUs"]) is not int or type(checked["mediaTimestampUs"]) is not int
+                or not 0 <= before["mediaTimestampUs"] < checked["mediaTimestampUs"]):
+            raise ValueError("frame verification lacks a newer capture from the same grant")
+        for frame in (before, checked):
+            hashes = frame.get("tileHashes")
+            if (not isinstance(hashes, list) or not 0 < len(hashes) == tiles <= 256
+                    or not all(isinstance(h, str) and re.fullmatch(r"[0-9a-f]{64}", h) for h in hashes)):
+                raise ValueError("incomplete canonical tile digests")
+            if any(type(frame.get(k)) is not int or frame[k] < 0 for k in measured):
+                raise ValueError("incomplete canonical copy or hash accounting")
+            if type(frame.get("externalHintMissedChange")) is not bool:
+                raise ValueError("unknown external hint outcome")
+        differences = [i for i, (a, b) in enumerate(zip(before["tileHashes"], checked["tileHashes"])) if a != b]
+        if name == "stale":
+            changed = stale.get("changedTiles")
+            if (not differences or not isinstance(changed, list) or any(type(i) is not int for i in changed)
+                    or changed != differences or stale.get("refusal") != "stale-observation"
+                    or type(stale.get("effectsBefore")) is not int or stale["effectsBefore"] != 0
+                    or type(stale.get("effectsAfter")) is not int or stale["effectsAfter"] != stale["effectsBefore"]):
+                raise ValueError("changed canonical evidence did not refuse the stale action without an effect")
+        else:
+            if differences or before["sessionId"] != progress.get("surfaceId"):
+                raise ValueError("fresh write lacks matching pixels on the measured capture")
+            if (type(fresh.get("effectCount")) is not int or fresh["effectCount"] != outcome["knownEffects"]
+                    or fresh.get("reconciliation") != "effect-present"):
+                raise ValueError("fresh write did not reconcile with the measured application effect")
+            for key in measured:
+                if type(outcome.get(key)) is not int or outcome[key] < before[key] + checked[key]:
+                    raise ValueError("timed workflow omits canonical evidence cost: " + key)
+            misses = outcome.get("externalHintMissedChanges")
+            if type(misses) is not int or misses < sum(f["externalHintMissedChange"] for f in (before, checked)):
+                raise ValueError("timed workflow omits external hint misses")
+    return {"representation": evidence["representation"], "staleTiles": len(stale["changedTiles"]),
+            "freshEffectCount": fresh["effectCount"], "sessionId": fresh["checked"]["sessionId"]}
+
+
 def summarize_row(path, wave, slot):
     p, e, o = (read(path / file) for file in ("progress.json", "exit.json", "outcome.json"))
     partial = p.get("partial") or {}
@@ -511,6 +573,7 @@ def summarize_row(path, wave, slot):
         "browser": p.get("browser"),
         "browserSource": read(path / "browser-source.json") or None,
         "compositorDigest": o.get("digestMode"),
+        "compositorTransport": o.get("compositorTransport"),
         "gpu": p.get("gpu"),
         "surfaceId": p.get("surfaceId"),
         "targetId": p.get("targetId"),
@@ -600,15 +663,16 @@ def summarize_row(path, wave, slot):
     elif wave["arm"] != "stock-helper" and not hardware_adapter(data.get("gpu")):
         data.update(status="unqualified", reason="working hardware adapter unconfirmed")
     else:
-        if "observer" in wave:
-            try:
+        try:
+            if "observer" in wave:
                 data.update(observer_evidence(path, wave, p, o, data["browserSource"]))
-            except (OSError, TypeError, ValueError, KeyError) as error:
-                data.update(status="unqualified", reason=str(error))
-                for field in ("requestMonotonicMs", "mutationReturnedMonotonicMs",
-                              "outcomeVerifiedMonotonicMs", "browserMutationEpochMs"):
-                    data[field] = None
-                return data
+            data["pixelAuthority"] = canonical_pixel_evidence(p, o)
+        except (OSError, TypeError, ValueError, KeyError) as error:
+            data.update(status="unqualified", reason=str(error))
+            for field in ("requestMonotonicMs", "mutationReturnedMonotonicMs",
+                          "outcomeVerifiedMonotonicMs", "browserMutationEpochMs"):
+                data[field] = None
+            return data
         start, changed, finish = (
             data[k]
             for k in ("requestMonotonicMs", "mutationReturnedMonotonicMs", "outcomeVerifiedMonotonicMs")
@@ -779,7 +843,7 @@ def summarize_plan(out, plan):
         "usageScope": "Per-arm usage includes all planned attempts, including refusals and incorrect outcomes. The observed sum includes partial receipts. A total requires a final measured value for every attempt.",
         "aggregation": "Nearest-rank p95 and median p50 of the qualified observations. Paired deltas subtract the baseline from the candidate in the same repeat and slot. Bounds carry the observed mutation-time uncertainty through each quantile. A delta interval containing zero leaves the direction unresolved. Sampling uncertainty is separate. Every planned attempt is reported and incomplete overlapping cohorts are excluded.",
         "memoryScope": "Process-tree RSS is sampled about every 250 ms. From browser readiness, Linux DRM counts resident bytes reported for the fixture GPU process. The peak contains one sample across regions, deduplicated by device and DRM client. Separate clients can count shared buffers twice. Missing samples are unknown. Whole-device VRAM is unmeasured.",
-        "attribution": "Matched source revisions and versions permit a whole-browser comparison. Fawn/Doe observations enter timing only in the matched trace-on cohort after the same page command completes on the pinned native runtime.",
+        "attribution": "Matched source revisions and versions permit a whole-browser comparison. Fawn/Doe observations enter timing only in the matched trace-on cohort after the same page command completes on the pinned native runtime. Its terminal identifies the GPU command that ran. The pixel-authority receipt separately identifies the canonical evidence used to approve the write.",
         "byArm": by_arm,
         "paired": pairs,
         "rows": rows,

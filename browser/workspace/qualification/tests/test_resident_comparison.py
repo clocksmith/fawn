@@ -2,12 +2,16 @@ import hashlib
 import importlib.util
 import os
 import subprocess
+import runpy
+import json
 import sys
 from pathlib import Path
 import tempfile
 import unittest
 from types import SimpleNamespace
 from unittest.mock import patch
+
+recorded_pixels = runpy.run_path(str(Path(__file__).with_name("test_canonical_evidence.py")))["recorded_pixels"]
 
 spec = importlib.util.spec_from_file_location(
     "resident_comparison", Path(__file__).resolve().parents[1] / "resident-comparison.py"
@@ -25,14 +29,14 @@ class ResidentComparisonTest(unittest.TestCase):
                 import { writeFileSync,existsSync } from 'node:fs';
                 import { setTimeout } from 'node:timers/promises';
                 const env=process.env, start=performance.timeOrigin;
-                writeFileSync(env.BLITZEN_RESIDENT_PROGRESS_FILE,JSON.stringify({phase:'ready',nodeTimeOriginMs:start}));
+                writeFileSync(env.BLITZEN_RESIDENT_PROGRESS_FILE,JSON.stringify({phase:'ready',nodeTimeOriginMs:start,surfaceId:'fixture-surface'}));
                 while (!existsSync(env.BLITZEN_RESIDENT_BARRIER_FILE)) await setTimeout(10);
                 const began=performance.now();
                 await setTimeout(350);
                 writeFileSync(env.BLITZEN_RESIDENT_RECEIPT_FILE,JSON.stringify({ verified:true,imageCorrect:true,
                   knownEffects:1,committedRevision:'B-r2',requestMonotonicMs:began,mutationReturnedMonotonicMs:began+1,
-                  outcomeVerifiedMonotonicMs:performance.now(), plannerCalls:0, modelSpendUsd:0 }));
-            """)
+                  outcomeVerifiedMonotonicMs:performance.now(), plannerCalls:0, modelSpendUsd:0, ...PIXEL_EVIDENCE }));
+            """.replace('PIXEL_EVIDENCE', json.dumps(recorded_pixels('fixture-surface'))))
             args = SimpleNamespace(stock_channel="chrome", timeout=10)
             wave = {"width": 2, "repeat": 1, "arm": "stock-helper"}
             with patch.object(module, "FIXTURE", script):
@@ -210,6 +214,7 @@ class ResidentComparisonTest(unittest.TestCase):
                             "verified": True,
                             "knownEffects": 1,
                             "committedRevision": "B-r2",
+                            **recorded_pixels("actual-surface"),
                             "requestMonotonicMs": first,
                             "mutationReturnedMonotonicMs": first + 2,
                             "outcomeVerifiedMonotonicMs": first + 12 + slot,

@@ -10,6 +10,9 @@ wire = runpy.run_path(str(Path(__file__).with_name("test_wire_submit.py")))
 pin = json.loads((QUAL / "resident-command-witness-pin.json").read_text())
 
 
+recorded_pixels = runpy.run_path(str(Path(__file__).with_name("test_canonical_evidence.py")))["recorded_pixels"]
+
+
 def record(path, name, obj):
     runner["write"](path / (name + ".json"), obj)
 
@@ -38,7 +41,7 @@ def make_row(path, wave, pid):
     outcome = dict(verified=True, imageCorrect=True, knownEffects=1, committedRevision="B-r2", selection=select,
                    requestMonotonicMs=2, mutationReturnedMonotonicMs=3, outcomeVerifiedMonotonicMs=13 if on else 10,
                    clock="request-repaint-through-authoritative-reconciliation", observer=observer,
-                   plannerCalls=0, modelSpendUsd=0, digestMode="cpu")
+                   plannerCalls=0, modelSpendUsd=0, digestMode="cpu", **recorded_pixels(surface))
     if on and arm.startswith("fawn"):
         progress["frameImportScope"] = {k: v for k, v in scope.items() if k not in ("ordinal", "width", "height", "mediaTimestampUs")}
         outcome.update(diagnosticOnly=True, diagnosticKind="frame-import", frameImportOrdinal=scope["ordinal"],

@@ -41,3 +41,9 @@ Use `resident-comparison.py plan --paired-observer --out RUN`, then the ordinary
 The report gives separate distributions for trace on and off, including planner calls and model spend for unsuccessful attempts. The observer-effect interval compares the same browser image, GPU, arm, concurrency, repeat and process slot. Fawn/Doe needs native completion for the selected mask command in that attempt. Its trace-off latency and observer cost remain unresolved while that proof depends on tracing. The trace-on comparisons describe the instrumented workflows. A separate diagnostic or a neighboring row cannot provide performance attribution.
 
 Paired hardware deltas require the same Linux boot. Two browser GPU arms must also expose one matching DRM device and PCI address across the sampled GPU process descriptors. Fawn/Dawn and Fawn/Doe must use identical browser bytes. Missing or ambiguous device observations remain in the per-arm results and exclude the cross-arm delta. Stock with the native CPU helper needs the same host but has no compute-device requirement.
+
+### Canonical pixel evidence in timed rows
+
+Every timed workflow carries the hashes of the permission-restricted frames reviewed and rechecked for its write. The checker recomputes the indexes of changed tiles, verifies that the stale proposal had zero effects, and matches the fresh pair to the capture whose write the application confirmed. A row without this evidence retains its diagnostic and spend records. Its latency is excluded from the current comparison.
+
+The external-texture mask can miss small I420 color changes that survive conversion to canonical sRGB RGBA. Record the host bytes copied, canonical bytes hashed, tiles rehashed, and missed hints. A Doe completion proves that the diff command ran. The separate write receipt establishes what the application authorized and recorded. Compare the full cost of both steps across arms.
