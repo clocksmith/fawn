@@ -6,6 +6,7 @@ import { join, resolve } from 'node:path';
 import { PrivateJsonFile } from './private-json-file.js';
 import { canonicalJson, sha256Hex } from '../journal.js';
 import { TraceDag } from './trace-dag.js';
+import { portableGraph } from './portable-handoff.js';
 import { runWorkflow } from './workflow-agent.js';
 import { WorkflowAttempts, attemptErrorCode } from './workflow-attempts.js';
 
@@ -107,6 +108,31 @@ export class WorkflowStore {
     if (!pointer) return { revision: 0, hasLearnedGraph: false };
     const dag = state.workflowVersions[pointer.currentVersion].dag;
     return { revision: pointer.revision, hasLearnedGraph: Object.keys(dag.nodes).length > 0 };
+  }
+  describeHandoff(scope, definition, projectRuns) {
+    const state = this.#read(), id = this.#namespace(scope);
+    const runs = state.workflowRuns.filter(run => run.workflowId === id);
+    const selected = runs.findLast(run => projectRuns.has(run.runId) && run.completed && run.reviewVerified);
+    const version = selected && state.workflowVersions[selected.resultVersion];
+    if (!version?.revision) throw Error('No verified learned routine for that project and template');
+    const policyHash = sha256Hex(canonicalJson({ disclosure: definition.disclosurePolicy, fieldGroups: definition.fieldGroups ?? null,
+      learnRepairs: definition.learnRepairs ?? true, observationScope: 'authorized-controls-v1' }));
+    // The account-scoped store can merge traces from other projects and synchronized clients.
+    // The first receipt for each nonempty version must attribute that edit to this investigation.
+    const firstReceipts = new Map();
+    for (const run of runs) {
+      if (!firstReceipts.has(run.resultVersion)) firstReceipts.set(run.resultVersion, run);
+    }
+    for (let id = selected.resultVersion; state.workflowVersions[id].revision > 0; id = state.workflowVersions[id].parentVersion) {
+      const receipt = firstReceipts.get(id);
+      if (!receipt || !projectRuns.has(receipt.runId) || !receipt.completed || !receipt.reviewVerified
+        || receipt.baseVersion !== state.workflowVersions[id].parentVersion || receipt.policyHash !== policyHash
+        || receipt.verificationId !== definition.verificationId
+        || canonicalJson(receipt.taskSourceHashes) !== canonicalJson(definition.taskSourceHashes)) {
+        throw Error('Routine contains changes without a matching verified publication by this investigation');
+      }
+    }
+    return portableGraph(TraceDag.restore(version.dag, this.limits), version.revision, scope.template, definition);
   }
   async checkout(scope) {
     const id = this.#namespace(scope);
@@ -219,7 +245,7 @@ export class WorkflowStore {
     }
     return { ...result, attempt };
   }
-  async #run({ accountScope, verifyAccount, verificationId, taskSourceHashes, disclosurePolicy, ...options }, accounting) {
+  async #run({ accountScope, verifyAccount, verificationId, taskSourceHashes, disclosurePolicy, verifyReadOnlyStep = null, ...options }, accounting) {
     if (typeof verifyAccount !== 'function' || typeof options.verifyReview !== 'function'
       || !identifier(verificationId) || !hashMapValid(taskSourceHashes)) {
       throw Error('Trusted account and review verifiers are required');
@@ -272,7 +298,7 @@ export class WorkflowStore {
     const startedAt = accounting.startedAt;
     let learned = null;
     await this.attempts.update(accounting.runId, { stage: 'executing' });
-    const result = await runWorkflow({ ...options, learnRepairs,
+    const result = await runWorkflow({ ...options, learnRepairs, countModelCalls: !verifyReadOnlyStep,
       observationLocators: [...policy.fields.map(field => field.locator), ...policy.intermediateClicks],
       fieldGroups, accountScope, planner, dag: TraceDag.restore(checkout.dag, this.limits),
       intermediateClicks: policy.intermediateClicks, assertContext,
@@ -282,6 +308,10 @@ export class WorkflowStore {
           : policy.fields.some(field => field.kind === step.kind && field.slot === step.slot
             && canonicalJson(field.locator) === canonicalJson(step.locator)));
         if (!permitted) fail('workflow-disclosure-denied', 'Input slot is not authorized for this field and origin');
+        if (verifyReadOnlyStep) {
+          if (await verifyReadOnlyStep(step) !== true) fail('workflow-read-only-denied', 'Recipient did not verify this read-only step');
+          await assertContext();
+        }
       },
       publishTrace: async trace => { learned = trace; },
     });

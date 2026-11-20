@@ -8,6 +8,7 @@ import { InvestigationStore } from './investigation.js';
 import { repositoryEvidence, repositoryFiles } from './repository.js';
 import { startAgent, investigationContext } from './agent.js';
 import { handoffBrief } from './handoff.js';
+import { exportHandoff, validateHandoff, taskContract, readOnlyPlanner } from './portable-handoff.js';
 import { validityBrief, describeChange, unfinishedRecords } from './validity.js';
 import { unreadMentions, claimsAbsence } from './unread-mentions.js';
 import { readArtifact } from './artifact-read.js';
@@ -158,6 +159,49 @@ export class WorkspaceController {
   }
   /** What a returning agent or person sees: prior sessions, attempts, human notes, unknown outcomes. */
   async handoff(id, options = {}) { return handoffBrief(this.store.get(id), await this.service.inspect(this.admin(id)), options); }
+  exportHandoff(id, { evidenceIds, template = null }) {
+    return this.exclusive(id, async () => {
+      if (this.active.has(id) || this.owner(id).ownerId !== 'human') throw Error('Take human control before exporting a handoff');
+      const project = this.store.get(id);
+      let routine = null;
+      if (template !== null) {
+        const definition = this.workflowTasks.get(template);
+        if (!this.workflowStore || !definition) throw Error('Select an installed and learned workflow');
+        const projectRuns = new Set(project.activity.filter(e => e.event === 'personal-workflow-finished' && e.completed && e.attempt?.receiptStored && e.persistence?.status === 'published')
+          .map(e => e.attempt.runId));
+        routine = this.workflowStore.describeHandoff({ accountScope: definition.accountScope, template }, definition, projectRuns);
+      }
+      const state = await this.service.inspect(this.admin(id));
+      return exportHandoff(project, state.actions, evidenceIds, routine);
+    });
+  }
+  importHandoff(id, input) {
+    return this.exclusive(id, () => {
+      if (this.active.has(id) || this.owner(id).ownerId !== 'human') throw Error('Take human control before importing a handoff');
+      const snapshot = validateHandoff(input);
+      const prior = this.store.get(id).activity.find(e => e.event === 'handoff-imported' && e.snapshot.digest === snapshot.digest);
+      if (!prior) this.store.activity(id, { event: 'handoff-imported', snapshot });
+      return { digest: snapshot.digest };
+    });
+  }
+  readHandoff(id, digest) {
+    const stored = this.store.get(id).activity.find(e => e.event === 'handoff-imported' && e.snapshot.digest === digest);
+    if (!stored) throw Error('Unknown imported handoff');
+    const snapshot = stored.snapshot;
+    const matching = [...this.workflowTasks].find(([name,definition]) => snapshot.routine?.contract === taskContract(name, definition));
+    let localTask = null;
+    if (matching) {
+      const [name,definition] = matching, policy = definition.disclosurePolicy;
+      const rules = [...policy.fields, ...policy.intermediateClicks.map(locator => ({ kind: 'click', locator }))];
+      const selected = [...new Set(snapshot.routine.nodes.flatMap(node => node.steps.map(step => {
+        if (rules[step.rule]?.kind !== step.kind) throw Error('Imported step does not match a local rule');
+        return step.rule;
+      })))];
+      localTask = { template: name, steps: selected.map(rule => ({ rule, kind: rules[rule].kind,
+        label: rules[rule].locator[1], ...(rules[rule].slot ? { slot: rules[rule].slot } : {}) })) };
+    }
+    return { snapshot, localTask, mode: 'review', unresolvedAuthority: 'source-workspace' };
+  }
   record(id, input) {
     if (input.kind === 'evidence' || (input.id && this.store.get(id).artifacts[input.id]?.kind === 'evidence')) throw Error('Capture a page or repository file to create evidence');
     return this.store.revise(id, input);
@@ -214,7 +258,11 @@ export class WorkspaceController {
         learnRepairs: definition.learnRepairs ?? true, revision, hasLearnedGraph, fields: this.#workflowFields(definition) };
     });
   }
-  runPersonalWorkflow(id, { template, pageId = 'main', inputs, mode } = {}) {
+  useHandoff(id, { digest, template, inputs, pageId }) {
+    if (typeof digest !== 'string' || !/^[a-f0-9]{64}$/.test(digest)) throw Error('Select an imported handoff');
+    return this.runPersonalWorkflow(id, { template, inputs, pageId, mode: 'fresh' }, digest);
+  }
+  runPersonalWorkflow(id, { template, pageId = 'main', inputs, mode } = {}, handoffDigest = null) {
     return this.exclusive(id, async () => {
       const definition = typeof template === 'string' ? this.workflowTasks.get(template) : null;
       if (!this.workflowStore || !definition || !['learn', 'reuse', 'fresh'].includes(mode)) {
@@ -228,7 +276,8 @@ export class WorkspaceController {
           throw Error(`Provide a string value within budget for workflow slot ${slot}`);
         }
       }
-      const planner = definition.planner ?? this.planner;
+      const imported = handoffDigest === null ? null : readOnlyPlanner(this.readHandoff(id, handoffDigest).snapshot, template, definition);
+      const planner = imported ?? definition.planner ?? this.planner;
       if (!planner && mode !== 'reuse') throw Error('Configure BLITZEN_MODEL (or FAWN_MODEL) and the planner API credential before delegating');
       if (this.active.has(id)) throw Error('The prior agent has not settled');
       const before = await this.service.inspect(this.admin(id));
@@ -241,7 +290,7 @@ export class WorkspaceController {
       const profile = structuredClone(inputs);
       await this.service.grantAuthorization({ ...this.admin(id), grantId, ownerId: 'agent',
         intents: ['personal-workflow'], targetOrigins: [disclosurePolicy.origin],
-        actionKinds: ['fill', 'select', 'click'], pageIds: [pageId], readRegions: null,
+        actionKinds: imported?.kinds ?? ['fill', 'select', 'click'], pageIds: [pageId], readRegions: null,
         expiresAt: new Date(Date.now() + this.config.delegationMaxAgeMs).toISOString() });
       for (const grant of before.grants.filter(value => value.ownerId === 'agent')) {
         await this.service.revokeAuthorization({ ...this.admin(id), grantId: grant.grantId });
@@ -250,11 +299,12 @@ export class WorkspaceController {
       const owner = createOwnerSession(this.service, { workspaceId: id, ...assigned }).identity;
       this.owners.set(id, owner);
       const controller = new AbortController();
-      this.store.activity(id, { event: 'personal-workflow-started', template, mode, grantId });
+      this.store.activity(id, { event: 'personal-workflow-started', template, mode, grantId, ...(imported ? { handoffDigest } : {}) });
       const done = this.workflowStore.run({ template, mode, pageId, inputs: profile,
         accountScope, verifyAccount, verificationId, taskSourceHashes, disclosurePolicy, fieldGroups, learnRepairs, service: this.service, owner,
         intent: 'personal-workflow', task, planner, config: this.config, store: this.store,
         projectId: id, signal: controller.signal,
+        ...(imported ? { verifyReadOnlyStep: step => definition.verifyReadOnlyHandoffStep({service:this.service, owner, pageId, step}) } : {}),
         verifyReview: () => verifyReview({ service: this.service, owner, pageId, inputs: profile }),
       }).then(result => {
         this.store.activity(id, { event: 'personal-workflow-finished', completed: result.completed,

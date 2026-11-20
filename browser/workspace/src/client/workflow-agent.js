@@ -65,7 +65,7 @@ export function scopeWorkflowObservation(service, template, locators) {
 export async function runWorkflow({ dag, mode, service, owner, pageId, intent, template, inputs,
   intermediateClicks, task, planner, config, store, projectId, verifyReview, signal,
   assertContext = async () => {}, authorizeStep = async () => {}, publishTrace = null, accountScope = null, fieldGroups = null,
-  learnRepairs = false, observationLocators = null, reconvergeMidRepair = false, goal = null }) {
+  learnRepairs = false, countModelCalls = true, observationLocators = null, reconvergeMidRepair = false, goal = null }) {
   if (!['learn', 'fresh', 'reuse'].includes(mode)) throw Error('Invalid workflow mode');
   if (typeof learnRepairs !== 'boolean') throw Error('Explicit boolean repair-learning policy required');
   if (typeof reconvergeMidRepair !== 'boolean') throw Error('Explicit boolean mid-repair reconvergence policy required');
@@ -199,7 +199,7 @@ export async function runWorkflow({ dag, mode, service, owner, pageId, intent, t
         return { tool: 'finish', input: { summary: 'Reconverged onto verified workflow suffix' } };
       }
       if (!planner) throw Error('Configure BLITZEN_MODEL (or FAWN_MODEL) and the planner API credential before learning or repairing a workflow');
-      modelCalls++;
+      if (countModelCalls) modelCalls++;
       return planner.next(...args);
     } };
     const run = startAgent({ projectId, store, planner: countedPlanner, execute, config, signal,

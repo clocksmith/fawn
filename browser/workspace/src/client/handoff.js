@@ -1,7 +1,7 @@
 import { validityBrief } from './validity.js';
 // Bounded continuation view of the complete journal and service action records.
 // This summary grants no authority and never settles an uncertain action.
-const LIMITS = Object.freeze({ sessions: 8, tried: 40, human: 12, unresolvedActions: 20, openQuestions: 12, needsReview: 20 });
+const LIMITS = Object.freeze({ sessions: 8, tried: 40, human: 12, receivedHandoffs: 20, unresolvedActions: 20, openQuestions: 12, needsReview: 20 });
 const MAX_TEXT = 400;
 const SIGN_IN = 'Site sign-ins may be lost: observe each site before relying on a session, and ask_human to sign in again if it is gone.';
 const RELEASE_NOTES = Object.freeze({
@@ -28,7 +28,7 @@ function summarizeOutput(output) {
 
 /** Cursors select older pages; use only the opaque nextCursor returned for that collection. */
 export function handoffBrief(project, workspace = null, { cursors = {} } = {}) {
-  const sessions = [], human = [], requested = new Map(), pagination = {};
+  const sessions = [], human = [], receivedHandoffs = [], requested = new Map(), pagination = {};
   let current = null, forcedRelease = null;
   // One forward settlement scan: each call is indexed once and updated on result.
   for (let index = 0; index < project.activity.length; index++) {
@@ -47,6 +47,9 @@ export function handoffBrief(project, workspace = null, { cursors = {} } = {}) {
       if (call) call.result = event;
     } else if (event.event === 'human-control' || event.event === 'human-note') {
       human.push({ cursor, event, provenance });
+    } else if (event.event === 'handoff-imported') {
+      const { digest, evidence, unresolved } = event.snapshot;
+      receivedHandoffs.push({ cursor: digest, digest, evidenceCount: evidence.length, sourceUnresolvedCount: unresolved.length });
     } else if (event.event === 'browser-released') {
       // Records written before the release kind existed carry only `forced`.
       const release = event.release ?? (event.forced ? 'forced' : 'graceful');
@@ -68,6 +71,7 @@ export function handoffBrief(project, workspace = null, { cursors = {} } = {}) {
   const unresolved = (workspace?.actions ?? []).filter(action => action.isUncertain);
   const artifacts = Object.values(project.artifacts);
   const result = {
+    receivedHandoffs: page('receivedHandoffs', receivedHandoffs, ({ cursor, ...summary }) => summary),
     previousRun: project.run ? { status: project.run.status, detail: clip(project.run.detail ?? ''), turns: project.run.turns } : null,
     sessions: page('sessions', sessions, ({ event, provenance, ended, finishProposal }) => ({ ...provenance,
       task: clip(event.task), startedAt: event.at, actionKinds: bounded(event.actionKinds),
