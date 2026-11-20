@@ -11,12 +11,18 @@ import { createPlaywrightAdapter } from '../../src/adapters/playwright-adapter.j
 import { testBrowserSelection } from '../support/browser-selection.js';
 import { assertSolidPixels } from '../support/gpu-presentation-oracle.js';
 
+import { attachSparseOracle, qualifySparseReview } from '../support/linked-sparse-oracle.js';
+
+const linkedSparse = process.env.BLITZEN_TEST_LINKED_SPARSE_ORACLE === '1';
+let sparseSamples;
 const canvasBackend = process.env.BLITZEN_TEST_CANVAS_BACKEND ?? 'cpu';
 const compositor = process.env.BLITZEN_REVIEW_COMPOSITOR_TRANSPORT;
 const sandboxedSoftware = process.env.BLITZEN_RESIDENT_SANDBOXED_SOFTWARE === '1';
 const frameTracePrefix = process.env.BLITZEN_RESIDENT_FRAME_TRACE_PREFIX;
 const expectPlaneEvidence = process.env.BLITZEN_TEST_FAWN_PLANE_EVIDENCE === '1';
 const observerMode = process.env.BLITZEN_RESIDENT_OBSERVER;
+if (linkedSparse && (!expectPlaneEvidence || !sandboxedSoftware || compositor !== 'external-texture'
+  || frameTracePrefix || observerMode || process.env.BLITZEN_RESIDENT_SCOPE_PROBE)) throw Error('Sparse oracle requires a private correctness run');
 const stockTracePrefix = process.env.BLITZEN_RESIDENT_STOCK_TRACE_PREFIX;
 const traceCategory = 'disabled-by-default-gpu.dawn';
 const frameEventNames = new Set([
@@ -229,6 +235,7 @@ try {
       adapter = createPlaywrightAdapter({ ...options, restrictedPlaneEvidence: expectPlaneEvidence, requireSandbox: expectPlaneEvidence || sandboxedSoftware || process.env.BLITZEN_RESIDENT_PHYSICAL === '1',
         captureAttribution: Boolean(process.env.BLITZEN_CAPTURE_RUN_DIRECTORY), frameImportEvidence: Boolean(frameTracePrefix),
         privateWorldPerCapture: observerMode === 'on' });
+      if (linkedSparse) sparseSamples = attachSparseOracle(adapter.compositor);
       const snapshot = adapter.snapshot.bind(adapter);
       adapter.snapshot = async (...args) => {
         const result = await snapshot(...args);
@@ -563,6 +570,7 @@ try {
       fresh: { reviewed: freshReviewed, checked: freshChecked, effectCount: committed().length, reconciliation: 'effect-present' } };
   }
   const receipt = { clock: 'request-repaint-through-authoritative-reconciliation', canvasBackend, ...(pixelAuthority ? { pixelAuthority } : {}),
+    ...(linkedSparse ? { diagnosticOnly: true, linkedSparseOracle: qualifySparseReview(sparseSamples, pixelAuthority) } : {}),
     ...(observer ? { observer } : {}),
     ...(frameScope ? { diagnosticOnly: true, diagnosticKind: 'frame-import', frameImportTimestampUs: frame.mediaTimestampUs, frameImportOrdinal: frame.frameImportOrdinal,
       frameImportDimensions: [frame.width, frame.height] } : {}),
