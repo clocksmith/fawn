@@ -803,3 +803,32 @@ fences, closure and forged labels. The full positive capture-to-fence result
 requires an instrumented, sandboxed Chromium build emitting these events on
 the same run as the independent GPU collector. A workspace receipt, stock
 browser completion or synthetic trace cannot substitute for that evidence.
+
+**One-command Linux capture attribution.** On a private desktop, select the
+fixture tab when Chromium asks to share it. Use the same pinned Fawn/Doe
+workspace profile used for the four-arm comparison. The executable and Doe
+library need debug symbols for the optional Chromium patch and native observer.
+In a component build, pass `--scope-image` with the path of the pinned
+dependency containing `FawnSubmitResidentDocumentCommandV1`. The pinned Linux
+component build links that function into `libgpu_gles2.so`.
+
+```sh
+cd browser/workspace
+python3 qualification/run-capture-attribution.py preflight --profile "$FAWN_PROFILE" --out "$FRESH_PREFLIGHT"
+python3 qualification/run-capture-attribution.py run --profile "$FAWN_PROFILE" --out "$FRESH_DIAGNOSTIC" --timeout 300
+```
+
+Preflight verifies the images and debug symbols without opening a browser.
+The run starts the existing Blitzen canvas fixture in a fresh profile. Its
+private browser control pipe identifies the GPU child. The controller checks
+child ancestry, executable, start time, forced runtime and GPU sandbox before
+arming the native fence observer. The browser chooser still authorizes the
+selected region. Use `--lookalike` for the separate copied-label fault control.
+A policy that prevents examining the fresh child produces a refusal. Keep the
+normal browser and OS sandbox active.
+
+A fresh output directory holds `result.json`, the browser trace, the native
+events and the independently verified application outcome when available.
+Only a matching run, capture world, live grant, queue submission and fence
+with one verified effect can pass. Every result excludes timing and hardware
+performance qualification. The timeout includes preflight and the chooser.

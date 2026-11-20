@@ -18,9 +18,10 @@ import { closeWithin } from './bounded-close.js';
 const UNSAFE_FILENAME_CHARS = /[^A-Za-z0-9._-]/g;
 
 class PlaywrightWorkspaceAdapter {
-  constructor({ config, profileRoot, artifactRoot, requireSandbox = false }) {
+  constructor({ config, profileRoot, artifactRoot, requireSandbox = false, captureAttribution = false }) {
     this._config = config;
     this._requireSandbox = requireSandbox;
+    this._captureAttribution = captureAttribution;
     this._profileRoot = profileRoot;
     this._artifactRoot = artifactRoot;
     this._workspaces = new Map();
@@ -33,6 +34,12 @@ class PlaywrightWorkspaceAdapter {
     if (this._workspaces.has(workspaceId)) return;
     const profileDir = join(this._profileRoot, workspaceId);
     const launchOptions = playwrightLaunchOptions(this._config.browser, this._requireSandbox);
+    if (this._captureAttribution) {
+      if (!launchOptions.chromiumSandbox || this._config.browser.fawnBuild?.runtime.mode !== 'doe-c') {
+        throw Error('Capture attribution requires pinned, sandboxed Fawn/Doe');
+      }
+      launchOptions.args.push('--fawn-resident-command-provenance');
+    }
     mkdirSync(profileDir, { recursive: true });
     const context = await chromium.launchPersistentContext(profileDir, {
       ...launchOptions,

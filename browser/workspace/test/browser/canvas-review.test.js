@@ -1,7 +1,7 @@
 // A canvas supplies the only status signal. The site's revision-conditional form
 // and its durable review record establish which job can be queued and recovered.
 import assert from 'node:assert/strict';
-import { appendFileSync, existsSync, mkdtempSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs';
+import { appendFileSync, existsSync, mkdtempSync, readFileSync, realpathSync, renameSync, rmSync, writeFileSync } from 'node:fs';
 import { createServer } from 'node:http';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -46,6 +46,47 @@ async function startScopeTrace(page, prefix) {
       }
     } finally { clearTimeout(timer); await session.detach(); }
   };
+}
+
+// Load Doe in another document, so the measured document still requests its
+// own fresh decoder while the browser trace is active. The GPU child identity
+// comes from this explicitly launched browser's private CDP pipe.
+async function awaitNativeObserver(page, directory, pinnedLibrary) {
+  const control = await page.context().browser().newBrowserCDPSession();
+  const warm = await page.context().newPage();
+  try {
+    await warm.goto(origin + '/warm-attribution');
+    await warm.evaluate(async () => {
+      const adapter = await navigator.gpu?.requestAdapter();
+      if (!adapter) throw Error('Private diagnostic GPU adapter unavailable');
+      const device = await adapter.requestDevice();
+      try { await device.queue.onSubmittedWorkDone(); } finally { device.destroy(); }
+    });
+    const { processInfo } = await control.send('SystemInfo.getProcessInfo');
+    const { gpu } = await control.send('SystemInfo.getInfo');
+    const { arguments: flags } = await control.send('Browser.getBrowserCommandLine');
+    if (gpu.auxAttributes?.sandboxed !== true || flags.some(f =>
+      /^--(?:no-sandbox|disable-(?:gpu|setuid|namespace|seccomp-filter)-sandbox|single-process|in-process-gpu)(?:=|$)/.test(f)) ||
+      !flags.includes('--fawn-resident-command-provenance') || !flags.includes('--use-webgpu-runtime=doe') ||
+      !flags.includes('--doe-webgpu-library-path=' + realpathSync.native(pinnedLibrary))) throw Error('Browser reported an incompatible sandbox or runtime');
+    const unique = role => {
+      const ids = processInfo.filter(p => p.type.toLowerCase() === role).map(p => p.id);
+      if (ids.length !== 1 || !Number.isSafeInteger(ids[0]) || ids[0] <= 0) throw Error('Expected one browser-owned ' + role + ' child');
+      return ids[0];
+    };
+    const ready = { run: process.env.BLITZEN_NATIVE_TRACE_RUN_ID, controllerPid: process.pid,
+      browserPid: unique('browser'), gpuPid: unique('gpu'), gpuSandboxed: true };
+    writeFileSync(join(directory, 'ready.partial'), JSON.stringify(ready), { flag: 'wx', mode: 0o600 });
+    renameSync(join(directory, 'ready.partial'), join(directory, 'ready.json'));
+    const deadline = Date.now() + Number(process.env.BLITZEN_CAPTURE_TIMEOUT_MS);
+    const armedPath = join(directory, 'armed.json');
+    while (!existsSync(armedPath)) {
+      if (Date.now() >= deadline) throw Error('Native observer did not arm in the allotted window');
+      await new Promise(resolve => setTimeout(resolve, 50));
+    }
+    const armed = JSON.parse(readFileSync(armedPath, 'utf8'));
+    if (armed.run !== ready.run || armed.gpuPid !== ready.gpuPid) throw Error('Native handoff belongs to another process');
+  } finally { await warm.close(); await control.detach(); }
 }
 
 // Fault control on the private fixture. A second ordinary page gets its own
@@ -152,7 +193,8 @@ try {
   const config = { ...baseConfig, observation: { ...baseConfig.observation, canvasBackend } };
   service = await WorkspaceService.open({ stateDir: join(root, 'service'), config,
     createAdapter: options => {
-      adapter = createPlaywrightAdapter({ ...options, requireSandbox: process.env.BLITZEN_RESIDENT_PHYSICAL === '1' });
+      adapter = createPlaywrightAdapter({ ...options, requireSandbox: process.env.BLITZEN_RESIDENT_PHYSICAL === '1',
+        captureAttribution: Boolean(process.env.BLITZEN_CAPTURE_RUN_DIRECTORY) });
       const snapshot = adapter.snapshot.bind(adapter);
       adapter.snapshot = async (...args) => {
         const result = await snapshot(...args);
@@ -275,6 +317,9 @@ try {
   checkpoint({ phase: 'authorize-surface', knownEffects: committed().length });
   const tracePrefix = process.env.BLITZEN_RESIDENT_SCOPE_TRACE_PREFIX;
   if (tracePrefix && process.env.BLITZEN_RESIDENT_SCOPE_PROBE !== '1') throw Error('Scope trace requires diagnostic mode');
+  if (process.env.BLITZEN_CAPTURE_RUN_DIRECTORY) {
+    await awaitNativeObserver(page, process.env.BLITZEN_CAPTURE_RUN_DIRECTORY, config.browser.fawnBuild.runtime.library.path);
+  }
   const finishTrace = tracePrefix ? await startScopeTrace(page, tracePrefix) : null;
   let beforeChange = await evidence();
   if (useCompositor) {

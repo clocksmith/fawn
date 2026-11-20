@@ -1,7 +1,7 @@
 // Explicit Fawn build selection. Artifact identity is launch admission, not GPU
 // ownership proof; that additionally requires the composed browser qualification.
 import { createHash } from 'node:crypto';
-import { readFileSync, realpathSync, statSync } from 'node:fs';
+import { openSync, closeSync, readSync, realpathSync, statSync } from 'node:fs';
 import { posix, win32 } from 'node:path';
 import { forcedRuntimeArgs } from '../../chromium/scripts/browser-runtime-selector.mjs';
 
@@ -48,7 +48,14 @@ function validateFawnBuild(browser, { platform = process.platform } = {}) {
 function verifiedArtifact(artifact) {
   const path = realpathSync.native(artifact.path);
   if (!statSync(path).isFile()) throw new Error(`Fawn artifact is not a file: ${path}`);
-  const sha256 = createHash('sha256').update(readFileSync(path)).digest('hex');
+  const digest = createHash('sha256');
+  const buffer = Buffer.allocUnsafe(1024 * 1024);
+  const fd = openSync(path, 'r');
+  try {
+    let count;
+    while ((count = readSync(fd, buffer)) > 0) digest.update(buffer.subarray(0, count));
+  } finally { closeSync(fd); }
+  const sha256 = digest.digest('hex');
   if (sha256 !== artifact.sha256) throw new Error(`Fawn artifact SHA-256 mismatch: ${path}`);
   return Object.freeze({ path, sha256 });
 }

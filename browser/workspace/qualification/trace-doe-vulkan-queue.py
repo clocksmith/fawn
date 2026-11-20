@@ -37,7 +37,10 @@ calls, by_command, queues, errors = {}, {}, {}, []
 counter = queue_count = commands_seen = 0
 retired_unresolved = set()
 owner_pid = gdb.selected_inferior().pid
-if not owner_pid or not any(Path(obj.filename).resolve() == library for obj in gdb.objfiles()):
+loaded_images = {Path(obj.filename).resolve() for obj in gdb.objfiles() if obj.filename}
+if scope_image and scope_image not in loaded_images:
+    raise gdb.GdbError("The pinned scope image is not loaded by this diagnostic child")
+if not owner_pid or library not in loaded_images:
     raise gdb.GdbError("Start the owned inferior and load the pinned Doe image before arming probes")
 
 
@@ -269,6 +272,7 @@ emit(
     pid=owner_pid,
     nativeLibrarySha256=expected,
     scopeImageSha256=scope_sha,
+    controllerRun=os.environ.get("BLITZEN_NATIVE_TRACE_RUN_ID"),
     pageOwnership=None,
     latencyQualified=False,
 )
