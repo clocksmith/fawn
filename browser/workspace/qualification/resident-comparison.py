@@ -342,6 +342,7 @@ def run_wave(out, wave, args):
 
 def summarize_row(path, wave, slot):
     p, e, o = (read(path / file) for file in ("progress.json", "exit.json", "outcome.json"))
+    partial = p.get("partial") or {}
     data = {
         **wave,
         "slot": slot,
@@ -374,7 +375,11 @@ def summarize_row(path, wave, slot):
         "rssSamples": e.get("rssSamples"),
         "physicalGpuMemoryBytes": None,
         "gpuProcessDrm": e.get("gpuProcessDrm"),
-        **{k: o.get(k, p.get("partial", {}).get(k)) for k in COUNTERS},
+        "usageReceipts": {
+            k: "outcome" if k in o else "partial" if k in partial else None
+            for k in ("plannerCalls", "modelSpendUsd")
+        },
+        **{k: o.get(k, partial.get(k)) for k in COUNTERS},
     }
     if not e:
         data["reason"] = "no completed runner record"
@@ -471,6 +476,24 @@ def bounded_stats(intervals):
     }
 
 
+def usage_totals(rows, field):
+    values = []
+    complete = 0
+    for row in rows:
+        value = row[field]
+        if type(value) not in (int, float) or not math.isfinite(value) or value < 0:
+            continue
+        if field == "plannerCalls" and type(value) is not int:
+            continue
+        values.append(value)
+        if row["usageReceipts"][field] == "outcome":
+            complete += 1
+    total_fn = sum if field == "plannerCalls" else math.fsum
+    observed = total_fn(values) if values else None
+    return {"observedSum": observed, "observedAttempts": len(values), "finalAttempts": complete,
+            "total": observed if complete == len(rows) else None}
+
+
 def summarize(out):
     plan = read(out / "plan.json")
     if not isinstance(plan, list) or not plan:
@@ -500,6 +523,8 @@ def summarize(out):
                     "concurrency": width,
                     "planned": len(items),
                     "statuses": dict(collections.Counter(r["status"] for r in items)),
+                    "plannerCalls": usage_totals(items, "plannerCalls"),
+                    "modelSpendUsd": usage_totals(items, "modelSpendUsd"),
                     "excludedIncompleteWaves": sum(
                         r["status"] == "verified" and not r["fullMeasuredOverlap"] for r in items
                     ),
@@ -537,6 +562,7 @@ def summarize(out):
             )
     return {
         "clock": "Host monotonic bounds bracket the page canvas mutation, ending at authoritative application reconciliation. Midpoint is an estimate. No compositor frame-commit stamp.",
+        "usageScope": "Per-arm usage includes all planned attempts, including refusals and incorrect outcomes. The observed sum includes partial receipts. A total requires a final measured value for every attempt.",
         "aggregation": "Nearest-rank p95 and median p50 of the qualified observations. Paired deltas subtract the baseline from the candidate in the same repeat and slot. Bounds carry the observed mutation-time uncertainty through each quantile. A delta interval containing zero leaves the direction unresolved. Sampling uncertainty is separate. Every planned attempt is reported and incomplete overlapping cohorts are excluded.",
         "memoryScope": "Process-tree RSS is sampled about every 250 ms. From browser readiness, Linux DRM counts resident bytes reported for the fixture GPU process. The peak contains one sample across regions, deduplicated by device and DRM client. Separate clients can count shared buffers twice. Missing samples are unknown. Whole-device VRAM is unmeasured.",
         "attribution": "Matching source revisions and versions permits a whole-browser comparison only. Build options and renderer paths may differ. Fawn/Doe timings stay withheld pending native per-page provenance.",

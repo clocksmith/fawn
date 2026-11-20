@@ -220,6 +220,9 @@ class ResidentComparisonTest(unittest.TestCase):
             refused = root / module.run_id({"width": 1, "repeat": 2, "arm": "fawn-doe"}, 1)
             (refused / "outcome.json").unlink()
             module.write(refused / "exit.json", {"exit": 1, "allReady": False})
+            progress = module.read(refused / "progress.json")
+            progress["partial"] = {"plannerCalls": 2, "modelSpendUsd": 0.03}
+            module.write(refused / "progress.json", progress)
             report = module.summarize(root)
             rows = report["rows"]
             self.assertEqual(len(rows), 24)
@@ -233,7 +236,11 @@ class ResidentComparisonTest(unittest.TestCase):
                 )
             )
             row = next(r for r in rows if r["status"] == "refused")
-            self.assertEqual(row["modelSpendUsd"], 0)
+            self.assertEqual(row["modelSpendUsd"], 0.03)
+            doe = next(r for r in report["byArm"] if r["arm"] == "fawn-doe" and r["concurrency"] == 1)
+            self.assertEqual(doe["plannerCalls"], {"observedSum": 2, "observedAttempts": 2, "finalAttempts": 1, "total": None})
+            self.assertEqual(doe["modelSpendUsd"]["observedSum"], 0.03)
+            self.assertIsNone(doe["modelSpendUsd"]["total"])
             self.assertIsNone(row["cdpPixelPayloadBytes"])
             row = next(
                 r
@@ -250,6 +257,8 @@ class ResidentComparisonTest(unittest.TestCase):
                 r for r in report["byArm"] if r["arm"] == "stock-dawn" and r["concurrency"] == 1
             )
             self.assertEqual(baseline["p95BoundsMs"], [11, 13])
+            self.assertEqual(baseline["plannerCalls"]["total"], 0)
+            self.assertEqual(baseline["modelSpendUsd"]["total"], 0)
             row = next(
                 r for r in report["byArm"] if r["arm"] == "stock-helper" and r["concurrency"] == 2
             )
@@ -269,6 +278,13 @@ class ResidentComparisonTest(unittest.TestCase):
         self.assertEqual(result["p95Ms"], 20)
         self.assertEqual(result["p95BoundsMs"], [18, 21])
         self.assertEqual(result["p50BoundsMs"], [9.5, 12.5])
+
+    def test_unpriced_model_call_preserves_count_and_unknown_total_spend(self):
+        rows = [{"usageReceipts": {"plannerCalls": "outcome", "modelSpendUsd": "outcome"},
+                 "plannerCalls": 1, "modelSpendUsd": None}]
+        self.assertEqual(module.usage_totals(rows, "plannerCalls")["total"], 1)
+        self.assertEqual(module.usage_totals(rows, "modelSpendUsd"),
+                         {"observedSum": None, "observedAttempts": 0, "finalAttempts": 0, "total": None})
 
 
 if __name__ == "__main__":
