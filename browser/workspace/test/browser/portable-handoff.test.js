@@ -8,6 +8,8 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { WorkspaceService } from '../../src/service.js';
 import { loadServiceConfig } from '../../src/config.js';
+import { testBrowserSelection } from '../support/browser-selection.js';
+import { visualHandoffFixture, crashRecipientWithCapture, submitSourceControl, verifyRecipientReview } from '../support/visual-handoff.js';
 import { createCdpAdapter } from '../../src/adapters/cdp-adapter.js';
 import { WorkspaceController } from '../../src/client/controller.js';
 import { WorkflowStore } from '../../src/client/workflow-store.js';
@@ -16,7 +18,9 @@ import { sha256Hex, canonicalJson } from '../../src/journal.js';
 
 const config=JSON.parse(readFileSync(new URL('../../../../config/fawn-workspace-client.json',import.meta.url)));
 const root=mkdtempSync(join(tmpdir(),'blitzen-portable-')), posts=[];
+const visual=process.env.BLITZEN_TEST_HANDOFF_CAPTURE === '1' ? visualHandoffFixture() : null;
 const site=createServer((req,res)=>{
+  if (visual?.handle(req, res)) return;
   if (req.method!=='GET') posts.push(req.method);
   const account=req.url==='/account-b'?'b':req.url==='/account-a'?'a':'other';
   res.setHeader('content-security-policy',"default-src 'none'; script-src 'unsafe-inline'; form-action 'none'; connect-src 'none'");
@@ -31,12 +35,19 @@ const template='lookup';const loc=['textbox','Filter','input','text'];const obse
 let rulePermitted=true, dropOneAck=false;
 async function instance(person) {
   const stateDir=join(root,person);
+  let adapter;
   const service=await WorkspaceService.open({stateDir:join(stateDir,'service'),
-    config:loadServiceConfig(undefined,{browserChannel:process.env.FAWN_WORKSPACE_TEST_BROWSER_CHANNEL??'chrome',headless:true}),
+    config:visual ? testBrowserSelection(stateDir,{headless:false,compositorTransport:'external-texture'}).config : loadServiceConfig(undefined,{browserChannel:process.env.FAWN_WORKSPACE_TEST_BROWSER_CHANNEL??'chrome',headless:true}),
     createAdapter:opts=>{
       const a=createCdpAdapter(opts),execute=a.execute.bind(a);
+      adapter=a;
       a.execute=async (...args)=>{const value=await execute(...args);if(person==='a' && dropOneAck && args[1].kind==='fill'){
-        dropOneAck=false;throw Error('Fixture lost acknowledgment after actual browser effect');}return value;};
+        dropOneAck=false;throw Error('Fixture lost acknowledgment after actual browser effect');}
+        if (visual && args[1].kind==='submit' && ['visual-fresh','private-write-sentinel'].includes(args[1].actionId)) {
+          await visual.awaitCommit(person==='b' ? 'recipient' : 'sender');
+          throw Error('Fixture lost the acknowledgment after the site committed');
+        }
+        return value;};
       return a;
     }});
   const work=new WorkflowStore({directory:join(stateDir,'workflows'),ownerScope:'person-'+person,
@@ -55,11 +66,11 @@ async function instance(person) {
     verifyReview:async ({owner,pageId,inputs})=>({completed:(await observation(service,owner,pageId)).text.includes('Showing '+inputs.search)}),
     verifyReadOnlyHandoffStep:async ({owner,pageId,step})=>rulePermitted && step.kind==='fill' && step.slot==='search'
       && await liveUrl(owner,pageId)===origin+'/account-'+person};
-  const controller=new WorkspaceController({service,stateDir:join(stateDir,'client'),config,
+  const controller=new WorkspaceController({service,stateDir:visual ? stateDir : join(stateDir,'client'),config,
     workflowStore:work,workflowTasks:new Map([[template,definition]])});
   await controller.restore();
   const http=await startWorkspaceServer({controller,config,port:0});
-  return {controller,service,http,work,definition,close:async()=>{await http.close();await controller.close();await service.close();}};
+  return {controller,service,http,work,definition,adapter,close:async()=>{await http.close();await controller.close();await service.close();}};
 }
 const cmd=promisify(execFile),cli=fileURLToPath(new URL('../../src/client/handoff-cli.js',import.meta.url));
 async function run(app,...args){
@@ -78,13 +89,25 @@ try{
   const learned=await done;assert.equal(learned.completed,true,JSON.stringify(learned));
   const other=(await a.controller.create({goal:'Independent investigation'})).id;
   await assert.rejects(a.controller.exportHandoff(other,{evidenceIds:[],template}),/No verified learned routine/);
+  let visualSource;
+  if (visual) {
+    await a.controller.navigate(source, {pageId:'main',url:origin+visual.login('sender')});
+    visualSource=await a.controller.capture(source,{pageId:'main',compositorRegion:'#cell'});
+    assert.equal(visualSource.source.compositor.pixelRepresentation,'video-frame-copy-to-srgb-rgba8');
+  }
   const file=join(root,'handoff.json');
-  const id=await run(a,'export',source,file,'--evidence',selected.id,'--routine',template);
+  const id=await run(a,'export',source,file,'--evidence',selected.id,...(visual ? ['--evidence',visualSource.id] : []),'--routine',template);
   const raw=readFileSync(file,'utf8'),bundle=JSON.parse(raw);
-  assert.equal(id,bundle.digest);assert.equal(statSync(file).mode & 0o777,0o600);assert.deepEqual(bundle.evidence.map(r=>r.sha256),[selected.source.sha256]);
+  assert.equal(id,bundle.digest);assert.equal(statSync(file).mode & 0o777,0o600);assert.deepEqual(bundle.evidence.map(r=>r.sha256),[selected.source.sha256,...(visual ? [visualSource.source.sha256] : [])]);
   const cache=await a.work.checkout({accountScope:'account-a',template});
   for(const secret of [a.controller.admin(source).adminCredential,cache.dag.key,'PRIVATE_BODY_SENTINEL','SOURCE_INPUT_SENTINEL',hidden.id,selected.id,origin,root,source,'account-a','#filter'])
     assert(!raw.includes(secret),secret);
+  if (visual) {
+    for (const secret of [...visual.secrets,visualSource.id,visualSource.source.compositor.sessionId,
+      visualSource.source.compositor.loaderId,visualSource.source.compositor.surfaceId,a.controller.owner(source).ownerCredential]) {
+      assert.equal(raw.includes(secret),false,'Source authority or capture leaked into export');
+    }
+  }
   const recipientState=()=>b.service.inspect(b.controller.admin(target));
   const before=await recipientState();
   assert.equal(await run(b,'import',target,file),id);assert.equal(await run(b,'import',target,file),id);
@@ -92,7 +115,9 @@ try{
   const inspect=JSON.parse(await run(b,'read',target,id));
   assert.equal(inspect.localTask.template,template);assert.equal(inspect.localTask.steps[0].slot,'search');
   assert.equal((await recipientState()).grants.length,before.grants.length);assert.equal((await recipientState()).actions.length,before.actions.length);
-  await b.close();b=await instance('b');
+  await b.close();b=null;
+  const retired=visual ? await crashRecipientWithCapture(join(root,'b'),target,origin+visual.login('recipient')) : null;
+  b=await instance('b');
   assert.throws(()=>b.controller.useHandoff(target,{template,inputs:{search:'local'},pageId:'main'}),/imported handoff/);
   assert.equal(JSON.parse(await run(b,'read',target,id)).snapshot.digest,id);
   await b.controller.navigate(target,{pageId:'main',url:origin+'/account-a'});
@@ -113,10 +138,24 @@ try{
     assert(records.some(r=>r.type==='authorization-revoked' && r.body.grantId===grantId));
     assert(!state.grants.some(g=>g.grantId===grantId));
   }
-  const owner=await a.controller.humanPage(source,'main'), obs=await observation(a.service,owner,'main');
-  const element=obs.elements.find(e=>e.label==='Filter');dropOneAck=true;
-  const lost=await (await a.service.submitAction({...owner,pageId:'main',authorizedIntent:'human',actionId:'private-write-sentinel',kind:'fill',
-    observationVersion:obs.observationVersion,target:{handle:element.handle,selector:element.selector,digest:element.digest},params:{value:'ALREADY_APPLIED'}})).result;
+  let visualResult;
+  if (visual) {
+    visualResult=await verifyRecipientReview({app:b,project:target,origin,visual,retired,
+      sourceGrant:visualSource.source.compositor.sessionId,sourceAdmin:a.controller.admin(source).adminCredential,
+      imported:JSON.parse(await run(b,'read',target,id)).snapshot});
+    assert.equal(visualResult.selectedEvidenceSha256,visualSource.source.sha256);
+  }
+  let lost;
+  if (visual) {
+    lost=await submitSourceControl(a,source,origin,visual);
+    assert.equal(lost.outcome,'unknown',JSON.stringify({outcome:lost.outcome,refusal:lost.neverDispatched,basis:lost.outcomeBasis}));
+    assert.deepEqual(visual.effects,['recipient','sender']);
+  } else {
+    const owner=await a.controller.humanPage(source,'main'), obs=await observation(a.service,owner,'main');
+    const element=obs.elements.find(e=>e.label==='Filter');dropOneAck=true;
+    lost=await (await a.service.submitAction({...owner,pageId:'main',authorizedIntent:'human',actionId:'private-write-sentinel',kind:'fill',
+      observationVersion:obs.observationVersion,target:{handle:element.handle,selector:element.selector,digest:element.digest},params:{value:'ALREADY_APPLIED'}})).result;
+  }
   assert.equal(lost.outcome,'unknown');
   const file2=join(root,'open.json'), id2=await run(a,'export',source,file2,'--no-evidence','--routine',template);
   await run(b,'import',target,file2); const note=JSON.parse(await run(b,'read',target,id2));
@@ -124,10 +163,26 @@ try{
   assert(!readFileSync(file2,'utf8').includes('ALREADY_APPLIED'));
   await assert.rejects(run(b,'use',target,id2,...args.slice(3)),/source workspace/);
   await assert.rejects(b.controller.check(target,{actionId:note.snapshot.unresolved[0].ref}));
-  assert.equal((await a.service.action({...owner,actionId:'private-write-sentinel'})).isUncertain,true);
+  assert.equal((await a.service.action({...a.controller.owner(source),actionId:'private-write-sentinel'})).isUncertain,true);
   assert.equal((await fills()).length,1);assert.equal(posts.length,0);
+  if (visual) {
+    assert.deepEqual(Object.keys(note.snapshot.unresolved[0]).sort(),['kind','ref']);
+    assert.equal(note.snapshot.unresolved[0].kind,'submit');
+    for (const secret of [...visual.secrets,'private-write-sentinel','private-source-effect',origin,'#verified',source]) {
+      assert(!readFileSync(file2,'utf8').includes(secret),'Source write or authority leaked into handoff');
+    }
+    assert.deepEqual(visual.effects,['recipient','sender']);
+    assert.deepEqual(visual.attempts.map(entry=>entry.account),['recipient','sender']);
+    const report={...visualResult,sourceCommittedWithLostAcknowledgment:true,sourceUnresolvedKind:'submit',
+      sourceWriteReissuedByRecipient:false,transferredEvidenceReferences:bundle.evidence.length,
+      importedRoutineFingerprint:bundle.routine.contract,sourcePendingAction:'opaque-reference-only',
+      recipientCannotCheckSourceAction:true,recipientCannotUsePendingRoutine:true,recipientRoutineModelCalls:used.modelCalls,
+      externalModelCalls:0,modelSpendUsd:0};
+    if (process.env.BLITZEN_HANDOFF_RECEIPT) writeFileSync(process.env.BLITZEN_HANDOFF_RECEIPT,JSON.stringify(report,null,2)+'\n',{flag:'wx'});
+    console.log(JSON.stringify(report));
+  }
   const poisoned=structuredClone(bundle);poisoned.routine.nodes[0].payload='raw';delete poisoned.digest;poisoned.digest=sha256Hex(canonicalJson(poisoned));
   const bad=join(root,'invalid.json');writeFileSync(bad,JSON.stringify(poisoned));await assert.rejects(run(b,'import',target,bad),/routine edge/);
-  console.log(JSON.stringify({completed:true,independentAccounts:2,evidenceSelected:1,importedGrants:0,
-    receiverFieldActions:1,wrongAccountFieldActions:0,modelCalls:used.modelCalls,sourceUnknownStillPending:true,siteWrites:posts.length,recipientGrantKinds:granted.at(-1).grant.actionKinds}));
+  console.log(JSON.stringify({completed:true,independentAccounts:2,evidenceSelected:bundle.evidence.length,importedGrants:0,
+    receiverFieldActions:1,wrongAccountFieldActions:0,modelCalls:used.modelCalls,sourceUnknownStillPending:true,siteWrites:visual ? visual.attempts.length : posts.length,recipientGrantKinds:granted.at(-1).grant.actionKinds}));
 }finally{await a?.close();await b?.close();await new Promise(resolve=>site.close(resolve));rmSync(root,{recursive:true,force:true});}
