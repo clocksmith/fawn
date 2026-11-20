@@ -289,6 +289,16 @@ try {
     try {
       const { targetInfo } = await sessionCdp.send('Target.getTargetInfo');
       const version = await sessionCdp.send('Browser.getVersion');
+      let browserPid;
+      if (process.env.BLITZEN_RESIDENT_OBSERVE_BROWSER_PID === '1') {
+        const control = await page.context().browser().newBrowserCDPSession();
+        try {
+          const { processInfo } = await control.send('SystemInfo.getProcessInfo');
+          const roots = processInfo.filter(row => row.type === 'browser');
+          assert.equal(roots.length, 1, 'one browser root per fixture');
+          browserPid = roots[0].id;
+        } finally { await control.detach(); }
+      }
       if (process.env.BLITZEN_RESIDENT_PHYSICAL === '1') {
         const flags = (await sessionCdp.send('Browser.getBrowserCommandLine')).arguments;
         if (flags.some(flag => /--(?:no-sandbox|disable-gpu(?:-sandbox)?|auto-accept-this-tab-capture|auto-select-desktop-capture-source|use-fake-ui-for-media-stream)(?:=|$)|^--enable-unsafe-swiftshader$|^--(?:use-angle|use-gl|use-vulkan)=.*(?:swiftshader|llvmpipe|lavapipe)/i.test(flag))) {
@@ -297,7 +307,7 @@ try {
       }
       const entry = [...adapter.compositor.entries.values()].find(e => e.id === session);
       const gpu = (await adapter.compositor.control(entry, 'adapterInfo')).result?.value ?? null;
-      checkpoint({ phase: 'ready', targetId: targetInfo.targetId, surfaceId: session, browser: version,
+      checkpoint({ phase: 'ready', targetId: targetInfo.targetId, surfaceId: session, browser: version, browserPid,
         gpu, commandLabel: null,
         selection: config.browser.fawnBuild ?? { channel: config.browser.channel } });
     } finally { await sessionCdp.detach(); }

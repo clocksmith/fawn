@@ -3,10 +3,13 @@
 
 import argparse
 import collections
+import functools
+import hashlib
 import json
 import math
 import os
 from pathlib import Path
+import re
 import signal
 import statistics
 import subprocess
@@ -84,8 +87,87 @@ def sample_tree_rss(jobs):
         job["peak"] = max(job["peak"], total)
 
 
+def git_revision(value):
+    if not isinstance(value, str):
+        return None
+    value = value.removeprefix("@")
+    return value if re.fullmatch(r"[0-9a-f]{40}", value) and value != "0" * 40 else None
+
+
+def source_receipt(path):
+    value = read(path)
+    if not isinstance(value, dict):
+        raise ValueError(f"Invalid pinned browser build receipt: {path}")
+    fields = ("chromium", "dawn", "chromeSha256", "source", "product")
+    if not all(isinstance(value.get(k), str) and value[k].strip() for k in fields):
+        raise ValueError(f"Incomplete pinned browser build receipt: {path}")
+    for key in ("chromium", "dawn"):
+        if not git_revision(value[key]) or value[key].startswith("@"):
+            raise ValueError(f"Invalid {key} revision in browser build receipt: {path}")
+    if not re.fullmatch(r"[0-9a-f]{64}", value["chromeSha256"]):
+        raise ValueError(f"Invalid executable digest in browser build receipt: {path}")
+    return value
+
+
+@functools.lru_cache(maxsize=8)
+def image_digest(path, stamp):
+    # Hash one immutable executable once across the cohort, before the measurement barrier.
+    with open(path, "rb") as image:
+        if file_stamp(os.fstat(image.fileno())) != stamp:
+            raise ValueError("Browser image changed before hashing")
+        digest = hashlib.sha256()
+        for block in iter(lambda: image.read(1024 * 1024), b""):
+            digest.update(block)
+        if file_stamp(os.fstat(image.fileno())) != stamp:
+            raise ValueError("Browser image changed during hashing")
+    return digest.hexdigest()
+
+
+def file_stamp(stat):
+    return stat.st_dev, stat.st_ino, stat.st_size, stat.st_mtime_ns, stat.st_ctime_ns
+
+
+def source_for_browser(progress, receipt, owner_pid):
+    """Match a browser returned by DevTools to its fixture-owned Linux process and pinned image."""
+    if not receipt:
+        return None
+    pid = progress.get("browserPid")
+    if type(pid) is not int or pid <= 1 or pid == owner_pid:
+        raise ValueError("No unique browser process")
+    proc = Path("/proc") / str(pid)
+    # The root returned by CDP must be a descendant of this exact test process.
+    ancestor = pid
+    while ancestor > 1 and ancestor != owner_pid:
+        status = (Path("/proc") / str(ancestor) / "status").read_text().splitlines()
+        ancestor = int(next(line for line in status if line.startswith("PPid:")).split()[1])
+    if ancestor != owner_pid:
+        raise ValueError("Browser process belongs to a different fixture")
+    live = proc / "exe"
+    stamp = file_stamp(live.stat())
+    actual = image_digest(live.resolve(strict=True), stamp)
+    version = progress["browser"]["product"].partition("/")[2]
+    cdp = git_revision(progress["browser"].get("revision"))
+    if (actual != receipt["chromeSha256"] or file_stamp(live.stat()) != stamp
+            or version != receipt["product"].split()[-1] or (cdp and cdp != receipt["chromium"])):
+        raise ValueError("Observed browser differs from its pinned build")
+    return {k: receipt[k] for k in ("chromeSha256", "chromium", "dawn", "source", "product")}
+
+
+def comparable_browsers(a, b):
+    av, bv = a.get("browser") or {}, b.get("browser") or {}
+    version = (av.get("product") or "").partition("/")[2]
+    if not version or version != (bv.get("product") or "").partition("/")[2]:
+        return False
+    left, right = a.get("browserSource"), b.get("browserSource")
+    if left or right:
+        return bool(left and right and left["chromium"] == right["chromium"] and left["dawn"] == right["dawn"])
+    revision = git_revision(av.get("revision"))
+    return bool(revision and revision == git_revision(bv.get("revision")))
+
+
 def run_wave(out, wave, args):
     gate = out / (run_id(wave, 0) + ".go")
+    sources = getattr(args, "sources", {})
     jobs, timeout, admitted = [], False, False
     started = time.monotonic()
     try:
@@ -103,6 +185,8 @@ def run_wave(out, wave, args):
                 )
             else:
                 env["BLITZEN_TEST_BROWSER_CHANNEL"] = args.stock_channel
+            if sources:
+                env["BLITZEN_RESIDENT_OBSERVE_BROWSER_PID"] = "1"
             env.update(
                 BLITZEN_TEST_ELEMENT_CAPTURE="1",
                 BLITZEN_RESIDENT_PHYSICAL="1",
@@ -122,6 +206,12 @@ def run_wave(out, wave, args):
             if not admitted:
                 phases = [read(j["dir"] / "progress.json").get("phase") for j in jobs]
                 if all(p == "ready" for p in phases):
+                    if sources:
+                        source = sources["fawn" if wave["arm"].startswith("fawn") else "stock"]
+                        for job in jobs:
+                            progress = read(job["dir"] / "progress.json")
+                            observed = source_for_browser(progress, source, job["child"].pid)
+                            write(job["dir"] / "browser-source.json", observed)
                     gate.touch(exist_ok=False)
                     admitted = True
                 elif any(j["child"].poll() is not None for j in jobs):
@@ -177,6 +267,7 @@ def summarize_row(path, wave, slot):
         ),
         "nodeTimeOriginMs": p.get("nodeTimeOriginMs"),
         "browser": p.get("browser"),
+        "browserSource": read(path / "browser-source.json") or None,
         "gpu": p.get("gpu"),
         "surfaceId": p.get("surfaceId"),
         "targetId": p.get("targetId"),
@@ -322,12 +413,7 @@ def summarize(out):
                         skipped["incomplete, unattributed or incorrect"] += 1
                         continue
 
-                    def browser(r):
-                        v = r.get("browser") or {}
-                        return v.get("revision"), (v.get("product") or "").partition("/")[2]
-
-                    revision = browser(a)
-                    if not all(revision) or revision != browser(b):
+                    if not comparable_browsers(a, b):
                         skipped["browser source/version unmatched"] += 1
                         continue
                     deltas.append(
@@ -365,6 +451,8 @@ def main():
         if command == "run":
             p.add_argument("--dawn", type=Path, required=True)
             p.add_argument("--doe", type=Path, required=True)
+            p.add_argument("--source-receipts", nargs=2, type=Path, metavar=("STOCK", "FAWN"),
+                           help="bind both Linux browser images to their operator-verified source receipts")
             p.add_argument("--stock-channel", choices=["chrome", "chromium"], default="chrome")
             p.add_argument("--timeout", type=int, default=175)
     args = parser.parse_args()
@@ -391,6 +479,13 @@ def main():
             parser.error(
                 "both profiles must pin the identical Fawn executable/dependencies and force their declared runtime"
             )
+        args.sources = {}
+        if args.source_receipts:
+            if sys.platform != "linux":
+                parser.error("source receipt matching requires Linux process image handles")
+            args.sources = dict(zip(("stock", "fawn"), map(source_receipt, args.source_receipts), strict=True))
+            if args.sources["fawn"]["chromeSha256"] != d["executable"]["sha256"]:
+                parser.error("Fawn source receipt differs from the selected build")
         plan = read(out / "plan.json")
         if not plan:
             parser.error("create the plan first")
