@@ -693,7 +693,7 @@ the observer has yet to see its fence. Its receipt must remain unresolved.
 qualification/tests/check-native-queue-observer.sh "$DOE_C_LIBRARY" "$DOE_C_SHA256" "$NEW_OUTPUT_DIR"
 ```
 
-**Where the browser link ends at the pinned revisions.** The browser process
+**The shipped browser at the pinned revisions.** The browser process
 can validate a Blink document token and renderer process against the live
 `RenderFrameHostImpl`. Its existing GPU-host reply returns the network
 isolation key. Several documents share a cache partition. This reply cannot
@@ -719,3 +719,54 @@ The software native observer proves only the backend half; the four-arm report
 continues to withhold Doe timings.
 [Outer-to-inner conversion](https://dawn.googlesource.com/dawn/+/758e5e6a974e8ca8039b1d7b209646dabccbcb7f/src/dawn/native/webgpu/CommandBufferWGPU.cpp#1144)
 · [Queue submission](https://dawn.googlesource.com/dawn/+/758e5e6a974e8ca8039b1d7b209646dabccbcb7f/src/dawn/native/webgpu/QueueWGPU.cpp#69)
+
+**Opt-in Chromium source change.** Apply the normal runtime patches first. The
+document-provenance patch targets Chromium `4a6fb38567da` with Fawn's pinned
+Dawn `758e5e6a974e`. It changes no default command line. Use an isolated
+checkout, build a symbolized browser, and preserve the sandbox for qualification.
+
+```sh
+lane=$(cd ../chromium && pwd)
+"$lane/scripts/apply-runtime-patches.sh" "$CHROMIUM_SRC"
+git -C "$CHROMIUM_SRC" apply --check "$lane/patches/resident-document-provenance.patch"
+git -C "$CHROMIUM_SRC" apply "$lane/patches/resident-document-provenance.patch"
+```
+
+With `--fawn-resident-command-provenance` and forced Doe, a browser-validated
+active document receives an opaque binding. Only the privileged browser trace
+contains its DevTools frame and loader. Deactivation, frame deletion, document teardown and the frame’s last active
+media stream ending retire the binding. Another active stream can keep the
+aggregate media indicator on after one particular capture stops. The GPU service retains the binding for
+one decoder. Single-command wire submissions mint a fresh ID at the synchronous
+Dawn queue call. Multiple-command submissions and workers remain unattributed.
+The native collector reads the scope only from that exact executing stack in a
+separately pinned executable or library. It continues to require the compute
+encoding, accepted submission and successful Doe fence.
+
+For a private diagnostic child, supply `BLITZEN_NATIVE_TRACE_SCOPE_IMAGE` and
+`BLITZEN_NATIVE_TRACE_SCOPE_SHA256` along with the existing Doe pin. Independently
+collect the privileged Chrome trace with category `disabled-by-default-gpu.dawn`.
+Record the matching CDP `Tracing.tracingComplete` event parameters, including its
+`dataLossOccurred` flag. Start tracing before acquiring the GPU device and end the observation window after
+fence completion. Use browser and GPU PIDs from the controller in the same PID
+namespace. The correlator rejects ambiguous input and excludes any document
+retired during the window. It expects complete controller-owned artifacts from
+this run. Arbitrary JSON or a page-supplied receipt has no evidentiary value.
+
+```sh
+python3 qualification/correlate-document-submit.py --browser-trace "$BROWSER_TRACE" \
+  --tracing-complete "$TRACING_COMPLETE_PARAMS" --native-log "$NATIVE_LOG" --browser-pid "$BROWSER_PID" --gpu-pid "$GPU_PID" \
+  --frame "$FRAME_ID" --loader "$LOADER_ID" --scope-sha256 "$BROWSER_IMAGE_SHA256" \
+  --doe-sha256 "$DOE_C_SHA256"
+```
+
+The software-only test compiles the exact stack wrapper from the Chromium patch,
+shimming tracing and the anti-tail-call operation. It sends two same-label
+commands through real software Vulkan, checks the observed document/command
+pairs, interrupts a command before its fence, and repeats with an unpinned
+wrapper. The browser-side Mojo, frame lifecycle and Dawn stack still require
+an integrated Chromium build. A document can submit work from multiple JS
+worlds. The remaining ownership check must bind the live browser capture grant
+and the exact authorized sample to that document's queue or command from
+a trusted boundary. Document correlation alone never qualifies an action or
+publishes a forced Doe latency.

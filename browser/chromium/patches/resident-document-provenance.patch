@@ -1,0 +1,416 @@
+diff --git a/components/viz/host/gpu_host_impl.cc b/components/viz/host/gpu_host_impl.cc
+index 53a46dd8ba36c6586f2fae88834ced5dc544b31b..12c3b8ea7cdc7a2abfb77e9046df012c8a33f726 100644
+--- a/components/viz/host/gpu_host_impl.cc
++++ b/components/viz/host/gpu_host_impl.cc
+@@ -758,7 +758,8 @@ void GpuHostImpl::GetIsolationKey(
+     const blink::WebGPUExecutionContextToken& token,
+     GetIsolationKeyCallback cb) {
+   std::string isolation_key = delegate_->GetIsolationKey(client_id, token);
+-  std::move(cb).Run(isolation_key);
++  std::move(cb).Run(isolation_key,
++                    delegate_->GetResidentDocumentReceipt(client_id, token));
+ }
+ 
+ void GpuHostImpl::DidUpdateGPUInfo(const gpu::GPUInfo& gpu_info) {
+diff --git a/components/viz/host/gpu_host_impl.h b/components/viz/host/gpu_host_impl.h
+index 1b8e5c783dc05ab8c6ae9984b837c260cfa8250d..4905a8788938d3bb76179d9efadddfc6ebc22f64 100644
+--- a/components/viz/host/gpu_host_impl.h
++++ b/components/viz/host/gpu_host_impl.h
+@@ -90,6 +90,11 @@ class VIZ_HOST_EXPORT GpuHostImpl : public mojom::GpuHost,
+ #endif
+     virtual void BlockDomainsFrom3DAPIs(const std::set<GURL>& urls,
+                                         gpu::DomainGuilt guilt) = 0;
++    virtual std::string GetResidentDocumentReceipt(
++        int32_t client_id,
++        const blink::WebGPUExecutionContextToken& token) {
++      return {};
++    }
+     virtual std::string GetIsolationKey(
+         int32_t client_id,
+         const blink::WebGPUExecutionContextToken& token) = 0;
+diff --git a/components/viz/service/gl/gpu_service_impl.cc b/components/viz/service/gl/gpu_service_impl.cc
+index 5b9d412e5844473e11736d6d9c7051504e124e31..427cb637e172447f4a7109e7269c9db185cff9de 100644
+--- a/components/viz/service/gl/gpu_service_impl.cc
++++ b/components/viz/service/gl/gpu_service_impl.cc
+@@ -887,11 +887,22 @@ void GpuServiceImpl::LoadedBlob(const gpu::GpuDiskCacheHandle& handle,
+   gpu_channel_manager_->PopulateCache(handle, no_prefix_key, data);
+ }
+ 
++void GpuServiceImpl::GetResidentIsolationKey(
++    int client_id,
++    const blink::WebGPUExecutionContextToken& token,
++    GetResidentIsolationKeyCallback cb) {
++  gpu_host_->GetIsolationKey(client_id, token, std::move(cb));
++}
++
+ void GpuServiceImpl::GetIsolationKey(
+     int client_id,
+     const blink::WebGPUExecutionContextToken& token,
+     GetIsolationKeyCallback cb) {
+-  gpu_host_->GetIsolationKey(client_id, token, std::move(cb));
++  gpu_host_->GetIsolationKey(
++      client_id, token,
++      base::BindOnce([](GetIsolationKeyCallback cb, const std::string& key,
++                        const std::string&) { std::move(cb).Run(key); },
++                     std::move(cb)));
+ }
+ 
+ void GpuServiceImpl::MaybeExitOnContextLost(
+diff --git a/components/viz/service/gl/gpu_service_impl.h b/components/viz/service/gl/gpu_service_impl.h
+index dc0d975f4f05c67359df87b0646c5bec0f276c7a..0673dcefc994e6fe0ad4d0f4202ff7156ab5a32c 100644
+--- a/components/viz/service/gl/gpu_service_impl.h
++++ b/components/viz/service/gl/gpu_service_impl.h
+@@ -273,6 +273,9 @@ class VIZ_SERVICE_EXPORT GpuServiceImpl
+                       const GURL& active_url) override;
+   void GetDawnInfo(bool collect_metrics, GetDawnInfoCallback callback) override;
+ 
++  void GetResidentIsolationKey(int client_id,
++                               const blink::WebGPUExecutionContextToken& token,
++                               GetResidentIsolationKeyCallback cb) override;
+   void GetIsolationKey(int client_id,
+                        const blink::WebGPUExecutionContextToken& token,
+                        GetIsolationKeyCallback cb) override;
+diff --git a/content/browser/gpu/gpu_process_host.cc b/content/browser/gpu/gpu_process_host.cc
+index d5f556ace7350f8048d82a0a914e7a262831a6b4..f42d1e56de79577540306406ffebe10a9b60d626 100644
+--- a/content/browser/gpu/gpu_process_host.cc
++++ b/content/browser/gpu/gpu_process_host.cc
+@@ -64,6 +64,9 @@
+ #include "content/public/browser/browser_task_traits.h"
+ #include "content/public/browser/browser_thread.h"
+ #include "content/public/browser/content_browser_client.h"
++#include "content/public/browser/document_user_data.h"
++#include "content/public/browser/web_contents.h"
++#include "content/public/browser/web_contents_observer.h"
+ #include "content/public/browser/gpu_utils.h"
+ #include "content/public/common/content_client.h"
+ #include "content/public/common/content_switches.h"
+@@ -298,6 +301,7 @@ static const char* const kSwitchNames[] = {
+     switches::kDisableSkiaGraphitePrecompilation,
+     switches::kDisableLowEndDeviceMode,
+     switches::kProfilingAtStart,
++    switches::kResidentWebGPUProvenance,
+     switches::kProfilingFile,
+     switches::kProfilingFlush,
+     switches::kRunAllCompositorStagesBeforeDraw,
+@@ -1132,6 +1136,83 @@ void GpuProcessHost::DidUpdateDXGIInfo(gfx::mojom::DXGIInfoPtr dxgi_info) {
+ }
+ #endif
+ 
++namespace {
++
++// The token below is minted inside the browser. Never return the navigation,
++// DocumentToken or DevTools frame capability to the renderer or GPU service.
++class ResidentDocumentReceipt final
++    : public DocumentUserData<ResidentDocumentReceipt>,
++      public WebContentsObserver {
++ public:
++  explicit ResidentDocumentReceipt(RenderFrameHost* host)
++      : DocumentUserData<ResidentDocumentReceipt>(host),
++        WebContentsObserver(WebContents::FromRenderFrameHost(host)),
++        id_(base::UnguessableToken::Create().ToString()) {}
++
++  ~ResidentDocumentReceipt() override { Retire("document-destroyed"); }
++
++  void RenderFrameHostStateChanged(
++      RenderFrameHost* host,
++      RenderFrameHost::LifecycleState old_state,
++      RenderFrameHost::LifecycleState new_state) override {
++    if (host == &render_frame_host() &&
++        new_state != RenderFrameHost::LifecycleState::kActive)
++      Retire("document-inactive");
++  }
++  void RenderFrameDeleted(RenderFrameHost* host) override {
++    if (host == &render_frame_host())
++      Retire("frame-deleted");
++  }
++  void OnFrameIsCapturingMediaStreamChanged(
++      RenderFrameHost* host,
++      bool is_capturing_media_stream) override {
++    // This is an aggregate frame signal. An unrelated live microphone or
++    // video stream can keep it active after one specific capture is revoked.
++    if (host == &render_frame_host() && !is_capturing_media_stream)
++      Retire("last-media-stream-stopped");
++  }
++  const std::string& id() const { return id_; }
++
++ private:
++  void Retire(const char* reason) {
++    if (id_.empty())
++      return;
++    TRACE_EVENT_INSTANT(TRACE_DISABLED_BY_DEFAULT("gpu.dawn"),
++                        "FawnResidentDocumentRetired", "binding", id_, "reason",
++                        reason);
++    id_.clear();
++  }
++  std::string id_;
++  friend DocumentUserData<ResidentDocumentReceipt>;
++  DOCUMENT_USER_DATA_KEY_DECL();
++};
++
++DOCUMENT_USER_DATA_KEY_IMPL(ResidentDocumentReceipt);
++
++}  // namespace
++
++std::string GpuProcessHost::GetResidentDocumentReceipt(
++    int32_t process_id,
++    const blink::WebGPUExecutionContextToken& token) {
++  if (!base::CommandLine::ForCurrentProcess()->HasSwitch(
++          switches::kResidentWebGPUProvenance) ||
++      !token.Is<blink::DocumentToken>())
++    return {};
++  auto* frame = RenderFrameHostImpl::FromDocumentToken(
++      process_id, token.GetAs<blink::DocumentToken>());
++  if (!frame || !frame->IsActive() || !frame->GetDevToolsNavigationToken())
++    return {};
++  const auto& binding =
++      ResidentDocumentReceipt::GetOrCreateForCurrentDocument(frame)->id();
++  if (!binding.empty()) {
++    TRACE_EVENT_INSTANT(
++        TRACE_DISABLED_BY_DEFAULT("gpu.dawn"), "FawnResidentDocumentValidated",
++        "binding", binding, "frame", frame->GetDevToolsFrameToken().ToString(),
++        "loader", frame->GetDevToolsNavigationToken()->ToString());
++  }
++  return binding;
++}
++
+ std::string GpuProcessHost::GetIsolationKey(
+     int32_t process_id,
+     const blink::WebGPUExecutionContextToken& token) {
+diff --git a/content/browser/gpu/gpu_process_host.h b/content/browser/gpu/gpu_process_host.h
+index 7e1e15d87a205d5c6c65d5e8faf0f43db24bb233..21eeb21fb5341c4495543143af352ca4fd48f460 100644
+--- a/content/browser/gpu/gpu_process_host.h
++++ b/content/browser/gpu/gpu_process_host.h
+@@ -179,6 +179,9 @@ class GpuProcessHost final : public BrowserChildProcessHostDelegate,
+   void DidUpdateOverlayInfo(const gpu::OverlayInfo& overlay_info) override;
+   void DidUpdateDXGIInfo(gfx::mojom::DXGIInfoPtr dxgi_info) override;
+ #endif
++  std::string GetResidentDocumentReceipt(
++      int32_t client_id,
++      const blink::WebGPUExecutionContextToken& token) override;
+   std::string GetIsolationKey(
+       int32_t process_id,
+       const blink::WebGPUExecutionContextToken& token) override;
+diff --git a/gpu/command_buffer/service/isolation_key_provider.h b/gpu/command_buffer/service/isolation_key_provider.h
+index b4c362346de51a97efc06034616197cdc0bdabc0..8d864cf34adcb5cd55e37e6bbe0b4a422c17cafe 100644
+--- a/gpu/command_buffer/service/isolation_key_provider.h
++++ b/gpu/command_buffer/service/isolation_key_provider.h
+@@ -5,6 +5,7 @@
+ #ifndef GPU_COMMAND_BUFFER_SERVICE_ISOLATION_KEY_PROVIDER_H_
+ #define GPU_COMMAND_BUFFER_SERVICE_ISOLATION_KEY_PROVIDER_H_
+ 
++#include "base/functional/bind.h"
+ #include "base/functional/callback.h"
+ #include "gpu/gpu_gles2_export.h"
+ #include "third_party/blink/public/common/tokens/tokens.h"
+@@ -27,6 +28,19 @@ class GPU_GLES2_EXPORT IsolationKeyProvider {
+   using GetIsolationKeyCallback =
+       base::OnceCallback<void(const std::string& isolation_key)>;
+ 
++  using GetResidentIsolationKeyCallback =
++      base::OnceCallback<void(const std::string&, const std::string&)>;
++  virtual void GetResidentIsolationKey(
++      const blink::WebGPUExecutionContextToken& token,
++      GetResidentIsolationKeyCallback cb) {
++    GetIsolationKey(token, base::BindOnce(
++                               [](GetResidentIsolationKeyCallback cb,
++                                  const std::string& key) {
++                                 std::move(cb).Run(key, std::string{});
++                               },
++                               std::move(cb)));
++  }
++
+   virtual void GetIsolationKey(const blink::WebGPUExecutionContextToken& token,
+                                GetIsolationKeyCallback cb) = 0;
+ 
+diff --git a/gpu/command_buffer/service/webgpu_decoder_impl.cc b/gpu/command_buffer/service/webgpu_decoder_impl.cc
+index d9ec8819b71a8d73a2264a792382929027b3131b..36ada1d6649de8189bc5df5fbcdc3e4bd85afafa 100644
+--- a/gpu/command_buffer/service/webgpu_decoder_impl.cc
++++ b/gpu/command_buffer/service/webgpu_decoder_impl.cc
+@@ -21,6 +21,7 @@
+ #include "base/memory/raw_ptr.h"
+ #include "base/memory/raw_ref.h"
+ #include "base/notimplemented.h"
++#include "base/debug/alias.h"
+ #include "base/notreached.h"
+ #include "base/numerics/checked_math.h"
+ #include "base/power_monitor/power_monitor.h"
+@@ -140,6 +141,23 @@ WGPUStringView MakeStringView() {
+   return {nullptr, 0};
+ }
+ 
++// Out-of-line stack frame for the independent native diagnostic. Only a
++// genuine synchronous wire submission can have this trusted scope on its
++// executing thread. Keep the values live through the call, including LTO.
++extern "C" NOINLINE void FawnSubmitResidentDocumentCommandV1(
++    WGPUProcQueueSubmit submit,
++    WGPUQueue queue,
++    size_t count,
++    const WGPUCommandBuffer* commands,
++    const char* document_binding,
++    const char* submission_id) {
++  TRACE_EVENT(TRACE_DISABLED_BY_DEFAULT("gpu.dawn"), "FawnResidentWireSubmit",
++              "binding", document_binding, "submission", submission_id);
++  submit(queue, count, commands);
++  base::debug::Alias(&document_binding);
++  base::debug::Alias(&submission_id);
++}
++
+ // This variable is set to DawnWireServer's parent decoder during execution of
+ // HandleCommands. It is cleared to nullptr after. This enables some of the
+ // overridden procs to be overridden with a WebGPUDecoderImpl member function.
+@@ -447,6 +465,15 @@ class WebGPUDecoderImpl final : public WebGPUDecoder {
+   // Device creation requires that an isolation key has been set for the
+   // decoder. As a result, this callback also runs all queued device creation
+   // calls that were requested and queued before the isolation key was ready.
++  void OnGetResidentIsolationKey(const std::string& key,
++                                 const std::string& binding) {
++    // Renderer requests do not set this string. A missing browser authority
++    // still allows normal WebGPU execution without attributing that work.
++    resident_document_binding_ = binding;
++    OnGetIsolationKey(key);
++  }
++  std::string resident_document_binding_;
++  bool resident_binding_requested_ = false;
+   void OnGetIsolationKey(const std::string& isolation_key);
+ 
+   bool use_blocklist() const;
+@@ -1243,6 +1270,24 @@ WebGPUDecoderImpl::WebGPUDecoderImpl(
+         std::forward<decltype(args)>(args)...);
+   };
+ 
++  if (use_doe_runtime_ && base::CommandLine::ForCurrentProcess()->HasSwitch(
++                              switches::kResidentWebGPUProvenance)) {
++    wire_procs.queueSubmit = [](WGPUQueue queue, size_t count,
++                                const WGPUCommandBuffer* commands) {
++      auto submit = dawn::native::GetProcs().queueSubmit;
++      if (!parent_decoder || count != 1 ||
++          parent_decoder->resident_document_binding_.empty()) {
++        submit(queue, count, commands);
++        return;
++      }
++      const auto submission = base::UnguessableToken::Create().ToString();
++      FawnSubmitResidentDocumentCommandV1(
++          submit, queue, count, commands,
++          parent_decoder->resident_document_binding_.c_str(),
++          submission.c_str());
++    };
++  }
++
+   wire_server_ = DawnWireServer::Create(
+       wire_serializer_.get(), memory_transfer_service_.get(), wire_procs);
+ 
+@@ -2794,6 +2839,21 @@ error::Error WebGPUDecoderImpl::HandleSetWebGPUExecutionContextToken(
+     default:
+       return error::kInvalidArguments;
+   }
++  if (use_doe_runtime_ && base::CommandLine::ForCurrentProcess()->HasSwitch(
++                              switches::kResidentWebGPUProvenance)) {
++    // Never rebind an existing decoder to a second document or permit a
++    // delayed first reply to take ownership of another document's work.
++    if (resident_binding_requested_)
++      return error::kInvalidArguments;
++    resident_binding_requested_ = true;
++    isolation_key_provider_->GetResidentIsolationKey(
++        execution_context_token,
++        base::BindPostTask(
++            base::SingleThreadTaskRunner::GetCurrentDefault(),
++            base::BindOnce(&WebGPUDecoderImpl::OnGetResidentIsolationKey,
++                           weak_ptr_factory_.GetWeakPtr())));
++    return error::kNoError;
++  }
+   isolation_key_provider_->GetIsolationKey(
+       execution_context_token,
+       base::BindPostTask(base::SingleThreadTaskRunner::GetCurrentDefault(),
+diff --git a/gpu/config/gpu_switches.h b/gpu/config/gpu_switches.h
+index de14552fd6fbaee9dbc25f99b81a4b20bf495af0..09f6dc1f8a7b244b081bce4bd2ea0780dcde0575 100644
+--- a/gpu/config/gpu_switches.h
++++ b/gpu/config/gpu_switches.h
+@@ -66,6 +66,10 @@ GPU_CONFIG_EXPORT extern const char kEnableSkiaGraphitePrecompilation[];
+ GPU_CONFIG_EXPORT extern const char kEnableGpuMainTimeKeeperMetrics[];
+ GPU_CONFIG_EXPORT extern const char kSuppressPerformanceLogs[];
+ 
++// Qualification-only. Never enabled by a web origin.
++inline constexpr char kResidentWebGPUProvenance[] =
++    "fawn-resident-command-provenance";
++
+ }  // namespace switches
+ 
+ #endif  // GPU_CONFIG_GPU_SWITCHES_H_
+diff --git a/gpu/ipc/service/gpu_channel.cc b/gpu/ipc/service/gpu_channel.cc
+index 59c0415128160ff43ef6f093bf96e0a1df6f9cdc..7fa876c093a80c6ec7d2525f3eeede6c7075a8bd 100644
+--- a/gpu/ipc/service/gpu_channel.cc
++++ b/gpu/ipc/service/gpu_channel.cc
+@@ -808,6 +808,13 @@ void GpuChannel::OnChannelError() {
+   gpu_channel_manager_->RemoveChannel(client_id_);
+ }
+ 
++void GpuChannel::GetResidentIsolationKey(
++    const blink::WebGPUExecutionContextToken& token,
++    GetResidentIsolationKeyCallback cb) {
++  gpu_channel_manager_->delegate()->GetResidentIsolationKey(client_id_, token,
++                                                            std::move(cb));
++}
++
+ void GpuChannel::GetIsolationKey(
+     const blink::WebGPUExecutionContextToken& token,
+     GetIsolationKeyCallback cb) {
+diff --git a/gpu/ipc/service/gpu_channel.h b/gpu/ipc/service/gpu_channel.h
+index c3a089aba86896ad93485b68b864eedf8efd35ff..740fd79860f5fdd3f92e17d7601c8af19c4752c0 100644
+--- a/gpu/ipc/service/gpu_channel.h
++++ b/gpu/ipc/service/gpu_channel.h
+@@ -119,6 +119,8 @@ class GPU_IPC_SERVICE_EXPORT GpuChannel : public IPC::Listener,
+   void OnChannelError() override;
+ 
+   // gpu::IsolationKeyProvider:
++  void GetResidentIsolationKey(const blink::WebGPUExecutionContextToken& token,
++                               GetResidentIsolationKeyCallback cb) override;
+   void GetIsolationKey(const blink::WebGPUExecutionContextToken& token,
+                        GetIsolationKeyCallback cb) override;
+ 
+diff --git a/gpu/ipc/service/gpu_channel_manager_delegate.h b/gpu/ipc/service/gpu_channel_manager_delegate.h
+index 716eadc9e9e584a6f45cf4e19d39d71f55116d1c..cbe60f019dcfc360508953d01abc7e69d9804883 100644
+--- a/gpu/ipc/service/gpu_channel_manager_delegate.h
++++ b/gpu/ipc/service/gpu_channel_manager_delegate.h
+@@ -5,6 +5,8 @@
+ #ifndef GPU_IPC_SERVICE_GPU_CHANNEL_MANAGER_DELEGATE_H_
+ #define GPU_IPC_SERVICE_GPU_CHANNEL_MANAGER_DELEGATE_H_
+ 
++#include "base/functional/bind.h"
++#include "base/functional/callback.h"
+ #include "build/build_config.h"
+ #include "gpu/command_buffer/common/constants.h"
+ #include "gpu/config/gpu_info.h"
+@@ -57,6 +59,20 @@ class GpuChannelManagerDelegate {
+   // identifying token on the client.
+   using GetIsolationKeyCallback =
+       base::OnceCallback<void(const std::string& isolation_key)>;
++  using GetResidentIsolationKeyCallback =
++      base::OnceCallback<void(const std::string&, const std::string&)>;
++  virtual void GetResidentIsolationKey(
++      int client_id,
++      const blink::WebGPUExecutionContextToken& token,
++      GetResidentIsolationKeyCallback cb) {
++    GetIsolationKey(
++        client_id, token,
++        base::BindOnce(
++            [](GetResidentIsolationKeyCallback cb, const std::string& key) {
++              std::move(cb).Run(key, std::string{});
++            },
++            std::move(cb)));
++  }
+   virtual void GetIsolationKey(int client_id,
+                                const blink::WebGPUExecutionContextToken& token,
+                                GetIsolationKeyCallback cb) = 0;
+diff --git a/services/viz/privileged/mojom/gl/gpu_host.mojom b/services/viz/privileged/mojom/gl/gpu_host.mojom
+index 3444bff0ca3d233334b9e755a71fcee5db4d1586..b2f4d8aac7a61e84a277f94cda21d1ee2961b245 100644
+--- a/services/viz/privileged/mojom/gl/gpu_host.mojom
++++ b/services/viz/privileged/mojom/gl/gpu_host.mojom
+@@ -67,7 +67,7 @@ interface GpuHost {
+   //     becomes a part of the ExecutionContextToken.
+   GetIsolationKey(int32 client_id,
+                   blink.mojom.WebGPUExecutionContextToken wgpu_context_token)
+-      => (string isolation_key);
++      => (string isolation_key, string resident_document);
+ 
+   // Tells the GPU host to store the blob on the given cache handle.
+   StoreBlobToDisk(gpu.mojom.GpuDiskCacheHandle cache_handle,

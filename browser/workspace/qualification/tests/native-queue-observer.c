@@ -2,6 +2,9 @@
  * collector must attribute each submit to its actual queue and never to a page. */
 #include "consumer.h"
 
+extern void FawnSubmitResidentDocumentCommandV1(WGPUProcQueueSubmit, WGPUQueue,
+    size_t, const WGPUCommandBuffer *, const char *, const char *);
+
 static void check(state *s, uint32_t initial) {
     const uint32_t sizeof_data = 4 * sizeof(uint32_t);
     WGPUBuffer data = buffer(s, sizeof_data, WGPUBufferUsage_Storage | WGPUBufferUsage_CopySrc | WGPUBufferUsage_CopyDst);
@@ -19,7 +22,11 @@ static void check(state *s, uint32_t initial) {
     desc.label = (WGPUStringView){"same-page-controlled-label", WGPU_STRLEN};
     WGPUCommandBuffer commands = wgpuCommandEncoderFinish(enc, &desc);
     assert(commands);
-    wgpuQueueSubmit(s->queue, 1, &commands);
+    /* Both commands deliberately have the same page-controlled label. The
+     * document and command below stand in for the two browser-minted IDs. */
+    const char *document = initial == 11 ? "10000000000000000000000000000001" : "10000000000000000000000000000002";
+    const char *command = initial == 11 ? "20000000000000000000000000000001" : "20000000000000000000000000000002";
+    FawnSubmitResidentDocumentCommandV1(wgpuQueueSubmit, s->queue, 1, &commands, document, command);
     const uint32_t *words = map(s, out, sizeof_data);
     for (uint32_t i = 0; i < 4; ++i) assert(words[i] == initial + i + 7u);
     wgpuBufferUnmap(out);

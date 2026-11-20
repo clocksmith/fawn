@@ -1,12 +1,13 @@
 """GDB source script for a freshly launched, owned diagnostic process with matching Doe DWARF.
 
 Read-only diagnostic: records native Vulkan compute, successful submission and fence/timeline observation.
-The library digest is supplied out of band. This tool has no browser document or page ownership source.
+Artifact pins are supplied out of band. Document-scoped submissions never establish a capture grant.
 """
 
 import hashlib
 import json
 import os
+import re
 from pathlib import Path
 
 import gdb
@@ -16,6 +17,20 @@ expected = os.environ["BLITZEN_NATIVE_TRACE_SHA256"]
 if hashlib.sha256(library.read_bytes()).hexdigest() != expected:
     raise gdb.GdbError("Native trace library differs from its independent artifact pin")
 identity = library.stat()
+scope_path = os.environ.get("BLITZEN_NATIVE_TRACE_SCOPE_IMAGE")
+scope_sha = os.environ.get("BLITZEN_NATIVE_TRACE_SCOPE_SHA256")
+if bool(scope_path) != bool(scope_sha):
+    raise gdb.GdbError("Provide the scope image and its independent artifact pin together")
+scope_image = Path(scope_path).resolve(strict=True) if scope_path else None
+if scope_image:
+    # Chromium can be large; the independent artifact check has bounded memory.
+    digest = hashlib.sha256()
+    with scope_image.open("rb") as image:
+        for block in iter(lambda: image.read(1024 * 1024), b""):
+            digest.update(block)
+    if digest.hexdigest() != scope_sha:
+        raise gdb.GdbError("Scoped submit image differs from its independent pin")
+scope_identity = scope_image.stat() if scope_image else None
 output = Path(os.environ["BLITZEN_NATIVE_TRACE_OUT"])
 log = output.open("x")
 calls, by_command, queues, errors = {}, {}, {}, []
@@ -31,10 +46,11 @@ def emit(event, **fields):
     log.flush()
 
 
-def native_frame(frame):
+def mapped_frame(frame, path, expected_identity):
     # Symbol name and a path alone would allow same-named probes in another image.
     pc = frame.pc()
-    if gdb.selected_inferior().pid != owner_pid or gdb.solib_name(pc) != str(library):
+    loaded = gdb.solib_name(pc) or gdb.current_progspace().filename
+    if gdb.selected_inferior().pid != owner_pid or not loaded or Path(loaded).resolve() != path:
         return False
     with open(f"/proc/{owner_pid}/maps") as maps:
         for line in maps:
@@ -42,8 +58,35 @@ def native_frame(frame):
             start, end = [int(part, 16) for part in span.split("-")]
             if start <= pc < end:
                 major, minor = (int(field, 16) for field in dev.split(":"))
-                return int(inode) == identity.st_ino and os.makedev(major, minor) == identity.st_dev
+                return int(inode) == expected_identity.st_ino and os.makedev(major, minor) == expected_identity.st_dev
     return False
+
+
+def native_frame(frame):
+    return mapped_frame(frame, library, identity)
+
+
+def wire_scope(frame):
+    if not scope_image or int(frame.read_var("count")) != 1:
+        return None
+    frame = frame.older()
+    while frame:
+        if (frame.name() == "FawnSubmitResidentDocumentCommandV1" and
+                mapped_frame(frame, scope_image, scope_identity)):
+            if int(frame.read_var("count")) != 1:
+                return None
+            values = []
+            for name in ("document_binding", "submission_id"):
+                address = int(frame.read_var(name))
+                if not address:
+                    return None
+                raw = bytes(gdb.selected_inferior().read_memory(address, 33))
+                if not re.fullmatch(b"[0-9A-F]{32}\x00", raw):
+                    return None
+                values.append(raw[:32].decode("ascii"))
+            return values
+        frame = frame.older()
+    return None
 
 
 class Entry(gdb.Breakpoint):
@@ -101,6 +144,10 @@ def public_submit(frame, thread):
         queue_count += 1
         queues[queue] = queue_count
     calls[thread] = (counter, queues[queue], queue)
+    scope = wire_scope(frame)
+    if scope:
+        emit("trusted-wire-scope", submit=counter, queue=queues[queue],
+             documentBinding=scope[0], wireSubmission=scope[1])
 
 
 def recorded(frame, thread):
@@ -221,6 +268,7 @@ emit(
     "collector-armed",
     pid=owner_pid,
     nativeLibrarySha256=expected,
+    scopeImageSha256=scope_sha,
     pageOwnership=None,
     latencyQualified=False,
 )
