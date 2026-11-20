@@ -332,6 +332,7 @@ try {
   const finishTrace = tracePrefix ? await startScopeTrace(page, tracePrefix) : null;
   const finishFrameTrace = frameTracePrefix ? await startScopeTrace(page, frameTracePrefix, new Set([
     'FawnResidentTrackRestriction', 'FawnResidentBrowserRestriction', 'FawnResidentFrameImported', 'FawnResidentStreamClosed',
+    'FawnResidentResourceEdge',
   ])) : null;
   let frameScope;
   let beforeChange = await evidence();
@@ -439,14 +440,16 @@ try {
     assert.equal(frame.grantRevision, frameScope.grantRevision);
     assert.ok(Number.isSafeInteger(frame.mediaTimestampUs));
     assert.ok(Number.isSafeInteger(frame.frameImportOrdinal) && frame.frameImportOrdinal > 0);
-    await finishFrameTrace({ ...frameScope, mediaTimestampUs: frame.mediaTimestampUs, ordinal: frame.frameImportOrdinal });
+    await finishFrameTrace({ ...frameScope, mediaTimestampUs: frame.mediaTimestampUs, ordinal: frame.frameImportOrdinal,
+      width: frame.width, height: frame.height });
   }
   const counters = summarizeResidentOutcome({ elapsedMs: verifiedAt - started, verified: true,
     ruleEvaluations, modelCalls: [], captures: captures.slice(captureStart) });
   assert.equal(counters.plannerCalls, 0);
   assert.equal(counters.modelSpendUsd, 0);
   const receipt = { clock: 'request-repaint-through-authoritative-reconciliation', canvasBackend,
-    ...(frameScope ? { diagnosticOnly: true, diagnosticKind: 'frame-import', frameImportTimestampUs: frame.mediaTimestampUs, frameImportOrdinal: frame.frameImportOrdinal } : {}),
+    ...(frameScope ? { diagnosticOnly: true, diagnosticKind: 'frame-import', frameImportTimestampUs: frame.mediaTimestampUs, frameImportOrdinal: frame.frameImportOrdinal,
+      frameImportDimensions: [frame.width, frame.height] } : {}),
     ...(frame.nativeScopeRequest ? { nativeScopeRequest: frame.nativeScopeRequest, diagnosticOnly: true } : {}),
     ...(lookalike ? { mainWorldControl: lookalike } : {}),
     ...(useCompositor ? { digestMode: config.observation.compositorDigest ?? 'cpu', reviewedBitmap } : {}),

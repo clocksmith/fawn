@@ -346,7 +346,7 @@ def run_wave(out, wave, args):
 
 @functools.lru_cache(maxsize=1)
 def frame_import_checker():
-    return runpy.run_path(str(Path(__file__).with_name("check-frame-import.py")))["check"]
+    return runpy.run_path(str(Path(__file__).with_name("check-mask-readback.py")))
 
 
 def summarize_row(path, wave, slot):
@@ -414,8 +414,20 @@ def summarize_row(path, wave, slot):
     elif o.get("diagnosticOnly") is True:
         if o.get("diagnosticKind") == "frame-import":
             try:
-                data["frameImport"] = frame_import_checker()(path)
+                checker = frame_import_checker()
+                importer = checker["INPUT"]
+                events, scope, browser = importer["read_row"](path)
+                importer["trace_input"](events, scope, browser)
+                data["frameImport"] = dict(restrictedFrameImportVerified=True,
+                                           nativeDispatchVerified=False, latencyQualified=False)
                 reason = "restricted frame import verified; native GPU completion unproven"
+                if "frameImportDimensions" in o:
+                    try:
+                        data["maskReadback"] = checker["checked_mask"](events, scope, browser)
+                        reason = "tile diff submitted and mask mapped; native backend completion unproven"
+                    except (KeyError, TypeError, ValueError) as error:
+                        data["maskReadback"] = dict(submittedTileDiffVerified=False, latencyQualified=False)
+                        reason = f"restricted frame import verified; mask result unproven: {error}"
             except (OSError, TypeError, KeyError, ValueError) as error:
                 data["frameImport"] = {"restrictedFrameImportVerified": False, "latencyQualified": False}
                 reason = f"restricted frame import unproven: {error}"

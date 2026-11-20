@@ -22,7 +22,7 @@ def single(rows: list[dict], description: str) -> dict:
     return rows[0]
 
 
-def trace_input(events: list[dict], scope: dict, browser: int) -> None:
+def trace_input(events: list[dict], scope: dict, browser: int) -> dict:
     require(type(browser) is int and browser > 1, "invalid browser PID")
     world, ordinal = scope["executionContextId"], scope["ordinal"]
     require(all(type(n) is int and n > 0 for n in (world, ordinal, scope["grantRevision"])),
@@ -68,9 +68,10 @@ def trace_input(events: list[dict], scope: dict, browser: int) -> None:
             "browser did not accept the matching restriction before import")
     require(not any(e["pid"] == browser and e["args"].get("stream") == track["stream"] and e["ts"] <= at
                     for e in rows("StreamClosed")), "browser stream closed or switched")
+    return chosen
 
 
-def check(row: Path) -> dict:
+def read_row(row: Path) -> tuple[list[dict], dict, int]:
     def read(name: str) -> dict:
         return json.loads((row / (name + ".json")).read_text())
 
@@ -86,8 +87,14 @@ def check(row: Path) -> dict:
     scope = read("frame-import.scope")
     expected = dict(progress["frameImportScope"], ordinal=outcome["frameImportOrdinal"],
                     mediaTimestampUs=outcome["frameImportTimestampUs"])
+    if "frameImportDimensions" in outcome:
+        expected["width"], expected["height"] = outcome["frameImportDimensions"]
     require(expected == scope and scope["captureId"] == progress["surfaceId"], "controller scopes differ")
-    trace_input(read("frame-import.trace")["traceEvents"], scope, progress["browserPid"])
+    return read("frame-import.trace")["traceEvents"], scope, progress["browserPid"]
+
+
+def check(row: Path) -> dict:
+    trace_input(*read_row(row))
     return {"restrictedFrameImportVerified": True, "nativeDispatchVerified": False,
             "latencyQualified": False}
 
