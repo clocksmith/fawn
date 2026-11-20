@@ -56,7 +56,7 @@ export async function openWorkspaceApp({ stateDir, port, headless = false, adapt
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const args = process.argv.slice(2), value = name => { const index = args.indexOf(name); return index < 0 ? undefined : args[index + 1]; };
   if (args.includes('--help')) {
-    console.log('Usage: npm --prefix browser/workspace start -- [--browser-channel chrome|chromium|chromium-headless-shell|fawn] [--browser-config PATH] [--compositor-transport external-texture|rgba-upload|native-helper] [--compositor-digest cpu|webgpu] [--workflow-module PATH] [--state-dir PATH] [--port NUMBER] [--adapter playwright|cdp] [--headless]');
+    console.log('Usage: npm --prefix browser/workspace start -- [--browser-channel chrome|chromium|chromium-headless-shell|fawn] [--browser-config PATH] [--compositor-transport external-texture|rgba-upload|native-helper|stock-i420] [--compositor-digest cpu|webgpu] [--workflow-module PATH] [--state-dir PATH] [--port NUMBER] [--adapter playwright|cdp] [--headless]');
     console.log('Default: installed Google Chrome (--browser-channel chrome) under ~/.local/state/blitzen. Pass --browser-channel fawn or --browser-config PATH (or BLITZEN_BROWSER_CONFIG) to require a hash-pinned Fawn browser build without fallback.');
   } else {
     const workflowModulePath = value('--workflow-module') ?? process.env.BLITZEN_WORKFLOW_MODULE ?? process.env.FAWN_WORKFLOW_MODULE;

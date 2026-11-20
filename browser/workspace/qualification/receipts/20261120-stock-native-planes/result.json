@@ -1,0 +1,15 @@
+{
+  "schema": "blitzen.stock-i420-export/v1",
+  "chromium": "4a6fb38567da21dc86f8ba468ac0ca9002f4f606",
+  "binarySha256": "01a0f7b8dd41057bb5bf3f48a598573976059e55eda36053f2173cdc907cab59",
+  "sourceVerificationFileBytes": 534164032,
+  "harness": "isolated Linux stock Chromium; one CPU; no physical GPU",
+  "modelCalls": 0,
+  "modelSpendUsd": 0,
+  "scope": "JS-visible WebCodecs buffer payloads, canonical hash inputs and a verified Blitzen effect; browser-internal copies and timings unmeasured",
+  "receipts": {
+    "frames-cpu": "554acba2b0f00f4f9bc2f3ec326a34d355c9a75ce38ede6daff0eb2fdb521eda",
+    "frames-lvp": "00b680914f7a9fc67fa79c44fc84bfb2741054321684be9d17c957b9fc6bba6f",
+    "workflow-final": "fc9be116d35ba7993b3420dff9ebd71a96eabcaa10990cc64b3decc90487a686"
+  }
+}
