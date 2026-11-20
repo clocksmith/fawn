@@ -1,0 +1,77 @@
+diff --git a/generator/templates/dawn/wire/server/ServerHandlers.cpp b/generator/templates/dawn/wire/server/ServerHandlers.cpp
+index aca4bbdb12b8d9a51d71572213de6c3758c24593..5e38fa479254ec8235de587132d32e678aad9761 100644
+--- a/generator/templates/dawn/wire/server/ServerHandlers.cpp
++++ b/generator/templates/dawn/wire/server/ServerHandlers.cpp
+@@ -98,6 +98,15 @@ namespace dawn::wire::server {
+             switch (cmdId) {
+                 {% for command in cmd_records["special command"] + cmd_records["command"] %}
+                     case WireCmd::{{command.name.CamelCase()}}:
++                        {% if command.name.CamelCase() == "QueueSubmit" %}
++                            if (mObserveQueueSubmit) {
++                                const auto* prior = mQueueSubmitHeader;
++                                mQueueSubmitHeader = reinterpret_cast<const volatile std::byte*>(cmdHeader);
++                                result = HandleQueueSubmit(&deserializeBuffer);
++                                mQueueSubmitHeader = prior;
++                                break;
++                            }
++                        {% endif %}
+                         result = Handle{{command.name.CamelCase()}}(&deserializeBuffer);
+                         break;
+                 {% endfor %}
+diff --git a/include/dawn/wire/WireServer.h b/include/dawn/wire/WireServer.h
+index 2a2209f32dd893677e33378085201d45315f21a9..f2e587cb7611a770706809fe6a9332f8d759f16e 100644
+--- a/include/dawn/wire/WireServer.h
++++ b/include/dawn/wire/WireServer.h
+@@ -77,6 +77,11 @@ class DAWN_WIRE_EXPORT WireServer : public CommandHandler {
+     // them periodically to ensure progress on asynchronous work is made.
+     bool IsDeviceKnown(WGPUDevice device) const;
+ 
++    // Valid only during the synchronous native submit invoked by this wire
++    // server. The embedder may identify the offset in its own current span.
++    void EnableQueueSubmitCursor();
++    const volatile std::byte* CurrentQueueSubmitHeader() const;
++
+     server::Server* GetImplForTesting();
+ 
+   private:
+diff --git a/src/dawn/wire/WireServer.cpp b/src/dawn/wire/WireServer.cpp
+index 42d5004fb029ee7cc29f3237e248a1f47971a1e9..9e2b5b9d360da959d0c0d1df0d62940fcbec2625 100644
+--- a/src/dawn/wire/WireServer.cpp
++++ b/src/dawn/wire/WireServer.cpp
+@@ -73,6 +73,14 @@ bool WireServer::IsDeviceKnown(WGPUDevice device) const {
+     return mImpl->IsDeviceKnown(device);
+ }
+ 
++void WireServer::EnableQueueSubmitCursor() {
++    mImpl->EnableQueueSubmitCursor();
++}
++
++const volatile std::byte* WireServer::CurrentQueueSubmitHeader() const {
++    return mImpl->CurrentQueueSubmitHeader();
++}
++
+ server::Server* WireServer::GetImplForTesting() {
+     return mImpl.get();
+ }
+diff --git a/src/dawn/wire/server/Server.h b/src/dawn/wire/server/Server.h
+index 0a69c32193712ae45f58f913c1803c808931a22a..31418a880186fc2807ee24e0bdc383a1310f74e9 100644
+--- a/src/dawn/wire/server/Server.h
++++ b/src/dawn/wire/server/Server.h
+@@ -196,6 +196,8 @@ class Server : public ServerBase {
+                                           MemoryTransferService* memoryTransferService,
+                                           bool useSpontaneousCallbacks);
+     ~Server() override;
++    void EnableQueueSubmitCursor() { mObserveQueueSubmit = true; }
++    const volatile std::byte* CurrentQueueSubmitHeader() const { return mQueueSubmitHeader; }
+ 
+     // ChunkedCommandHandler implementation
+     bool HandleCommands(Span<const volatile std::byte> commands) override;
+@@ -321,6 +323,8 @@ class Server : public ServerBase {
+     std::unique_ptr<MemoryTransferService> mOwnedMemoryTransferService = nullptr;
+     raw_ptr<MemoryTransferService> mMemoryTransferService = nullptr;
+     bool mUseSpontaneousCallbacks = false;
++    bool mObserveQueueSubmit = false;
++    const volatile std::byte* mQueueSubmitHeader = nullptr;
+ 
+     // Weak pointer to self to facilitate creation of userdata.
+     std::weak_ptr<Server> mSelf;

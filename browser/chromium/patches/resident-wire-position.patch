@@ -1,0 +1,323 @@
+diff --git a/content/browser/gpu/gpu_process_host.cc b/content/browser/gpu/gpu_process_host.cc
+index e66cc708b52248416968b92046bd099ade6be24c..e727c1b98fa832bbd6abc221ce35aaa3b9f9edd6 100644
+--- a/content/browser/gpu/gpu_process_host.cc
++++ b/content/browser/gpu/gpu_process_host.cc
+@@ -302,6 +302,7 @@ static const char* const kSwitchNames[] = {
+     switches::kDisableLowEndDeviceMode,
+     switches::kProfilingAtStart,
+     switches::kResidentWebGPUProvenance,
++    switches::kResidentFrameProvenance,
+     switches::kProfilingFile,
+     switches::kProfilingFlush,
+     switches::kRunAllCompositorStagesBeforeDraw,
+@@ -1194,8 +1195,9 @@ DOCUMENT_USER_DATA_KEY_IMPL(ResidentDocumentReceipt);
+ std::string GpuProcessHost::GetResidentDocumentReceipt(
+     int32_t process_id,
+     const blink::WebGPUExecutionContextToken& token) {
+-  if (!base::CommandLine::ForCurrentProcess()->HasSwitch(
+-          switches::kResidentWebGPUProvenance) ||
++  const auto* switches_for_process = base::CommandLine::ForCurrentProcess();
++  if ((!switches_for_process->HasSwitch(switches::kResidentWebGPUProvenance) &&
++       !switches_for_process->HasSwitch(switches::kResidentFrameProvenance)) ||
+       !token.Is<blink::DocumentToken>())
+     return {};
+   auto* frame = RenderFrameHostImpl::FromDocumentToken(
+diff --git a/gpu/command_buffer/client/dawn_client_serializer.cc b/gpu/command_buffer/client/dawn_client_serializer.cc
+index 343059910aad5710e0de4ada22cc0b02ab0a89bc..fc05a2750356c35d091bb060c152f9d9b035076d 100644
+--- a/gpu/command_buffer/client/dawn_client_serializer.cc
++++ b/gpu/command_buffer/client/dawn_client_serializer.cc
+@@ -6,6 +6,8 @@
+ 
+ #include "gpu/config/fawn_resident_provenance.h"
+ 
++#include <algorithm>
++
+ #include "base/compiler_specific.h"
+ #include "base/numerics/checked_math.h"
+ #include "base/trace_event/trace_event.h"
+@@ -18,6 +20,44 @@
+ namespace gpu {
+ namespace webgpu {
+ 
++namespace {
++struct ScopedFawnAllocation {
++  const DawnClientSerializer* owner = nullptr;
++  unsigned count = 0;
++  uint64_t generation = 0;
++  FawnWirePosition position;
++};
++// Wire serialization is synchronous. Work on another thread or another
++// channel cannot stamp this call. Ambiguous and disconnected calls stay empty.
++constinit thread_local ScopedFawnAllocation fawn_scope;
++}  // namespace
++
++bool DawnClientSerializer::BeginFawnSubmit() {
++  if (fawn_scope.owner) {
++    fawn_scope.count = 2;
++    return false;
++  }
++  fawn_scope.owner = this;
++  return true;
++}
++
++FawnWirePosition DawnClientSerializer::EndFawnSubmit() {
++  if (fawn_scope.owner != this)
++    return {};
++  const FawnWirePosition position =
++      fawn_scope.count == 1 ? fawn_scope.position : FawnWirePosition{};
++  fawn_scope = {};
++  return position;
++}
++
++void DawnClientSerializer::CaptureFawnAllocation(uint32_t offset) {
++  if (fawn_scope.owner != this)
++    return;
++  fawn_scope.count = std::min(2u, fawn_scope.count + 1);
++  fawn_scope.generation = fawn_buffer_generation_;
++  fawn_scope.position = {0, offset};
++}
++
+ DawnClientSerializer::DawnClientSerializer(
+     WebGPUImplementation* client,
+     WebGPUCmdHelper* helper,
+@@ -54,6 +94,8 @@ DawnClientSerializer::GetCommandSpace(size_t size) {
+   if (buffer_.valid() && !overflows_remaining_space) [[likely]] {
+     // If the buffer is valid and has sufficient space, return the
+     // pointer and increment the offset.
++    if (FawnResidentFrameProvenanceEnabled())
++      CaptureFawnAllocation(put_offset_);
+     auto space = buffer_.as_byte_span().subspan(put_offset_, size);
+     put_offset_ += static_cast<uint32_t>(size);
+     return std::span<volatile std::byte>(
+@@ -82,6 +124,8 @@ DawnClientSerializer::GetCommandSpace(size_t size) {
+     return std::nullopt;
+   }
+ 
++  if (FawnResidentFrameProvenanceEnabled())
++    CaptureFawnAllocation(0);
+   put_offset_ = size;
+   auto space = buffer_.as_byte_span().first(size);
+   return std::span<volatile std::byte>(
+@@ -110,6 +154,12 @@ void DawnClientSerializer::Commit() {
+       trace_id = 0;
+     }
+ 
++    if (FawnResidentFrameProvenanceEnabled()) {
++      if (fawn_scope.owner == this && fawn_scope.count == 1 &&
++          fawn_scope.generation == fawn_buffer_generation_)
++        fawn_scope.position.batch = trace_id;
++      ++fawn_buffer_generation_;
++    }
+     buffer_.Shrink(put_offset_);
+     helper_->DawnCommands(trace_id >> 32, trace_id & 0xFFFF'FFFF,
+                           buffer_.shm_id(), buffer_.offset(), put_offset_);
+diff --git a/gpu/command_buffer/client/dawn_client_serializer.h b/gpu/command_buffer/client/dawn_client_serializer.h
+index f911f37ec8429ab107f4bb577fab331df1ff0538..34297a5867d30eb6d86d378d254c6f0b2a7bd2c2 100644
+--- a/gpu/command_buffer/client/dawn_client_serializer.h
++++ b/gpu/command_buffer/client/dawn_client_serializer.h
+@@ -21,6 +21,7 @@ class TransferBuffer;
+ 
+ namespace webgpu {
+ 
++struct FawnWirePosition;
+ class DawnClientMemoryTransferService;
+ class WebGPUCmdHelper;
+ class WebGPUImplementation;
+@@ -38,6 +39,9 @@ class DawnClientSerializer : public dawn::wire::CommandSerializer {
+   std::optional<std::span<volatile std::byte>> GetCommandSpace(
+       size_t size) final;
+ 
++  bool BeginFawnSubmit();
++  FawnWirePosition EndFawnSubmit();
++
+   // Signal that it's important that the previously encoded commands are
+   // flushed. Calling |AwaitingFlush| will return whether or not a flush still
+   // needs to occur.
+@@ -58,6 +62,8 @@ class DawnClientSerializer : public dawn::wire::CommandSerializer {
+  private:
+   // dawn::wire::CommandSerializer implementation
+   bool Flush() final;
++  void CaptureFawnAllocation(uint32_t offset);
++  uint64_t fawn_buffer_generation_ = 0;
+ 
+   // Found dangling on `linux-rel` in
+   // `gpu_tests.context_lost_integration_test.ContextLostIntegrationTest.
+diff --git a/gpu/command_buffer/client/webgpu_implementation.h b/gpu/command_buffer/client/webgpu_implementation.h
+index 6c80ac752f7bd597e22b21bea2bfb863fbe384c9..0e90d894ea65402858d1600b09b807b82a0fb0cb 100644
+--- a/gpu/command_buffer/client/webgpu_implementation.h
++++ b/gpu/command_buffer/client/webgpu_implementation.h
+@@ -46,6 +46,8 @@ class DawnWireServices : public APIChannel {
+   base::WeakPtr<DawnWireServices> AsWeakPtr();
+ 
+   WGPUInstance GetWGPUInstance() const override;
++  bool BeginFawnSubmit() override { return serializer_.BeginFawnSubmit(); }
++  FawnWirePosition EndFawnSubmit() override { return serializer_.EndFawnSubmit(); }
+ 
+   void Disconnect() override;
+ 
+diff --git a/gpu/command_buffer/client/webgpu_interface.h b/gpu/command_buffer/client/webgpu_interface.h
+index 2686237124a179a42dd0d9f5e346082e0b708e65..22a1ae721b2d2d4375c87a4aa2496a107108cae6 100644
+--- a/gpu/command_buffer/client/webgpu_interface.h
++++ b/gpu/command_buffer/client/webgpu_interface.h
+@@ -38,12 +38,24 @@ struct ReservedTexture {
+   uint32_t deviceGeneration;
+ };
+ 
++// An ordinary encoder allocation identified within its committed wire batch.
++// A zero batch means the allocation was missing, ambiguous or unsent.
++struct FawnWirePosition {
++  uint64_t batch = 0;
++  uint32_t offset = 0;
++};
++
+ // APIChannel is a RefCounted class which holds the Dawn wire client.
+ class APIChannel : public base::RefCounted<APIChannel> {
+  public:
+   // Get the WGPUInstance.
+   virtual WGPUInstance GetWGPUInstance() const = 0;
+ 
++  // Internal diagnostic on a single synchronous Blink submit. Mocks and other
++  // channels do not participate. Never exposes command bytes or credentials.
++  virtual bool BeginFawnSubmit() { return false; }
++  virtual FawnWirePosition EndFawnSubmit() { return {}; }
++
+   // Disconnect. All commands using the WebGPU API should become a
+   // no-op and server-side resources can be freed.
+   virtual void Disconnect() = 0;
+diff --git a/gpu/command_buffer/service/webgpu_decoder_impl.cc b/gpu/command_buffer/service/webgpu_decoder_impl.cc
+index 612ab7835c7ee0ad2fe97b528bcdb9c79ff0e3a0..9b0f82d9dcd54c298df88f8433dbb0c1787b7f60 100644
+--- a/gpu/command_buffer/service/webgpu_decoder_impl.cc
++++ b/gpu/command_buffer/service/webgpu_decoder_impl.cc
+@@ -59,6 +59,7 @@
+ #include "gpu/config/gpu_feature_info.h"
+ #include "gpu/config/gpu_finch_features.h"
+ #include "gpu/config/gpu_preferences.h"
++#include "gpu/config/fawn_resident_provenance.h"
+ #include "gpu/config/gpu_switches.h"
+ #include "gpu/config/webgpu_blocklist_impl.h"
+ #include "gpu/webgpu/callback.h"
+@@ -476,6 +477,8 @@ class WebGPUDecoderImpl final : public WebGPUDecoder {
+   }
+   std::string resident_document_binding_;
+   uint64_t resident_wire_batch_ = 0;
++  uintptr_t resident_wire_base_ = 0;
++  size_t resident_wire_size_ = 0;
+   bool resident_binding_requested_ = false;
+   void OnGetIsolationKey(const std::string& isolation_key);
+ 
+@@ -1273,8 +1276,8 @@ WebGPUDecoderImpl::WebGPUDecoderImpl(
+         std::forward<decltype(args)>(args)...);
+   };
+ 
+-  if (use_doe_runtime_ && base::CommandLine::ForCurrentProcess()->HasSwitch(
+-                              switches::kResidentWebGPUProvenance)) {
++  if (use_doe_runtime_ &&
++      (gpu::FawnResidentProvenanceEnabled() || gpu::FawnResidentFrameProvenanceEnabled())) {
+     wire_procs.queueSubmit = [](WGPUQueue queue, size_t count,
+                                 const WGPUCommandBuffer* commands) {
+       auto submit = dawn::native::GetProcs().queueSubmit;
+@@ -1284,6 +1287,21 @@ WebGPUDecoderImpl::WebGPUDecoderImpl(
+         return;
+       }
+       const auto submission = base::UnguessableToken::Create().ToString();
++      if (gpu::FawnResidentFrameProvenanceEnabled()) {
++        const uintptr_t start = parent_decoder->resident_wire_base_;
++        const uintptr_t instruction = reinterpret_cast<uintptr_t>(
++            parent_decoder->wire_server_->CurrentQueueSubmitHeader());
++        // A chunked command has a reconstructed buffer outside this shared
++        // span. No raw addresses leave this process and no guess is made.
++        if (start && instruction >= start &&
++            instruction - start < parent_decoder->resident_wire_size_) {
++          TRACE_EVENT_INSTANT(TRACE_DISABLED_BY_DEFAULT("gpu.dawn"),
++              "FawnResidentDecodedSubmit", "submission", submission,
++              "binding", parent_decoder->resident_document_binding_,
++              "batch", base::NumberToString(parent_decoder->resident_wire_batch_),
++              "offset", instruction - start);
++        }
++      }
+       TRACE_EVENT_INSTANT(
+           TRACE_DISABLED_BY_DEFAULT("gpu.dawn"), "FawnResidentGpuBatch",
+           "batch", base::NumberToString(parent_decoder->resident_wire_batch_),
+@@ -1298,6 +1316,8 @@ WebGPUDecoderImpl::WebGPUDecoderImpl(
+   wire_server_ = DawnWireServer::Create(
+       wire_serializer_.get(), memory_transfer_service_.get(), wire_procs);
+ 
++  if (use_doe_runtime_ && gpu::FawnResidentFrameProvenanceEnabled())
++    wire_server_->EnableQueueSubmitCursor();
+   wire_server_->InjectInstance(dawn_instance_->Get(), {1, 0});
+ 
+   // If there is no isolation key provider we don't want to wait for an
+@@ -2179,8 +2199,16 @@ error::Error WebGPUDecoderImpl::HandleDawnCommands(
+   {
+     const auto resetter = ScopedParentDecoder(this);
+     std::optional<base::AutoReset<uint64_t>> current_batch;
+-    if (!resident_document_binding_.empty())
++    std::optional<base::AutoReset<uintptr_t>> current_base;
++    std::optional<base::AutoReset<size_t>> current_size;
++    if (!resident_document_binding_.empty()) {
+       current_batch.emplace(&resident_wire_batch_, trace_id);
++      if (gpu::FawnResidentFrameProvenanceEnabled()) {
++        current_base.emplace(&resident_wire_base_,
++                             reinterpret_cast<uintptr_t>(shm_commands->data()));
++        current_size.emplace(&resident_wire_size_, size);
++      }
++    }
+     if (!wire_server_->HandleCommands(*shm_commands)) {
+       return error::kLostContext;
+     }
+@@ -2849,8 +2877,8 @@ error::Error WebGPUDecoderImpl::HandleSetWebGPUExecutionContextToken(
+     default:
+       return error::kInvalidArguments;
+   }
+-  if (use_doe_runtime_ && base::CommandLine::ForCurrentProcess()->HasSwitch(
+-                              switches::kResidentWebGPUProvenance)) {
++  if (use_doe_runtime_ &&
++      (gpu::FawnResidentProvenanceEnabled() || gpu::FawnResidentFrameProvenanceEnabled())) {
+     // Never rebind an existing decoder to a second document or permit a
+     // delayed first reply to take ownership of another document's work.
+     if (resident_binding_requested_)
+diff --git a/third_party/blink/renderer/modules/webgpu/gpu_queue.cc b/third_party/blink/renderer/modules/webgpu/gpu_queue.cc
+index 6ac5dacc47f3639ae9f59bcef756b1390537cb1c..7367a8c2d0232c1f498dcf4ce023fcb7798b65ab 100644
+--- a/third_party/blink/renderer/modules/webgpu/gpu_queue.cc
++++ b/third_party/blink/renderer/modules/webgpu/gpu_queue.cc
+@@ -4,6 +4,7 @@
+ 
+ #include "third_party/blink/renderer/modules/webgpu/gpu_queue.h"
+ 
++#include "base/strings/string_number_conversions.h"
+ #include "gpu/config/fawn_resident_provenance.h"
+ #include "base/trace_event/trace_event.h"
+ #include "third_party/blink/renderer/platform/bindings/script_state.h"
+@@ -130,8 +131,20 @@ void GPUQueue::submit(ScriptState* script_state,
+     GetHandle().Submit(buffers.size(), commandBuffers.get());
+     FlushNow();
+   } else {
++    auto* channel = GetDawnControlClient()->FawnWireChannel();
++    const bool tracked = FawnTracing() && buffers.size() == 1 &&
++                         channel && channel->BeginFawnSubmit();
+     GetHandle().Submit(buffers.size(), commandBuffers.get());
+     FlushNow();
++    if (tracked) {
++      const auto wire = channel->EndFawnSubmit();
++      if (wire.batch) {
++        TRACE_EVENT_INSTANT(TRACE_DISABLED_BY_DEFAULT("gpu.dawn"),
++            "FawnResidentEncodedSubmit", "context", device_->FawnWorld(),
++            "device", device_->FawnObjectId(), "command", buffers[0]->FawnObjectId(),
++            "batch", base::NumberToString(wire.batch), "offset", wire.offset);
++      }
++    }
+   }
+ 
+   ExecutionContext* execution_context = ExecutionContext::From(script_state);
+diff --git a/third_party/blink/renderer/platform/graphics/gpu/dawn_control_client_holder.h b/third_party/blink/renderer/platform/graphics/gpu/dawn_control_client_holder.h
+index 697ba79b7af7ff02355fcebd5c281e31d8f3a7fe..45b60139e219d57e7d1103499c8efbeee0c20ae5 100644
+--- a/third_party/blink/renderer/platform/graphics/gpu/dawn_control_client_holder.h
++++ b/third_party/blink/renderer/platform/graphics/gpu/dawn_control_client_holder.h
+@@ -73,6 +73,7 @@ class PLATFORM_EXPORT DawnControlClientHolder
+   base::WeakPtr<WebGraphicsContext3DProviderWrapper> GetContextProviderWeakPtr()
+       const;
+   wgpu::Instance GetWGPUInstance() const;
++  gpu::webgpu::APIChannel* FawnWireChannel() const { return api_channel_.get(); }
+   void MarkContextLost();
+   bool IsContextLost() const;
+   std::unique_ptr<WebGpuSharedImageLease> LeaseSharedImage(

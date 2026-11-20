@@ -346,7 +346,7 @@ def run_wave(out, wave, args):
 
 @functools.lru_cache(maxsize=1)
 def frame_import_checker():
-    return runpy.run_path(str(Path(__file__).with_name("check-mask-readback.py")))
+    return runpy.run_path(str(Path(__file__).with_name("check-wire-submit.py")))
 
 
 def summarize_row(path, wave, slot):
@@ -423,8 +423,16 @@ def summarize_row(path, wave, slot):
                 reason = "restricted frame import verified; native GPU completion unproven"
                 if "frameImportDimensions" in o:
                     try:
-                        data["maskReadback"] = checker["checked_mask"](events, scope, browser)
+                        data["maskReadback"], command = checker["MASK"]["traced_mask"](events, scope, browser)
                         reason = "tile diff submitted and mask mapped; native backend completion unproven"
+                        if wave["arm"] == "fawn-doe":
+                            try:
+                                data["wireSubmit"] = checker["wire_submit"](
+                                    events, scope, browser, p.get("gpuProcessPid"), command)
+                                reason = "GPU-process mask submit identified; backend acceptance and completion unproven"
+                            except (KeyError, TypeError, ValueError) as error:
+                                data["wireSubmit"] = dict(nativeQueueSubmitInvoked=False, latencyQualified=False)
+                                reason = f"tile diff submitted and mask mapped; natural wire submit unproven: {error}"
                     except (KeyError, TypeError, ValueError) as error:
                         data["maskReadback"] = dict(submittedTileDiffVerified=False, latencyQualified=False)
                         reason = f"restricted frame import verified; mask result unproven: {error}"

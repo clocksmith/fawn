@@ -100,7 +100,7 @@ class Commands:
         return texture, queue, command
 
 
-def checked_mask(events: list[dict], scope: dict, browser: int) -> dict:
+def traced_mask(events: list[dict], scope: dict, browser: int) -> tuple[dict, dict]:
     frame = INPUT["trace_input"](events, scope, browser)
     tag = frame["args"]
     require(scope["ordinal"] > 1, "diff needs an earlier captured texture")
@@ -207,6 +207,17 @@ def checked_mask(events: list[dict], scope: dict, browser: int) -> dict:
         and frame["ts"] < e["ts"] <= commands.time
     ]
     require(not invalidation, "capture closed or restriction changed before successful readback")
+    # These private native identities let the wire checker select exactly this
+    # mask command. The existing frame-only and mask-only outputs stay stable.
+    command_scope = dict(
+        command=diff_command,
+        renderer=frame["pid"],
+        thread=frame["tid"],
+        context=tag["context"],
+        device=tag["device"],
+        start=frame["ts"],
+        end=commands.time,
+    )
     return {
         "restrictedFrameImportVerified": True,
         "submittedTileDiffVerified": True,
@@ -214,7 +225,12 @@ def checked_mask(events: list[dict], scope: dict, browser: int) -> dict:
         "maskBytes": size,
         "nativeBackendCompletionVerified": False,
         "latencyQualified": False,
-    }
+    }, command_scope
+
+
+def checked_mask(events: list[dict], scope: dict, browser: int) -> dict:
+    result, _ = traced_mask(events, scope, browser)
+    return result
 
 
 def check(row: Path) -> dict:
