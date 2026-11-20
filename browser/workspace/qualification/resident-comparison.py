@@ -1066,6 +1066,8 @@ def main():
             p.add_argument("--stock-executable", type=Path, help="select a sandboxed stock image verified against its source receipt")
             p.add_argument("--stock-channel", choices=["chrome", "chromium"], default="chrome")
             p.add_argument("--timeout", type=int, default=175)
+            p.add_argument("--matched-blocks", type=int, help="run at most this many complete sparse-control blocks, resuming the frozen comparison")
+            p.add_argument("--expected-drm-device", help="frozen physical render node, e.g. amdgpu@0000:00:00.0")
     args = parser.parse_args()
     out = args.out.resolve()
     if args.op == "plan":
@@ -1108,6 +1110,25 @@ def main():
             parser.error("create the plan first")
         if any("observer" in wave for wave in plan) and (not args.sources or args.frame_import_evidence):
             parser.error("paired observers require both process-bound source receipts and select tracing from the plan")
+        if args.matched_blocks is not None:
+            import resident_blocks as blocks
+            if not args.expected_drm_device or args.frame_import_evidence:
+                parser.error("block mode needs its expected DRM device and plan-selected observers")
+            signal.signal(signal.SIGTERM, lambda *_: sys.exit(143))
+            current = sys.modules[__name__]
+            try:
+                committed = blocks.run(out, plan, args, current)
+            except BlockingIOError:
+                parser.error("another block window is active")
+            except BaseException:
+                if (out / "block-ledger/identity.json").is_file():
+                    blocks.report(out, current)
+                raise
+            blocks.report(out, current)
+            print("Committed complete blocks", committed, flush=True)
+            return
+        if args.expected_drm_device:
+            parser.error("expected DRM device is used with --matched-blocks")
         with (out / "run-started").open("x") as f:
             f.write(str(os.getpid()))
         signal.signal(signal.SIGTERM, lambda *_: sys.exit(143))
@@ -1121,7 +1142,11 @@ def main():
                     parser.error("physical sparse control refused: " + control["reason"])
         write(out / "report.json", summarize(out))
     else:
-        write(out / "report.json", summarize(out))
+        if (out / "block-ledger/identity.json").is_file():
+            import resident_blocks as blocks
+            blocks.report(out, sys.modules[__name__])
+        else:
+            write(out / "report.json", summarize(out))
         print(out / "report.json")
 
 
