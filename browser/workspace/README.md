@@ -632,6 +632,15 @@ python3 qualification/resident-comparison.py run --out "$physical_run/results" -
 python3 qualification/resident-comparison.py report --out "$physical_run/results"
 ```
 
+Some upstream Chromium snapshots report forty zeroes for the revision in
+DevTools. On Linux, pass `--source-receipts STOCK.json FAWN.json` to `run`.
+Each JSON file records the verified build source (`source`), the complete
+`chromium` and `dawn` revisions, `product` (e.g. `Chromium 158.0.8108.0`)
+and the executable's `chromeSha256`. The runner verifies the actual browser
+process belongs to the fixture and hashes its image before releasing the cohort.
+The source-to-image mapping comes from the build or distribution records.
+Placeholder revisions alone cannot qualify a comparison.
+
 The offline `plan` command freezes the arm order and concurrency sweep. A repeat
 rotates the first arm. At concurrency two, two independent Resident Processes
 each have their own browser, page and grant. Every process waits at the same

@@ -1,4 +1,8 @@
+import hashlib
 import importlib.util
+import os
+import subprocess
+import sys
 from pathlib import Path
 import tempfile
 import unittest
@@ -78,6 +82,48 @@ class ResidentComparisonTest(unittest.TestCase):
             self.assertEqual(row["status"], "unqualified")
             self.assertIsNone(row["pageChangeToVerifiedMidpointMs"])
 
+    @unittest.skipUnless(Path("/proc/self/exe").exists(), "Linux image handles")
+    def test_pinned_image_must_belong_to_the_fixture(self):
+        with subprocess.Popen([sys.executable, "-c", "import time; time.sleep(30)"]) as child:
+            try:
+                # The subprocess inherits Python's executable after exec, even with a virtualenv.
+                digest = hashlib.sha256(Path(f"/proc/{child.pid}/exe").read_bytes()).hexdigest()
+                progress = {"browserPid": child.pid, "browser": {"product": "Chrome/158", "revision": "@" + "0" * 40}}
+                receipt = {"chromeSha256": digest, "source": "unit fixture", "product": "Chromium 158",
+                           "chromium": "a" * 40, "dawn": "b" * 40}
+                self.assertEqual(module.source_for_browser(progress, receipt, os.getpid()), receipt)
+                with self.assertRaisesRegex(ValueError, "different fixture"):
+                    module.source_for_browser(progress, receipt, child.pid + 1000000)
+                with self.assertRaisesRegex(ValueError, "pinned build"):
+                    module.source_for_browser(progress, dict(receipt, chromeSha256="0" * 64), os.getpid())
+                progress["browser"]["revision"] = "@" + "c" * 40
+                with self.assertRaisesRegex(ValueError, "pinned build"):
+                    module.source_for_browser(progress, receipt, os.getpid())
+            finally:
+                child.terminate()
+
+    def test_receipt_refuses_missing_or_non_string_fields(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "receipt.json"
+            base = {"source": "fixture", "product": "Chromium 158", "chromeSha256": "a" * 64,
+                    "chromium": "b" * 40, "dawn": "c" * 40}
+            for field in base:
+                module.write(path, dict(base, **{field: None}))
+                with self.assertRaises(ValueError):
+                    module.source_receipt(path)
+            module.write(path, dict(base, dawn="0" * 40))
+            with self.assertRaises(ValueError):
+                module.source_receipt(path)
+
+    def test_zero_cdp_revision_requires_observed_per_image_sources(self):
+        row = {"browser": {"revision": "@" + "0" * 40, "product": "Chrome/158.0.8108.0"}}
+        self.assertFalse(module.comparable_browsers(row, row))
+        source = {"chromium": "1" * 40, "dawn": "2" * 40}
+        left = dict(row, browserSource=source)
+        self.assertFalse(module.comparable_browsers(left, row))
+        self.assertTrue(module.comparable_browsers(left, left))
+        self.assertFalse(module.comparable_browsers(left, dict(row, browserSource=dict(source, dawn="3" * 40))))
+
     def test_missing_refusals_source_and_page_ownership(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
@@ -91,7 +137,7 @@ class ResidentComparisonTest(unittest.TestCase):
                     d.mkdir()
                     gpu = {"vendor": "intel", "isFallbackAdapter": False}
                     revision = (
-                        "different" if wave["arm"] == "fawn-dawn" and wave["repeat"] == 2 else "shared"
+                        "2" * 40 if wave["arm"] == "fawn-dawn" and wave["repeat"] == 2 else "1" * 40
                     )
                     module.write(
                         d / "progress.json",
