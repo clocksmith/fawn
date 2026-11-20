@@ -1,8 +1,21 @@
 diff --git a/components/viz/host/gpu_host_impl.cc b/components/viz/host/gpu_host_impl.cc
-index 53a46dd8ba36c6586f2fae88834ced5dc544b31b..12c3b8ea7cdc7a2abfb77e9046df012c8a33f726 100644
+index 53a46dd8ba36c6586f2fae88834ced5dc544b31b..6bac99c8401629aeec7bb68d8fca2dbeb305e8b8 100644
 --- a/components/viz/host/gpu_host_impl.cc
 +++ b/components/viz/host/gpu_host_impl.cc
-@@ -758,7 +758,8 @@ void GpuHostImpl::GetIsolationKey(
+@@ -129,6 +129,12 @@ bool CanUseShaderCache(const gpu::GpuDiskCacheHandle& handle,
+ 
+ }  // namespace
+ 
++std::string GpuHostImpl::Delegate::GetResidentDocumentReceipt(
++    int32_t client_id,
++    const blink::WebGPUExecutionContextToken& token) {
++  return {};
++}
++
+ GpuHostImpl::InitParams::InitParams() = default;
+ 
+ GpuHostImpl::InitParams::InitParams(InitParams&&) = default;
+@@ -758,7 +764,8 @@ void GpuHostImpl::GetIsolationKey(
      const blink::WebGPUExecutionContextToken& token,
      GetIsolationKeyCallback cb) {
    std::string isolation_key = delegate_->GetIsolationKey(client_id, token);
@@ -13,18 +26,16 @@ index 53a46dd8ba36c6586f2fae88834ced5dc544b31b..12c3b8ea7cdc7a2abfb77e9046df012c
  
  void GpuHostImpl::DidUpdateGPUInfo(const gpu::GPUInfo& gpu_info) {
 diff --git a/components/viz/host/gpu_host_impl.h b/components/viz/host/gpu_host_impl.h
-index 1b8e5c783dc05ab8c6ae9984b837c260cfa8250d..4905a8788938d3bb76179d9efadddfc6ebc22f64 100644
+index 1b8e5c783dc05ab8c6ae9984b837c260cfa8250d..de22c96f70b97a7db5061b9debf4c2095a71e206 100644
 --- a/components/viz/host/gpu_host_impl.h
 +++ b/components/viz/host/gpu_host_impl.h
-@@ -90,6 +90,11 @@ class VIZ_HOST_EXPORT GpuHostImpl : public mojom::GpuHost,
+@@ -90,6 +90,9 @@ class VIZ_HOST_EXPORT GpuHostImpl : public mojom::GpuHost,
  #endif
      virtual void BlockDomainsFrom3DAPIs(const std::set<GURL>& urls,
                                          gpu::DomainGuilt guilt) = 0;
 +    virtual std::string GetResidentDocumentReceipt(
 +        int32_t client_id,
-+        const blink::WebGPUExecutionContextToken& token) {
-+      return {};
-+    }
++        const blink::WebGPUExecutionContextToken& token);
      virtual std::string GetIsolationKey(
          int32_t client_id,
          const blink::WebGPUExecutionContextToken& token) = 0;
@@ -322,19 +333,54 @@ index 52d5bf07ebb15bf2982a4f2cf69f56ffbf46b3ec..343059910aad5710e0de4ada22cc0b02
        TRACE_EVENT(TRACE_DISABLED_BY_DEFAULT("gpu.dawn"), "DawnCommands",
                    perfetto::Flow::Global(trace_id));
      } else {
+diff --git a/gpu/command_buffer/service/BUILD.gn b/gpu/command_buffer/service/BUILD.gn
+index 67e171d528a7931c1dce5253afffd42cf15cdb69..f4126726f3920d54501ff1526a166260be29c9d7 100644
+--- a/gpu/command_buffer/service/BUILD.gn
++++ b/gpu/command_buffer/service/BUILD.gn
+@@ -198,6 +198,7 @@ target(link_target_type, "gles2_sources") {
+     "id_manager.h",
+     "indexed_buffer_binding_host.cc",
+     "indexed_buffer_binding_host.h",
++    "isolation_key_provider.cc",
+     "isolation_key_provider.h",
+     "logger.cc",
+     "logger.h",
+diff --git a/gpu/command_buffer/service/isolation_key_provider.cc b/gpu/command_buffer/service/isolation_key_provider.cc
+new file mode 100644
+index 0000000000000000000000000000000000000000..7969a1e49dcc4d2e59633036815dd45d1ea29255
+--- /dev/null
++++ b/gpu/command_buffer/service/isolation_key_provider.cc
+@@ -0,0 +1,25 @@
++// Copyright 2026 The Chromium Authors
++// Use of this source code is governed by a BSD-style license that can be
++// found in the LICENSE file.
++
++#include "gpu/command_buffer/service/isolation_key_provider.h"
++
++#include <string>
++#include <utility>
++
++#include "base/functional/bind.h"
++
++namespace gpu {
++
++void IsolationKeyProvider::GetResidentIsolationKey(
++    const blink::WebGPUExecutionContextToken& token,
++    GetResidentIsolationKeyCallback cb) {
++  GetIsolationKey(token, base::BindOnce(
++                             [](GetResidentIsolationKeyCallback cb,
++                                const std::string& key) {
++                               std::move(cb).Run(key, std::string{});
++                             },
++                             std::move(cb)));
++}
++
++}  // namespace gpu
 diff --git a/gpu/command_buffer/service/isolation_key_provider.h b/gpu/command_buffer/service/isolation_key_provider.h
-index b4c362346de51a97efc06034616197cdc0bdabc0..8d864cf34adcb5cd55e37e6bbe0b4a422c17cafe 100644
+index b4c362346de51a97efc06034616197cdc0bdabc0..ff406a87617c7afc37deed780cb02ad3caaa780a 100644
 --- a/gpu/command_buffer/service/isolation_key_provider.h
 +++ b/gpu/command_buffer/service/isolation_key_provider.h
-@@ -5,6 +5,7 @@
- #ifndef GPU_COMMAND_BUFFER_SERVICE_ISOLATION_KEY_PROVIDER_H_
- #define GPU_COMMAND_BUFFER_SERVICE_ISOLATION_KEY_PROVIDER_H_
- 
-+#include "base/functional/bind.h"
- #include "base/functional/callback.h"
- #include "gpu/gpu_gles2_export.h"
- #include "third_party/blink/public/common/tokens/tokens.h"
-@@ -27,6 +28,19 @@ class GPU_GLES2_EXPORT IsolationKeyProvider {
+@@ -27,6 +27,12 @@ class GPU_GLES2_EXPORT IsolationKeyProvider {
    using GetIsolationKeyCallback =
        base::OnceCallback<void(const std::string& isolation_key)>;
  
@@ -342,14 +388,7 @@ index b4c362346de51a97efc06034616197cdc0bdabc0..8d864cf34adcb5cd55e37e6bbe0b4a42
 +      base::OnceCallback<void(const std::string&, const std::string&)>;
 +  virtual void GetResidentIsolationKey(
 +      const blink::WebGPUExecutionContextToken& token,
-+      GetResidentIsolationKeyCallback cb) {
-+    GetIsolationKey(token, base::BindOnce(
-+                               [](GetResidentIsolationKeyCallback cb,
-+                                  const std::string& key) {
-+                                 std::move(cb).Run(key, std::string{});
-+                               },
-+                               std::move(cb)));
-+  }
++      GetResidentIsolationKeyCallback cb);
 +
    virtual void GetIsolationKey(const blink::WebGPUExecutionContextToken& token,
                                 GetIsolationKeyCallback cb) = 0;
@@ -576,20 +615,57 @@ index c3a089aba86896ad93485b68b864eedf8efd35ff..740fd79860f5fdd3f92e17d7601c8af1
    void GetIsolationKey(const blink::WebGPUExecutionContextToken& token,
                         GetIsolationKeyCallback cb) override;
  
+diff --git a/gpu/ipc/service/gpu_channel_manager.cc b/gpu/ipc/service/gpu_channel_manager.cc
+index eb81fa7a1d02bce67af86a8c326de946118311dc..247f0fccfa62bfb30f97d6c1202ad5cedd7ac596 100644
+--- a/gpu/ipc/service/gpu_channel_manager.cc
++++ b/gpu/ipc/service/gpu_channel_manager.cc
+@@ -195,6 +195,18 @@ void SetCrashKeyTimeDelta(base::debug::CrashKeyString* key,
+ 
+ }  // namespace
+ 
++void GpuChannelManagerDelegate::GetResidentIsolationKey(
++    int client_id,
++    const blink::WebGPUExecutionContextToken& token,
++    GetResidentIsolationKeyCallback cb) {
++  GetIsolationKey(client_id, token,
++                  base::BindOnce(
++                      [](GetResidentIsolationKeyCallback cb, const std::string& key) {
++                        std::move(cb).Run(key, std::string{});
++                      },
++                      std::move(cb)));
++}
++
+ GpuChannelManager::GpuPeakMemoryMonitor::GpuPeakMemoryMonitor() = default;
+ 
+ GpuChannelManager::GpuPeakMemoryMonitor::~GpuPeakMemoryMonitor() = default;
 diff --git a/gpu/ipc/service/gpu_channel_manager_delegate.h b/gpu/ipc/service/gpu_channel_manager_delegate.h
-index 716eadc9e9e584a6f45cf4e19d39d71f55116d1c..cbe60f019dcfc360508953d01abc7e69d9804883 100644
+index 716eadc9e9e584a6f45cf4e19d39d71f55116d1c..a9e6968363ec7d74ebbf676a1e2b617adb7d7235 100644
 --- a/gpu/ipc/service/gpu_channel_manager_delegate.h
 +++ b/gpu/ipc/service/gpu_channel_manager_delegate.h
-@@ -5,6 +5,8 @@
+@@ -5,11 +5,13 @@
  #ifndef GPU_IPC_SERVICE_GPU_CHANNEL_MANAGER_DELEGATE_H_
  #define GPU_IPC_SERVICE_GPU_CHANNEL_MANAGER_DELEGATE_H_
  
-+#include "base/functional/bind.h"
 +#include "base/functional/callback.h"
  #include "build/build_config.h"
  #include "gpu/command_buffer/common/constants.h"
  #include "gpu/config/gpu_info.h"
-@@ -57,6 +59,20 @@ class GpuChannelManagerDelegate {
+ #include "gpu/ipc/common/gpu_disk_cache_type.h"
+ #include "gpu/ipc/common/surface_handle.h"
++#include "gpu/ipc/service/gpu_ipc_service_export.h"
+ #include "third_party/blink/public/common/tokens/tokens.h"
+ 
+ class GURL;
+@@ -18,7 +20,7 @@ namespace gpu {
+ 
+ // TODO(kylechar): Rename this class. It's used to provide GpuServiceImpl
+ // functionality to multiple classes in src/gpu/ so delegate is inaccurate.
+-class GpuChannelManagerDelegate {
++class GPU_IPC_SERVICE_EXPORT GpuChannelManagerDelegate {
+  public:
+   // Force the loss of all GL contexts.
+   virtual void LoseAllContexts() = 0;
+@@ -57,6 +59,12 @@ class GpuChannelManagerDelegate {
    // identifying token on the client.
    using GetIsolationKeyCallback =
        base::OnceCallback<void(const std::string& isolation_key)>;
@@ -598,15 +674,7 @@ index 716eadc9e9e584a6f45cf4e19d39d71f55116d1c..cbe60f019dcfc360508953d01abc7e69
 +  virtual void GetResidentIsolationKey(
 +      int client_id,
 +      const blink::WebGPUExecutionContextToken& token,
-+      GetResidentIsolationKeyCallback cb) {
-+    GetIsolationKey(
-+        client_id, token,
-+        base::BindOnce(
-+            [](GetResidentIsolationKeyCallback cb, const std::string& key) {
-+              std::move(cb).Run(key, std::string{});
-+            },
-+            std::move(cb)));
-+  }
++      GetResidentIsolationKeyCallback cb);
    virtual void GetIsolationKey(int client_id,
                                 const blink::WebGPUExecutionContextToken& token,
                                 GetIsolationKeyCallback cb) = 0;
@@ -624,7 +692,7 @@ index 3444bff0ca3d233334b9e755a71fcee5db4d1586..b2f4d8aac7a61e84a277f94cda21d1ee
    // Tells the GPU host to store the blob on the given cache handle.
    StoreBlobToDisk(gpu.mojom.GpuDiskCacheHandle cache_handle,
 diff --git a/third_party/blink/renderer/modules/mediastream/browser_capture_media_stream_track.cc b/third_party/blink/renderer/modules/mediastream/browser_capture_media_stream_track.cc
-index 37826b6f5a9f49e95c73f828e766e38c512b69df..a0bae55e303ecb4ab29908f71df8f865d0394643 100644
+index 37826b6f5a9f49e95c73f828e766e38c512b69df..1317e782f040cf97f3789e91db981949ebfe8dbe 100644
 --- a/third_party/blink/renderer/modules/mediastream/browser_capture_media_stream_track.cc
 +++ b/third_party/blink/renderer/modules/mediastream/browser_capture_media_stream_track.cc
 @@ -4,6 +4,12 @@
@@ -675,8 +743,8 @@ index 37826b6f5a9f49e95c73f828e766e38c512b69df..a0bae55e303ecb4ab29908f71df8f865
 +  if (gpu::FawnResidentProvenanceEnabled() &&
 +      script_state->World().IsIsolatedWorld() &&
 +      type == SubCaptureTarget::Type::kRestrictionTarget && !token->is_zero()) {
-+    const auto source = device();
-+    if (source && source->serializable_session_id()) {
++    const auto capture_device = device();
++    if (capture_device && capture_device->serializable_session_id()) {
 +      if (resident_track_id_.is_empty())
 +        resident_track_id_ = base::UnguessableToken::Create();
 +      TRACE_EVENT_INSTANT(TRACE_DISABLED_BY_DEFAULT("gpu.dawn"),
@@ -684,7 +752,7 @@ index 37826b6f5a9f49e95c73f828e766e38c512b69df..a0bae55e303ecb4ab29908f71df8f865
 +                          v8_inspector::V8ContextInfo::executionContextId(
 +                              script_state->GetContext()),
 +                          "track", resident_track_id_.ToString(), "stream",
-+                          gpu::FawnCaptureDigest(source->session_id()),
++                          gpu::FawnCaptureDigest(capture_device->session_id()),
 +                          "target", gpu::FawnCaptureDigest(token.value()),
 +                          "version", capture_version.sub_capture);
 +    }
