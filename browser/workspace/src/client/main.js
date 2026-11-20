@@ -17,7 +17,7 @@ import { WorkflowStore } from './workflow-store.js';
 import { startWorkspaceServer } from './server.js';
 
 export async function openWorkspaceApp({ stateDir, port, headless = false, adapter = 'playwright', config: supplied, planner: suppliedPlanner,
-  workflowPersistence = null, workflowTasks = new Map(), browserConfig, browserChannel } = {}) {
+  workflowPersistence = null, workflowTasks = new Map(), browserConfig, browserChannel, compositorTransport } = {}) {
   const config = supplied ?? JSON.parse(await readFile(new URL('../../../../config/fawn-workspace-client.json', import.meta.url), 'utf8'));
   for (const field of ['port', 'maxBodyBytes', 'maxEvidenceBytes', 'maxRepositoryFiles', 'maxTurns', 'maxInputBytes', 'maxOutputTokens', 'modelTimeoutMs', 'pollMs', 'delegationMaxAgeMs', 'shutdownWaitMs', 'cliTerminationGraceMs']) {
     if (!Number.isSafeInteger(config[field]) || config[field] < (field === 'port' ? 0 : 1)) throw Error(`Invalid client config ${field}`);
@@ -28,7 +28,7 @@ export async function openWorkspaceApp({ stateDir, port, headless = false, adapt
   if (plannerEnv && !['claude-cli', 'anthropic'].includes(plannerEnv)) throw Error('Unknown planner selection');
   if (config.host !== '127.0.0.1') throw Error('Workspace control service only listens on loopback');
   const directory = resolve(stateDir ?? process.env.BLITZEN_STATE_DIR ?? process.env.FAWN_WORKSPACE_STATE_DIR ?? join(homedir(), '.local/state/blitzen'));
-  const serviceConfig = loadClientServiceConfig({ directory, headless,
+  const serviceConfig = loadClientServiceConfig({ directory, headless, compositorTransport,
     browserConfig: browserConfig ?? process.env.BLITZEN_BROWSER_CONFIG ?? process.env.FAWN_BROWSER_CONFIG,
     browserChannel: browserChannel ?? process.env.BLITZEN_BROWSER_CHANNEL ?? process.env.FAWN_BROWSER_CHANNEL });
   mkdirSync(directory, { recursive: true, mode: 0o700 }); chmodSync(directory, 0o700);
@@ -56,7 +56,7 @@ export async function openWorkspaceApp({ stateDir, port, headless = false, adapt
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const args = process.argv.slice(2), value = name => { const index = args.indexOf(name); return index < 0 ? undefined : args[index + 1]; };
   if (args.includes('--help')) {
-    console.log('Usage: npm --prefix browser/workspace start -- [--browser-channel chrome|chromium|chromium-headless-shell|fawn] [--browser-config PATH] [--workflow-module PATH] [--state-dir PATH] [--port NUMBER] [--adapter playwright|cdp] [--headless]');
+    console.log('Usage: npm --prefix browser/workspace start -- [--browser-channel chrome|chromium|chromium-headless-shell|fawn] [--browser-config PATH] [--compositor-transport external-texture|rgba-upload|native-helper] [--workflow-module PATH] [--state-dir PATH] [--port NUMBER] [--adapter playwright|cdp] [--headless]');
     console.log('Default: installed Google Chrome (--browser-channel chrome) under ~/.local/state/blitzen. Pass --browser-channel fawn or --browser-config PATH (or BLITZEN_BROWSER_CONFIG) to require a hash-pinned Fawn browser build without fallback.');
   } else {
     const workflowModulePath = value('--workflow-module') ?? process.env.BLITZEN_WORKFLOW_MODULE ?? process.env.FAWN_WORKFLOW_MODULE;
@@ -67,7 +67,7 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
       adapter: value('--adapter'), headless: args.includes('--headless'),
       workflowPersistence: workflowConfig.workflowPersistence ?? null,
       workflowTasks: workflowConfig.workflowTasks ?? new Map(),
-      browserConfig: value('--browser-config'), browserChannel: value('--browser-channel') });
+      browserConfig: value('--browser-config'), browserChannel: value('--browser-channel'), compositorTransport: value('--compositor-transport') });
     console.log(`Blitzen workspace (${app.browser.channel}, ${app.browser.fawnBuild?.runtime.mode ?? 'stock provider'}): ${app.loginUrl}`);
     console.log('Start with human control. Model calls occur only after an explicit delegation.');
     let closing = false;

@@ -31,7 +31,7 @@ try {
     const stateDir = join(root, adapter), config = testBrowserSelection(root).config;
     const browserConfig = join(root, adapter + '.json');
     const liveConfig = { ...config, browser: { ...config.browser, headless: false },
-      observation: { ...config.observation, compositorCapture: true, compositorTransport: 'external-texture' } };
+      observation: { ...config.observation, compositorCapture: true, compositorTransport: process.env.BLITZEN_TEST_COMPOSITOR_TRANSPORT ?? 'external-texture' } };
     writeFileSync(browserConfig, JSON.stringify(liveConfig));
     const start = () => startHost({ stateDir, browserConfig, adapter, headless: false });
     const workspaceId = 'capture', profile = join(stateDir, 'profiles', workspaceId);

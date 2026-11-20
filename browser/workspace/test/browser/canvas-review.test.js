@@ -12,19 +12,24 @@ import { testBrowserSelection } from '../support/browser-selection.js';
 import { assertSolidPixels } from '../support/gpu-presentation-oracle.js';
 
 const canvasBackend = process.env.BLITZEN_TEST_CANVAS_BACKEND ?? 'cpu';
+const compositor = process.env.BLITZEN_REVIEW_COMPOSITOR_TRANSPORT;
+const useCompositor = typeof compositor === 'string' && compositor.length > 0;
+if (useCompositor && process.env.BLITZEN_TEST_ELEMENT_CAPTURE !== '1') throw Error('Visible, authorized compositor capture required');
 const captures = [];
 const root = mkdtempSync(join(tmpdir(), 'blitzen-canvas-review-'));
 const log = join(root, 'commits.jsonl');
 const committed = () => existsSync(log) ? readFileSync(log, 'utf8').trim().split('\n').map(line => JSON.parse(line)) : [];
 const attempts = [];
+let applicationHttpRequests = 0;
 // The grant only covers the review controls and the canvas. Every route keeps
 // those roots identifiable, including the authoritative GET after a lost reply.
 const layout = controls => `<!doctype html><main id="controls">${controls}</main>
-  <canvas id="cell" width="8" height="8"></canvas><aside>Outside the review grant</aside>`;
+  <canvas id="cell" style="isolation:isolate" width="8" height="8"></canvas><aside>Outside the review grant</aside>`;
 let current = { job: 'A', revision: 1 };
 const key = ({ job, revision }) => `${job}-r${revision}`;
 const pathFor = (row) => `/queue/${key(row)}`;
 const server = createServer((req, res) => {
+  applicationHttpRequests++;
   res.setHeader('Cache-Control', 'no-store');
   if (req.method === 'POST') {
     attempts.push(req.url);
@@ -52,7 +57,7 @@ await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
 const origin = `http://127.0.0.1:${server.address().port}`;
 let service, adapter;
 try {
-  const baseConfig = testBrowserSelection(root).config;
+  const baseConfig = testBrowserSelection(root, { headless: !useCompositor, compositorTransport: compositor }).config;
   const config = { ...baseConfig, observation: { ...baseConfig.observation, canvasBackend } };
   service = await WorkspaceService.open({ stateDir: join(root, 'service'), config,
     createAdapter: options => {
@@ -169,14 +174,33 @@ try {
     el.width = 130; el.height = 70;
     const ctx = el.getContext('2d'); ctx.fillStyle = 'red'; ctx.fillRect(0, 0, 130, 70);
   });
-  const beforeChange = await observe();
-  const captureStart = captures.length, started = performance.now();
-  await cell.evaluate(el => { const ctx = el.getContext('2d'); ctx.fillStyle = 'blue'; ctx.fillRect(129, 69, 1, 1); });
-  const valid = await service.observe({ ...owner, regions: ['#cell'], sinceVersion: beforeChange.observationVersion });
+  let session = 'start';
+  const evidence = async sinceVersion => {
+    const snapshot = await service.observe({ ...owner, regions: ['#cell'], sinceVersion,
+      ...(useCompositor ? { compositorRegion: '#cell', compositorSession: session } : {}) });
+    if (useCompositor) session = snapshot.frameEvidence['#cell'].sessionId;
+    return snapshot;
+  };
+  let beforeChange = await evidence();
+  if (useCompositor) {
+    for (let i = 0; i < 5; i++) {
+      beforeChange = await evidence(beforeChange.observationVersion);
+      if (beforeChange.visualChanges['#cell']?.baseline === 'compared') break;
+    }
+    assert.equal(beforeChange.visualChanges['#cell']?.baseline, 'compared');
+  }
+  const captureStart = captures.length, requestsBefore = applicationHttpRequests, started = performance.now();
+  const patch = useCompositor ? { x: 84, y: 40, length: 5 } : { x: 129, y: 69, length: 1 };
+  await cell.evaluate((el, p) => { const ctx = el.getContext('2d'); ctx.fillStyle = 'blue'; ctx.fillRect(p.x, p.y, p.length, p.length); }, patch);
+  const valid = await evidence(beforeChange.observationVersion);
   const changed = valid.visualChanges['#cell']?.changed ?? [];
-  // This routine accepts exactly the expected indicator tile and still has to
-  // bind an authorized, current application target before it can submit.
-  const ruleMatched = changed.length === 1 && changed[0].x === 128 && changed[0].y === 64;
+  // Select the application action only if the expected indicator tile changed.
+  // Independent revision and authority checks still apply to the actual POST.
+  const frame = valid.frameEvidence?.['#cell'] ?? { width: 130, height: 70 };
+  const x = Math.floor((patch.x + patch.length / 2) * frame.width / 130);
+  const y = Math.floor((patch.y + patch.length / 2) * frame.height / 70);
+  const tile = changed[0];
+  const ruleMatched = changed.length === 1 && x >= tile.x && x < tile.x + tile.width && y >= tile.y && y < tile.y + tile.height;
   const accepted = ruleMatched ? proposal(valid, 'lost-ack') : null;
   assert.ok(accepted);
   const lost = await submit(valid, accepted);
@@ -192,6 +216,8 @@ try {
   assert.equal(counters.plannerCalls, 0);
   assert.equal(counters.modelSpendUsd, 0);
   const receipt = { clock: 'request-repaint-through-authoritative-reconciliation', canvasBackend,
+    compositorTransport: compositor ?? null, selection: config.browser.fawnBuild ?? { channel: config.browser.channel },
+    applicationHttpRequests: applicationHttpRequests - requestsBefore, indicator: { expectedPixel: [x, y], changed },
     knownEffects: committed().length, ...counters };
   if (process.env.BLITZEN_RESIDENT_RECEIPT_FILE) {
     writeFileSync(process.env.BLITZEN_RESIDENT_RECEIPT_FILE, JSON.stringify(receipt, null, 2) + '\n', { flag: 'wx' });

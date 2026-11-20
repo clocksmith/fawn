@@ -248,7 +248,8 @@ async function queryPage({ mode, selector, maxElements, maxTextChars, elementTex
   };
   // Copy the selected bitmap synchronously with its markup. Reading it through
   // a separate 2D surface leaves the application's original context alone.
-  // Tile hashes are retained by the workspace. No pixel bytes cross the pipe.
+  // The backing-store path returns tile hashes. The separate native-helper
+  // transport sends only its browser-restricted compositor frame to the service.
   let remainingCanvasPixels = 4 * 1024 * 1024;
   let residentReader = canvasReader;
   const canvasRegion = async (region, description) => {

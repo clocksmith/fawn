@@ -129,7 +129,8 @@ The contract's semantic names map to these concrete rules.
   the service independently reads the scoped pixels again on CPU. CSS overlays
   and other compositor layers fall outside this canvas-bitmap observation.
 - **Composited element evidence.** An administrator can enable
-  `observation.compositorCapture` on a visible Chromium browser. Call
+  `observation.compositorCapture` on a visible Chromium browser, or launch
+  Blitzen with `--compositor-transport native-helper` for the stock helper. Call
   `observe({ regions: ['#surface'], compositorRegion: '#surface', compositorSession: 'start' })`
   on a scoped workspace with a live grant naming that canvas and origin. The
   user selects the current tab in Chromium's sharing chooser. The service
@@ -145,8 +146,17 @@ The contract's semantic names map to these concrete rules.
   surface ID, document loader, grant revision, media timestamp and captured
   dimensions. Rectangles in this mode use captured-frame pixels.
   `observation.compositorTransport` selects `external-texture` (direct WebGPU
-  import) or the default `rgba-upload` (WebCodecs RGBA read into host memory
-  and upload). The investigation client's `capture` accepts the same
+  import), the default `rgba-upload` (WebCodecs RGBA read into host memory
+  and upload), or `native-helper`. The helper sends the granted element’s
+  RGBA pixels over the private CDP pipe to a workspace-owned Node worker.
+  The worker shares the service’s OS account and receives pixel bytes and
+  dimensions. Browser bindings and write credentials stay with Blitzen.
+  Native buffer comparison skips unchanged hashes; OpenSSL hashes changed
+  tiles and rehashes all pixels before dispatch. The worker retains one prior
+  frame per active share and ends on revocation or missed renewal. The journal
+  stores frame identity and tile digests. The receipt counts the raw
+  RGBA copy, base64 payload, helper input, hashed bytes, and maximum combined
+  size of its previous and current pixel buffers. The investigation client's `capture` accepts the same
   `compositorRegion`, saves a digest-bound evidence record, and reuses its
   selected region when refreshing that record. A changed rendered surface can
   therefore revise the evidence while the page text stays identical.
@@ -426,6 +436,14 @@ the native track ended and the pre-write check refused the old grant. Use
 `BLITZEN_TEST_CAPTURE_LEASE=1` to exercise service-heartbeat expiry. The
 separate `test/browser/compositor-service-crash.test.js` uses the same visible
 browser opt-in and kills the fixture-owned service after its first capture.
+To exercise the application write and reconciliation for the same granted
+compositor surface, run `test/browser/canvas-review.test.js` with
+`BLITZEN_TEST_ELEMENT_CAPTURE=1` and `BLITZEN_REVIEW_COMPOSITOR_TRANSPORT`
+set to the transport under comparison. `BLITZEN_RESIDENT_RECEIPT_FILE` selects
+a new receipt file. The clock begins when the fixture requests a repaint and
+ends after the authoritative record confirms the interrupted write. The
+native-helper control measures CPU-native work outside the browser. A native
+GPU helper and hardware-level copy counts need independent instrumentation.
 A software Vulkan run checks behavior. Native backend selection and transfer
 ownership still require the corresponding Chromium lane identity and trace.
 

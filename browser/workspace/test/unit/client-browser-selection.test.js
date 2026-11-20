@@ -20,6 +20,11 @@ try {
   for (const browserChannel of ['chrome', 'chromium', 'chromium-headless-shell']) {
     assert.equal(loadClientServiceConfig({ directory, browserChannel }).browser.channel, browserChannel);
   }
+  const native = loadClientServiceConfig({ directory, browserChannel: 'chrome', headless: false, compositorTransport: 'native-helper' });
+  assert.equal(native.observation.compositorCapture, true);
+  assert.equal(native.observation.compositorTransport, 'native-helper');
+  assert.throws(() => loadClientServiceConfig({ directory, headless: true, compositorTransport: 'native-helper' }), /visible/);
+  assert.throws(() => loadClientServiceConfig({ directory, headless: false, compositorTransport: 'unconfigured' }), /compositorTransport/);
   assert.throws(() => loadClientServiceConfig({ directory, browserChannel: 'unknown' }));
   // Explicitly requesting Fawn refuses silent fallback to Chrome when profile/binary is missing.
   assert.throws(() => loadClientServiceConfig({ directory, browserChannel: 'fawn' }), /No stock-browser fallback/);

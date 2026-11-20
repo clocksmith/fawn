@@ -83,7 +83,12 @@ isolated scripting world. After the browser acknowledges a self-tab restriction,
 Blitzen holds a compositor-produced VideoFrame through GPU submission and
 completion. Its external-texture transport imports the frame and writes a
 canonical RGBA8 texture. An explicitly selected WebCodecs upload control copies
-RGBA through host memory. The receipt identifies the transport. Verify actual
+RGBA through host memory. The stock native-helper control passes that same
+restricted RGBA frame across the private CDP pipe to a Node worker. It uses
+native buffer equality and OpenSSL SHA-256, retains one prior frame, and
+rehashes all tiles before a write. The receipt includes both pixel bytes and
+base64 payload size. A native GPU helper using a different buffer transport
+remains a separate comparison. The receipt identifies the transport. Verify actual
 shared-image backing, fences, copies, and selected backend on the target Fawn
 build before claiming zero-copy execution. In the pinned Chromium patch,
 `AssociateMailboxForDoe` may use a native shared image or select Skia staging.

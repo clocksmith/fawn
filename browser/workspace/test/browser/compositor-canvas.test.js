@@ -35,11 +35,11 @@ await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
 const origin = 'http://127.0.0.1:' + server.address().port;
 try {
   for (const [name, createAdapter] of Object.entries({ playwright: createPlaywrightAdapter, cdp: createCdpAdapter })) {
-    const root = join(directory, name), base = testBrowserSelection(root).config;
+    const root = join(directory, name);
     const transport = process.env.BLITZEN_TEST_COMPOSITOR_TRANSPORT ?? 'external-texture';
-    const config = { ...base, observation: { ...base.observation, compositorCapture: true, compositorTransport: transport },
-      browser: { ...base.browser, headless: false } };
-    let adapter, lastMetric;
+    const { config } = testBrowserSelection(root, { headless: false, compositorTransport: transport });
+    const nativeHelper = transport === 'native-helper';
+    let adapter, lastMetric, lastTileHashes;
     const captures = [];
     const service = await WorkspaceService.open({ stateDir: root, config, createAdapter: opts => {
       adapter = createAdapter(opts);
@@ -48,6 +48,7 @@ try {
         const result = await snapshot(...args);
         if (result.frameEvidence?.['#surface']) {
           lastMetric = result.regionBitmapMetrics['#surface'];
+          lastTileHashes = result.regionBitmaps['#surface'].hashes;
           captures.push(lastMetric);
         }
         return result;
@@ -66,7 +67,13 @@ try {
       assert.equal((await navigation.result).outcome, 'completed');
       let session = 'start';
       const observe = async sinceVersion => {
-        const result = await service.observe({ ...owner, regions: ['#surface'], compositorRegion: '#surface', compositorSession: session, sinceVersion });
+        let result;
+        try {
+          result = await service.observe({ ...owner, regions: ['#surface'], compositorRegion: '#surface', compositorSession: session, sinceVersion });
+        } catch (error) {
+          if (error.code === 'unauthorized-target') throw error;
+          throw Error(`${name} ${transport} observation: ${error.message}`, { cause: error });
+        }
         session = result.frameEvidence['#surface'].sessionId;
         return result;
       };
@@ -87,7 +94,7 @@ try {
       assert.equal(original.frameEvidence['#surface'].transport, transport);
       const { width, height } = original.frameEvidence['#surface'];
       assert.ok(width > 0 && width <= 256 && width === height * 2);
-      assert.equal(lastMetric.frameHostCopyBytes, transport === 'rgba-upload' ? width * height * 4 : 0);
+      assert.equal(lastMetric.frameHostCopyBytes, transport === 'external-texture' ? 0 : width * height * 4);
       assert.ok(original.frameEvidence['#surface'].loaderId);
       assert.ok(Number.isSafeInteger(original.frameEvidence['#surface'].mediaTimestampUs));
       // The sibling occludes half the chosen canvas on the compositor. Its
@@ -98,10 +105,18 @@ try {
       session = 'start';
       const same = await observe(original.observationVersion);
       assert.deepEqual(same.visualChanges['#surface'].changed, []);
-      assert.equal(lastMetric.comparedOnGpu, true);
-      assert.equal(lastMetric.tilePixelReadbackBytes, 0);
       const unchangedComparison = { ...lastMetric };
-      assert.equal(unchangedComparison.gpuMaskReadbackBytes, 4);
+      const stableTileHashes = [...lastTileHashes];
+      if (nativeHelper) {
+        assert.equal(lastMetric.path, 'element-capture-native-helper');
+        assert.equal(lastMetric.nativeHashedBytes, 0);
+        assert.equal(lastMetric.nativeHelperInputBytes, width * height * 4);
+        assert.equal(lastMetric.cdpPixelPayloadBytes, 4 * Math.ceil(width * height * 4 / 3));
+      } else {
+        assert.equal(lastMetric.comparedOnGpu, true);
+        assert.equal(lastMetric.tilePixelReadbackBytes, 0);
+        assert.equal(lastMetric.gpuMaskReadbackBytes, 4);
+      }
       assert.equal(original.frameEvidence['#surface'].sessionId, same.frameEvidence['#surface'].sessionId);
       assert.equal(captures.reduce((n, v) => n + v.permissionRequests, 0), 1);
       assert.equal(same.frameEvidence['#surface'].mediaTimestampUs > original.frameEvidence['#surface'].mediaTimestampUs, true);
@@ -109,6 +124,7 @@ try {
       await evaluate(() => { document.body.classList.add('tint'); });
       const tinted = await observe(original.observationVersion);
       assert.equal(tinted.visualChanges['#surface'].changed.length, Math.ceil(width / 64) * Math.ceil(height / 64), 'ancestor CSS changes every rendered tile');
+      const tintedTileHashes = [...lastTileHashes];
       const verifyBacking = await service.observe({ ...owner, regions: ['#surface'] });
       assert.equal(verifyBacking.regions['#surface'], backing.regions['#surface'], 'the application backing store stayed red');
       const submit = (obs, actionId) => service.submitAction({ ...owner, actionId, kind: 'click', authorizedIntent: 'inspect',
@@ -132,6 +148,7 @@ try {
       await service.revokeAuthorization({ ...admin, grantId: 'selected' });
       const revoked = (await adapter.compositor.control(revokedEntry, 'status')).result.value;
       assert.equal(revoked.trackState, 'ended');
+      if (nativeHelper) assert.equal(revokedEntry.helper.worker.threadId, -1);
       assert.equal(revoked.permissionRequests, 1);
       await service.grantAuthorization({ ...grant, grantId: 'selected', readRegions: ['#surface','#ack'] });
       assert.equal((await (await submit(beforeRegrant, 'reused-grant-id')).result).neverDispatched?.code, 'stale-observation');
@@ -149,16 +166,26 @@ try {
       const outcome = await ack.result;
       assert.equal(outcome.outcome, 'completed', JSON.stringify(outcome));
       assert.equal(await evaluate(() => document.querySelector('#ack').textContent), 'done');
-      assert.equal(lastMetric.tilePixelReadbackBytes, width * height * 4, 'dispatch independently read every rendered pixel');
+      assert.equal(nativeHelper ? lastMetric.nativeHashedBytes : lastMetric.tilePixelReadbackBytes, width * height * 4, 'dispatch independently checked every rendered pixel');
       assert.equal(await evaluate(() => typeof globalThis.__blitzenSurface), 'undefined', 'the page cannot access the private capture handle');
       const receipt = {
         clock: 'fresh-permitted-observation-through-confirmed-click-effect', transport, adapter: name, applicationHttpRequests: pageRequests - firstRequest,
         selection: config.browser.channel === 'fawn' ? config.browser.fawnBuild : { channel: config.browser.channel },
-        dimensions: [width, height], unchangedComparison,
+        dimensions: [width, height], stableTileHashes, tintedTileHashes, unchangedComparison,
         ...summarizeResidentOutcome({ elapsedMs: performance.now() - started, verified: true,
           ruleEvaluations: 1, modelCalls: [], captures: captures.slice(firstCapture) }),
       };
       assert.equal(receipt.permissionRequests, 0, 'observation and dispatch reused the existing browser permission');
+      if (nativeHelper) {
+        const cited = await observe();
+        const live = [...adapter.compositor.entries.values()][0];
+        await live.helper.worker.terminate();
+        const lostHelper = await submit(cited, 'helper-exited');
+        assert.equal((await lostHelper.result).neverDispatched?.code, 'stale-observation');
+        await assert.rejects(observe(), /expired|changed/);
+        receipt.nativeHelperCrashRefusedDispatch = true;
+        session = 'start'; await observe();
+      }
       let browserStop = null;
       const nativeStop = process.env.BLITZEN_TEST_NATIVE_STOP_SHARING;
       if (nativeStop) {
@@ -168,6 +195,13 @@ try {
         const status = await adapter.compositor.control(entry, 'status');
         assert.equal(status.result.value.trackState, 'ended', 'browser chrome stopped the actual native track');
         assert.equal(status.result.value.permissionRequests, 1);
+        if (nativeHelper) {
+          // Browser-owned revocation also retires the idle outside-browser
+          // pixel buffer without another sample or workspace command.
+          const deadline = Date.now() + 10000;
+          while (entry.helper.worker.threadId !== -1 && Date.now() < deadline) await new Promise(resolve => setTimeout(resolve, 50));
+          assert.equal(entry.helper.worker.threadId, -1);
+        }
         await assert.rejects(observe(), /ended|expired|changed/);
         assert.equal((await (await submit(old, 'native-stop')).result).neverDispatched?.code, 'stale-observation');
         browserStop = { trackState: status.result.value.trackState, permissionRequests: status.result.value.permissionRequests, staleRefusal: true };

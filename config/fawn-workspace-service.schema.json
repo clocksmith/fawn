@@ -62,7 +62,7 @@
         "maxRegions": { "type": "integer", "minimum": 1 },
         "canvasBackend": { "enum": ["cpu", "webgpu"] },
         "compositorCapture": { "type": "boolean" },
-        "compositorTransport": { "enum": ["external-texture", "rgba-upload"] }
+        "compositorTransport": { "enum": ["external-texture", "rgba-upload", "native-helper"] }
       }
     },
     "dispatch": {
