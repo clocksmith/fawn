@@ -1,0 +1,62 @@
+diff --git a/gpu/command_buffer/client/webgpu_implementation.cc b/gpu/command_buffer/client/webgpu_implementation.cc
+index cc11a52cba87e01f01893b1b97dc69800766d96c..937a104606372a0ac43fd3c5f4ed70011179cf8d 100644
+--- a/gpu/command_buffer/client/webgpu_implementation.cc
++++ b/gpu/command_buffer/client/webgpu_implementation.cc
+@@ -70,6 +70,14 @@
+   return wgpu_instance_;
+ }
+ 
++bool DawnWireServices::BeginFawnSubmit() {
++  return serializer_.BeginFawnSubmit();
++}
++
++FawnWirePosition DawnWireServices::EndFawnSubmit() {
++  return serializer_.EndFawnSubmit();
++}
++
+ void DawnWireServices::Disconnect() {
+   {
+     base::AutoLockMaybe lock(OptionalToPtr(lock_));
+diff --git a/gpu/command_buffer/client/webgpu_implementation.h b/gpu/command_buffer/client/webgpu_implementation.h
+index 0e90d894ea65402858d1600b09b807b82a0fb0cb..7bd6fb4c16efe60727906258ed9669a0573faa32 100644
+--- a/gpu/command_buffer/client/webgpu_implementation.h
++++ b/gpu/command_buffer/client/webgpu_implementation.h
+@@ -46,8 +46,8 @@
+   base::WeakPtr<DawnWireServices> AsWeakPtr();
+ 
+   WGPUInstance GetWGPUInstance() const override;
+-  bool BeginFawnSubmit() override { return serializer_.BeginFawnSubmit(); }
+-  FawnWirePosition EndFawnSubmit() override { return serializer_.EndFawnSubmit(); }
++  bool BeginFawnSubmit() override;
++  FawnWirePosition EndFawnSubmit() override;
+ 
+   void Disconnect() override;
+ 
+diff --git a/gpu/command_buffer/client/webgpu_interface.h b/gpu/command_buffer/client/webgpu_interface.h
+index 22a1ae721b2d2d4375c87a4aa2496a107108cae6..224bdc351a8b9806406263d94b2ee6ad62e93ee3 100644
+--- a/gpu/command_buffer/client/webgpu_interface.h
++++ b/gpu/command_buffer/client/webgpu_interface.h
+@@ -53,8 +53,8 @@
+ 
+   // Internal diagnostic on a single synchronous Blink submit. Mocks and other
+   // channels do not participate. Never exposes command bytes or credentials.
+-  virtual bool BeginFawnSubmit() { return false; }
+-  virtual FawnWirePosition EndFawnSubmit() { return {}; }
++  virtual bool BeginFawnSubmit() = 0;
++  virtual FawnWirePosition EndFawnSubmit() = 0;
+ 
+   // Disconnect. All commands using the WebGPU API should become a
+   // no-op and server-side resources can be freed.
+diff --git a/gpu/command_buffer/client/webgpu_interface_stub.cc b/gpu/command_buffer/client/webgpu_interface_stub.cc
+index fef03d2c24abc0f590e939f5727b0c670566e7e1..20d54cf89b40cb7f2234fc2974e82e10e99c203b 100644
+--- a/gpu/command_buffer/client/webgpu_interface_stub.cc
++++ b/gpu/command_buffer/client/webgpu_interface_stub.cc
+@@ -14,6 +14,8 @@
+   APIChannelStub() = default;
+ 
+   WGPUInstance GetWGPUInstance() const override { return nullptr; }
++  bool BeginFawnSubmit() override { return false; }
++  FawnWirePosition EndFawnSubmit() override { return {}; }
+   void Disconnect() override {}
+ 
+  private:

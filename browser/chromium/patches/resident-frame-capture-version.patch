@@ -1,0 +1,13 @@
+diff --git a/third_party/blink/renderer/modules/webgpu/gpu_external_texture.cc b/third_party/blink/renderer/modules/webgpu/gpu_external_texture.cc
+index b94f9af9d362dcb53461367dd83e9dfaba6ef0cf..f05770d358c848ae3a7338e8b6c9d020c1ddb9c5 100644
+--- a/third_party/blink/renderer/modules/webgpu/gpu_external_texture.cc
++++ b/third_party/blink/renderer/modules/webgpu/gpu_external_texture.cc
+@@ -510,7 +510,7 @@
+   auto* window = LocalDOMWindow::From(state);
+   auto* local = window ? window->GetFrame() : nullptr;
+   auto* loader = local ? local->Loader().GetDocumentLoader() : nullptr;
+-  const auto& version = media_frame->metadata().version;
++  const auto& version = media_frame->metadata().capture.version;
+   if (loader && version.sub_capture > 0 && cache_->device()->BindFawnWorld(world)) {
+     const uint64_t seq = cache_->device()->NextFawnSequence();
+     TRACE_EVENT_INSTANT(TRACE_DISABLED_BY_DEFAULT("gpu.dawn"),

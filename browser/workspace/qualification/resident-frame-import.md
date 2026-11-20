@@ -55,3 +55,9 @@ Paired hardware deltas require the same Linux boot. Two browser GPU arms must al
 Every timed workflow carries the hashes of the permission-restricted frames reviewed and rechecked for its write. The checker recomputes the indexes of changed tiles, verifies that the stale proposal had zero effects, and matches the fresh pair to the capture whose write the application confirmed. A row without this evidence retains its diagnostic and spend records. Its latency is excluded from the current comparison.
 
 The external-texture mask can miss small I420 color changes that survive conversion to canonical sRGB RGBA. Record the host bytes copied, canonical bytes hashed, tiles rehashed, and missed hints. A Doe completion proves that the diff command ran. The separate write receipt establishes what the application authorized and recorded. Compare the full cost of both steps across arms.
+
+### Compile corrections for Chromium 4a6fb385
+
+After the six patches above, apply `resident-frame-capture-version.patch` and `resident-wire-out-of-line.patch` at the Chromium root. The first reads the source and sub-capture counters from `media::VideoFrameMetadata::capture.version`. The second moves the concrete wire hooks out of the implementation header and gives Chromium’s stub explicit zero-evidence implementations. The private witness retains its existing wire recording, native command ownership and completion logic.
+
+The SHA-256 values for these patches are `a10ea4b02043c6633b33d1cb54f5b752db9e48ad983939b6d2a524071a208c88` and `ed6cd52730b05b2380f80b23966ae2d580961c6dfab584063c4ee87be34a61b7`. Jupiter’s frozen Clang, generated headers, GN command and Chromium style plugin compiled the complete Blink external-texture translation unit and the real and stub GPU client translation units on this corrected source. A linked image and an observed page submission are separate qualifications.
