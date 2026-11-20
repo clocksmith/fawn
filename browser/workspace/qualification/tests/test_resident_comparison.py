@@ -40,6 +40,24 @@ class ResidentComparisonTest(unittest.TestCase):
                 self.assertGreaterEqual(row["pageChangeToVerifiedBoundsMs"][0], 300)
             self.assertTrue((root / (module.run_id(wave, 0) + ".go")).exists())
 
+    def test_incorrect_effect_and_failed_oracle_cannot_enter_latency(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            wave = {"width": 1, "repeat": 1, "arm": "stock-helper"}
+            module.write(root / "exit.json", {"exit": 0, "allReady": True})
+            module.write(
+                root / "outcome.json",
+                {"verified": True, "imageCorrect": True, "knownEffects": 2, "committedRevision": "B-r2"},
+            )
+            row = module.summarize_row(root, wave, 1)
+            self.assertEqual(row["status"], "incorrect")
+            self.assertIsNone(row["pageChangeToVerifiedMidpointMs"])
+            module.write(root / "exit.json", {"exit": 1, "allReady": True})
+            module.write(
+                root / "progress.json", {"failureType": "AssertionError", "failure": "wrong tile"}
+            )
+            self.assertEqual(module.summarize_row(root, wave, 1)["reason"], "wrong tile")
+
     def test_missing_refusals_source_and_page_ownership(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
