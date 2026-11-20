@@ -19,8 +19,20 @@ import time
 
 ARMS = ("stock-dawn", "stock-helper", "fawn-dawn", "fawn-doe")
 PAIRS = (("stock-dawn", "stock-helper"), ("stock-dawn", "fawn-dawn"), ("fawn-dawn", "fawn-doe"))
+PLANE_ARM = "stock-js-i420"
+CPU_ARMS = ("stock-helper", PLANE_ARM)
+SPARSE_ARMS = (*ARMS, PLANE_ARM)
 FIXTURE = Path(__file__).resolve().parents[1] / "test/browser/canvas-review.test.js"
 COUNTERS = (
+    "permissionRequests",
+    "stockPlaneExportBytes",
+    "stockCanonicalRgbaCopyBytes",
+    "nativePlaneSnapshotCopyBytes",
+    "nativePlaneSnapshotSamples",
+    "stockPlaneSparseFrames",
+    "stockPlaneEqualFrames",
+    "sparseCanonicalFrames",
+    "nativePlaneDigestReuses",
     "frameHostCopyBytes",
     "canonicalHashedBytes",
     "canonicalRehashedTiles",
@@ -52,7 +64,7 @@ def write(path, value):
     path.write_text(json.dumps(value, indent=2, allow_nan=False) + "\n")
 
 
-def make_plan(repeats, widths, paired_observer=False):
+def make_plan(repeats, widths, paired_observer=False, sparse_controls=False):
     if (
         not (1 <= repeats <= 100)
         or not widths
@@ -60,14 +72,18 @@ def make_plan(repeats, widths, paired_observer=False):
         or any(not 1 <= n <= 16 for n in widths)
     ):
         raise ValueError("supply 1–100 repeats and distinct concurrency levels in 1–16")
-    plan = []
+    arms = SPARSE_ARMS if sparse_controls else ARMS
+    plan = [{"arm": arm, "repeat": 0, "width": 1, "sparseControls": True, "oracle": True}
+            for arm in ("fawn-dawn", "fawn-doe")] if sparse_controls else []
     for repeat in range(repeats):
         for width in widths:
-            order = ARMS[repeat % 4 :] + ARMS[: repeat % 4]
+            order = arms[repeat % len(arms):] + arms[:repeat % len(arms)]
             for arm in order:
                 wave = {"arm": arm, "repeat": repeat + 1, "width": width}
-                if paired_observer:
-                    modes = ("on", "off") if (repeat + ARMS.index(arm)) % 2 else ("off", "on")
+                if sparse_controls:
+                    wave["sparseControls"] = True
+                if paired_observer or sparse_controls:
+                    modes = ("on", "off") if (repeat + arms.index(arm)) % 2 else ("off", "on")
                     plan.extend(dict(wave, observer=mode) for mode in modes)
                 else:
                     plan.append(wave)
@@ -76,6 +92,8 @@ def make_plan(repeats, widths, paired_observer=False):
 
 def run_id(wave, slot):
     suffix = "-" + wave["observer"] if "observer" in wave else ""
+    if wave.get("oracle"):
+        suffix = "-oracle"
     return f"r{wave['repeat']:03}-c{wave['width']:02}-{wave['arm']}-p{slot:02}{suffix}"
 
 
@@ -328,6 +346,23 @@ def comparable_browsers(a, b):
     return bool(revision and revision == git_revision(bv.get("revision")))
 
 
+def capture_selection(wave, compositor_digest):
+    arm = wave["arm"]
+    if arm not in (SPARSE_ARMS if wave.get("sparseControls") else ARMS):
+        raise ValueError("unknown resident comparison arm")
+    if wave.get("oracle") and (not wave.get("sparseControls") or not arm.startswith("fawn") or "observer" in wave):
+        raise ValueError("same-frame oracle requires a separate Fawn control")
+    env = {"BLITZEN_TEST_COMPOSITOR_DIGEST": "cpu" if arm in CPU_ARMS else compositor_digest,
+           "BLITZEN_REVIEW_COMPOSITOR_TRANSPORT": {PLANE_ARM:"stock-i420", "stock-helper":"native-helper"}.get(arm, "external-texture")}
+    if wave.get("sparseControls"):
+        env["BLITZEN_TEST_MATCHED_SPARSE"] = "1"
+        if arm.startswith("fawn"):
+            env["BLITZEN_TEST_FAWN_PLANE_EVIDENCE"] = "1"
+        if wave.get("oracle"):
+            env["BLITZEN_TEST_LINKED_SPARSE_ORACLE"] = "1"
+    return env
+
+
 def run_wave(out, wave, args):
     gate = out / (run_id(wave, 0) + ".go")
     sources = getattr(args, "sources", {})
@@ -355,17 +390,16 @@ def run_wave(out, wave, args):
                 )
             else:
                 env["BLITZEN_TEST_BROWSER_CHANNEL"] = args.stock_channel
+                if getattr(args, "stock_executable", None):
+                    env["BLITZEN_TEST_STOCK_EXECUTABLE"] = str(args.stock_executable)
                 if mode == "on":
                     env["BLITZEN_RESIDENT_STOCK_TRACE_PREFIX"] = str(row / "stock-observer")
             if sources or sys.platform.startswith("linux"):
                 env["BLITZEN_RESIDENT_OBSERVE_BROWSER_PID"] = "1"
             env.update(
+                **capture_selection(wave, getattr(args, "compositor_digest", "cpu")),
                 BLITZEN_TEST_ELEMENT_CAPTURE="1",
-                BLITZEN_TEST_COMPOSITOR_DIGEST="cpu" if wave["arm"] == "stock-helper" else args.compositor_digest,
                 BLITZEN_RESIDENT_PHYSICAL="1",
-                BLITZEN_REVIEW_COMPOSITOR_TRANSPORT="native-helper"
-                if wave["arm"] == "stock-helper"
-                else "external-texture",
                 BLITZEN_RESIDENT_RECEIPT_FILE=str(row / "outcome.json"),
                 BLITZEN_RESIDENT_PROGRESS_FILE=str(row / "progress.json"),
                 BLITZEN_RESIDENT_BARRIER_FILE=str(gate),
@@ -385,7 +419,7 @@ def run_wave(out, wave, args):
                         for job in jobs:
                             progress = read(job["dir"] / "progress.json")
                             observed = source_for_browser(progress, source, job["child"].pid)
-                            if mode:
+                            if mode or wave.get("oracle"):
                                 boot = Path("/proc/sys/kernel/random/boot_id").read_bytes().strip()
                                 if not re.fullmatch(rb"[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}", boot):
                                     raise ValueError("missing physical host boot identity")
@@ -549,6 +583,96 @@ def canonical_pixel_evidence(progress, outcome):
             "freshEffectCount": fresh["effectCount"], "sessionId": fresh["checked"]["sessionId"]}
 
 
+def capture_control(wave, progress, outcome):
+    arm = wave["arm"]
+    required_transport = capture_selection(wave, "cpu")["BLITZEN_REVIEW_COMPOSITOR_TRANSPORT"]
+    if outcome.get("compositorTransport") != required_transport:
+        raise ValueError("selected capture transport differs")
+    refresh = outcome["grantRefresh"]
+    fresh = outcome["pixelAuthority"]["fresh"]
+    before, checked = fresh["reviewed"], fresh["checked"]
+    if (refresh.get("staleSessionRefused") is not True or not refresh.get("priorSession")
+            or refresh["priorSession"] == refresh["newSession"] or refresh["newSession"] != progress["surfaceId"]
+            or refresh["newSession"] != before["sessionId"] or refresh["grantId"] != before["grantId"]
+            or not 0 < refresh["priorRevision"] < refresh["newRevision"] == before["grantRevision"]
+            or refresh["permissionRequests"] < 1 or refresh["newFrameRgbaBytes"] != before["width"] * before["height"] * 4
+            or refresh["newFrameHostCopyBytes"] < refresh["newFrameRgbaBytes"]):
+        raise ValueError("replacement grant or full canonical refresh is unproven")
+    detail = {"transport": required_transport, "grantRefresh": refresh}
+    if arm == PLANE_ARM:
+        if (outcome.get("digestMode") != "cpu" or not before.get("stockPlaneSource") or not before.get("stockPlaneSparseTiles")
+                or not checked.get("stockPlaneEqualityReused") or outcome["stockPlaneExportBytes"] <= 0
+                or outcome["stockCanonicalRgbaCopyBytes"] <= 0 or outcome["stockPlaneSparseFrames"] <= 0
+                or outcome["stockPlaneEqualFrames"] <= 0
+                or outcome["frameHostCopyBytes"] != outcome["stockPlaneExportBytes"] + outcome["stockCanonicalRgbaCopyBytes"]):
+            raise ValueError("stock JS plane mask fell back or capture accounting differs")
+        source_bytes = outcome["stockSourceImageReadBytesBeforeCapture"]
+        if type(source_bytes) is not int or source_bytes < 0:
+            raise ValueError("missing pre-capture stock image verification bytes")
+        detail["sourceImageReadBytesBeforeCapture"] = source_bytes
+    if arm.startswith("fawn") and (not before.get("nativePlaneSparseTilesReused")
+            or not checked.get("nativePlaneEqualityReused") or outcome["nativePlaneSnapshotSamples"] <= 0
+            or type(outcome["nativePlaneSnapshotCopyBytes"]) is not int or outcome["nativePlaneSnapshotCopyBytes"] < 0):
+        raise ValueError("linked native sparse/equality path or plane accounting is missing")
+    return detail
+
+
+def oracle_report(path, wave):
+    """An independently observed full-frame read is a correctness expense outside timed cohorts."""
+    data = {"verified": False, "latencyQualified": False}
+    try:
+        progress, outcome, ex, source = (read(path / (name + ".json")) for name in ("progress", "outcome", "exit", "browser-source"))
+        partial = progress.get("partial") or {}
+        for key in ("plannerCalls", "modelSpendUsd"):
+            data[key] = outcome.get(key, partial.get(key))
+        if not ex.get("allReady") or ex.get("exit") != 0:
+            raise ValueError(progress.get("failure") or "no completed oracle")
+        select = outcome["selection"]
+        expected = "doe-c" if wave["arm"] == "fawn-doe" else "dawn"
+        if (select != progress["selection"] or select["runtime"]["mode"] != expected or not outcome.get("diagnosticOnly")
+                or not outcome.get("verified") or not outcome.get("imageCorrect") or outcome.get("knownEffects") != 1
+                or outcome.get("committedRevision") != "B-r2" or not hardware_adapter(progress.get("gpu"))
+                or select["executable"]["sha256"] != source["chromeSha256"]
+                or not re.fullmatch(r"[0-9a-f]{64}", source["hostBootSha256"])):
+            raise ValueError("oracle lacks selected physical image, verified write or host")
+        runtime = progress["observedRuntime"]
+        selector = "--use-webgpu-runtime=" + wave["arm"].split("-")[-1]
+        if (runtime.get("gpuProcessPid") != progress["gpuProcessPid"] or runtime.get("sandboxed") is not True
+                or runtime.get("selectors") != [selector] or runtime.get("frameObserver") is not False):
+            raise ValueError("oracle browser selector or sandbox differs")
+        canonical_pixel_evidence(progress, outcome)
+        control = capture_control(wave, progress, outcome)
+        proof = outcome["linkedSparseOracle"]
+        if (proof.get("schema") != "blitzen.same-frame-sparse-correctness/v1" or proof.get("sameFrameOracle") is not True
+                or proof.get("maskSource") != "linked-restricted-reader" or proof.get("diagnosticOnly") is not True
+                or proof["verifiedFrames"] < 2 or proof["oracleCopyBytes"] <= 0 or proof["oracleHashBytes"] != proof["oracleCopyBytes"]):
+            raise ValueError("complete same-frame oracle is missing")
+        for key in ("reviewed", "checked"):
+            observed = proof[key]
+            frame = outcome["pixelAuthority"]["fresh"][key]
+            for k in ("sessionId", "grantId", "grantRevision", "mediaTimestampUs"):
+                if frame[k] != observed[k]:
+                    raise ValueError("oracle frame is from another grant or timestamp")
+            if (frame["tileHashes"] != observed["hashes"] or observed["producerCopyBytes"] != frame["frameHostCopyBytes"]
+                    or observed["producerHashBytes"] != frame["canonicalHashedBytes"]
+                    or observed["oracleCopyBytes"] != frame["width"] * frame["height"] * 4):
+                raise ValueError("same-frame pixels or copy attribution differs")
+        before, after = proof["reviewed"], proof["checked"]
+        if (not before["usedNativeTiles"] or not before["changed"] or before["rejectedTileReads"] != 0
+                or len(before["candidates"]) >= len(before["hashes"]) or not set(before["changed"]).issubset(before["candidates"])
+                or not 0 < before["producerCopyBytes"] < before["oracleCopyBytes"] or after["changed"] != []
+                or not after["usedNativeEquality"] or after["producerCopyBytes"] != 0):
+            raise ValueError("native comparator omitted or failed to narrow canonical work")
+        data.update(verified=True, canonicalControl=control, hostBootSha256=source["hostBootSha256"],
+                    chromeSha256=source["chromeSha256"], selection=select, verifiedFrames=proof["verifiedFrames"],
+                    oracleCopyBytes=proof["oracleCopyBytes"], oracleHashBytes=proof["oracleHashBytes"],
+                    plannerCalls=outcome["plannerCalls"], modelSpendUsd=outcome["modelSpendUsd"])
+    except (OSError, KeyError, TypeError, ValueError) as error:
+        data["reason"] = str(error)
+    return data
+
+
+
 def summarize_row(path, wave, slot):
     p, e, o = (read(path / file) for file in ("progress.json", "exit.json", "outcome.json"))
     partial = p.get("partial") or {}
@@ -660,13 +784,15 @@ def summarize_row(path, wave, slot):
             status="unattributed",
             reason="independent native page dispatch and completion proof unavailable",
         )
-    elif wave["arm"] != "stock-helper" and not hardware_adapter(data.get("gpu")):
+    elif wave["arm"] not in CPU_ARMS and not hardware_adapter(data.get("gpu")):
         data.update(status="unqualified", reason="working hardware adapter unconfirmed")
     else:
         try:
             if "observer" in wave:
                 data.update(observer_evidence(path, wave, p, o, data["browserSource"]))
             data["pixelAuthority"] = canonical_pixel_evidence(p, o)
+            if wave.get("sparseControls"):
+                data["captureControl"] = capture_control(wave, p, o)
         except (OSError, TypeError, ValueError, KeyError) as error:
             data.update(status="unqualified", reason=str(error))
             for field in ("requestMonotonicMs", "mutationReturnedMonotonicMs",
@@ -752,6 +878,15 @@ def usage_totals(rows, field):
             "total": observed if complete == len(rows) else None}
 
 
+def capture_byte_summary(samples):
+    measurements = {}
+    for field in COUNTERS:
+        if field.endswith("Bytes"):
+            values = [r[field] for r in samples if type(r[field]) is int and r[field] >= 0]
+            measurements[field] = {"observations": len(values), "median": statistics.median(values) if values else None}
+    return measurements
+
+
 def physical_pair_mismatch(left, right):
     a, b = left["browserSource"], right["browserSource"]
     identity = a.get("hostBootSha256", "")
@@ -759,7 +894,7 @@ def physical_pair_mismatch(left, right):
         return "host boot differs or is unobserved"
     if left["arm"].startswith("fawn") and right["arm"].startswith("fawn") and a["chromeSha256"] != b["chromeSha256"]:
         return "Fawn executable differs"
-    if "stock-helper" in (left["arm"], right["arm"]):
+    if any(row["arm"] in CPU_ARMS for row in (left, right)):
         return None  # The native CPU helper has no WebGPU device requirement.
     if left["compositorDigest"] != right["compositorDigest"]:
         return "digest mode differs"
@@ -770,8 +905,20 @@ def physical_pair_mismatch(left, right):
     return None
 
 
-def summarize_plan(out, plan):
+def summarize_plan(out, plan, oracles=None):
+    arms = SPARSE_ARMS if any(w.get("sparseControls") for w in plan) else ARMS
+    pairs_to_check = (*PAIRS, (PLANE_ARM, "stock-dawn"), (PLANE_ARM, "fawn-dawn")) if PLANE_ARM in arms else PAIRS
     rows = [summarize_row(out / run_id(w, s), w, s) for w in plan for s in range(1, w["width"] + 1)]
+    for row in rows:
+        if row.get("sparseControls") and row["arm"].startswith("fawn") and row["status"] == "verified":
+            control = (oracles or {}).get(row["arm"], {})
+            source = row["browserSource"] or {}
+            if (not control.get("verified") or control["selection"] != row["selection"]
+                    or control["chromeSha256"] != source.get("chromeSha256")
+                    or control["hostBootSha256"] != source.get("hostBootSha256")):
+                row.update(status="unqualified", reason="same-frame correctness on this selected image and host is missing",
+                           pageChangeToVerifiedBoundsMs=None, pageChangeToVerifiedMidpointMs=None,
+                           requestMonotonicMs=None, mutationReturnedMonotonicMs=None, outcomeVerifiedMonotonicMs=None)
     # An incomplete concurrency wave is still retained, but cannot establish matched load.
     waves = collections.defaultdict(list)
     for row in rows:
@@ -787,7 +934,7 @@ def summarize_plan(out, plan):
             row["fullMeasuredOverlap"] = overlap
     by_arm, pairs = [], []
     for width in sorted({w["width"] for w in plan}):
-        for arm in ARMS:
+        for arm in arms:
             items = [r for r in rows if r["width"] == width and r["arm"] == arm]
             samples = [r for r in items if r["status"] == "verified" and r["fullMeasuredOverlap"]]
             by_arm.append(
@@ -798,13 +945,14 @@ def summarize_plan(out, plan):
                     "statuses": dict(collections.Counter(r["status"] for r in items)),
                     "plannerCalls": usage_totals(items, "plannerCalls"),
                     "modelSpendUsd": usage_totals(items, "modelSpendUsd"),
+                    **({"verifiedCaptureBytes": capture_byte_summary(samples)} if PLANE_ARM in arms else {}),
                     "excludedIncompleteWaves": sum(
                         r["status"] == "verified" and not r["fullMeasuredOverlap"] for r in items
                     ),
                     **bounded_stats([r["pageChangeToVerifiedBoundsMs"] for r in samples]),
                 }
             )
-        for left, right in PAIRS:
+        for left, right in pairs_to_check:
             deltas, skipped = [], collections.Counter()
             for w in (w for w in plan if w["arm"] == left and w["width"] == width):
                 aa, bb = waves[width, w["repeat"], left], waves[width, w["repeat"], right]
@@ -854,6 +1002,12 @@ def summarize(out):
     plan = read(out / "plan.json")
     if not isinstance(plan, list) or not plan:
         raise ValueError("missing frozen comparison plan")
+    controls = [wave for wave in plan if wave.get("oracle")]
+    plan = [wave for wave in plan if not wave.get("oracle")]
+    if any(w.get("sparseControls") for w in plan):
+        if not all(w.get("sparseControls") and "observer" in w for w in plan) or sorted(w["arm"] for w in controls) != ["fawn-dawn", "fawn-doe"]:
+            raise ValueError("incomplete sparse comparison plan")
+    oracles = {w["arm"]: oracle_report(out / run_id(w, 1), w) for w in controls}
     if not any("observer" in wave for wave in plan):
         return summarize_plan(out, plan)
     cohorts = {mode: [wave for wave in plan if wave.get("observer") == mode] for mode in ("off", "on")}
@@ -863,11 +1017,11 @@ def summarize(out):
     if (len(off_keys) + len(on_keys) != len(plan) or sorted(off_keys) != sorted(on_keys)
             or len(set(off_keys)) != len(off_keys)):
         raise ValueError("observer plan must pair each arm, repeat and concurrency exactly once")
-    off, on = (summarize_plan(out, cohorts[mode]) for mode in ("off", "on"))
+    off, on = (summarize_plan(out, cohorts[mode], oracles) for mode in ("off", "on"))
     by_key = {(r["arm"], r["width"], r["repeat"], r["slot"]): r for r in off["rows"]}
     effect = []
     for width in sorted({w["width"] for w in plan}):
-        for arm in ARMS:
+        for arm in (SPARSE_ARMS if controls else ARMS):
             bounds, omitted = [], collections.Counter()
             for traced in (r for r in on["rows"] if r["width"] == width and r["arm"] == arm):
                 bare = by_key[arm, width, traced["repeat"], traced["slot"]]
@@ -885,7 +1039,7 @@ def summarize(out):
                 bounds.append((low - base_high, high - base_low))
             effect.append(dict(arm=arm, concurrency=width, omitted=dict(omitted), **bounded_stats(bounds)))
     return {"scope": "Trace-on and trace-off measurements are separate. Observer-effect bounds subtract the same image and arm with tracing off. A missing backend witness leaves that comparison unresolved. No overhead is subtracted from cross-arm results.",
-            "traceOn": on, "traceOff": off, "observerEffect": effect}
+            "traceOn": on, "traceOff": off, "observerEffect": effect, **({"sparseCorrectness": oracles} if controls else {})}
 
 
 def main():
@@ -895,6 +1049,7 @@ def main():
         p = sub.add_parser(command)
         p.add_argument("--out", type=Path, required=True)
         if command == "plan":
+            p.add_argument("--sparse-controls", action="store_true", help="add stock JS I420, require native sparse paths and separate same-frame correctness on each Fawn profile")
             p.add_argument("--repeats", type=int, default=20)
             p.add_argument("--paired-observer", action="store_true",
                            help="interleave a common CDP trace and an unchanged control per arm and repeat")
@@ -908,12 +1063,13 @@ def main():
                            help="digest for the three browser GPU arms; the native helper retains its own CPU digest")
             p.add_argument("--frame-import-evidence", action="store_true",
                            help="record the restricted VideoFrame import on both Fawn arms; traced rows are diagnostic")
+            p.add_argument("--stock-executable", type=Path, help="select a sandboxed stock image verified against its source receipt")
             p.add_argument("--stock-channel", choices=["chrome", "chromium"], default="chrome")
             p.add_argument("--timeout", type=int, default=175)
     args = parser.parse_args()
     out = args.out.resolve()
     if args.op == "plan":
-        plan = make_plan(args.repeats, args.concurrency, args.paired_observer)
+        plan = make_plan(args.repeats, args.concurrency, args.paired_observer, args.sparse_controls)
         out.mkdir(exist_ok=False, parents=True)
         write(out / "plan.json", plan)
     elif args.op == "run":
@@ -941,6 +1097,10 @@ def main():
             args.sources = dict(zip(("stock", "fawn"), map(source_receipt, args.source_receipts), strict=True))
             if args.sources["fawn"]["chromeSha256"] != d["executable"]["sha256"]:
                 parser.error("Fawn source receipt differs from the selected build")
+        if args.stock_executable:
+            if not args.sources:
+                parser.error("an explicitly selected stock image requires process-bound source receipts")
+            args.stock_executable = args.stock_executable.resolve(strict=True)
         if args.frame_import_evidence and not args.sources:
             parser.error("frame import evidence requires process-bound source receipts")
         plan = read(out / "plan.json")
@@ -954,6 +1114,11 @@ def main():
         for wave in plan:
             print(wave, flush=True)
             run_wave(out, wave, args)
+            if wave.get("oracle"):
+                control = oracle_report(out / run_id(wave, 1), wave)
+                if not control["verified"]:
+                    write(out / "report.json", summarize(out))
+                    parser.error("physical sparse control refused: " + control["reason"])
         write(out / "report.json", summarize(out))
     else:
         write(out / "report.json", summarize(out))

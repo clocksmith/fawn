@@ -19,9 +19,10 @@ import { closeWithin } from './bounded-close.js';
 const UNSAFE_FILENAME_CHARS = /[^A-Za-z0-9._-]/g;
 
 class PlaywrightWorkspaceAdapter {
-  constructor({ config, profileRoot, artifactRoot, requireSandbox = false, captureAttribution = false, frameImportEvidence = false, restrictedPlaneEvidence = false, privateWorldPerCapture = false }) {
+  constructor({ config, profileRoot, artifactRoot, requireSandbox = false, captureAttribution = false, frameImportEvidence = false, restrictedPlaneEvidence = false, privateWorldPerCapture = false, stockExecutable }) {
     this._config = config;
     this._requireSandbox = requireSandbox;
+    this._stockExecutable = stockExecutable;
     this._captureAttribution = captureAttribution;
     this._frameImportEvidence = frameImportEvidence;
     this._restrictedPlaneEvidence = restrictedPlaneEvidence;
@@ -37,6 +38,11 @@ class PlaywrightWorkspaceAdapter {
     if (this._workspaces.has(workspaceId)) return;
     const profileDir = join(this._profileRoot, workspaceId);
     const launchOptions = playwrightLaunchOptions(this._config.browser, this._requireSandbox);
+    if (this._stockExecutable) {
+      if (this._config.browser.fawnBuild || !launchOptions.chromiumSandbox)
+        throw Error('A stock comparison image requires the sandboxed stock browser selection');
+      launchOptions.executablePath = this._stockExecutable;
+    }
     if (this._restrictedPlaneEvidence) {
       if (!this._config.browser.fawnBuild || !launchOptions.chromiumSandbox)
         throw Error('Native plane evidence requires a sandboxed pinned Fawn browser');
@@ -67,10 +73,12 @@ class PlaywrightWorkspaceAdapter {
       const entry = { context, page, profileDir, pages: new Map([['main', page]]) };
       if (this._config.observation.compositorTransport === 'stock-i420') {
         let control;
+        entry.stockSourceImageReadBytes = 0;
         try {
           control = await context.browser().newBrowserCDPSession();
           const { processInfo } = await control.send('SystemInfo.getProcessInfo');
-          entry.stockPlaneSource = await supportsStockCapturePlanes(processInfo.find(row => row.type === 'browser')?.id);
+          entry.stockPlaneSource = await supportsStockCapturePlanes(processInfo.find(row => row.type === 'browser')?.id,
+            bytes => { entry.stockSourceImageReadBytes += bytes; });
         } catch { entry.stockPlaneSource = false; }
         finally { await control?.detach(); }
       }

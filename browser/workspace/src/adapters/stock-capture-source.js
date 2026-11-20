@@ -6,7 +6,7 @@ import { open } from 'node:fs/promises';
 const expected = '01a0f7b8dd41057bb5bf3f48a598573976059e55eda36053f2173cdc907cab59';
 let lastImage;
 
-export async function supportsStockCapturePlanes(browserPid) {
+export async function supportsStockCapturePlanes(browserPid, onImageRead) {
   if (process.platform !== 'linux' || !Number.isSafeInteger(browserPid) || browserPid <= 0) return false;
   let file;
   try {
@@ -16,7 +16,10 @@ export async function supportsStockCapturePlanes(browserPid) {
     const key = [stat.dev, stat.ino, stat.size, stat.ctimeNs].join('/');
     if (lastImage?.key === key) return lastImage.supported;
     const hash = createHash('sha256');
-    for await (const chunk of file.createReadStream({ autoClose: false })) hash.update(chunk);
+    for await (const chunk of file.createReadStream({ autoClose: false })) {
+      hash.update(chunk);
+      onImageRead?.(chunk.length);
+    }
     const supported = hash.digest('hex') === expected;
     lastImage = { key, supported };
     return supported;

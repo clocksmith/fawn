@@ -14,6 +14,8 @@ import { assertSolidPixels } from '../support/gpu-presentation-oracle.js';
 import { attachSparseOracle, qualifySparseReview } from '../support/linked-sparse-oracle.js';
 
 const linkedSparse = process.env.BLITZEN_TEST_LINKED_SPARSE_ORACLE === '1';
+const matchedSparse = process.env.BLITZEN_TEST_MATCHED_SPARSE === '1';
+const physical = process.env.BLITZEN_RESIDENT_PHYSICAL === '1';
 let sparseSamples;
 const canvasBackend = process.env.BLITZEN_TEST_CANVAS_BACKEND ?? 'cpu';
 const compositor = process.env.BLITZEN_REVIEW_COMPOSITOR_TRANSPORT;
@@ -21,7 +23,7 @@ const sandboxedSoftware = process.env.BLITZEN_RESIDENT_SANDBOXED_SOFTWARE === '1
 const frameTracePrefix = process.env.BLITZEN_RESIDENT_FRAME_TRACE_PREFIX;
 const expectPlaneEvidence = process.env.BLITZEN_TEST_FAWN_PLANE_EVIDENCE === '1';
 const observerMode = process.env.BLITZEN_RESIDENT_OBSERVER;
-if (linkedSparse && (!expectPlaneEvidence || !sandboxedSoftware || compositor !== 'external-texture'
+if (linkedSparse && (!expectPlaneEvidence || !(sandboxedSoftware || (matchedSparse && physical)) || compositor !== 'external-texture'
   || frameTracePrefix || observerMode || process.env.BLITZEN_RESIDENT_SCOPE_PROBE)) throw Error('Sparse oracle requires a private correctness run');
 const stockTracePrefix = process.env.BLITZEN_RESIDENT_STOCK_TRACE_PREFIX;
 const traceCategory = 'disabled-by-default-gpu.dawn';
@@ -158,7 +160,10 @@ function captureReceipt(frame, bitmap, metrics) {
     mediaTimestampUs: frame.mediaTimestampUs, sourcePixelFormat: frame.sourcePixelFormat,
     width: bitmap.width, height: bitmap.height, tileSize: bitmap.tileSize, tileHashes: bitmap.hashes,
     frameHostCopyBytes: metrics.frameHostCopyBytes, canonicalHashedBytes: metrics.canonicalHashedBytes,
-    canonicalRehashedTiles: metrics.canonicalRehashedTiles, nativePlaneEqualityReused: metrics.nativePlaneEqualityReused === true,
+    canonicalRehashedTiles: metrics.canonicalRehashedTiles,
+    nativePlaneSparseTilesReused: metrics.nativePlaneSparseTilesReused === true,
+    stockPlaneSparseTiles: metrics.stockPlaneSparseTiles === true, stockPlaneEqualityReused: metrics.stockPlaneEqualityReused === true,
+    stockPlaneSource: metrics.stockPlaneSource === true, nativePlaneEqualityReused: metrics.nativePlaneEqualityReused === true,
     externalHintMissedChange: metrics.externalHintMissedChange === true };
 }
 const root = mkdtempSync(join(tmpdir(), 'blitzen-canvas-review-'));
@@ -232,7 +237,7 @@ try {
   } else if (stockTracePrefix) throw Error('Stock trace requires a matched observer run');
   service = await WorkspaceService.open({ stateDir: join(root, 'service'), config,
     createAdapter: options => {
-      adapter = createPlaywrightAdapter({ ...options, restrictedPlaneEvidence: expectPlaneEvidence, requireSandbox: expectPlaneEvidence || sandboxedSoftware || process.env.BLITZEN_RESIDENT_PHYSICAL === '1',
+      adapter = createPlaywrightAdapter({ ...options, stockExecutable: process.env.BLITZEN_TEST_STOCK_EXECUTABLE, restrictedPlaneEvidence: expectPlaneEvidence, requireSandbox: expectPlaneEvidence || sandboxedSoftware || process.env.BLITZEN_RESIDENT_PHYSICAL === '1',
         captureAttribution: Boolean(process.env.BLITZEN_CAPTURE_RUN_DIRECTORY), frameImportEvidence: Boolean(frameTracePrefix),
         privateWorldPerCapture: observerMode === 'on' });
       if (linkedSparse) sparseSamples = attachSparseOracle(adapter.compositor);
@@ -370,7 +375,7 @@ try {
   if (process.env.BLITZEN_CAPTURE_RUN_DIRECTORY) {
     await awaitNativeObserver(page, process.env.BLITZEN_CAPTURE_RUN_DIRECTORY, config.browser.fawnBuild.runtime.library.path);
   }
-  let stalePixelControl;
+  let stalePixelControl, grantRefresh;
   if (useCompositor) {
     const paint = color => cell.evaluate((el, value) => {
       const ctx = el.getContext('2d'); ctx.fillStyle = value; ctx.fillRect(0, 0, el.width, el.height);
@@ -378,6 +383,24 @@ try {
     // Let the restricted stream settle before pairing frames. This control runs outside the timed interval.
     await paint('rgb(113,5,0)');
     let base = await evidence();
+    if (matchedSparse) {
+      const original = latestCapture;
+      await service.grantAuthorization({ ...grant, grantId: original.grantId, readRegions: ['#controls', '#cell'],
+        actionKinds: ['navigate', 'submit'] });
+      await assert.rejects(evidence(), /capture session expired or changed/i);
+      session = 'start';
+      base = await evidence();
+      const fresh = latestCapture;
+      assert.notEqual(original.sessionId, fresh.sessionId);
+      assert.ok(fresh.grantId === original.grantId && fresh.grantRevision > original.grantRevision);
+      assert.ok(!fresh.stockPlaneSparseTiles && !fresh.stockPlaneEqualityReused &&
+        !fresh.nativePlaneSparseTilesReused && !fresh.nativePlaneEqualityReused);
+      grantRefresh = { priorSession: original.sessionId, newSession: fresh.sessionId, grantId: fresh.grantId,
+        priorRevision: original.grantRevision, newRevision: fresh.grantRevision, staleSessionRefused: true,
+        newFrameRgbaBytes: fresh.width * fresh.height * 4, newFrameHostCopyBytes: fresh.frameHostCopyBytes,
+        permissionRequests: captures.at(-1).permissionRequests };
+      assert.ok(grantRefresh.permissionRequests > 0 && grantRefresh.newFrameHostCopyBytes >= grantRefresh.newFrameRgbaBytes);
+    }
     for (let i = 0; i < 5; i++) {
       base = await evidence(base.observationVersion);
       if (base.visualChanges['#cell']?.baseline === 'compared') break;
@@ -436,7 +459,7 @@ try {
           browserPid = roots[0].id;
           const gpuProcesses = processInfo.filter(row => row.type.toLowerCase() === 'gpu');
           if (gpuProcesses.length === 1) gpuProcessPid = gpuProcesses[0].id;
-          if (observerMode) {
+          if (observerMode || (linkedSparse && physical)) {
             const { gpu } = await control.send('SystemInfo.getInfo');
             const flags = (await control.send('Browser.getBrowserCommandLine')).arguments;
             const selectors = flags.filter(flag => flag.startsWith('--use-webgpu-runtime='));
@@ -570,6 +593,8 @@ try {
       fresh: { reviewed: freshReviewed, checked: freshChecked, effectCount: committed().length, reconciliation: 'effect-present' } };
   }
   const receipt = { clock: 'request-repaint-through-authoritative-reconciliation', canvasBackend, ...(pixelAuthority ? { pixelAuthority } : {}),
+    ...(matchedSparse ? { grantRefresh, stockSourceImageReadBytesBeforeCapture:
+      compositor === 'stock-i420' ? adapter._workspaces.get(workspaceId).stockSourceImageReadBytes : null } : {}),
     ...(linkedSparse ? { diagnosticOnly: true, linkedSparseOracle: qualifySparseReview(sparseSamples, pixelAuthority) } : {}),
     ...(observer ? { observer } : {}),
     ...(frameScope ? { diagnosticOnly: true, diagnosticKind: 'frame-import', frameImportTimestampUs: frame.mediaTimestampUs, frameImportOrdinal: frame.frameImportOrdinal,

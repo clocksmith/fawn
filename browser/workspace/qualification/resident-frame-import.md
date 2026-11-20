@@ -61,3 +61,22 @@ The external-texture mask can miss small I420 color changes that survive convers
 After the six patches above, apply `resident-frame-capture-version.patch` and `resident-wire-out-of-line.patch` at the Chromium root. The first reads the source and sub-capture counters from `media::VideoFrameMetadata::capture.version`. The second moves the concrete wire hooks out of the implementation header and gives Chromium’s stub explicit zero-evidence implementations. The private witness retains its existing wire recording, native command ownership and completion logic.
 
 The SHA-256 values for these patches are `a10ea4b02043c6633b33d1cb54f5b752db9e48ad983939b6d2a524071a208c88` and `ed6cd52730b05b2380f80b23966ae2d580961c6dfab584063c4ee87be34a61b7`. Jupiter’s frozen Clang, generated headers, GN command and Chromium style plugin compiled the complete Blink external-texture translation unit and the real and stub GPU client translation units on this corrected source. A linked image and an observed page submission are separate qualifications.
+
+## Matched sparse capture controls
+
+The opt-in plan retains stock Dawn, stock with a native helper, Fawn/Dawn and forced Fawn/Doe. It adds stock JavaScript I420 plane comparison as a CPU arm. On a private Linux display with the pinned stock Chromium image, the pinned ten-overlay Fawn image, matching Dawn and Doe profiles, and their source receipts, run the following from the Fawn checkout. Set RUN to a new output directory and the other five variables to the local stock executable, Fawn profiles and verified source receipts.
+
+```sh
+runner=browser/workspace/qualification/resident-comparison.py
+python3 "$runner" plan --out "$RUN" --sparse-controls --repeats 20 --concurrency 1 2
+python3 "$runner" run --out "$RUN" --dawn "$FAWN_DAWN_PROFILE" --doe "$FAWN_DOE_PROFILE" \
+  --source-receipts "$STOCK_SOURCE_RECEIPT" "$FAWN_SOURCE_RECEIPT" \
+  --stock-channel chromium --stock-executable "$STOCK_CHROMIUM" --compositor-digest webgpu
+python3 "$runner" report --out "$RUN"
+```
+
+Each fixture asks for capture permission again after replacing the workspace grant. It verifies that the retired session is rejected and that the new session pays for a full canonical frame before timing the normal write and its reconciliation.
+
+A separate correctness run on each Fawn profile compares sparse results with the full canonical tile hashes on the same live frames. Both complete before timed waves begin. A missing native tile reader, a mask that misses a changed tile, missing native copy accounting, or a failed write stops this plan. The oracle’s pixel reads and hashes appear in `sparseCorrectness` and stay outside latency and copy comparisons. Native timing rows require the corresponding accepted oracle on the same physical host boot, browser image and selected profile. The command-specific completion check still applies to traced Doe rows.
+
+The stock JS arm requires the pinned stock image and consumes an I420 copy before choosing which canonical RGBA tiles to verify. The report exposes both byte counts. Their sum already appears in `frameHostCopyBytes`. The stock image qualification bytes appear separately in the row’s `captureControl` and count only files actually read by that fixture before capture. The controller also verifies its source receipt before releasing the measurement barrier. Both image checks have separate caches. Native plane snapshots have their own measured field. An absent measurement remains unknown. Trace-on and trace-off remain separate, and each arm retains planner calls and model spend for completed and failed attempts.
