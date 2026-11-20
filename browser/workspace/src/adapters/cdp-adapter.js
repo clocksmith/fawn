@@ -1,3 +1,4 @@
+import { supportsStockCapturePlanes } from './stock-capture-source.js';
 import { CompositorSessions } from './compositor-capture.js';
 import { createResidentCanvasReader } from './resident-canvas.js';
 import { pickRegion } from './region-picker.js';
@@ -219,7 +220,9 @@ class CdpWorkspaceAdapter {
       await cdp.send('Page.enable', {}, sessionId);
       await cdp.send('Runtime.enable', {}, sessionId);
       await cdp.send('Browser.setDownloadBehavior', { behavior: 'allowAndName', downloadPath: downloadDir, eventsEnabled: true });
-      this._workspaces.set(workspaceId, { cdp, sessionId, downloadDir,
+      const stockPlaneSource = this._config.observation.compositorTransport === 'stock-i420'
+        && await supportsStockCapturePlanes(child.pid);
+      this._workspaces.set(workspaceId, { cdp, sessionId, downloadDir, stockPlaneSource,
         pages: new Map([['main', { sessionId, targetId: pageTarget.targetId }]]) });
       for (const saved of pages.filter(value => value.pageId !== 'main')) await this.openPage(workspaceId, saved.pageId);
     } catch (error) {
@@ -258,7 +261,8 @@ class CdpWorkspaceAdapter {
     let raw;
     if (read.capture) {
       const { sessionId } = this._entry({ workspaceId, pageId });
-      raw = await this.compositor.snapshot(workspaceId, read.pageId ?? 'main', (method, params) => cdp.send(method, params, sessionId), args, read.capture, read.captureSignal);
+      raw = await this.compositor.snapshot(workspaceId, read.pageId ?? 'main', (method, params) => cdp.send(method, params, sessionId), args,
+        { ...read.capture, stockPlaneSource: this._entry(workspaceId).stockPlaneSource === true }, read.captureSignal);
     } else if (!read.verifyCanvas && this._config.observation.canvasBackend === 'webgpu' && (args.regions.length || args.regionGroups.length)) {
       const page = this._workspaces.get(workspaceId).pages.get(pageId);
       const { frameTree } = await cdp.send('Page.getFrameTree', {}, page.sessionId);

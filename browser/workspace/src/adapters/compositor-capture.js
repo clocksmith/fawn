@@ -1,4 +1,5 @@
 // Browser-only closure. Only the isolated world owns the MediaStream or frames.
+import { stockFramePlaneEvidence } from './stock-frame-planes.js';
 import { randomUUID } from 'node:crypto';
 import { createResidentCanvasReader } from './resident-canvas.js';
 import { createGpuTileDigest } from './gpu-tile-sha256.js';
@@ -43,8 +44,8 @@ export async function canonicalRgbaTiles(bytes, width, height, tileSize, previou
 
 // The optional native witness is issued by the current restricted reader. Its serial
 // names byte-identical I420 conversion inputs within that reader, never an image.
-export async function canonicalRestrictedFrame(frame, width, height, tileSize, prior, copyRgba, canonicalTiles) {
-  const plan = frame.fawnRestrictedPlaneTiles?.(prior?.witness ?? null, prior?.serial ?? 0, tileSize);
+export async function canonicalRestrictedFrame(frame, width, height, tileSize, prior, copyRgba, canonicalTiles, stockEvidence) {
+  const plan = stockEvidence ? stockEvidence.plan : frame.fawnRestrictedPlaneTiles?.(prior?.witness ?? null, prior?.serial ?? 0, tileSize);
   const serial = plan === undefined ? frame.fawnRestrictedPlaneVersion?.() ?? 0 : plan[0] ?? 0;
   const snapshotBytesCopied = plan?.[2] ?? null;
   const compatible = prior?.record.width === width && prior.record.height === height && prior.record.tileSize === tileSize;
@@ -54,7 +55,7 @@ export async function canonicalRestrictedFrame(frame, width, height, tileSize, p
   const valid = dirty && prior.record.hashes.length === count && count <= 256 &&
     dirty.every((n, i) => Number.isInteger(n) && n >= 0 && n < count && (!i || dirty[i - 1] < n));
   // The closed wrapper retains only its native lease identity. Frames are closed by the caller.
-  const witness = plan === undefined || !serial ? null : frame;
+  const witness = stockEvidence || plan === undefined || !serial ? null : frame;
   const common = { serial, witness, snapshotBytesCopied, usedNativeEquality: false, usedNativeTiles: false };
   if (compatible && serial > 0 && prior.serial === serial && (plan === undefined || (valid && !dirty.length))) {
     return { ...common, record: prior.record, copiedBytes: 0, hashedBytes: 0, tilesHashed: 0, usedNativeEquality: true };
@@ -90,10 +91,11 @@ export async function canonicalRestrictedFrame(frame, width, height, tileSize, p
   return { ...result, ...common, copiedBytes: pixels.length };
 }
 
-function createElementCapture(id, resident, capture, leaseMs, scopeProbe, canonicalTiles, restrictedFrame) {
+function createElementCapture(id, resident, capture, leaseMs, scopeProbe, canonicalTiles, restrictedFrame, stockPlanes) {
   const { selector, origin } = capture;
   let element, stream, track, reader, observer, watchdog, expiry, ended = false;
-  let verifiedBrackets = 0, previousCanonical = null;
+  let verifiedBrackets = 0, previousCanonical = null, previousPlanes = null;
+  const planeLease = {};
   async function copyRgba(frame, width, height, tile) {
     const bounds = frame.visibleRect;
     if (width < 1 || height < 1 || width * height > 4 * 1024 * 1024
@@ -111,7 +113,7 @@ function createElementCapture(id, resident, capture, leaseMs, scopeProbe, canoni
   }
   const stop = () => {
     if (ended) return;
-    ended = true; previousCanonical = null;
+    ended = true; previousCanonical = null; previousPlanes = null;
     clearTimeout(watchdog); clearTimeout(expiry); observer?.disconnect();
     removeEventListener('pagehide', stop); document.removeEventListener('freeze', stop);
     globalThis.navigation?.removeEventListener('navigate', stop);
@@ -191,7 +193,21 @@ function createElementCapture(id, resident, capture, leaseMs, scopeProbe, canoni
           consumedFrames: closedFrames + 1, discardedFrames: closedFrames };
         const evidence = { bitmapMetrics, frame: { source: 'element-capture', surfaceId: id, sessionId: id,
           transport: capture.transport, pixelRepresentation: 'video-frame-copy-to-srgb-rgba8', sourcePixelFormat: frame.format ?? null, mediaTimestampUs: frame.timestamp, width, height } };
-        if (capture.transport === 'native-helper') {
+        if (capture.transport === 'stock-i420') {
+          let tileSize = 64;
+          while (Math.ceil(width / tileSize) * Math.ceil(height / tileSize) > 256) tileSize *= 2;
+          const input = await stockPlanes(frame, width, height, tileSize, previousPlanes, planeLease, capture.stockPlaneSource);
+          assertCurrent();
+          const confirmed = await restrictedFrame(frame, width, height, tileSize, previousCanonical, copyRgba, canonicalTiles, input);
+          assertCurrent();
+          previousPlanes = input; previousCanonical = confirmed;
+          evidence.bitmap = { format: 'compositor-element-canonical-srgb-rgba8-v2', width, height, tileSize, hashes: confirmed.record.hashes };
+          Object.assign(bitmapMetrics, { path: 'element-capture-stock-i420', stockPlaneSource: capture.stockPlaneSource,
+            stockPlaneExportBytes: input.exportedBytes, stockPlaneEqualityReused: confirmed.usedNativeEquality,
+            stockPlaneSparseTiles: confirmed.usedNativeTiles, stockCanonicalRgbaCopyBytes: confirmed.copiedBytes,
+            frameHostCopyBytes: input.exportedBytes + confirmed.copiedBytes,
+            canonicalHashedBytes: confirmed.hashedBytes, canonicalRehashedTiles: confirmed.tilesHashed, cpuPixelReadBytes: 0 });
+        } else if (capture.transport === 'native-helper') {
           const pixels = await copyRgba(frame, width, height);
           evidence.restrictedRgba = pixels.toBase64();
           Object.assign(bitmapMetrics, { path: 'element-capture-native-helper', cpuPixelReadBytes: 0, frameHostCopyBytes: pixels.length,
@@ -321,7 +337,7 @@ export class CompositorSessions {
           globalThis.__blitzenSurface?.stop();
           globalThis.__blitzenSurface = (${createElementCapture.toString()})(${JSON.stringify(entry.id)},
             (${createResidentCanvasReader.toString()})(${JSON.stringify(entry.id)},
-              ${capture.digest === 'webgpu' ? '(' + createGpuTileDigest.toString() + ')()' : 'null'}), ${JSON.stringify(capture)}, ${leaseMs}, ${entry.scopeProbe}, (${canonicalRgbaTiles.toString()}), (${canonicalRestrictedFrame.toString()})); return true;
+              ${capture.digest === 'webgpu' ? '(' + createGpuTileDigest.toString() + ')()' : 'null'}), ${JSON.stringify(capture)}, ${leaseMs}, ${entry.scopeProbe}, (${canonicalRgbaTiles.toString()}), (${canonicalRestrictedFrame.toString()}), (${stockFramePlaneEvidence.toString()})); return true;
         })()` });
         if (signal?.aborted || this.entries.get(key) !== entry) {
           await this.control(entry, 'stop').catch(() => {});

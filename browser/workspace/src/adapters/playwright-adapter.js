@@ -1,3 +1,4 @@
+import { supportsStockCapturePlanes } from './stock-capture-source.js';
 import { CompositorSessions } from './compositor-capture.js';
 import { createResidentCanvasReader } from './resident-canvas.js';
 import { pickRegion } from './region-picker.js';
@@ -64,6 +65,15 @@ class PlaywrightWorkspaceAdapter {
       const page = context.pages()[0] ?? await context.newPage();
       page.setDefaultTimeout(this._config.dispatch.actionTimeoutMs);
       const entry = { context, page, profileDir, pages: new Map([['main', page]]) };
+      if (this._config.observation.compositorTransport === 'stock-i420') {
+        let control;
+        try {
+          control = await context.browser().newBrowserCDPSession();
+          const { processInfo } = await control.send('SystemInfo.getProcessInfo');
+          entry.stockPlaneSource = await supportsStockCapturePlanes(processInfo.find(row => row.type === 'browser')?.id);
+        } catch { entry.stockPlaneSource = false; }
+        finally { await control?.detach(); }
+      }
       this._workspaces.set(workspaceId, entry);
       for (const saved of pages.filter(value => value.pageId !== 'main')) {
         const restored = await context.newPage();
@@ -96,7 +106,8 @@ class PlaywrightWorkspaceAdapter {
         session = await page.context().newCDPSession(page);
         this._surfaceSessions.set(page, session);
       }
-      const raw = await this.compositor.snapshot(workspaceId, read.pageId ?? 'main', (method, params) => session.send(method, params), args, read.capture, read.captureSignal);
+      const raw = await this.compositor.snapshot(workspaceId, read.pageId ?? 'main', (method, params) => session.send(method, params), args,
+        { ...read.capture, stockPlaneSource: this._workspaces.get(workspaceId).stockPlaneSource === true }, read.captureSignal);
       return buildSnapshot(raw, this._workspaces.get(workspaceId).context.pages().length);
     }
     if (!read.verifyCanvas && this._config.observation.canvasBackend === 'webgpu' && (args.regions.length || args.regionGroups.length)) {

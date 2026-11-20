@@ -1,0 +1,196 @@
+{
+  "clock": "request-repaint-through-authoritative-reconciliation",
+  "canvasBackend": "cpu",
+  "pixelAuthority": {
+    "schema": "blitzen.canonical-capture/v1",
+    "representation": "video-frame-copy-to-srgb-rgba8",
+    "stale": {
+      "reviewed": {
+        "sessionId": "9a2136e1-fb1c-4d8c-9381-a74aa96999b5",
+        "grantId": "review-regions",
+        "grantRevision": 11,
+        "mediaTimestampUs": 179911841800,
+        "sourcePixelFormat": "I420",
+        "width": 130,
+        "height": 70,
+        "tileSize": 64,
+        "tileHashes": [
+          "b7557e5ce4b77497debd3306560c9814cef609af433255779024802fd5321b93",
+          "b7557e5ce4b77497debd3306560c9814cef609af433255779024802fd5321b93",
+          "50312be5431d78e86ba01ff2103416e0d8641ce653bb1cdfca57ed797de171ef",
+          "05dad4665df44dab54dd7e97d9a38641cc0dec4383e651624441143ff3bf4988",
+          "05dad4665df44dab54dd7e97d9a38641cc0dec4383e651624441143ff3bf4988",
+          "58d4943e7ce5a4b822db8ae00642284ac792302b4b5f7a10c031d0f38029d68b"
+        ],
+        "frameHostCopyBytes": 50050,
+        "canonicalHashedBytes": 72800,
+        "canonicalRehashedTiles": 6,
+        "nativePlaneEqualityReused": false,
+        "externalHintMissedChange": false
+      },
+      "checked": {
+        "sessionId": "9a2136e1-fb1c-4d8c-9381-a74aa96999b5",
+        "grantId": "review-regions",
+        "grantRevision": 11,
+        "mediaTimestampUs": 179912076100,
+        "sourcePixelFormat": "I420",
+        "width": 130,
+        "height": 70,
+        "tileSize": 64,
+        "tileHashes": [
+          "aa995eb418344ea9b3847239efe3f9f135eed7cf2ba20ba14cfb6750aa64ce7f",
+          "aa995eb418344ea9b3847239efe3f9f135eed7cf2ba20ba14cfb6750aa64ce7f",
+          "5c82ccb788026e15a529dd4f405e7def00b5d43367e46b50ae936cbcdb60d1d3",
+          "189c6a12152f95f3321a65d270b6ea5f225665d4d86d746f8343acd067a4ed2d",
+          "189c6a12152f95f3321a65d270b6ea5f225665d4d86d746f8343acd067a4ed2d",
+          "63ea6df7620d267db43405550f095cbfe1175780111d3be0555e3b3cb224f8df"
+        ],
+        "frameHostCopyBytes": 50050,
+        "canonicalHashedBytes": 72800,
+        "canonicalRehashedTiles": 6,
+        "nativePlaneEqualityReused": false,
+        "externalHintMissedChange": false
+      },
+      "changedTiles": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "sourceColor": "lime",
+      "refusal": "stale-observation",
+      "effectsBefore": 0,
+      "effectsAfter": 0
+    },
+    "fresh": {
+      "reviewed": {
+        "sessionId": "9a2136e1-fb1c-4d8c-9381-a74aa96999b5",
+        "grantId": "review-regions",
+        "grantRevision": 11,
+        "mediaTimestampUs": 179912941200,
+        "sourcePixelFormat": "I420",
+        "width": 130,
+        "height": 70,
+        "tileSize": 64,
+        "tileHashes": [
+          "17d9cdfe1af1ccb6a2be484274b4e864aa3459eee94a417254d66264439c4b59",
+          "f0205766c5b03d12262ca91465858b9e55d10bc8dea0dd8b1408de535d7578ca",
+          "5b2876eaed3ce4648a4c9644048705eb08fdae6784d1638af8d652a72a9fb4d4",
+          "30a1d6e12d59f14b25209c1aa9e36493499d7aedda14bf5500f93d84415354cc",
+          "30a1d6e12d59f14b25209c1aa9e36493499d7aedda14bf5500f93d84415354cc",
+          "36bf76c372762d3286c9c94f838dcc42909baa4d5ab3a37667dc0cc9eb89e095"
+        ],
+        "frameHostCopyBytes": 30034,
+        "canonicalHashedBytes": 16384,
+        "canonicalRehashedTiles": 1,
+        "nativePlaneEqualityReused": false,
+        "externalHintMissedChange": false
+      },
+      "checked": {
+        "sessionId": "9a2136e1-fb1c-4d8c-9381-a74aa96999b5",
+        "grantId": "review-regions",
+        "grantRevision": 11,
+        "mediaTimestampUs": 179913343200,
+        "sourcePixelFormat": "I420",
+        "width": 130,
+        "height": 70,
+        "tileSize": 64,
+        "tileHashes": [
+          "17d9cdfe1af1ccb6a2be484274b4e864aa3459eee94a417254d66264439c4b59",
+          "f0205766c5b03d12262ca91465858b9e55d10bc8dea0dd8b1408de535d7578ca",
+          "5b2876eaed3ce4648a4c9644048705eb08fdae6784d1638af8d652a72a9fb4d4",
+          "30a1d6e12d59f14b25209c1aa9e36493499d7aedda14bf5500f93d84415354cc",
+          "30a1d6e12d59f14b25209c1aa9e36493499d7aedda14bf5500f93d84415354cc",
+          "36bf76c372762d3286c9c94f838dcc42909baa4d5ab3a37667dc0cc9eb89e095"
+        ],
+        "frameHostCopyBytes": 13650,
+        "canonicalHashedBytes": 0,
+        "canonicalRehashedTiles": 0,
+        "nativePlaneEqualityReused": false,
+        "externalHintMissedChange": false
+      },
+      "effectCount": 1,
+      "reconciliation": "effect-present"
+    }
+  },
+  "digestMode": "webgpu",
+  "reviewedBitmap": {
+    "format": "compositor-element-canonical-srgb-rgba8-v2",
+    "width": 130,
+    "height": 70,
+    "tileSize": 64,
+    "hashes": [
+      "17d9cdfe1af1ccb6a2be484274b4e864aa3459eee94a417254d66264439c4b59",
+      "f0205766c5b03d12262ca91465858b9e55d10bc8dea0dd8b1408de535d7578ca",
+      "5b2876eaed3ce4648a4c9644048705eb08fdae6784d1638af8d652a72a9fb4d4",
+      "30a1d6e12d59f14b25209c1aa9e36493499d7aedda14bf5500f93d84415354cc",
+      "30a1d6e12d59f14b25209c1aa9e36493499d7aedda14bf5500f93d84415354cc",
+      "36bf76c372762d3286c9c94f838dcc42909baa4d5ab3a37667dc0cc9eb89e095"
+    ]
+  },
+  "compositorTransport": "stock-i420",
+  "selection": {
+    "channel": "chrome"
+  },
+  "applicationHttpRequests": 5,
+  "indicator": {
+    "expectedPixel": [
+      86,
+      42
+    ],
+    "changed": [
+      {
+        "x": 64,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      }
+    ]
+  },
+  "knownEffects": 1,
+  "elapsedMs": 792.5017610000004,
+  "verified": true,
+  "ruleEvaluations": 1,
+  "plannerCalls": 0,
+  "modelSpendUsd": 0,
+  "canvasObservations": 3,
+  "permissionRequests": 0,
+  "consumedFrames": 4,
+  "discardedFrames": 2,
+  "cpuPixelReadBytes": 256,
+  "frameHostCopyBytes": 43684,
+  "stockPlaneExportBytes": 27300,
+  "stockCanonicalRgbaCopyBytes": 16384,
+  "stockPlaneSparseFrames": 1,
+  "stockPlaneEqualFrames": 1,
+  "sparseCanonicalFrames": 0,
+  "nativePlaneSnapshotSamples": 0,
+  "nativePlaneSnapshotCopyBytes": null,
+  "rejectedCanonicalTileReads": 0,
+  "nativePlaneDigestReuses": 0,
+  "nativePlaneLogicalBytesComparedOnReuse": 0,
+  "canonicalHashedBytes": 16384,
+  "canonicalRehashedTiles": 1,
+  "externalHintMissedChanges": 0,
+  "cdpPixelPayloadBytes": 0,
+  "nativeHelperInputBytes": 0,
+  "peakNativeRgbaBufferBytes": 0,
+  "nativeHashedBytes": 0,
+  "logicalTextureWriteBytes": 0,
+  "mappedTileReadbackBytes": 0,
+  "rehashedTiles": 0,
+  "mappedTileAndMaskReadbacks": 0,
+  "tilePixelReadbackBytes": 0,
+  "digestReadbackBytes": 0,
+  "digestJobUploadBytes": 0,
+  "digestComputePasses": 0,
+  "gpuMaskReadbackBytes": 0,
+  "requestMonotonicMs": 4508.619669,
+  "mutationReturnedMonotonicMs": 4518.029405,
+  "browserMutationEpochMs": 1795184993283.8,
+  "outcomeVerifiedMonotonicMs": 5301.12143,
+  "imageCorrect": true,
+  "committedRevision": "B-r2"
+}

@@ -75,8 +75,8 @@ function validateServiceConfig(config, { platform = process.platform } = {}) {
       throw invalid(field, 'plain file name', value);
     }
   }
-  if (config.observation.compositorTransport !== undefined && !['external-texture', 'rgba-upload', 'native-helper'].includes(config.observation.compositorTransport)) {
-    throw invalid('observation.compositorTransport', 'external-texture, rgba-upload or native-helper', config.observation.compositorTransport);
+  if (config.observation.compositorTransport !== undefined && !['external-texture', 'rgba-upload', 'native-helper', 'stock-i420'].includes(config.observation.compositorTransport)) {
+    throw invalid('observation.compositorTransport', 'external-texture, rgba-upload, native-helper or stock-i420', config.observation.compositorTransport);
   }
   if (config.observation.compositorDigest !== undefined && !['cpu', 'webgpu'].includes(config.observation.compositorDigest)) {
     throw invalid('observation.compositorDigest', 'cpu or webgpu', config.observation.compositorDigest);
