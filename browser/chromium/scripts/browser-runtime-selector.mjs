@@ -104,13 +104,15 @@ export function defaultDoeLibPath({
 // Shared by browser diagnostics and workspace launchers after runtime selection.
 // A nonexistent explicit path is allowed here so the real browser's fail-closed
 // loader can be tested; product launch admission verifies artifact bytes first.
-export function forcedRuntimeArgs(mode, libraryPath) {
+// Early GPU sandbox sealing on Linux is opt-in because Mesa/ANGLE EGL init fails
+// with libEGL.so.1 Permission denied when sealed before GL preload.
+export function forcedRuntimeArgs(mode, libraryPath, { earlyGpuSandbox = false } = {}) {
   if (mode === 'dawn') return ['--use-webgpu-runtime=dawn'];
   if (mode !== 'doe' || typeof libraryPath !== 'string' || !libraryPath) {
     throw new Error('forced runtime requires dawn, or doe with an explicit library path');
   }
   return ['--use-webgpu-runtime=doe', `--doe-webgpu-library-path=${libraryPath}`,
-    ...(process.platform === 'linux' ? ['--gpu-sandbox-start-early'] : [])];
+    ...(earlyGpuSandbox && process.platform === 'linux' ? ['--gpu-sandbox-start-early'] : [])];
 }
 
 function envFlagEnabled(env, name) {

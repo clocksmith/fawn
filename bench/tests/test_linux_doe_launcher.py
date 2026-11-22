@@ -93,8 +93,8 @@ class LinuxLauncherTests(unittest.TestCase):
             self.assertEqual(lines[3], "--doe-webgpu-library-path=" + str(relocated / "lib/doe/libwebgpu_doe_c.so"))
             self.assertTrue(lines[4].startswith("--user-data-dir=/"))
             self.assertTrue(lines[4].endswith("/fawn/doe-c"))
-            self.assertEqual(lines[5], "--gpu-sandbox-start-early")
-            self.assertEqual(lines[6:], [*branding(relocated), "--remote-debugging-pipe", "https://example.test/a b"])
+            self.assertNotIn("--gpu-sandbox-start-early", lines)
+            self.assertEqual(lines[5:], [*branding(relocated), "--remote-debugging-pipe", "https://example.test/a b"])
             self.assertIn("desktop=fawn.desktop", stderr)
             self.assertEqual(os.read(read_fd, 1), b"X")
             self.assertNotIn("--no-sandbox", lines)
@@ -168,7 +168,7 @@ class LinuxLauncherTests(unittest.TestCase):
         process = subprocess.run([str(self.package / "chrome-wrapper"), profile], capture_output=True, text=True)
         self.assertEqual(process.returncode, 7, process.stderr)
         self.assertEqual(process.stdout.splitlines()[4:],
-                         ["--gpu-sandbox-start-early", *branding(self.package), profile])
+                         [*branding(self.package), profile])
 
     def test_missing_start_page_fails_without_launch(self) -> None:
         self.install()
@@ -178,9 +178,17 @@ class LinuxLauncherTests(unittest.TestCase):
         self.assertIn("start page", failed.stderr)
         self.assertEqual(failed.stdout, "")
 
-    def test_external_sandbox_ordering_is_canonical_before_user_arguments(self) -> None:
+    def test_external_sandbox_ordering_is_opt_in_and_canonical_before_user_arguments(self) -> None:
         self.install()
-        for arguments in [[], ["--use-webgpu-runtime=doe"],
+        for arguments in [[], ["--use-webgpu-runtime=doe"]]:
+            process = subprocess.run([str(self.package / "chrome-wrapper"), *arguments,
+                                      "--remote-debugging-pipe"], capture_output=True, text=True)
+            self.assertEqual(process.returncode, 7, process.stderr)
+            lines = process.stdout.splitlines()
+            self.assertNotIn("--gpu-sandbox-start-early", lines)
+            self.assertFalse(any(value in lines for value in ["--no-sandbox", "--disable-gpu-sandbox",
+                                                            "--enable-unsafe-swiftshader"]))
+        for arguments in [["--gpu-sandbox-start-early"],
                           ["-gpu-sandbox-start-early"],
                           [" \t--gpu-sandbox-start-early=yes\r"]]:
             process = subprocess.run([str(self.package / "chrome-wrapper"), *arguments,

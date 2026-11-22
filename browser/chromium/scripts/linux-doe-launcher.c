@@ -108,6 +108,7 @@ int main(int argc, char **argv) {
     int positional = 0;
     int has_profile = 0;
     int library_seen = 0;
+    int early_gpu_sandbox = 0;
     size_t count = 0;
     ssize_t length = readlink("/proc/self/exe", image, sizeof(image) - 1);
     if (length <= 0 || (size_t)length >= sizeof(image) - 1) {
@@ -152,6 +153,8 @@ int main(int argc, char **argv) {
                 fputs("Fawn: select one absolute user-data-dir\n", stderr);
                 goto cleanup;
             }
+        } else if (protected_switch(view, "gpu-sandbox-start-early", &value)) {
+            early_gpu_sandbox = 1;
         }
     }
     if (dawn && library_seen) {
@@ -201,9 +204,10 @@ int main(int argc, char **argv) {
         }
         forwarded[count++] = profile_argument;
     }
-    /* Mesa may create threads during GL initialization. Start Chromium's
-     * existing GPU sandbox before GL, while it can still seal one thread. */
-    if (!dawn) forwarded[count++] = "--gpu-sandbox-start-early";
+    /* Keep early GPU sandbox sealing opt-in on Linux: Mesa/ANGLE EGL init fails
+     * with libEGL.so.1 Permission denied when sealed before GL preload, putting
+     * default Doe at parity with Dawn until EGL preload hardening lands. */
+    if (!dawn && early_gpu_sandbox) forwarded[count++] = "--gpu-sandbox-start-early";
     forwarded[count++] = "--class=fawn";
     forwarded[count++] = homepage_argument;
     forwarded[count++] = "--new-window";

@@ -76,7 +76,7 @@ export const chromium={async launch(options){
  if(!options.ignoreDefaultArgs.includes('--enable-unsafe-swiftshader'))throw Error('unsafe fallback default retained');
  if(options.args.some(x=>/^--(?:enable-unsafe-webgpu|ignore-gpu-blocklist|use-angle|unsafely-treat-insecure-origin-as-secure)(?:=|$)/.test(x)))throw Error('unsafe implicit override');
  const doe=options.args.includes('--use-webgpu-runtime=doe');
- if(options.args.includes('--gpu-sandbox-start-early')!==(doe&&process.platform==='linux'))throw Error('incorrect early GPU sandbox ordering');
+ if(options.args.includes('--gpu-sandbox-start-early'))throw Error('early GPU sandbox flag must be opt-in');
  if(caseName==='sandbox-disabled'&&!options.args.includes('--no-sandbox'))throw Error('explicit disabled diagnostic flag missing');
  log('launch');events={};return {
  on(name,fn){events[name]=fn;},version(){return 'CPU-control';},
