@@ -27,9 +27,9 @@ const { values } = parseArgs({ options: {
   'doe-library': { type: 'string' }, patch: { type: 'string' },
   'animation-trials': { type: 'string', default: '20' },
 } });
-assert(values.browser && values.out && ['dawn', 'doe'].includes(values.arm),
-  'usage: --browser CHROME --out NEW.json --arm dawn|doe [--doe-library LIB] [--patch PATCH]');
-assert(values.arm === 'dawn' || values.arm === 'doe' && values['doe-library'], 'doe needs --doe-library');
+assert(values.browser && values.out && ['cpu', 'dawn', 'doe'].includes(values.arm),
+  'usage: --browser CHROME --out NEW.json --arm cpu|dawn|doe [--doe-library LIB] [--patch PATCH]');
+assert(values.arm !== 'doe' || values['doe-library'], 'doe needs --doe-library');
 const animationTrials = Number(values['animation-trials']);
 assert(Number.isSafeInteger(animationTrials) && animationTrials > 0);
 
@@ -80,6 +80,7 @@ async function openDrawing() {
       res.end(`<!doctype html><title>Review drawing</title>
         <style>body{margin:0}canvas#drawing{display:block;isolation:isolate}</style>
         <canvas id="drawing" role="button" tabindex="0" aria-label="Repair drawing" width="48" height="48"></canvas>
+        <button id="confirm" type="button" style="position:absolute;left:0;top:80px;width:96px;height:32px;margin:0">Confirm</button>
         ${animations[url.searchParams.get('animate') ?? 'none'] ?? ''}
         <script>
         const doc = crypto.randomUUID();
@@ -175,16 +176,39 @@ function barriers(dir) {
 const report = {
   schema: 'fawn.reviewed-input-qualification/v1', arm: values.arm, diagnostic: false,
   chromeSha256: await sha256(binary),
-  libcontentSha256: await sha256(join(dirname(binary), 'libcontent.so')),
+  // Component builds only; a release build links content into chrome.
+  libcontentSha256: await sha256(join(dirname(binary), 'libcontent.so')).catch(() => null),
   harnessSha256: await sha256(new URL(import.meta.url)),
   patchSha256: values.patch ? await sha256(values.patch) : null,
   doeLibrarySha256: values['doe-library'] ? await sha256(values['doe-library']) : null,
   cases: [], animation: {}, application: {},
+  // Captures the browser refused (the reviewer must review again) are counted
+  // apart from clicks refused as stale (the page changed after review).
+  refusals: { capture: 0, captureReasons: {}, staleClick: 0, admittedThenCancelled: 0 },
 };
+const countRefusals = client => ({
+  status: review => client.status(review),
+  async capture(...args) {
+    try { return await client.capture(...args); } catch (error) {
+      report.refusals.capture++;
+      const reason = error.message.split('\n')[0];
+      report.refusals.captureReasons[reason] = (report.refusals.captureReasons[reason] ?? 0) + 1;
+      throw error;
+    }
+  },
+  async click(...args) {
+    const outcome = await client.click(...args);
+    if (!outcome.admitted && outcome.reason === 'stale-compositor-revision') report.refusals.staleClick++;
+    if (outcome.admitted && !outcome.delivered) report.refusals.admittedThenCancelled++;
+    return outcome;
+  },
+});
 const site = await openDrawing();
 const barrierDir = await mkdtemp(join(tmpdir(), 'fawn-reviewed-input-'));
 const gate = barriers(barrierDir);
-const runtime = values.arm === 'dawn' ? forcedRuntimeArgs('dawn') : forcedRuntimeArgs('doe', resolve(values['doe-library']));
+// cpu: the shipping path, Viz software compositing with the default runtime.
+const runtime = values.arm === 'doe' ? forcedRuntimeArgs('doe', resolve(values['doe-library']))
+  : [...forcedRuntimeArgs('dawn'), ...(values.arm === 'cpu' ? ['--disable-gpu-compositing'] : [])];
 report.flags = [...runtime, '--use-gl=angle', '--use-angle=swiftshader', '--disable-accelerated-2d-canvas',
   '--ozone-platform=headless', '--force-device-scale-factor=1', `--fawn-reviewed-input-barriers=${barrierDir}`];
 let browser, control;
@@ -209,7 +233,7 @@ try {
     report.runtimeMapped = { gpuPid: gpu ?? null,
       doeLibrary: maps === null ? 'unknown' : maps.includes('libwebgpu_doe_c') };
     if (values.arm === 'doe') assert.notEqual(report.runtimeMapped.doeLibrary, false, 'Doe arm GPU process did not map Doe');
-    if (values.arm === 'dawn') assert.notEqual(report.runtimeMapped.doeLibrary, true, 'Dawn arm GPU process mapped Doe');
+    if (values.arm !== 'doe') assert.notEqual(report.runtimeMapped.doeLibrary, true, `${values.arm} arm GPU process mapped Doe`);
   }
   const context = await browser.newContext({ viewport: null });
   let page, session, client, serial = 0;
@@ -223,7 +247,7 @@ try {
     await page.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));
     await page.screenshot();
     session = await context.newCDPSession(page);
-    client = reviewedClicks(session);
+    client = countRefusals(reviewedClicks(session));
   }
   async function quiesce() {
     await wait(300);
@@ -418,6 +442,61 @@ try {
     });
   }
 
+  // The reviewed region can be ordinary DOM: a plain button receives the click.
+  await runCase('dom-button-delivers', async (row, before) => {
+    await open(`/draw/dom-button-${++serial}?animate=compositor`);
+    const button = { x: 0, y: 80, width: 96, height: 32 }, center = { x: 48, y: 96 };
+    row.outcome = await client.click(await client.capture(button, center));
+    assert.deepEqual(row.outcome, { admitted: true, delivered: true, reason: 'delivered' });
+    await until(() => site.inputs.length - before.inputs >= SEQUENCE.length, 'button events');
+    const events = sequence(before.inputs);
+    row.events = events;
+    assert.deepEqual(events.map(e => e.type), SEQUENCE);
+    assert(events.every(e => e.trusted && e.target === 'confirm' && e.x === center.x && e.y === center.y));
+  });
+
+  // A review can be asked whether it still holds without spending it, and the
+  // answer comes from Viz: it turns false once a reviewed pixel changes.
+  await runCase('status-reports-without-consuming', async (row, before) => {
+    await open(`/draw/status-${++serial}?animate=compositor`);
+    const review = await client.capture(rect, point);
+    row.statusBefore = await client.status(review);
+    assert.equal(row.statusBefore.holds, true);
+    await wait(500);
+    row.statusWhileAnimating = await client.status(review);
+    assert.equal(row.statusWhileAnimating.holds, true);
+    assert(Number(row.statusWhileAnimating.verifiedRevision) > Number(row.statusBefore.verifiedRevision),
+      'Viz must keep verifying frames while the page animates');
+    await draw1BluePixel();
+    row.statusAfterChange = await until(async () => { const s = await client.status(review); return s.holds ? null : s; }, 'status to report the change');
+    assert.equal(row.statusAfterChange.reason, 'viz:pixels-changed');
+    row.outcome = await client.click(review);
+    row.counts = delta(await quiesce(), before);
+    assert.deepEqual(row.outcome, { admitted: false, delivered: false, reason: 'stale-compositor-revision' });
+    expectNothingDelivered(row);
+  });
+
+  // Two reviews of one page, each in its own session, stay open together and
+  // deliver independently to their own bound targets.
+  await runCase('two-concurrent-reviews-deliver-independently', async (row, before) => {
+    await open(`/draw/concurrent-${++serial}`);
+    const second = countRefusals(reviewedClicks(await context.newCDPSession(page)));
+    const button = { x: 0, y: 80, width: 96, height: 32 }, center = { x: 48, y: 96 };
+    const onDrawing = await client.capture(rect, point);
+    const onButton = await second.capture(button, center);
+    assert.equal((await client.status(onDrawing)).holds, true, 'the first review must survive the second capture');
+    assert.equal((await second.status(onButton)).holds, true);
+    row.button = await second.click(onButton);
+    await until(() => site.inputs.length - before.inputs >= SEQUENCE.length, 'button events');
+    assert.equal((await client.status(onDrawing)).holds, true, 'the first review must survive the other click');
+    row.outcome = await client.click(onDrawing);
+    await until(() => site.inputs.length - before.inputs >= 2 * SEQUENCE.length, 'drawing events');
+    assert.deepEqual(row.button, { admitted: true, delivered: true, reason: 'delivered' });
+    assert.deepEqual(row.outcome, { admitted: true, delivered: true, reason: 'delivered' });
+    const events = sequence(before.inputs);
+    assert.deepEqual(events.map(e => e.target), [...Array(5).fill('confirm'), ...Array(5).fill('drawing')]);
+  });
+
   let consumed;
   await runCase('unchanged-target-delivers', async (row, before) => {
     await open(`/draw/unchanged-${++serial}`);
@@ -563,6 +642,7 @@ try {
   // arm composites in software. Neither arm gets a WebGPU adapter here.
   const status = (await control.send('SystemInfo.getInfo')).gpu.featureStatus;
   report.compositing = { gpuCompositing: status?.gpu_compositing, rasterization: status?.rasterization, webgpu: status?.webgpu };
+  if (values.arm === 'cpu') assert.match(report.compositing.gpuCompositing ?? '', /^disabled/, 'cpu arm must composite in software');
 } catch (error) {
   report.error = error.stack;
 } finally {

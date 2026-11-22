@@ -56,5 +56,15 @@ export function reviewedClicks(session) {
     throw new Error('Browser returned an indeterminate input admission result');
   }
 
-  return { capture, click };
+  // Whether the browser could still admit a click on this review, without
+  // spending it. `reason` names the first condition that fails.
+  async function status(review) {
+    const ticket = tickets.get(review);
+    if (!ticket) return { holds: false, reason: 'review-spent', verifiedRevision: '0' };
+    const { holds, reason, verifiedRevision } = await session.send('Input.getVisualEvidenceStatus', { evidenceId: ticket });
+    if (typeof holds !== 'boolean' || typeof reason !== 'string') throw new Error('Browser returned an indeterminate review status');
+    return { holds, reason, verifiedRevision };
+  }
+
+  return { capture, click, status };
 }
