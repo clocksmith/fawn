@@ -1,0 +1,135 @@
+{
+  "schema": "fawn.reviewed-input-latency/v1",
+  "arm": "doe",
+  "flags": [
+    "--use-webgpu-runtime=doe",
+    "--doe-webgpu-library-path=$FAWN_QUAL_ROOT/qual-80-83-20261121/c-stage/lib/libwebgpu_doe_c.so",
+    "--gpu-sandbox-start-early",
+    "--use-gl=angle",
+    "--use-angle=swiftshader",
+    "--disable-accelerated-2d-canvas",
+    "--ozone-platform=headless",
+    "--force-device-scale-factor=1"
+  ],
+  "chromeSha256": "51f8f047ea4b888b641be0255de665acf427336f097e1a267ac029b72d4595a1",
+  "libcontentSha256": "7ec843674e5815ebf1a4d77219c512985131fc28bcd3bdeb0be415a60287ff3d",
+  "libvizServiceSha256": "b0c9c4139eb8f2681aea35da0d0187a43bdd6058b86bfbbe5e059a465e9005d1",
+  "harnessSha256": "f1462cac11f33f9b1a64b252ff1c0661a359436b75aaeaf263a69027e3c08b09",
+  "patchSha256": "2626f5826b17896947682210345799082945bc68f3cc2c1e916fdb4469132e42",
+  "doeLibrarySha256": "f2d1d260739fb65e4e8a5d5897ded8f0700772ea7582c5c3c2ec5ff6a04f18f8",
+  "reviewedPixels": 2304,
+  "bytesPerCopy": 9216,
+  "browserVersion": "158.0.8108.0",
+  "gpu": {
+    "devices": [
+      {
+        "vendorId": 4098,
+        "deviceId": 5510,
+        "vendorString": "",
+        "deviceString": ""
+      }
+    ],
+    "compositing": "disabled_software",
+    "rasterization": "disabled_software",
+    "webgpu": "disabled_off"
+  },
+  "webgpuAdapter": false,
+  "memoryBefore": {
+    "browser": null,
+    "gpu": 163565568
+  },
+  "pacingIdle": {
+    "frames": 600,
+    "fps": 60,
+    "frameMs": {
+      "n": 599,
+      "p50": 16.699999999999818,
+      "p90": 16.700000000000728,
+      "p99": 16.800000000000182,
+      "max": 16.80000000000109,
+      "mean": 16.665943238731217
+    },
+    "longFrames": 0
+  },
+  "pacingReviewOpen": {
+    "frames": 600,
+    "fps": 60,
+    "frameMs": {
+      "n": 599,
+      "p50": 16.69999999999891,
+      "p90": 16.700000000000728,
+      "p99": 16.80000000000109,
+      "max": 16.80000000000291,
+      "mean": 16.66594323873122
+    },
+    "longFrames": 0
+  },
+  "memoryReviewOpen": {
+    "browser": null,
+    "gpu": 168726528
+  },
+  "memoryAfter": {
+    "browser": null,
+    "gpu": 169881600
+  },
+  "runtimeMapped": {
+    "gpuPid": 3698856,
+    "doeLibrary": true
+  },
+  "trustedClicksAtPage": 301,
+  "trials": 300,
+  "delivered": 300,
+  "refused": {},
+  "unnecessaryRefusalRate": 0,
+  "captureMs": {
+    "n": 300,
+    "p50": 16.1127290000004,
+    "p90": 17.73516600000221,
+    "p99": 18.94565700000021,
+    "max": 19.230193000003055,
+    "mean": 15.824503493333468
+  },
+  "clickMs": {
+    "n": 300,
+    "p50": 17.070303999997122,
+    "p90": 20.660829000000376,
+    "p99": 22.631382999999914,
+    "max": 23.346940999999788,
+    "mean": 17.49254541666645
+  },
+  "phasesMs": {
+    "validatedToAdmission": {
+      "n": 301,
+      "p50": 0.02,
+      "p90": 0.029,
+      "p99": 0.047,
+      "max": 0.101,
+      "mean": 0.021269102990033213
+    },
+    "admissionToVerdict": {
+      "n": 301,
+      "p50": 1.115,
+      "p90": 2.191,
+      "p99": 2.265,
+      "max": 2.326,
+      "mean": 0.971661129568106
+    },
+    "verdictToDelivery": {
+      "n": 301,
+      "p50": 0.603,
+      "p90": 2.897,
+      "p99": 4.291,
+      "max": 4.455,
+      "mean": 0.9963455149501662
+    }
+  },
+  "vizCopies": {
+    "references": 301,
+    "verifications": 920,
+    "mismatches": 0,
+    "readbackBytes": 11252736,
+    "gpuBlitsAndDriverTransfers": "unknown"
+  },
+  "correct": true,
+  "passed": true
+}

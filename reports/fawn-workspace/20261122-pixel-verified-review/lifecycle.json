@@ -1,0 +1,33 @@
+{
+  "passed": true,
+  "steps": [
+    "unchanged-and-one-shot",
+    "scope-region-and-session",
+    "same-document-navigation",
+    "child-rejected",
+    "child-and-resize-rejected",
+    "gpu-process-loss-and-fresh-recovery",
+    "renderer-loss-and-fresh-target"
+  ],
+  "unchangedTrials": [
+    {
+      "frame": "4",
+      "admitted": true,
+      "delivered": true,
+      "reason": "delivered"
+    },
+    {
+      "frame": "4",
+      "admitted": true,
+      "delivered": true,
+      "reason": "delivered"
+    },
+    {
+      "frame": "4",
+      "admitted": true,
+      "delivered": true,
+      "reason": "delivered"
+    }
+  ],
+  "browserVersion": "158.0.8108.0"
+}

@@ -87,8 +87,9 @@ async function openDrawing() {
         ctx.fillStyle = '#c80000'; ctx.fillRect(0,0,48,48);
         const request = ${JSON.stringify(request)};
         window.inputs = [];
+        let seq = 0;
         for (const type of ${JSON.stringify(SEQUENCE)}) document.addEventListener(type, e => {
-          const entry = {type, trusted: e.isTrusted, target: e.target.id || e.target.nodeName, doc,
+          const entry = {seq: seq++, type, trusted: e.isTrusted, target: e.target.id || e.target.nodeName, doc,
             path: location.pathname, x: e.clientX, y: e.clientY};
           inputs.push(entry);
           fetch('/input', {method: 'POST', keepalive: true, body: JSON.stringify(entry)});
@@ -151,13 +152,18 @@ function barriers(dir) {
       await writeFile(file(`${phase}.await-activation`), '');
       return until(() => json(`${phase}.viz-activation`), `Viz activation during ${phase}`, timeout);
     },
+    // Viz drew a frame whose reviewed pixels differ from the reference.
+    async refutation(phase, timeout = 5000) {
+      await writeFile(file(`${phase}.await-refutation`), '');
+      return until(() => json(`${phase}.viz-refutation`), `Viz refutation during ${phase}`, timeout);
+    },
     async release(phase) {
       await writeFile(file(`${phase}.release`), '');
       return until(() => json(`${phase}.continued`), `${phase} continuation`);
     },
     async clear() {
       for (const phase of ['admission', 'delivery']) {
-        for (const suffix of ['.ready', '.await-activation', '.viz-activation', '.continued', '.release']) {
+        for (const suffix of ['.ready', '.await-activation', '.viz-activation', '.await-refutation', '.viz-refutation', '.continued', '.release']) {
           await rm(file(phase + suffix), { force: true });
         }
         await rm(file(`hold-${phase}`), { force: true });
@@ -225,7 +231,8 @@ try {
   }
   const delta = (after, before) => ({ siteInputEvents: after.inputs - before.inputs,
     applicationAttempts: after.attempts - before.attempts, applicationWrites: after.writes - before.writes });
-  const sequence = start => site.inputs.slice(start);
+  // Each event is a separate beacon request; order them by page dispatch.
+  const sequence = start => site.inputs.slice(start).sort((a, b) => a.doc === b.doc ? a.seq - b.seq : 0);
   async function runCase(name, body) {
     const row = { name };
     report.cases.push(row);
@@ -259,26 +266,66 @@ try {
   };
 
   // Ordering 1: approve red, pause before admission, paint one pixel blue, wait
-  // for Viz to confirm the replacement frame is active on that surface, release.
-  await runCase('ordering-1-replacement-active-before-admission', async (row, before) => {
-    await open(`/draw/ordering-1-${++serial}`);
-    const review = await client.capture(rect, point);
-    row.review = { surface: review.surfaceId, document: review.documentId, revision: review.frameRevision };
-    assert.deepEqual([...Buffer.from(review.rgba, 'base64').subarray(0, 4)], [200, 0, 0, 255]);
-    await gate.hold('admission');
-    const pending = client.click(review);
-    row.barrier = { reached: await gate.reached('admission') };
-    assert.equal(row.barrier.reached.gate, 'open');
-    await draw1BluePixel();
-    row.barrier.vizActivation = await gate.activation('admission');
-    assert.equal(row.barrier.vizActivation.surface, review.surfaceId);
-    assert(row.barrier.vizActivation.replacementRevision > Number(review.frameRevision));
-    assert.equal(row.barrier.vizActivation.gate, 'stale');
-    assert.equal(site.inputs.length, before.inputs);
-    row.barrier.continued = await gate.release('admission');
-    row.outcome = await pending;
+  // for Viz to confirm the replacement frame is active on that surface and that
+  // its drawn pixels differ from the reference, release. Run once on a still
+  // page and once while an unrelated animation keeps Viz activating frames.
+  for (const animate of ['none', 'compositor']) {
+    const suffix = animate === 'none' ? '' : `-under-${animate}-animation`;
+    await runCase(`ordering-1-replacement-active-before-admission${suffix}`, async (row, before) => {
+      await open(`/draw/ordering-1${suffix}-${++serial}?animate=${animate}`);
+      const review = await client.capture(rect, point);
+      row.review = { surface: review.surfaceId, document: review.documentId, revision: review.frameRevision };
+      assert.deepEqual([...Buffer.from(review.rgba, 'base64').subarray(0, 4)], [200, 0, 0, 255]);
+      await gate.hold('admission');
+      const pending = client.click(review);
+      row.barrier = { reached: await gate.reached('admission') };
+      assert.equal(row.barrier.reached.gate, 'open');
+      assert.equal(row.barrier.reached.refutedAt, 0);
+      await draw1BluePixel();
+      row.barrier.vizActivation = await gate.activation('admission');
+      assert.equal(row.barrier.vizActivation.surface, review.surfaceId);
+      assert(row.barrier.vizActivation.replacementRevision > Number(review.frameRevision));
+      row.barrier.vizRefutation = await gate.refutation('admission');
+      assert(row.barrier.vizRefutation.refutedAt > Number(review.frameRevision));
+      assert.equal(row.barrier.vizRefutation.gate, 'stale');
+      assert.equal(site.inputs.length, before.inputs);
+      row.barrier.continued = await gate.release('admission');
+      row.outcome = await pending;
+      row.counts = delta(await quiesce(), before);
+      assert.deepEqual(row.outcome, { admitted: false, delivered: false, reason: 'stale-compositor-revision' });
+      expectNothingDelivered(row);
+    });
+  }
+
+  // Control for the comparison: an animation that starts inside the reviewed
+  // rectangle after review, away from the click point. Viz must refute it
+  // before admission on every trial; no click may reach the page.
+  await runCase('animation-inside-region-before-admission', async (row, before) => {
+    row.trials = [];
+    for (let i = 0; i < 5; i++) {
+      await gate.clear();
+      await open(`/draw/inside-region-${++serial}`);
+      const review = await client.capture(rect, point);
+      await gate.hold('admission');
+      const pending = client.click(review);
+      const trial = { reached: await gate.reached('admission') };
+      await page.evaluate(() => {
+        const d = document.createElement('div');
+        d.id = 'inside';
+        d.style = 'position:absolute;left:8px;top:28px;width:12px;height:12px;background:#555;animation:spin 1s linear infinite';
+        const style = document.createElement('style');
+        style.textContent = '@keyframes spin{to{transform:rotate(360deg)}}';
+        document.body.append(style, d);
+      });
+      trial.vizRefutation = await gate.refutation('admission');
+      assert(trial.vizRefutation.refutedAt > Number(review.frameRevision));
+      trial.continued = await gate.release('admission');
+      trial.outcome = await pending;
+      assert.deepEqual(trial.outcome, { admitted: false, delivered: false, reason: 'stale-compositor-revision' });
+      row.trials.push(trial);
+    }
+    row.outcome = row.trials.at(-1).outcome;
     row.counts = delta(await quiesce(), before);
-    assert.deepEqual(row.outcome, { admitted: false, delivered: false, reason: 'stale-compositor-revision' });
     expectNothingDelivered(row);
   });
 
@@ -355,9 +402,10 @@ try {
     'transparent-overlay': () => { const d = document.createElement('div'); d.id = 'overlay'; d.style = 'position:absolute;left:0;top:0;width:48px;height:48px'; document.body.append(d); },
     'opacity-zero-overlay': () => { const d = document.createElement('div'); d.id = 'overlay'; d.style = 'position:absolute;left:0;top:0;width:48px;height:48px;background:#0f0;opacity:0'; document.body.append(d); },
     'raised-existing-element': () => { document.getElementById('under').style.zIndex = '5'; },
-  })) {
-    await runCase(`overlay-before-admission-${variant}`, async (row, before) => {
-      await open(`/draw/overlay-${variant}-${++serial}`);
+  })) for (const animate of ['none', 'compositor']) {
+    const suffix = animate === 'none' ? '' : `-under-${animate}-animation`;
+    await runCase(`overlay-before-admission-${variant}${suffix}`, async (row, before) => {
+      await open(`/draw/overlay-${variant}${suffix}-${++serial}?animate=${animate}`);
       await page.evaluate(() => { const d = document.createElement('div'); d.id = 'under'; d.style = 'position:absolute;left:0;top:0;width:48px;height:48px;z-index:-1'; document.body.append(d); });
       await page.screenshot();
       const review = await client.capture(rect, point);
@@ -509,7 +557,12 @@ try {
     report.animation[kind] = tally;
     console.log(JSON.stringify({ animation: kind, ...tally }));
   }
-  report.animationPassed = report.animation.none.delivered === animationTrials;
+  report.animationPassed = Object.values(report.animation).every(t => t.delivered === animationTrials);
+  // The compositor Viz actually ran, read at the end of the run. The Doe arm's
+  // --gpu-sandbox-start-early keeps SwiftShader GL from initializing, so that
+  // arm composites in software. Neither arm gets a WebGPU adapter here.
+  const status = (await control.send('SystemInfo.getInfo')).gpu.featureStatus;
+  report.compositing = { gpuCompositing: status?.gpu_compositing, rasterization: status?.rasterization, webgpu: status?.webgpu };
 } catch (error) {
   report.error = error.stack;
 } finally {
