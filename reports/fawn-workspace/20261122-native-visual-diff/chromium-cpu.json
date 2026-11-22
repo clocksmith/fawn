@@ -1,0 +1,1042 @@
+{
+  "source": "Page.captureScreenshot(fromSurface=true)",
+  "clock": "perf_counter_ns",
+  "browserSha256": "728f6f7d8e9eb42d483bbefc9e69051e2264908b16a755af4fbdc7e69a49e65f",
+  "measured": [
+    {
+      "ns": 20925625,
+      "readDecodeNs": 20615792,
+      "compareNs": 309833,
+      "pngBytes": 962,
+      "changed": false,
+      "mask": 0
+    },
+    {
+      "ns": 20267917,
+      "readDecodeNs": 19960875,
+      "compareNs": 307042,
+      "pngBytes": 1007,
+      "changed": true,
+      "mask": 1024
+    },
+    {
+      "ns": 20061208,
+      "readDecodeNs": 19747791,
+      "compareNs": 313417,
+      "pngBytes": 962,
+      "changed": false,
+      "mask": 0
+    },
+    {
+      "ns": 21616750,
+      "readDecodeNs": 21276167,
+      "compareNs": 340583,
+      "pngBytes": 1007,
+      "changed": true,
+      "mask": 1024
+    },
+    {
+      "ns": 23182834,
+      "readDecodeNs": 22843125,
+      "compareNs": 339709,
+      "pngBytes": 962,
+      "changed": false,
+      "mask": 0
+    },
+    {
+      "ns": 41574708,
+      "readDecodeNs": 40776208,
+      "compareNs": 798500,
+      "pngBytes": 1007,
+      "changed": true,
+      "mask": 1024
+    },
+    {
+      "ns": 23240292,
+      "readDecodeNs": 22882792,
+      "compareNs": 357500,
+      "pngBytes": 962,
+      "changed": false,
+      "mask": 0
+    },
+    {
+      "ns": 20439042,
+      "readDecodeNs": 20113542,
+      "compareNs": 325500,
+      "pngBytes": 1007,
+      "changed": true,
+      "mask": 1024
+    },
+    {
+      "ns": 22245209,
+      "readDecodeNs": 21894125,
+      "compareNs": 351084,
+      "pngBytes": 962,
+      "changed": false,
+      "mask": 0
+    },
+    {
+      "ns": 20316917,
+      "readDecodeNs": 19989875,
+      "compareNs": 327042,
+      "pngBytes": 1007,
+      "changed": true,
+      "mask": 1024
+    },
+    {
+      "ns": 22009584,
+      "readDecodeNs": 21692542,
+      "compareNs": 317042,
+      "pngBytes": 962,
+      "changed": false,
+      "mask": 0
+    },
+    {
+      "ns": 23007209,
+      "readDecodeNs": 22631417,
+      "compareNs": 375792,
+      "pngBytes": 1007,
+      "changed": true,
+      "mask": 1024
+    },
+    {
+      "ns": 20274750,
+      "readDecodeNs": 19951666,
+      "compareNs": 323084,
+      "pngBytes": 962,
+      "changed": false,
+      "mask": 0
+    },
+    {
+      "ns": 20722667,
+      "readDecodeNs": 20407042,
+      "compareNs": 315625,
+      "pngBytes": 1007,
+      "changed": true,
+      "mask": 1024
+    },
+    {
+      "ns": 20920541,
+      "readDecodeNs": 20601000,
+      "compareNs": 319541,
+      "pngBytes": 962,
+      "changed": false,
+      "mask": 0
+    },
+    {
+      "ns": 20869667,
+      "readDecodeNs": 20556542,
+      "compareNs": 313125,
+      "pngBytes": 1007,
+      "changed": true,
+      "mask": 1024
+    },
+    {
+      "ns": 20924375,
+      "readDecodeNs": 20613958,
+      "compareNs": 310417,
+      "pngBytes": 962,
+      "changed": false,
+      "mask": 0
+    },
+    {
+      "ns": 20930125,
+      "readDecodeNs": 20622000,
+      "compareNs": 308125,
+      "pngBytes": 1007,
+      "changed": true,
+      "mask": 1024
+    },
+    {
+      "ns": 21297542,
+      "readDecodeNs": 20989417,
+      "compareNs": 308125,
+      "pngBytes": 962,
+      "changed": false,
+      "mask": 0
+    },
+    {
+      "ns": 20954250,
+      "readDecodeNs": 20626458,
+      "compareNs": 327792,
+      "pngBytes": 1007,
+      "changed": true,
+      "mask": 1024
+    },
+    {
+      "ns": 20485292,
+      "readDecodeNs": 20138334,
+      "compareNs": 346958,
+      "pngBytes": 962,
+      "changed": false,
+      "mask": 0
+    },
+    {
+      "ns": 21204458,
+      "readDecodeNs": 20889500,
+      "compareNs": 314958,
+      "pngBytes": 1007,
+      "changed": true,
+      "mask": 1024
+    },
+    {
+      "ns": 20350208,
+      "readDecodeNs": 19978958,
+      "compareNs": 371250,
+      "pngBytes": 962,
+      "changed": false,
+      "mask": 0
+    },
+    {
+      "ns": 21027000,
+      "readDecodeNs": 20692458,
+      "compareNs": 334542,
+      "pngBytes": 1007,
+      "changed": true,
+      "mask": 1024
+    },
+    {
+      "ns": 22530792,
+      "readDecodeNs": 22130625,
+      "compareNs": 400167,
+      "pngBytes": 962,
+      "changed": false,
+      "mask": 0
+    },
+    {
+      "ns": 23630834,
+      "readDecodeNs": 22591959,
+      "compareNs": 1038875,
+      "pngBytes": 1007,
+      "changed": true,
+      "mask": 1024
+    },
+    {
+      "ns": 21043666,
+      "readDecodeNs": 20691375,
+      "compareNs": 352291,
+      "pngBytes": 962,
+      "changed": false,
+      "mask": 0
+    },
+    {
+      "ns": 21397917,
+      "readDecodeNs": 21049792,
+      "compareNs": 348125,
+      "pngBytes": 1007,
+      "changed": true,
+      "mask": 1024
+    },
+    {
+      "ns": 21230083,
+      "readDecodeNs": 20898125,
+      "compareNs": 331958,
+      "pngBytes": 962,
+      "changed": false,
+      "mask": 0
+    },
+    {
+      "ns": 21120083,
+      "readDecodeNs": 20771625,
+      "compareNs": 348458,
+      "pngBytes": 1007,
+      "changed": true,
+      "mask": 1024
+    },
+    {
+      "ns": 22019958,
+      "readDecodeNs": 21622333,
+      "compareNs": 397625,
+      "pngBytes": 962,
+      "changed": false,
+      "mask": 0
+    },
+    {
+      "ns": 21060333,
+      "readDecodeNs": 20735833,
+      "compareNs": 324500,
+      "pngBytes": 1007,
+      "changed": true,
+      "mask": 1024
+    },
+    {
+      "ns": 20307917,
+      "readDecodeNs": 19971375,
+      "compareNs": 336542,
+      "pngBytes": 962,
+      "changed": false,
+      "mask": 0
+    },
+    {
+      "ns": 21060250,
+      "readDecodeNs": 20722041,
+      "compareNs": 338209,
+      "pngBytes": 1007,
+      "changed": true,
+      "mask": 1024
+    },
+    {
+      "ns": 20523500,
+      "readDecodeNs": 20177042,
+      "compareNs": 346458,
+      "pngBytes": 962,
+      "changed": false,
+      "mask": 0
+    },
+    {
+      "ns": 20561167,
+      "readDecodeNs": 20235625,
+      "compareNs": 325542,
+      "pngBytes": 1007,
+      "changed": true,
+      "mask": 1024
+    },
+    {
+      "ns": 20890084,
+      "readDecodeNs": 20542375,
+      "compareNs": 347709,
+      "pngBytes": 962,
+      "changed": false,
+      "mask": 0
+    },
+    {
+      "ns": 20937208,
+      "readDecodeNs": 20606625,
+      "compareNs": 330583,
+      "pngBytes": 1007,
+      "changed": true,
+      "mask": 1024
+    },
+    {
+      "ns": 21458375,
+      "readDecodeNs": 21139500,
+      "compareNs": 318875,
+      "pngBytes": 962,
+      "changed": false,
+      "mask": 0
+    },
+    {
+      "ns": 21172875,
+      "readDecodeNs": 20853375,
+      "compareNs": 319500,
+      "pngBytes": 1007,
+      "changed": true,
+      "mask": 1024
+    },
+    {
+      "ns": 19960000,
+      "readDecodeNs": 19641333,
+      "compareNs": 318667,
+      "pngBytes": 962,
+      "changed": false,
+      "mask": 0
+    },
+    {
+      "ns": 21658208,
+      "readDecodeNs": 21348292,
+      "compareNs": 309916,
+      "pngBytes": 1007,
+      "changed": true,
+      "mask": 1024
+    },
+    {
+      "ns": 20981875,
+      "readDecodeNs": 20670833,
+      "compareNs": 311042,
+      "pngBytes": 962,
+      "changed": false,
+      "mask": 0
+    },
+    {
+      "ns": 21130333,
+      "readDecodeNs": 20818583,
+      "compareNs": 311750,
+      "pngBytes": 1007,
+      "changed": true,
+      "mask": 1024
+    },
+    {
+      "ns": 23266417,
+      "readDecodeNs": 22907500,
+      "compareNs": 358917,
+      "pngBytes": 962,
+      "changed": false,
+      "mask": 0
+    },
+    {
+      "ns": 21086417,
+      "readDecodeNs": 20760584,
+      "compareNs": 325833,
+      "pngBytes": 1007,
+      "changed": true,
+      "mask": 1024
+    },
+    {
+      "ns": 21028542,
+      "readDecodeNs": 20702500,
+      "compareNs": 326042,
+      "pngBytes": 962,
+      "changed": false,
+      "mask": 0
+    },
+    {
+      "ns": 21127334,
+      "readDecodeNs": 20797250,
+      "compareNs": 330084,
+      "pngBytes": 1007,
+      "changed": true,
+      "mask": 1024
+    },
+    {
+      "ns": 21616250,
+      "readDecodeNs": 21277083,
+      "compareNs": 339167,
+      "pngBytes": 962,
+      "changed": false,
+      "mask": 0
+    },
+    {
+      "ns": 24074125,
+      "readDecodeNs": 23727834,
+      "compareNs": 346291,
+      "pngBytes": 1007,
+      "changed": true,
+      "mask": 1024
+    },
+    {
+      "ns": 20912958,
+      "readDecodeNs": 20593666,
+      "compareNs": 319292,
+      "pngBytes": 962,
+      "changed": false,
+      "mask": 0
+    },
+    {
+      "ns": 20164917,
+      "readDecodeNs": 19835792,
+      "compareNs": 329125,
+      "pngBytes": 1007,
+      "changed": true,
+      "mask": 1024
+    },
+    {
+      "ns": 22405666,
+      "readDecodeNs": 22072375,
+      "compareNs": 333291,
+      "pngBytes": 962,
+      "changed": false,
+      "mask": 0
+    },
+    {
+      "ns": 20008667,
+      "readDecodeNs": 19661375,
+      "compareNs": 347292,
+      "pngBytes": 1007,
+      "changed": true,
+      "mask": 1024
+    },
+    {
+      "ns": 20256042,
+      "readDecodeNs": 19920625,
+      "compareNs": 335417,
+      "pngBytes": 962,
+      "changed": false,
+      "mask": 0
+    },
+    {
+      "ns": 20532500,
+      "readDecodeNs": 20198791,
+      "compareNs": 333709,
+      "pngBytes": 1007,
+      "changed": true,
+      "mask": 1024
+    },
+    {
+      "ns": 20601125,
+      "readDecodeNs": 20278666,
+      "compareNs": 322459,
+      "pngBytes": 962,
+      "changed": false,
+      "mask": 0
+    },
+    {
+      "ns": 21022458,
+      "readDecodeNs": 20691875,
+      "compareNs": 330583,
+      "pngBytes": 1007,
+      "changed": true,
+      "mask": 1024
+    },
+    {
+      "ns": 20432333,
+      "readDecodeNs": 20106667,
+      "compareNs": 325666,
+      "pngBytes": 962,
+      "changed": false,
+      "mask": 0
+    },
+    {
+      "ns": 20661416,
+      "readDecodeNs": 20315958,
+      "compareNs": 345458,
+      "pngBytes": 1007,
+      "changed": true,
+      "mask": 1024
+    },
+    {
+      "ns": 33639209,
+      "readDecodeNs": 33308959,
+      "compareNs": 330250,
+      "pngBytes": 962,
+      "changed": false,
+      "mask": 0
+    },
+    {
+      "ns": 20754542,
+      "readDecodeNs": 20405959,
+      "compareNs": 348583,
+      "pngBytes": 1007,
+      "changed": true,
+      "mask": 1024
+    },
+    {
+      "ns": 19469292,
+      "readDecodeNs": 19149584,
+      "compareNs": 319708,
+      "pngBytes": 962,
+      "changed": false,
+      "mask": 0
+    },
+    {
+      "ns": 21004000,
+      "readDecodeNs": 20689334,
+      "compareNs": 314666,
+      "pngBytes": 1007,
+      "changed": true,
+      "mask": 1024
+    },
+    {
+      "ns": 21319417,
+      "readDecodeNs": 20998834,
+      "compareNs": 320583,
+      "pngBytes": 962,
+      "changed": false,
+      "mask": 0
+    },
+    {
+      "ns": 20928709,
+      "readDecodeNs": 20593709,
+      "compareNs": 335000,
+      "pngBytes": 1007,
+      "changed": true,
+      "mask": 1024
+    },
+    {
+      "ns": 20892208,
+      "readDecodeNs": 20563333,
+      "compareNs": 328875,
+      "pngBytes": 962,
+      "changed": false,
+      "mask": 0
+    },
+    {
+      "ns": 21900292,
+      "readDecodeNs": 21411958,
+      "compareNs": 488334,
+      "pngBytes": 1007,
+      "changed": true,
+      "mask": 1024
+    },
+    {
+      "ns": 21668416,
+      "readDecodeNs": 21334291,
+      "compareNs": 334125,
+      "pngBytes": 962,
+      "changed": false,
+      "mask": 0
+    },
+    {
+      "ns": 20215584,
+      "readDecodeNs": 19892750,
+      "compareNs": 322834,
+      "pngBytes": 1007,
+      "changed": true,
+      "mask": 1024
+    },
+    {
+      "ns": 23935125,
+      "readDecodeNs": 22898250,
+      "compareNs": 1036875,
+      "pngBytes": 962,
+      "changed": false,
+      "mask": 0
+    },
+    {
+      "ns": 21359250,
+      "readDecodeNs": 21049417,
+      "compareNs": 309833,
+      "pngBytes": 1007,
+      "changed": true,
+      "mask": 1024
+    },
+    {
+      "ns": 22580250,
+      "readDecodeNs": 22246250,
+      "compareNs": 334000,
+      "pngBytes": 962,
+      "changed": false,
+      "mask": 0
+    },
+    {
+      "ns": 21234708,
+      "readDecodeNs": 20895708,
+      "compareNs": 339000,
+      "pngBytes": 1007,
+      "changed": true,
+      "mask": 1024
+    },
+    {
+      "ns": 21566625,
+      "readDecodeNs": 21233708,
+      "compareNs": 332917,
+      "pngBytes": 962,
+      "changed": false,
+      "mask": 0
+    },
+    {
+      "ns": 21893250,
+      "readDecodeNs": 21561583,
+      "compareNs": 331667,
+      "pngBytes": 1007,
+      "changed": true,
+      "mask": 1024
+    },
+    {
+      "ns": 21677000,
+      "readDecodeNs": 21353583,
+      "compareNs": 323417,
+      "pngBytes": 962,
+      "changed": false,
+      "mask": 0
+    },
+    {
+      "ns": 20023125,
+      "readDecodeNs": 19693500,
+      "compareNs": 329625,
+      "pngBytes": 1007,
+      "changed": true,
+      "mask": 1024
+    },
+    {
+      "ns": 20998500,
+      "readDecodeNs": 20652875,
+      "compareNs": 345625,
+      "pngBytes": 962,
+      "changed": false,
+      "mask": 0
+    },
+    {
+      "ns": 21854125,
+      "readDecodeNs": 21517583,
+      "compareNs": 336542,
+      "pngBytes": 1007,
+      "changed": true,
+      "mask": 1024
+    },
+    {
+      "ns": 20950708,
+      "readDecodeNs": 20624292,
+      "compareNs": 326416,
+      "pngBytes": 962,
+      "changed": false,
+      "mask": 0
+    },
+    {
+      "ns": 20895500,
+      "readDecodeNs": 20566250,
+      "compareNs": 329250,
+      "pngBytes": 1007,
+      "changed": true,
+      "mask": 1024
+    },
+    {
+      "ns": 20652375,
+      "readDecodeNs": 20318959,
+      "compareNs": 333416,
+      "pngBytes": 962,
+      "changed": false,
+      "mask": 0
+    },
+    {
+      "ns": 20874791,
+      "readDecodeNs": 20542416,
+      "compareNs": 332375,
+      "pngBytes": 1007,
+      "changed": true,
+      "mask": 1024
+    },
+    {
+      "ns": 21010875,
+      "readDecodeNs": 20678708,
+      "compareNs": 332167,
+      "pngBytes": 962,
+      "changed": false,
+      "mask": 0
+    },
+    {
+      "ns": 19983292,
+      "readDecodeNs": 19656750,
+      "compareNs": 326542,
+      "pngBytes": 1007,
+      "changed": true,
+      "mask": 1024
+    },
+    {
+      "ns": 21849292,
+      "readDecodeNs": 21519125,
+      "compareNs": 330167,
+      "pngBytes": 962,
+      "changed": false,
+      "mask": 0
+    },
+    {
+      "ns": 20779208,
+      "readDecodeNs": 20456208,
+      "compareNs": 323000,
+      "pngBytes": 1007,
+      "changed": true,
+      "mask": 1024
+    },
+    {
+      "ns": 22718666,
+      "readDecodeNs": 22357666,
+      "compareNs": 361000,
+      "pngBytes": 962,
+      "changed": false,
+      "mask": 0
+    },
+    {
+      "ns": 21476041,
+      "readDecodeNs": 21151083,
+      "compareNs": 324958,
+      "pngBytes": 1007,
+      "changed": true,
+      "mask": 1024
+    },
+    {
+      "ns": 20947750,
+      "readDecodeNs": 20629208,
+      "compareNs": 318542,
+      "pngBytes": 962,
+      "changed": false,
+      "mask": 0
+    },
+    {
+      "ns": 22332125,
+      "readDecodeNs": 22000958,
+      "compareNs": 331167,
+      "pngBytes": 1007,
+      "changed": true,
+      "mask": 1024
+    },
+    {
+      "ns": 22128292,
+      "readDecodeNs": 21779125,
+      "compareNs": 349167,
+      "pngBytes": 962,
+      "changed": false,
+      "mask": 0
+    },
+    {
+      "ns": 25310042,
+      "readDecodeNs": 24168000,
+      "compareNs": 1142042,
+      "pngBytes": 1007,
+      "changed": true,
+      "mask": 1024
+    },
+    {
+      "ns": 22306041,
+      "readDecodeNs": 21973333,
+      "compareNs": 332708,
+      "pngBytes": 962,
+      "changed": false,
+      "mask": 0
+    },
+    {
+      "ns": 20882500,
+      "readDecodeNs": 20554667,
+      "compareNs": 327833,
+      "pngBytes": 1007,
+      "changed": true,
+      "mask": 1024
+    },
+    {
+      "ns": 21091791,
+      "readDecodeNs": 20767416,
+      "compareNs": 324375,
+      "pngBytes": 962,
+      "changed": false,
+      "mask": 0
+    },
+    {
+      "ns": 21279666,
+      "readDecodeNs": 20943291,
+      "compareNs": 336375,
+      "pngBytes": 1007,
+      "changed": true,
+      "mask": 1024
+    },
+    {
+      "ns": 25606083,
+      "readDecodeNs": 24531250,
+      "compareNs": 1074833,
+      "pngBytes": 962,
+      "changed": false,
+      "mask": 0
+    },
+    {
+      "ns": 25006667,
+      "readDecodeNs": 24034667,
+      "compareNs": 972000,
+      "pngBytes": 1007,
+      "changed": true,
+      "mask": 1024
+    },
+    {
+      "ns": 25261750,
+      "readDecodeNs": 24089208,
+      "compareNs": 1172542,
+      "pngBytes": 962,
+      "changed": false,
+      "mask": 0
+    },
+    {
+      "ns": 20254875,
+      "readDecodeNs": 19921916,
+      "compareNs": 332959,
+      "pngBytes": 1007,
+      "changed": true,
+      "mask": 1024
+    },
+    {
+      "ns": 21158334,
+      "readDecodeNs": 20820042,
+      "compareNs": 338292,
+      "pngBytes": 962,
+      "changed": false,
+      "mask": 0
+    },
+    {
+      "ns": 20577541,
+      "readDecodeNs": 20218833,
+      "compareNs": 358708,
+      "pngBytes": 1007,
+      "changed": true,
+      "mask": 1024
+    },
+    {
+      "ns": 23836750,
+      "readDecodeNs": 23479709,
+      "compareNs": 357041,
+      "pngBytes": 962,
+      "changed": false,
+      "mask": 0
+    },
+    {
+      "ns": 23335208,
+      "readDecodeNs": 22993292,
+      "compareNs": 341916,
+      "pngBytes": 1007,
+      "changed": true,
+      "mask": 1024
+    },
+    {
+      "ns": 22689208,
+      "readDecodeNs": 22005666,
+      "compareNs": 683542,
+      "pngBytes": 962,
+      "changed": false,
+      "mask": 0
+    },
+    {
+      "ns": 22738000,
+      "readDecodeNs": 22407250,
+      "compareNs": 330750,
+      "pngBytes": 1007,
+      "changed": true,
+      "mask": 1024
+    },
+    {
+      "ns": 21963750,
+      "readDecodeNs": 21621542,
+      "compareNs": 342208,
+      "pngBytes": 962,
+      "changed": false,
+      "mask": 0
+    },
+    {
+      "ns": 23492708,
+      "readDecodeNs": 23083792,
+      "compareNs": 408916,
+      "pngBytes": 1007,
+      "changed": true,
+      "mask": 1024
+    },
+    {
+      "ns": 23349084,
+      "readDecodeNs": 22656292,
+      "compareNs": 692792,
+      "pngBytes": 962,
+      "changed": false,
+      "mask": 0
+    },
+    {
+      "ns": 21874084,
+      "readDecodeNs": 21529542,
+      "compareNs": 344542,
+      "pngBytes": 1007,
+      "changed": true,
+      "mask": 1024
+    },
+    {
+      "ns": 21732250,
+      "readDecodeNs": 21394500,
+      "compareNs": 337750,
+      "pngBytes": 962,
+      "changed": false,
+      "mask": 0
+    },
+    {
+      "ns": 21706291,
+      "readDecodeNs": 21373166,
+      "compareNs": 333125,
+      "pngBytes": 1007,
+      "changed": true,
+      "mask": 1024
+    },
+    {
+      "ns": 20976208,
+      "readDecodeNs": 20647667,
+      "compareNs": 328541,
+      "pngBytes": 962,
+      "changed": false,
+      "mask": 0
+    },
+    {
+      "ns": 23068166,
+      "readDecodeNs": 22703875,
+      "compareNs": 364291,
+      "pngBytes": 1007,
+      "changed": true,
+      "mask": 1024
+    },
+    {
+      "ns": 21592875,
+      "readDecodeNs": 21256875,
+      "compareNs": 336000,
+      "pngBytes": 962,
+      "changed": false,
+      "mask": 0
+    },
+    {
+      "ns": 19679084,
+      "readDecodeNs": 19365500,
+      "compareNs": 313584,
+      "pngBytes": 1007,
+      "changed": true,
+      "mask": 1024
+    },
+    {
+      "ns": 21830750,
+      "readDecodeNs": 21505292,
+      "compareNs": 325458,
+      "pngBytes": 962,
+      "changed": false,
+      "mask": 0
+    },
+    {
+      "ns": 23301833,
+      "readDecodeNs": 22937292,
+      "compareNs": 364541,
+      "pngBytes": 1007,
+      "changed": true,
+      "mask": 1024
+    },
+    {
+      "ns": 23442500,
+      "readDecodeNs": 22515500,
+      "compareNs": 927000,
+      "pngBytes": 962,
+      "changed": false,
+      "mask": 0
+    },
+    {
+      "ns": 22729416,
+      "readDecodeNs": 22356000,
+      "compareNs": 373416,
+      "pngBytes": 1007,
+      "changed": true,
+      "mask": 1024
+    },
+    {
+      "ns": 23667375,
+      "readDecodeNs": 23292583,
+      "compareNs": 374792,
+      "pngBytes": 962,
+      "changed": false,
+      "mask": 0
+    },
+    {
+      "ns": 20137083,
+      "readDecodeNs": 19814541,
+      "compareNs": 322542,
+      "pngBytes": 1007,
+      "changed": true,
+      "mask": 1024
+    },
+    {
+      "ns": 21570375,
+      "readDecodeNs": 21238125,
+      "compareNs": 332250,
+      "pngBytes": 962,
+      "changed": false,
+      "mask": 0
+    },
+    {
+      "ns": 22718542,
+      "readDecodeNs": 22387792,
+      "compareNs": 330750,
+      "pngBytes": 1007,
+      "changed": true,
+      "mask": 1024
+    },
+    {
+      "ns": 23951791,
+      "readDecodeNs": 23425791,
+      "compareNs": 526000,
+      "pngBytes": 962,
+      "changed": false,
+      "mask": 0
+    },
+    {
+      "ns": 21214000,
+      "readDecodeNs": 20880792,
+      "compareNs": 333208,
+      "pngBytes": 1007,
+      "changed": true,
+      "mask": 1024
+    }
+  ],
+  "copies": {
+    "materializedRgbaBytesPerRead": 524288,
+    "modelLoaded": false,
+    "driverCopyCount": null
+  },
+  "version": "Chrome/158.0.8108.0",
+  "elapsedNs": {
+    "p50": 21172875,
+    "p95": 24074125,
+    "p99": 33639209
+  }
+}

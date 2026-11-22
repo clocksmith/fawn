@@ -1,0 +1,2323 @@
+{
+  "captureNs" : [
+    51471083,
+    26527708,
+    33428417
+  ],
+  "driverTransferCounts" : null,
+  "failures" : {
+
+  },
+  "format" : "BGRA8 sRGB",
+  "height" : 256,
+  "modelLoaded" : false,
+  "producer" : "WindowServer via ScreenCaptureKit",
+  "timing" : [
+    {
+      "arm" : "dawn",
+      "changed" : false,
+      "elapsedNs" : 365625,
+      "mask" : 0
+    },
+    {
+      "arm" : "doe_c",
+      "changed" : false,
+      "elapsedNs" : 387958,
+      "mask" : 0
+    },
+    {
+      "arm" : "cpu",
+      "changed" : false,
+      "elapsedNs" : 33333,
+      "mask" : 0
+    },
+    {
+      "arm" : "doe_c",
+      "changed" : true,
+      "elapsedNs" : 394750,
+      "mask" : 1024
+    },
+    {
+      "arm" : "cpu",
+      "changed" : true,
+      "elapsedNs" : 32875,
+      "mask" : 1024
+    },
+    {
+      "arm" : "dawn",
+      "changed" : true,
+      "elapsedNs" : 372208,
+      "mask" : 1024
+    },
+    {
+      "arm" : "cpu",
+      "changed" : false,
+      "elapsedNs" : 33583,
+      "mask" : 0
+    },
+    {
+      "arm" : "dawn",
+      "changed" : false,
+      "elapsedNs" : 422334,
+      "mask" : 0
+    },
+    {
+      "arm" : "doe_c",
+      "changed" : false,
+      "elapsedNs" : 386042,
+      "mask" : 0
+    },
+    {
+      "arm" : "dawn",
+      "changed" : true,
+      "elapsedNs" : 360084,
+      "mask" : 1024
+    },
+    {
+      "arm" : "doe_c",
+      "changed" : true,
+      "elapsedNs" : 386208,
+      "mask" : 1024
+    },
+    {
+      "arm" : "cpu",
+      "changed" : true,
+      "elapsedNs" : 36459,
+      "mask" : 1024
+    },
+    {
+      "arm" : "doe_c",
+      "changed" : false,
+      "elapsedNs" : 388584,
+      "mask" : 0
+    },
+    {
+      "arm" : "cpu",
+      "changed" : false,
+      "elapsedNs" : 32792,
+      "mask" : 0
+    },
+    {
+      "arm" : "dawn",
+      "changed" : false,
+      "elapsedNs" : 399833,
+      "mask" : 0
+    },
+    {
+      "arm" : "cpu",
+      "changed" : true,
+      "elapsedNs" : 33125,
+      "mask" : 1024
+    },
+    {
+      "arm" : "dawn",
+      "changed" : true,
+      "elapsedNs" : 389583,
+      "mask" : 1024
+    },
+    {
+      "arm" : "doe_c",
+      "changed" : true,
+      "elapsedNs" : 413584,
+      "mask" : 1024
+    },
+    {
+      "arm" : "dawn",
+      "changed" : false,
+      "elapsedNs" : 391708,
+      "mask" : 0
+    },
+    {
+      "arm" : "doe_c",
+      "changed" : false,
+      "elapsedNs" : 393334,
+      "mask" : 0
+    },
+    {
+      "arm" : "cpu",
+      "changed" : false,
+      "elapsedNs" : 36500,
+      "mask" : 0
+    },
+    {
+      "arm" : "doe_c",
+      "changed" : true,
+      "elapsedNs" : 404459,
+      "mask" : 1024
+    },
+    {
+      "arm" : "cpu",
+      "changed" : true,
+      "elapsedNs" : 37167,
+      "mask" : 1024
+    },
+    {
+      "arm" : "dawn",
+      "changed" : true,
+      "elapsedNs" : 374958,
+      "mask" : 1024
+    },
+    {
+      "arm" : "cpu",
+      "changed" : false,
+      "elapsedNs" : 33958,
+      "mask" : 0
+    },
+    {
+      "arm" : "dawn",
+      "changed" : false,
+      "elapsedNs" : 394750,
+      "mask" : 0
+    },
+    {
+      "arm" : "doe_c",
+      "changed" : false,
+      "elapsedNs" : 385000,
+      "mask" : 0
+    },
+    {
+      "arm" : "dawn",
+      "changed" : true,
+      "elapsedNs" : 416000,
+      "mask" : 1024
+    },
+    {
+      "arm" : "doe_c",
+      "changed" : true,
+      "elapsedNs" : 364000,
+      "mask" : 1024
+    },
+    {
+      "arm" : "cpu",
+      "changed" : true,
+      "elapsedNs" : 35000,
+      "mask" : 1024
+    },
+    {
+      "arm" : "doe_c",
+      "changed" : false,
+      "elapsedNs" : 255416,
+      "mask" : 0
+    },
+    {
+      "arm" : "cpu",
+      "changed" : false,
+      "elapsedNs" : 33416,
+      "mask" : 0
+    },
+    {
+      "arm" : "dawn",
+      "changed" : false,
+      "elapsedNs" : 249584,
+      "mask" : 0
+    },
+    {
+      "arm" : "cpu",
+      "changed" : true,
+      "elapsedNs" : 32125,
+      "mask" : 1024
+    },
+    {
+      "arm" : "dawn",
+      "changed" : true,
+      "elapsedNs" : 252458,
+      "mask" : 1024
+    },
+    {
+      "arm" : "doe_c",
+      "changed" : true,
+      "elapsedNs" : 258166,
+      "mask" : 1024
+    },
+    {
+      "arm" : "dawn",
+      "changed" : false,
+      "elapsedNs" : 244542,
+      "mask" : 0
+    },
+    {
+      "arm" : "doe_c",
+      "changed" : false,
+      "elapsedNs" : 345583,
+      "mask" : 0
+    },
+    {
+      "arm" : "cpu",
+      "changed" : false,
+      "elapsedNs" : 33083,
+      "mask" : 0
+    },
+    {
+      "arm" : "doe_c",
+      "changed" : true,
+      "elapsedNs" : 261750,
+      "mask" : 1024
+    },
+    {
+      "arm" : "cpu",
+      "changed" : true,
+      "elapsedNs" : 34459,
+      "mask" : 1024
+    },
+    {
+      "arm" : "dawn",
+      "changed" : true,
+      "elapsedNs" : 278167,
+      "mask" : 1024
+    },
+    {
+      "arm" : "cpu",
+      "changed" : false,
+      "elapsedNs" : 34500,
+      "mask" : 0
+    },
+    {
+      "arm" : "dawn",
+      "changed" : false,
+      "elapsedNs" : 238833,
+      "mask" : 0
+    },
+    {
+      "arm" : "doe_c",
+      "changed" : false,
+      "elapsedNs" : 245958,
+      "mask" : 0
+    },
+    {
+      "arm" : "dawn",
+      "changed" : true,
+      "elapsedNs" : 253417,
+      "mask" : 1024
+    },
+    {
+      "arm" : "doe_c",
+      "changed" : true,
+      "elapsedNs" : 261542,
+      "mask" : 1024
+    },
+    {
+      "arm" : "cpu",
+      "changed" : true,
+      "elapsedNs" : 32000,
+      "mask" : 1024
+    },
+    {
+      "arm" : "doe_c",
+      "changed" : false,
+      "elapsedNs" : 256667,
+      "mask" : 0
+    },
+    {
+      "arm" : "cpu",
+      "changed" : false,
+      "elapsedNs" : 33750,
+      "mask" : 0
+    },
+    {
+      "arm" : "dawn",
+      "changed" : false,
+      "elapsedNs" : 973875,
+      "mask" : 0
+    },
+    {
+      "arm" : "cpu",
+      "changed" : true,
+      "elapsedNs" : 35375,
+      "mask" : 1024
+    },
+    {
+      "arm" : "dawn",
+      "changed" : true,
+      "elapsedNs" : 259417,
+      "mask" : 1024
+    },
+    {
+      "arm" : "doe_c",
+      "changed" : true,
+      "elapsedNs" : 370625,
+      "mask" : 1024
+    },
+    {
+      "arm" : "dawn",
+      "changed" : false,
+      "elapsedNs" : 240625,
+      "mask" : 0
+    },
+    {
+      "arm" : "doe_c",
+      "changed" : false,
+      "elapsedNs" : 393708,
+      "mask" : 0
+    },
+    {
+      "arm" : "cpu",
+      "changed" : false,
+      "elapsedNs" : 32708,
+      "mask" : 0
+    },
+    {
+      "arm" : "doe_c",
+      "changed" : true,
+      "elapsedNs" : 370083,
+      "mask" : 1024
+    },
+    {
+      "arm" : "cpu",
+      "changed" : true,
+      "elapsedNs" : 31459,
+      "mask" : 1024
+    },
+    {
+      "arm" : "dawn",
+      "changed" : true,
+      "elapsedNs" : 409250,
+      "mask" : 1024
+    },
+    {
+      "arm" : "cpu",
+      "changed" : false,
+      "elapsedNs" : 30875,
+      "mask" : 0
+    },
+    {
+      "arm" : "dawn",
+      "changed" : false,
+      "elapsedNs" : 357000,
+      "mask" : 0
+    },
+    {
+      "arm" : "doe_c",
+      "changed" : false,
+      "elapsedNs" : 428833,
+      "mask" : 0
+    },
+    {
+      "arm" : "dawn",
+      "changed" : true,
+      "elapsedNs" : 374916,
+      "mask" : 1024
+    },
+    {
+      "arm" : "doe_c",
+      "changed" : true,
+      "elapsedNs" : 396583,
+      "mask" : 1024
+    },
+    {
+      "arm" : "cpu",
+      "changed" : true,
+      "elapsedNs" : 37625,
+      "mask" : 1024
+    },
+    {
+      "arm" : "doe_c",
+      "changed" : false,
+      "elapsedNs" : 372833,
+      "mask" : 0
+    },
+    {
+      "arm" : "cpu",
+      "changed" : false,
+      "elapsedNs" : 35708,
+      "mask" : 0
+    },
+    {
+      "arm" : "dawn",
+      "changed" : false,
+      "elapsedNs" : 369792,
+      "mask" : 0
+    },
+    {
+      "arm" : "cpu",
+      "changed" : true,
+      "elapsedNs" : 31958,
+      "mask" : 1024
+    },
+    {
+      "arm" : "dawn",
+      "changed" : true,
+      "elapsedNs" : 331583,
+      "mask" : 1024
+    },
+    {
+      "arm" : "doe_c",
+      "changed" : true,
+      "elapsedNs" : 246292,
+      "mask" : 1024
+    },
+    {
+      "arm" : "dawn",
+      "changed" : false,
+      "elapsedNs" : 373583,
+      "mask" : 0
+    },
+    {
+      "arm" : "doe_c",
+      "changed" : false,
+      "elapsedNs" : 383250,
+      "mask" : 0
+    },
+    {
+      "arm" : "cpu",
+      "changed" : false,
+      "elapsedNs" : 32208,
+      "mask" : 0
+    },
+    {
+      "arm" : "doe_c",
+      "changed" : true,
+      "elapsedNs" : 363667,
+      "mask" : 1024
+    },
+    {
+      "arm" : "cpu",
+      "changed" : true,
+      "elapsedNs" : 33000,
+      "mask" : 1024
+    },
+    {
+      "arm" : "dawn",
+      "changed" : true,
+      "elapsedNs" : 349417,
+      "mask" : 1024
+    },
+    {
+      "arm" : "cpu",
+      "changed" : false,
+      "elapsedNs" : 34084,
+      "mask" : 0
+    },
+    {
+      "arm" : "dawn",
+      "changed" : false,
+      "elapsedNs" : 415250,
+      "mask" : 0
+    },
+    {
+      "arm" : "doe_c",
+      "changed" : false,
+      "elapsedNs" : 428750,
+      "mask" : 0
+    },
+    {
+      "arm" : "dawn",
+      "changed" : true,
+      "elapsedNs" : 402208,
+      "mask" : 1024
+    },
+    {
+      "arm" : "doe_c",
+      "changed" : true,
+      "elapsedNs" : 401959,
+      "mask" : 1024
+    },
+    {
+      "arm" : "cpu",
+      "changed" : true,
+      "elapsedNs" : 41625,
+      "mask" : 1024
+    },
+    {
+      "arm" : "doe_c",
+      "changed" : false,
+      "elapsedNs" : 412041,
+      "mask" : 0
+    },
+    {
+      "arm" : "cpu",
+      "changed" : false,
+      "elapsedNs" : 39375,
+      "mask" : 0
+    },
+    {
+      "arm" : "dawn",
+      "changed" : false,
+      "elapsedNs" : 391125,
+      "mask" : 0
+    },
+    {
+      "arm" : "cpu",
+      "changed" : true,
+      "elapsedNs" : 33917,
+      "mask" : 1024
+    },
+    {
+      "arm" : "dawn",
+      "changed" : true,
+      "elapsedNs" : 349792,
+      "mask" : 1024
+    },
+    {
+      "arm" : "doe_c",
+      "changed" : true,
+      "elapsedNs" : 408583,
+      "mask" : 1024
+    },
+    {
+      "arm" : "dawn",
+      "changed" : false,
+      "elapsedNs" : 411083,
+      "mask" : 0
+    },
+    {
+      "arm" : "doe_c",
+      "changed" : false,
+      "elapsedNs" : 392625,
+      "mask" : 0
+    },
+    {
+      "arm" : "cpu",
+      "changed" : false,
+      "elapsedNs" : 37792,
+      "mask" : 0
+    },
+    {
+      "arm" : "doe_c",
+      "changed" : true,
+      "elapsedNs" : 426250,
+      "mask" : 1024
+    },
+    {
+      "arm" : "cpu",
+      "changed" : true,
+      "elapsedNs" : 34542,
+      "mask" : 1024
+    },
+    {
+      "arm" : "dawn",
+      "changed" : true,
+      "elapsedNs" : 254667,
+      "mask" : 1024
+    },
+    {
+      "arm" : "cpu",
+      "changed" : false,
+      "elapsedNs" : 38334,
+      "mask" : 0
+    },
+    {
+      "arm" : "dawn",
+      "changed" : false,
+      "elapsedNs" : 245875,
+      "mask" : 0
+    },
+    {
+      "arm" : "doe_c",
+      "changed" : false,
+      "elapsedNs" : 254583,
+      "mask" : 0
+    },
+    {
+      "arm" : "dawn",
+      "changed" : true,
+      "elapsedNs" : 255500,
+      "mask" : 1024
+    },
+    {
+      "arm" : "doe_c",
+      "changed" : true,
+      "elapsedNs" : 240000,
+      "mask" : 1024
+    },
+    {
+      "arm" : "cpu",
+      "changed" : true,
+      "elapsedNs" : 31708,
+      "mask" : 1024
+    },
+    {
+      "arm" : "doe_c",
+      "changed" : false,
+      "elapsedNs" : 246458,
+      "mask" : 0
+    },
+    {
+      "arm" : "cpu",
+      "changed" : false,
+      "elapsedNs" : 31791,
+      "mask" : 0
+    },
+    {
+      "arm" : "dawn",
+      "changed" : false,
+      "elapsedNs" : 251417,
+      "mask" : 0
+    },
+    {
+      "arm" : "cpu",
+      "changed" : true,
+      "elapsedNs" : 31667,
+      "mask" : 1024
+    },
+    {
+      "arm" : "dawn",
+      "changed" : true,
+      "elapsedNs" : 248000,
+      "mask" : 1024
+    },
+    {
+      "arm" : "doe_c",
+      "changed" : true,
+      "elapsedNs" : 315417,
+      "mask" : 1024
+    },
+    {
+      "arm" : "dawn",
+      "changed" : false,
+      "elapsedNs" : 250541,
+      "mask" : 0
+    },
+    {
+      "arm" : "doe_c",
+      "changed" : false,
+      "elapsedNs" : 257583,
+      "mask" : 0
+    },
+    {
+      "arm" : "cpu",
+      "changed" : false,
+      "elapsedNs" : 32458,
+      "mask" : 0
+    },
+    {
+      "arm" : "doe_c",
+      "changed" : true,
+      "elapsedNs" : 265000,
+      "mask" : 1024
+    },
+    {
+      "arm" : "cpu",
+      "changed" : true,
+      "elapsedNs" : 32917,
+      "mask" : 1024
+    },
+    {
+      "arm" : "dawn",
+      "changed" : true,
+      "elapsedNs" : 266084,
+      "mask" : 1024
+    },
+    {
+      "arm" : "cpu",
+      "changed" : false,
+      "elapsedNs" : 35291,
+      "mask" : 0
+    },
+    {
+      "arm" : "dawn",
+      "changed" : false,
+      "elapsedNs" : 263916,
+      "mask" : 0
+    },
+    {
+      "arm" : "doe_c",
+      "changed" : false,
+      "elapsedNs" : 269625,
+      "mask" : 0
+    },
+    {
+      "arm" : "dawn",
+      "changed" : true,
+      "elapsedNs" : 263208,
+      "mask" : 1024
+    },
+    {
+      "arm" : "doe_c",
+      "changed" : true,
+      "elapsedNs" : 277084,
+      "mask" : 1024
+    },
+    {
+      "arm" : "cpu",
+      "changed" : true,
+      "elapsedNs" : 35167,
+      "mask" : 1024
+    },
+    {
+      "arm" : "doe_c",
+      "changed" : false,
+      "elapsedNs" : 248750,
+      "mask" : 0
+    },
+    {
+      "arm" : "cpu",
+      "changed" : false,
+      "elapsedNs" : 38083,
+      "mask" : 0
+    },
+    {
+      "arm" : "dawn",
+      "changed" : false,
+      "elapsedNs" : 928792,
+      "mask" : 0
+    },
+    {
+      "arm" : "cpu",
+      "changed" : true,
+      "elapsedNs" : 58292,
+      "mask" : 1024
+    },
+    {
+      "arm" : "dawn",
+      "changed" : true,
+      "elapsedNs" : 424166,
+      "mask" : 1024
+    },
+    {
+      "arm" : "doe_c",
+      "changed" : true,
+      "elapsedNs" : 283584,
+      "mask" : 1024
+    },
+    {
+      "arm" : "dawn",
+      "changed" : false,
+      "elapsedNs" : 471125,
+      "mask" : 0
+    },
+    {
+      "arm" : "doe_c",
+      "changed" : false,
+      "elapsedNs" : 437250,
+      "mask" : 0
+    },
+    {
+      "arm" : "cpu",
+      "changed" : false,
+      "elapsedNs" : 67458,
+      "mask" : 0
+    },
+    {
+      "arm" : "doe_c",
+      "changed" : true,
+      "elapsedNs" : 399958,
+      "mask" : 1024
+    },
+    {
+      "arm" : "cpu",
+      "changed" : true,
+      "elapsedNs" : 48708,
+      "mask" : 1024
+    },
+    {
+      "arm" : "dawn",
+      "changed" : true,
+      "elapsedNs" : 428959,
+      "mask" : 1024
+    },
+    {
+      "arm" : "cpu",
+      "changed" : false,
+      "elapsedNs" : 37083,
+      "mask" : 0
+    },
+    {
+      "arm" : "dawn",
+      "changed" : false,
+      "elapsedNs" : 427042,
+      "mask" : 0
+    },
+    {
+      "arm" : "doe_c",
+      "changed" : false,
+      "elapsedNs" : 398542,
+      "mask" : 0
+    },
+    {
+      "arm" : "dawn",
+      "changed" : true,
+      "elapsedNs" : 380709,
+      "mask" : 1024
+    },
+    {
+      "arm" : "doe_c",
+      "changed" : true,
+      "elapsedNs" : 378375,
+      "mask" : 1024
+    },
+    {
+      "arm" : "cpu",
+      "changed" : true,
+      "elapsedNs" : 36000,
+      "mask" : 1024
+    },
+    {
+      "arm" : "doe_c",
+      "changed" : false,
+      "elapsedNs" : 403250,
+      "mask" : 0
+    },
+    {
+      "arm" : "cpu",
+      "changed" : false,
+      "elapsedNs" : 38250,
+      "mask" : 0
+    },
+    {
+      "arm" : "dawn",
+      "changed" : false,
+      "elapsedNs" : 376834,
+      "mask" : 0
+    },
+    {
+      "arm" : "cpu",
+      "changed" : true,
+      "elapsedNs" : 36667,
+      "mask" : 1024
+    },
+    {
+      "arm" : "dawn",
+      "changed" : true,
+      "elapsedNs" : 380916,
+      "mask" : 1024
+    },
+    {
+      "arm" : "doe_c",
+      "changed" : true,
+      "elapsedNs" : 380291,
+      "mask" : 1024
+    },
+    {
+      "arm" : "dawn",
+      "changed" : false,
+      "elapsedNs" : 390666,
+      "mask" : 0
+    },
+    {
+      "arm" : "doe_c",
+      "changed" : false,
+      "elapsedNs" : 243625,
+      "mask" : 0
+    },
+    {
+      "arm" : "cpu",
+      "changed" : false,
+      "elapsedNs" : 35833,
+      "mask" : 0
+    },
+    {
+      "arm" : "doe_c",
+      "changed" : true,
+      "elapsedNs" : 234833,
+      "mask" : 1024
+    },
+    {
+      "arm" : "cpu",
+      "changed" : true,
+      "elapsedNs" : 33958,
+      "mask" : 1024
+    },
+    {
+      "arm" : "dawn",
+      "changed" : true,
+      "elapsedNs" : 273459,
+      "mask" : 1024
+    },
+    {
+      "arm" : "cpu",
+      "changed" : false,
+      "elapsedNs" : 33500,
+      "mask" : 0
+    },
+    {
+      "arm" : "dawn",
+      "changed" : false,
+      "elapsedNs" : 233917,
+      "mask" : 0
+    },
+    {
+      "arm" : "doe_c",
+      "changed" : false,
+      "elapsedNs" : 238750,
+      "mask" : 0
+    },
+    {
+      "arm" : "dawn",
+      "changed" : true,
+      "elapsedNs" : 246125,
+      "mask" : 1024
+    },
+    {
+      "arm" : "doe_c",
+      "changed" : true,
+      "elapsedNs" : 249125,
+      "mask" : 1024
+    },
+    {
+      "arm" : "cpu",
+      "changed" : true,
+      "elapsedNs" : 32959,
+      "mask" : 1024
+    },
+    {
+      "arm" : "doe_c",
+      "changed" : false,
+      "elapsedNs" : 239208,
+      "mask" : 0
+    },
+    {
+      "arm" : "cpu",
+      "changed" : false,
+      "elapsedNs" : 30625,
+      "mask" : 0
+    },
+    {
+      "arm" : "dawn",
+      "changed" : false,
+      "elapsedNs" : 229708,
+      "mask" : 0
+    },
+    {
+      "arm" : "cpu",
+      "changed" : true,
+      "elapsedNs" : 35334,
+      "mask" : 1024
+    },
+    {
+      "arm" : "dawn",
+      "changed" : true,
+      "elapsedNs" : 234291,
+      "mask" : 1024
+    },
+    {
+      "arm" : "doe_c",
+      "changed" : true,
+      "elapsedNs" : 245208,
+      "mask" : 1024
+    },
+    {
+      "arm" : "dawn",
+      "changed" : false,
+      "elapsedNs" : 241542,
+      "mask" : 0
+    },
+    {
+      "arm" : "doe_c",
+      "changed" : false,
+      "elapsedNs" : 258083,
+      "mask" : 0
+    },
+    {
+      "arm" : "cpu",
+      "changed" : false,
+      "elapsedNs" : 32875,
+      "mask" : 0
+    },
+    {
+      "arm" : "doe_c",
+      "changed" : true,
+      "elapsedNs" : 254500,
+      "mask" : 1024
+    },
+    {
+      "arm" : "cpu",
+      "changed" : true,
+      "elapsedNs" : 36833,
+      "mask" : 1024
+    },
+    {
+      "arm" : "dawn",
+      "changed" : true,
+      "elapsedNs" : 278375,
+      "mask" : 1024
+    },
+    {
+      "arm" : "cpu",
+      "changed" : false,
+      "elapsedNs" : 31209,
+      "mask" : 0
+    },
+    {
+      "arm" : "dawn",
+      "changed" : false,
+      "elapsedNs" : 241375,
+      "mask" : 0
+    },
+    {
+      "arm" : "doe_c",
+      "changed" : false,
+      "elapsedNs" : 243917,
+      "mask" : 0
+    },
+    {
+      "arm" : "dawn",
+      "changed" : true,
+      "elapsedNs" : 235208,
+      "mask" : 1024
+    },
+    {
+      "arm" : "doe_c",
+      "changed" : true,
+      "elapsedNs" : 243833,
+      "mask" : 1024
+    },
+    {
+      "arm" : "cpu",
+      "changed" : true,
+      "elapsedNs" : 32542,
+      "mask" : 1024
+    },
+    {
+      "arm" : "doe_c",
+      "changed" : false,
+      "elapsedNs" : 254250,
+      "mask" : 0
+    },
+    {
+      "arm" : "cpu",
+      "changed" : false,
+      "elapsedNs" : 34917,
+      "mask" : 0
+    },
+    {
+      "arm" : "dawn",
+      "changed" : false,
+      "elapsedNs" : 256541,
+      "mask" : 0
+    },
+    {
+      "arm" : "cpu",
+      "changed" : true,
+      "elapsedNs" : 33875,
+      "mask" : 1024
+    },
+    {
+      "arm" : "dawn",
+      "changed" : true,
+      "elapsedNs" : 231166,
+      "mask" : 1024
+    },
+    {
+      "arm" : "doe_c",
+      "changed" : true,
+      "elapsedNs" : 245958,
+      "mask" : 1024
+    },
+    {
+      "arm" : "dawn",
+      "changed" : false,
+      "elapsedNs" : 253792,
+      "mask" : 0
+    },
+    {
+      "arm" : "doe_c",
+      "changed" : false,
+      "elapsedNs" : 278375,
+      "mask" : 0
+    },
+    {
+      "arm" : "cpu",
+      "changed" : false,
+      "elapsedNs" : 34542,
+      "mask" : 0
+    },
+    {
+      "arm" : "doe_c",
+      "changed" : true,
+      "elapsedNs" : 243709,
+      "mask" : 1024
+    },
+    {
+      "arm" : "cpu",
+      "changed" : true,
+      "elapsedNs" : 36000,
+      "mask" : 1024
+    },
+    {
+      "arm" : "dawn",
+      "changed" : true,
+      "elapsedNs" : 238417,
+      "mask" : 1024
+    },
+    {
+      "arm" : "cpu",
+      "changed" : false,
+      "elapsedNs" : 34208,
+      "mask" : 0
+    },
+    {
+      "arm" : "dawn",
+      "changed" : false,
+      "elapsedNs" : 248833,
+      "mask" : 0
+    },
+    {
+      "arm" : "doe_c",
+      "changed" : false,
+      "elapsedNs" : 250583,
+      "mask" : 0
+    },
+    {
+      "arm" : "dawn",
+      "changed" : true,
+      "elapsedNs" : 271917,
+      "mask" : 1024
+    },
+    {
+      "arm" : "doe_c",
+      "changed" : true,
+      "elapsedNs" : 256292,
+      "mask" : 1024
+    },
+    {
+      "arm" : "cpu",
+      "changed" : true,
+      "elapsedNs" : 31625,
+      "mask" : 1024
+    },
+    {
+      "arm" : "doe_c",
+      "changed" : false,
+      "elapsedNs" : 255834,
+      "mask" : 0
+    },
+    {
+      "arm" : "cpu",
+      "changed" : false,
+      "elapsedNs" : 34959,
+      "mask" : 0
+    },
+    {
+      "arm" : "dawn",
+      "changed" : false,
+      "elapsedNs" : 1115917,
+      "mask" : 0
+    },
+    {
+      "arm" : "cpu",
+      "changed" : true,
+      "elapsedNs" : 30250,
+      "mask" : 1024
+    },
+    {
+      "arm" : "dawn",
+      "changed" : true,
+      "elapsedNs" : 377917,
+      "mask" : 1024
+    },
+    {
+      "arm" : "doe_c",
+      "changed" : true,
+      "elapsedNs" : 615375,
+      "mask" : 1024
+    },
+    {
+      "arm" : "dawn",
+      "changed" : false,
+      "elapsedNs" : 252833,
+      "mask" : 0
+    },
+    {
+      "arm" : "doe_c",
+      "changed" : false,
+      "elapsedNs" : 268250,
+      "mask" : 0
+    },
+    {
+      "arm" : "cpu",
+      "changed" : false,
+      "elapsedNs" : 32625,
+      "mask" : 0
+    },
+    {
+      "arm" : "doe_c",
+      "changed" : true,
+      "elapsedNs" : 256958,
+      "mask" : 1024
+    },
+    {
+      "arm" : "cpu",
+      "changed" : true,
+      "elapsedNs" : 32792,
+      "mask" : 1024
+    },
+    {
+      "arm" : "dawn",
+      "changed" : true,
+      "elapsedNs" : 250959,
+      "mask" : 1024
+    },
+    {
+      "arm" : "cpu",
+      "changed" : false,
+      "elapsedNs" : 34167,
+      "mask" : 0
+    },
+    {
+      "arm" : "dawn",
+      "changed" : false,
+      "elapsedNs" : 252375,
+      "mask" : 0
+    },
+    {
+      "arm" : "doe_c",
+      "changed" : false,
+      "elapsedNs" : 278667,
+      "mask" : 0
+    },
+    {
+      "arm" : "dawn",
+      "changed" : true,
+      "elapsedNs" : 268209,
+      "mask" : 1024
+    },
+    {
+      "arm" : "doe_c",
+      "changed" : true,
+      "elapsedNs" : 267625,
+      "mask" : 1024
+    },
+    {
+      "arm" : "cpu",
+      "changed" : true,
+      "elapsedNs" : 30750,
+      "mask" : 1024
+    },
+    {
+      "arm" : "doe_c",
+      "changed" : false,
+      "elapsedNs" : 254208,
+      "mask" : 0
+    },
+    {
+      "arm" : "cpu",
+      "changed" : false,
+      "elapsedNs" : 36125,
+      "mask" : 0
+    },
+    {
+      "arm" : "dawn",
+      "changed" : false,
+      "elapsedNs" : 257625,
+      "mask" : 0
+    },
+    {
+      "arm" : "cpu",
+      "changed" : true,
+      "elapsedNs" : 30667,
+      "mask" : 1024
+    },
+    {
+      "arm" : "dawn",
+      "changed" : true,
+      "elapsedNs" : 243666,
+      "mask" : 1024
+    },
+    {
+      "arm" : "doe_c",
+      "changed" : true,
+      "elapsedNs" : 283708,
+      "mask" : 1024
+    },
+    {
+      "arm" : "dawn",
+      "changed" : false,
+      "elapsedNs" : 252833,
+      "mask" : 0
+    },
+    {
+      "arm" : "doe_c",
+      "changed" : false,
+      "elapsedNs" : 271291,
+      "mask" : 0
+    },
+    {
+      "arm" : "cpu",
+      "changed" : false,
+      "elapsedNs" : 34250,
+      "mask" : 0
+    },
+    {
+      "arm" : "doe_c",
+      "changed" : true,
+      "elapsedNs" : 251542,
+      "mask" : 1024
+    },
+    {
+      "arm" : "cpu",
+      "changed" : true,
+      "elapsedNs" : 35625,
+      "mask" : 1024
+    },
+    {
+      "arm" : "dawn",
+      "changed" : true,
+      "elapsedNs" : 244083,
+      "mask" : 1024
+    },
+    {
+      "arm" : "cpu",
+      "changed" : false,
+      "elapsedNs" : 32625,
+      "mask" : 0
+    },
+    {
+      "arm" : "dawn",
+      "changed" : false,
+      "elapsedNs" : 239250,
+      "mask" : 0
+    },
+    {
+      "arm" : "doe_c",
+      "changed" : false,
+      "elapsedNs" : 240417,
+      "mask" : 0
+    },
+    {
+      "arm" : "dawn",
+      "changed" : true,
+      "elapsedNs" : 240625,
+      "mask" : 1024
+    },
+    {
+      "arm" : "doe_c",
+      "changed" : true,
+      "elapsedNs" : 243250,
+      "mask" : 1024
+    },
+    {
+      "arm" : "cpu",
+      "changed" : true,
+      "elapsedNs" : 35084,
+      "mask" : 1024
+    },
+    {
+      "arm" : "doe_c",
+      "changed" : false,
+      "elapsedNs" : 246666,
+      "mask" : 0
+    },
+    {
+      "arm" : "cpu",
+      "changed" : false,
+      "elapsedNs" : 34083,
+      "mask" : 0
+    },
+    {
+      "arm" : "dawn",
+      "changed" : false,
+      "elapsedNs" : 238708,
+      "mask" : 0
+    },
+    {
+      "arm" : "cpu",
+      "changed" : true,
+      "elapsedNs" : 30708,
+      "mask" : 1024
+    },
+    {
+      "arm" : "dawn",
+      "changed" : true,
+      "elapsedNs" : 258000,
+      "mask" : 1024
+    },
+    {
+      "arm" : "doe_c",
+      "changed" : true,
+      "elapsedNs" : 247958,
+      "mask" : 1024
+    },
+    {
+      "arm" : "dawn",
+      "changed" : false,
+      "elapsedNs" : 252666,
+      "mask" : 0
+    },
+    {
+      "arm" : "doe_c",
+      "changed" : false,
+      "elapsedNs" : 262333,
+      "mask" : 0
+    },
+    {
+      "arm" : "cpu",
+      "changed" : false,
+      "elapsedNs" : 36500,
+      "mask" : 0
+    },
+    {
+      "arm" : "doe_c",
+      "changed" : true,
+      "elapsedNs" : 248542,
+      "mask" : 1024
+    },
+    {
+      "arm" : "cpu",
+      "changed" : true,
+      "elapsedNs" : 33459,
+      "mask" : 1024
+    },
+    {
+      "arm" : "dawn",
+      "changed" : true,
+      "elapsedNs" : 255416,
+      "mask" : 1024
+    },
+    {
+      "arm" : "cpu",
+      "changed" : false,
+      "elapsedNs" : 34542,
+      "mask" : 0
+    },
+    {
+      "arm" : "dawn",
+      "changed" : false,
+      "elapsedNs" : 250792,
+      "mask" : 0
+    },
+    {
+      "arm" : "doe_c",
+      "changed" : false,
+      "elapsedNs" : 270000,
+      "mask" : 0
+    },
+    {
+      "arm" : "dawn",
+      "changed" : true,
+      "elapsedNs" : 250709,
+      "mask" : 1024
+    },
+    {
+      "arm" : "doe_c",
+      "changed" : true,
+      "elapsedNs" : 291417,
+      "mask" : 1024
+    },
+    {
+      "arm" : "cpu",
+      "changed" : true,
+      "elapsedNs" : 34166,
+      "mask" : 1024
+    },
+    {
+      "arm" : "doe_c",
+      "changed" : false,
+      "elapsedNs" : 261625,
+      "mask" : 0
+    },
+    {
+      "arm" : "cpu",
+      "changed" : false,
+      "elapsedNs" : 35541,
+      "mask" : 0
+    },
+    {
+      "arm" : "dawn",
+      "changed" : false,
+      "elapsedNs" : 267625,
+      "mask" : 0
+    },
+    {
+      "arm" : "cpu",
+      "changed" : true,
+      "elapsedNs" : 33750,
+      "mask" : 1024
+    },
+    {
+      "arm" : "dawn",
+      "changed" : true,
+      "elapsedNs" : 245125,
+      "mask" : 1024
+    },
+    {
+      "arm" : "doe_c",
+      "changed" : true,
+      "elapsedNs" : 254667,
+      "mask" : 1024
+    },
+    {
+      "arm" : "dawn",
+      "changed" : false,
+      "elapsedNs" : 233875,
+      "mask" : 0
+    },
+    {
+      "arm" : "doe_c",
+      "changed" : false,
+      "elapsedNs" : 267583,
+      "mask" : 0
+    },
+    {
+      "arm" : "cpu",
+      "changed" : false,
+      "elapsedNs" : 32583,
+      "mask" : 0
+    },
+    {
+      "arm" : "doe_c",
+      "changed" : true,
+      "elapsedNs" : 259750,
+      "mask" : 1024
+    },
+    {
+      "arm" : "cpu",
+      "changed" : true,
+      "elapsedNs" : 34708,
+      "mask" : 1024
+    },
+    {
+      "arm" : "dawn",
+      "changed" : true,
+      "elapsedNs" : 256208,
+      "mask" : 1024
+    },
+    {
+      "arm" : "cpu",
+      "changed" : false,
+      "elapsedNs" : 33792,
+      "mask" : 0
+    },
+    {
+      "arm" : "dawn",
+      "changed" : false,
+      "elapsedNs" : 247042,
+      "mask" : 0
+    },
+    {
+      "arm" : "doe_c",
+      "changed" : false,
+      "elapsedNs" : 257250,
+      "mask" : 0
+    },
+    {
+      "arm" : "dawn",
+      "changed" : true,
+      "elapsedNs" : 245209,
+      "mask" : 1024
+    },
+    {
+      "arm" : "doe_c",
+      "changed" : true,
+      "elapsedNs" : 244917,
+      "mask" : 1024
+    },
+    {
+      "arm" : "cpu",
+      "changed" : true,
+      "elapsedNs" : 30625,
+      "mask" : 1024
+    },
+    {
+      "arm" : "doe_c",
+      "changed" : false,
+      "elapsedNs" : 242416,
+      "mask" : 0
+    },
+    {
+      "arm" : "cpu",
+      "changed" : false,
+      "elapsedNs" : 32167,
+      "mask" : 0
+    },
+    {
+      "arm" : "dawn",
+      "changed" : false,
+      "elapsedNs" : 242334,
+      "mask" : 0
+    },
+    {
+      "arm" : "cpu",
+      "changed" : true,
+      "elapsedNs" : 34541,
+      "mask" : 1024
+    },
+    {
+      "arm" : "dawn",
+      "changed" : true,
+      "elapsedNs" : 302042,
+      "mask" : 1024
+    },
+    {
+      "arm" : "doe_c",
+      "changed" : true,
+      "elapsedNs" : 247125,
+      "mask" : 1024
+    },
+    {
+      "arm" : "dawn",
+      "changed" : false,
+      "elapsedNs" : 246125,
+      "mask" : 0
+    },
+    {
+      "arm" : "doe_c",
+      "changed" : false,
+      "elapsedNs" : 322208,
+      "mask" : 0
+    },
+    {
+      "arm" : "cpu",
+      "changed" : false,
+      "elapsedNs" : 35709,
+      "mask" : 0
+    },
+    {
+      "arm" : "doe_c",
+      "changed" : true,
+      "elapsedNs" : 273250,
+      "mask" : 1024
+    },
+    {
+      "arm" : "cpu",
+      "changed" : true,
+      "elapsedNs" : 34542,
+      "mask" : 1024
+    },
+    {
+      "arm" : "dawn",
+      "changed" : true,
+      "elapsedNs" : 252209,
+      "mask" : 1024
+    },
+    {
+      "arm" : "cpu",
+      "changed" : false,
+      "elapsedNs" : 33125,
+      "mask" : 0
+    },
+    {
+      "arm" : "dawn",
+      "changed" : false,
+      "elapsedNs" : 243834,
+      "mask" : 0
+    },
+    {
+      "arm" : "doe_c",
+      "changed" : false,
+      "elapsedNs" : 249625,
+      "mask" : 0
+    },
+    {
+      "arm" : "dawn",
+      "changed" : true,
+      "elapsedNs" : 244584,
+      "mask" : 1024
+    },
+    {
+      "arm" : "doe_c",
+      "changed" : true,
+      "elapsedNs" : 321750,
+      "mask" : 1024
+    },
+    {
+      "arm" : "cpu",
+      "changed" : true,
+      "elapsedNs" : 35000,
+      "mask" : 1024
+    },
+    {
+      "arm" : "doe_c",
+      "changed" : false,
+      "elapsedNs" : 1945542,
+      "mask" : 0
+    },
+    {
+      "arm" : "cpu",
+      "changed" : false,
+      "elapsedNs" : 35292,
+      "mask" : 0
+    },
+    {
+      "arm" : "dawn",
+      "changed" : false,
+      "elapsedNs" : 285833,
+      "mask" : 0
+    },
+    {
+      "arm" : "cpu",
+      "changed" : true,
+      "elapsedNs" : 34584,
+      "mask" : 1024
+    },
+    {
+      "arm" : "dawn",
+      "changed" : true,
+      "elapsedNs" : 239417,
+      "mask" : 1024
+    },
+    {
+      "arm" : "doe_c",
+      "changed" : true,
+      "elapsedNs" : 252250,
+      "mask" : 1024
+    },
+    {
+      "arm" : "dawn",
+      "changed" : false,
+      "elapsedNs" : 235916,
+      "mask" : 0
+    },
+    {
+      "arm" : "doe_c",
+      "changed" : false,
+      "elapsedNs" : 245083,
+      "mask" : 0
+    },
+    {
+      "arm" : "cpu",
+      "changed" : false,
+      "elapsedNs" : 34042,
+      "mask" : 0
+    },
+    {
+      "arm" : "doe_c",
+      "changed" : true,
+      "elapsedNs" : 245625,
+      "mask" : 1024
+    },
+    {
+      "arm" : "cpu",
+      "changed" : true,
+      "elapsedNs" : 31583,
+      "mask" : 1024
+    },
+    {
+      "arm" : "dawn",
+      "changed" : true,
+      "elapsedNs" : 241125,
+      "mask" : 1024
+    },
+    {
+      "arm" : "cpu",
+      "changed" : false,
+      "elapsedNs" : 34833,
+      "mask" : 0
+    },
+    {
+      "arm" : "dawn",
+      "changed" : false,
+      "elapsedNs" : 244875,
+      "mask" : 0
+    },
+    {
+      "arm" : "doe_c",
+      "changed" : false,
+      "elapsedNs" : 250250,
+      "mask" : 0
+    },
+    {
+      "arm" : "dawn",
+      "changed" : true,
+      "elapsedNs" : 243709,
+      "mask" : 1024
+    },
+    {
+      "arm" : "doe_c",
+      "changed" : true,
+      "elapsedNs" : 248458,
+      "mask" : 1024
+    },
+    {
+      "arm" : "cpu",
+      "changed" : true,
+      "elapsedNs" : 32959,
+      "mask" : 1024
+    },
+    {
+      "arm" : "doe_c",
+      "changed" : false,
+      "elapsedNs" : 261291,
+      "mask" : 0
+    },
+    {
+      "arm" : "cpu",
+      "changed" : false,
+      "elapsedNs" : 30417,
+      "mask" : 0
+    },
+    {
+      "arm" : "dawn",
+      "changed" : false,
+      "elapsedNs" : 235625,
+      "mask" : 0
+    },
+    {
+      "arm" : "cpu",
+      "changed" : true,
+      "elapsedNs" : 30583,
+      "mask" : 1024
+    },
+    {
+      "arm" : "dawn",
+      "changed" : true,
+      "elapsedNs" : 248834,
+      "mask" : 1024
+    },
+    {
+      "arm" : "doe_c",
+      "changed" : true,
+      "elapsedNs" : 244791,
+      "mask" : 1024
+    },
+    {
+      "arm" : "dawn",
+      "changed" : false,
+      "elapsedNs" : 255959,
+      "mask" : 0
+    },
+    {
+      "arm" : "doe_c",
+      "changed" : false,
+      "elapsedNs" : 253584,
+      "mask" : 0
+    },
+    {
+      "arm" : "cpu",
+      "changed" : false,
+      "elapsedNs" : 31041,
+      "mask" : 0
+    },
+    {
+      "arm" : "doe_c",
+      "changed" : true,
+      "elapsedNs" : 252416,
+      "mask" : 1024
+    },
+    {
+      "arm" : "cpu",
+      "changed" : true,
+      "elapsedNs" : 32208,
+      "mask" : 1024
+    },
+    {
+      "arm" : "dawn",
+      "changed" : true,
+      "elapsedNs" : 251833,
+      "mask" : 1024
+    },
+    {
+      "arm" : "cpu",
+      "changed" : false,
+      "elapsedNs" : 38791,
+      "mask" : 0
+    },
+    {
+      "arm" : "dawn",
+      "changed" : false,
+      "elapsedNs" : 260250,
+      "mask" : 0
+    },
+    {
+      "arm" : "doe_c",
+      "changed" : false,
+      "elapsedNs" : 260667,
+      "mask" : 0
+    },
+    {
+      "arm" : "dawn",
+      "changed" : true,
+      "elapsedNs" : 255709,
+      "mask" : 1024
+    },
+    {
+      "arm" : "doe_c",
+      "changed" : true,
+      "elapsedNs" : 271334,
+      "mask" : 1024
+    },
+    {
+      "arm" : "cpu",
+      "changed" : true,
+      "elapsedNs" : 41500,
+      "mask" : 1024
+    },
+    {
+      "arm" : "doe_c",
+      "changed" : false,
+      "elapsedNs" : 269833,
+      "mask" : 0
+    },
+    {
+      "arm" : "cpu",
+      "changed" : false,
+      "elapsedNs" : 32167,
+      "mask" : 0
+    },
+    {
+      "arm" : "dawn",
+      "changed" : false,
+      "elapsedNs" : 253667,
+      "mask" : 0
+    },
+    {
+      "arm" : "cpu",
+      "changed" : true,
+      "elapsedNs" : 35541,
+      "mask" : 1024
+    },
+    {
+      "arm" : "dawn",
+      "changed" : true,
+      "elapsedNs" : 249167,
+      "mask" : 1024
+    },
+    {
+      "arm" : "doe_c",
+      "changed" : true,
+      "elapsedNs" : 261084,
+      "mask" : 1024
+    },
+    {
+      "arm" : "dawn",
+      "changed" : false,
+      "elapsedNs" : 253000,
+      "mask" : 0
+    },
+    {
+      "arm" : "doe_c",
+      "changed" : false,
+      "elapsedNs" : 261250,
+      "mask" : 0
+    },
+    {
+      "arm" : "cpu",
+      "changed" : false,
+      "elapsedNs" : 31000,
+      "mask" : 0
+    },
+    {
+      "arm" : "doe_c",
+      "changed" : true,
+      "elapsedNs" : 252584,
+      "mask" : 1024
+    },
+    {
+      "arm" : "cpu",
+      "changed" : true,
+      "elapsedNs" : 32375,
+      "mask" : 1024
+    },
+    {
+      "arm" : "dawn",
+      "changed" : true,
+      "elapsedNs" : 244792,
+      "mask" : 1024
+    },
+    {
+      "arm" : "cpu",
+      "changed" : false,
+      "elapsedNs" : 32708,
+      "mask" : 0
+    },
+    {
+      "arm" : "dawn",
+      "changed" : false,
+      "elapsedNs" : 230459,
+      "mask" : 0
+    },
+    {
+      "arm" : "doe_c",
+      "changed" : false,
+      "elapsedNs" : 245375,
+      "mask" : 0
+    },
+    {
+      "arm" : "dawn",
+      "changed" : true,
+      "elapsedNs" : 231458,
+      "mask" : 1024
+    },
+    {
+      "arm" : "doe_c",
+      "changed" : true,
+      "elapsedNs" : 264292,
+      "mask" : 1024
+    },
+    {
+      "arm" : "cpu",
+      "changed" : true,
+      "elapsedNs" : 31417,
+      "mask" : 1024
+    },
+    {
+      "arm" : "doe_c",
+      "changed" : false,
+      "elapsedNs" : 239000,
+      "mask" : 0
+    },
+    {
+      "arm" : "cpu",
+      "changed" : false,
+      "elapsedNs" : 30958,
+      "mask" : 0
+    },
+    {
+      "arm" : "dawn",
+      "changed" : false,
+      "elapsedNs" : 245667,
+      "mask" : 0
+    },
+    {
+      "arm" : "cpu",
+      "changed" : true,
+      "elapsedNs" : 34000,
+      "mask" : 1024
+    },
+    {
+      "arm" : "dawn",
+      "changed" : true,
+      "elapsedNs" : 252708,
+      "mask" : 1024
+    },
+    {
+      "arm" : "doe_c",
+      "changed" : true,
+      "elapsedNs" : 274167,
+      "mask" : 1024
+    },
+    {
+      "arm" : "dawn",
+      "changed" : false,
+      "elapsedNs" : 248958,
+      "mask" : 0
+    },
+    {
+      "arm" : "doe_c",
+      "changed" : false,
+      "elapsedNs" : 259166,
+      "mask" : 0
+    },
+    {
+      "arm" : "cpu",
+      "changed" : false,
+      "elapsedNs" : 30833,
+      "mask" : 0
+    },
+    {
+      "arm" : "doe_c",
+      "changed" : true,
+      "elapsedNs" : 267083,
+      "mask" : 1024
+    },
+    {
+      "arm" : "cpu",
+      "changed" : true,
+      "elapsedNs" : 33750,
+      "mask" : 1024
+    },
+    {
+      "arm" : "dawn",
+      "changed" : true,
+      "elapsedNs" : 249833,
+      "mask" : 1024
+    },
+    {
+      "arm" : "cpu",
+      "changed" : false,
+      "elapsedNs" : 32125,
+      "mask" : 0
+    },
+    {
+      "arm" : "dawn",
+      "changed" : false,
+      "elapsedNs" : 242500,
+      "mask" : 0
+    },
+    {
+      "arm" : "doe_c",
+      "changed" : false,
+      "elapsedNs" : 315583,
+      "mask" : 0
+    },
+    {
+      "arm" : "dawn",
+      "changed" : true,
+      "elapsedNs" : 246917,
+      "mask" : 1024
+    },
+    {
+      "arm" : "doe_c",
+      "changed" : true,
+      "elapsedNs" : 267417,
+      "mask" : 1024
+    },
+    {
+      "arm" : "cpu",
+      "changed" : true,
+      "elapsedNs" : 35458,
+      "mask" : 1024
+    },
+    {
+      "arm" : "doe_c",
+      "changed" : false,
+      "elapsedNs" : 262084,
+      "mask" : 0
+    },
+    {
+      "arm" : "cpu",
+      "changed" : false,
+      "elapsedNs" : 32667,
+      "mask" : 0
+    },
+    {
+      "arm" : "dawn",
+      "changed" : false,
+      "elapsedNs" : 259167,
+      "mask" : 0
+    },
+    {
+      "arm" : "cpu",
+      "changed" : true,
+      "elapsedNs" : 33000,
+      "mask" : 1024
+    },
+    {
+      "arm" : "dawn",
+      "changed" : true,
+      "elapsedNs" : 256167,
+      "mask" : 1024
+    },
+    {
+      "arm" : "doe_c",
+      "changed" : true,
+      "elapsedNs" : 281167,
+      "mask" : 1024
+    },
+    {
+      "arm" : "dawn",
+      "changed" : false,
+      "elapsedNs" : 242709,
+      "mask" : 0
+    },
+    {
+      "arm" : "doe_c",
+      "changed" : false,
+      "elapsedNs" : 628542,
+      "mask" : 0
+    },
+    {
+      "arm" : "cpu",
+      "changed" : false,
+      "elapsedNs" : 33500,
+      "mask" : 0
+    },
+    {
+      "arm" : "doe_c",
+      "changed" : true,
+      "elapsedNs" : 874208,
+      "mask" : 1024
+    },
+    {
+      "arm" : "cpu",
+      "changed" : true,
+      "elapsedNs" : 34458,
+      "mask" : 1024
+    },
+    {
+      "arm" : "dawn",
+      "changed" : true,
+      "elapsedNs" : 259250,
+      "mask" : 1024
+    },
+    {
+      "arm" : "cpu",
+      "changed" : false,
+      "elapsedNs" : 32000,
+      "mask" : 0
+    },
+    {
+      "arm" : "dawn",
+      "changed" : false,
+      "elapsedNs" : 229667,
+      "mask" : 0
+    },
+    {
+      "arm" : "doe_c",
+      "changed" : false,
+      "elapsedNs" : 248292,
+      "mask" : 0
+    },
+    {
+      "arm" : "dawn",
+      "changed" : true,
+      "elapsedNs" : 244750,
+      "mask" : 1024
+    },
+    {
+      "arm" : "doe_c",
+      "changed" : true,
+      "elapsedNs" : 248833,
+      "mask" : 1024
+    },
+    {
+      "arm" : "cpu",
+      "changed" : true,
+      "elapsedNs" : 30667,
+      "mask" : 1024
+    },
+    {
+      "arm" : "doe_c",
+      "changed" : false,
+      "elapsedNs" : 241750,
+      "mask" : 0
+    },
+    {
+      "arm" : "cpu",
+      "changed" : false,
+      "elapsedNs" : 32542,
+      "mask" : 0
+    },
+    {
+      "arm" : "dawn",
+      "changed" : false,
+      "elapsedNs" : 235167,
+      "mask" : 0
+    },
+    {
+      "arm" : "cpu",
+      "changed" : true,
+      "elapsedNs" : 34250,
+      "mask" : 1024
+    },
+    {
+      "arm" : "dawn",
+      "changed" : true,
+      "elapsedNs" : 238875,
+      "mask" : 1024
+    },
+    {
+      "arm" : "doe_c",
+      "changed" : true,
+      "elapsedNs" : 240958,
+      "mask" : 1024
+    },
+    {
+      "arm" : "dawn",
+      "changed" : false,
+      "elapsedNs" : 233250,
+      "mask" : 0
+    },
+    {
+      "arm" : "doe_c",
+      "changed" : false,
+      "elapsedNs" : 239333,
+      "mask" : 0
+    },
+    {
+      "arm" : "cpu",
+      "changed" : false,
+      "elapsedNs" : 35375,
+      "mask" : 0
+    },
+    {
+      "arm" : "doe_c",
+      "changed" : true,
+      "elapsedNs" : 260875,
+      "mask" : 1024
+    },
+    {
+      "arm" : "cpu",
+      "changed" : true,
+      "elapsedNs" : 36084,
+      "mask" : 1024
+    },
+    {
+      "arm" : "dawn",
+      "changed" : true,
+      "elapsedNs" : 229250,
+      "mask" : 1024
+    }
+  ],
+  "width" : 512,
+  "windowOwned" : true
+}

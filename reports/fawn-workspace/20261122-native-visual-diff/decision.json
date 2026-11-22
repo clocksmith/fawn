@@ -1,0 +1,162 @@
+{
+  "consumer": "clocksmith/deco#81",
+  "status": "diagnostic",
+  "observedDateUTC": "2026-11-22",
+  "platform": "Apple M3 / macOS 26.6.2 (25G83)",
+  "protocol": "8ab6ec0707",
+  "checkedHarness": "3ce7a2cd2359",
+  "fixture": "Completed WindowServer BGRA8 IOSurfaces delivered by ScreenCaptureKit for an owned window. Frozen repeated frames, 16 warmups, then 64 equal and 64 localized mutations.",
+  "scope": "No Chromium Viz mailbox or producer fence was transferred. ScreenCaptureKit completed before comparison. Each GPU arm waited on actual Metal shared events from both WebGPU EndAccess calls.",
+  "copies": {
+    "cpuFullFramesCopiedPerPair": 2,
+    "cpuExplicitBytesPerPair": 1048576,
+    "gpuFullHostFramesCopiedPerPair": 0,
+    "gpuResultReadbacksPerPair": 1,
+    "gpuExplicitMaskBytesPerPair": 4,
+    "driverInternalTransfers": null
+  },
+  "builds": {
+    "calibration": {
+      "doeSource": "4d563b55ad9bce61539a1286c16c10d966973fac",
+      "dawnBinaryCalibration": "4d563b55ad9bce61539a1286c16c10d966973fac",
+      "runtimeAndHeaderHashes": {
+        "libwebgpu_dawn.dylib": "ea81f617e7989e2e35cae46a9600a7c26848ce2e5c36bde195715ce5fc8829a5",
+        "libwebgpu_doe_c.dylib": "1dcecc867a92e76e1344bd804dee78dce628f9a034b4f5464a7cdfb929998969",
+        "libdoe_compiler.dylib": "67ad4d634331b24a4a9538b4992c9b1f5a039c29b5db77cf852c786464cf7165",
+        "webgpu.h": "9a4325200dbc4ff1b17542b2f896f85ade3adee2f95d1c6d355b00a496df782e"
+      },
+      "reportedAdapters": [
+        "native adapter: Apple M3 / Metal driver on macOS Version 26.6.2 (Build 25G83) backend 5, type 2",
+        "native adapter: Apple M3 / Apple M3 backend 5, type 2"
+      ]
+    },
+    "currentDoe": {
+      "doeSource": "b305800cd78e36725d86e2dae0f188e0214e5431",
+      "dawnBinaryCalibration": "4d563b55ad9bce61539a1286c16c10d966973fac",
+      "runtimeAndHeaderHashes": {
+        "libwebgpu_dawn.dylib": "ea81f617e7989e2e35cae46a9600a7c26848ce2e5c36bde195715ce5fc8829a5",
+        "libwebgpu_doe_c.dylib": "d39927f6158c9f56075fbe2e07ca55702fa24b4f63c53ac52bb3bcb60c22e18e",
+        "libdoe_compiler.dylib": "e686512f692b324d415b2888688f34a3bbb23937f8e8f64714eabb2821671582",
+        "webgpu.h": "9a4325200dbc4ff1b17542b2f896f85ade3adee2f95d1c6d355b00a496df782e"
+      },
+      "reportedAdapters": [
+        "native adapter: Apple M3 / Metal driver on macOS Version 26.6.2 (Build 25G83) backend 5, type 2",
+        "native adapter: Apple M3 / Apple M3 backend 5, type 2"
+      ]
+    }
+  },
+  "modelResidentInWorkload": false,
+  "runs": [
+    {
+      "run": "calibration-first",
+      "raw": "calibration-first.json",
+      "sha256": "60e38843fe6bf0fcc5525b4ab3dc7e71fa746ca9e4b461cd01ac9d379d9c36b3",
+      "acquisitionNs": [
+        51288000,
+        21203708,
+        23063375
+      ],
+      "samplesPerArm": 128,
+      "percentilesNs": {
+        "cpu": {
+          "p50": 36541,
+          "p95": 63875,
+          "p99": 110459
+        },
+        "dawn": {
+          "p50": 258125,
+          "p95": 396042,
+          "p99": 762875
+        },
+        "doe_c": {
+          "p50": 258166,
+          "p95": 791250,
+          "p99": 2459708
+        }
+      },
+      "doeThresholdMet": false
+    },
+    {
+      "run": "calibration-repeat",
+      "raw": "calibration-repeat.json",
+      "sha256": "55010e9e4a72ece3d9dbe62bcce760e02b081a84dc898ce9f9862b869fddba0e",
+      "acquisitionNs": [
+        51471083,
+        26527708,
+        33428417
+      ],
+      "samplesPerArm": 128,
+      "percentilesNs": {
+        "cpu": {
+          "p50": 33875,
+          "p95": 38791,
+          "p99": 58292
+        },
+        "dawn": {
+          "p50": 252833,
+          "p95": 424166,
+          "p99": 973875
+        },
+        "doe_c": {
+          "p50": 261542,
+          "p95": 428750,
+          "p99": 874208
+        }
+      },
+      "doeThresholdMet": false
+    },
+    {
+      "run": "current-doe",
+      "raw": "current-doe.json",
+      "sha256": "3fafa13987fb7993e5134317e2079fbd9bf31d9e0e82fac5181420e77905acbb",
+      "acquisitionNs": [
+        58715708,
+        23437083,
+        22950291
+      ],
+      "samplesPerArm": 128,
+      "percentilesNs": {
+        "cpu": {
+          "p50": 33000,
+          "p95": 38792,
+          "p99": 53750
+        },
+        "dawn": {
+          "p50": 241916,
+          "p95": 400333,
+          "p99": 436125
+        },
+        "doe_c": {
+          "p50": 250833,
+          "p95": 405875,
+          "p99": 771958
+        }
+      },
+      "doeThresholdMet": false
+    }
+  ],
+  "chromiumCpu": {
+    "raw": "chromium-cpu.json",
+    "sha256": "58c36afcd32800d3e04a7fbe9d32a521ce3ccba557844aa7ec0f1ee08eef1c3f",
+    "browserSha256": "728f6f7d8e9eb42d483bbefc9e69051e2264908b16a755af4fbdc7e69a49e65f",
+    "version": "Chrome/158.0.8108.0",
+    "samples": 128,
+    "percentilesNs": {
+      "p50": 21172875,
+      "p95": 24074125,
+      "p99": 33639209
+    },
+    "cpuDecodedBytesPerCapture": 524288,
+    "pngBytesPerCapture": [
+      962,
+      1007
+    ],
+    "scope": "Separate end-to-end CDP fromSurface capture/decode + compare against a cached reference. Disposable profile and owned page."
+  },
+  "firstRejectedRun": {
+    "raw": "opaque-window-rejected.json",
+    "sha256": "0b4a3171bf94f97c255763e3e1edebaa67299ac5bd0e0eb192fce491c07fde17",
+    "reason": "The opaque changed frame had byte-level noise outside tile 10. All 32 bits changed; exact oracle rejected it. A transparent background preserved the prescribed single-tile change with no pixel tolerance."
+  },
+  "conclusion": "Both calibration runs and the fresh staged Doe build missed the frozen p95 improvement threshold against CPU and Dawn. No end-to-end product performance claim."
+}

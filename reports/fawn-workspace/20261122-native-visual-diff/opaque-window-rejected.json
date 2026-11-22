@@ -1,0 +1,20 @@
+{
+  "captureNs" : [
+    135374500,
+    30248167,
+    32791625
+  ],
+  "driverTransferCounts" : null,
+  "failures" : {
+    "cpu" : "sample 1 returned mask 4294967295, expected 1024"
+  },
+  "format" : "BGRA8 sRGB",
+  "height" : 256,
+  "modelLoaded" : false,
+  "producer" : "WindowServer via ScreenCaptureKit",
+  "timing" : [
+
+  ],
+  "width" : 512,
+  "windowOwned" : true
+}
