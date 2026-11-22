@@ -1,1467 +1,1536 @@
 {
-  "consumer": "clocksmith/deco#81",
-  "kind": "fawn.reviewed-click-release-receipt/v1",
-  "observedDateUTC": "2026-11-22",
-  "verdict": {
-    "cpuReviewedClicks": "qualified on the tested non-PGO, non-component build for the tested cases",
-    "extensionGate": "The fenced extension meets frozen requirements R1 to R4 on recipients that page-level DOM can identify. It does not identify a recipient inside a closed shadow root.",
-    "forkBuysOnly": [
-      "the actual recipient inside a closed shadow root",
-      "every drawn frame inspected, so a one-frame change closes the review",
-      "no debugger permission or debugging bar",
-      "status of a review without polling screenshots"
-    ],
-    "doe": "not measured: no arm had a hardware GPU or a WebGPU adapter",
-    "pilotChoice": "Owner decision, 2026-11-22: build the DOM-button pilot on the fenced extension in stock Chrome and keep the browser-owned CPU path behind the same workspace interface. This is a pilot choice, not a claim that the extension gives the same guarantee everywhere. Use the extension only where the actual recipient can be verified; if a workflow needs a target it cannot verify, or the debugger warning is unacceptable, use the browser-owned path or leave that action manual. The transient-change refusal is a real difference and is not a pilot requirement without a user need."
-  },
-  "build": {
-    "description": "Linux x86_64, is_component_build=false, is_debug=false, is_official_build=false, chrome_pgo_phase=0, symbol_level=0. Non-component, not official, no profile-guided optimization.",
-    "chromeSha256": "148d641a1545dcd90c68e7e71958a39d2c556d1ef1af2b9c74defbebeb9565ae",
-    "frozenManifestSha256": "efa4f494b7ac9a52cd1598f6448f625366263759817322c73b9c591d68c81f7b",
-    "chromium": "4a6fb385",
-    "patches": {
-      "chromium-reviewed-input.patch": "b0647891d0091875fef456199de65a6c399b190d74105f8ff3b87ad22401e645",
-      "chromium-doe-runtime.patch": "bcf41516f4647e19e67971e024cc1213d462d629de626d98186a380746758f37"
-    },
-    "sourceIdentity": "Each of the 72 touched Chromium files in the build overlay equals pinned Chromium plus chromium-doe-runtime.patch plus chromium-reviewed-input.patch, checked file by file before the build started."
-  },
-  "compositingPerArm": {
-    "cpu": {
-      "gpuCompositing": "disabled_software",
-      "webgpu": "unavailable_software",
-      "doeLibraryMapped": false
-    },
-    "dawn": {
-      "gpuCompositing": "enabled",
-      "webgpu": "unavailable_software",
-      "doeLibraryMapped": false
-    },
-    "doe": {
-      "gpuCompositing": "disabled_software",
-      "webgpu": "disabled_off",
-      "doeLibraryMapped": "unknown"
-    }
-  },
-  "compositingNote": "cpu: Viz software compositing. dawn: SwiftShader GL, a software stand-in for a GPU. doe: --gpu-sandbox-start-early keeps SwiftShader GL from starting, so it composites in software. No arm used a hardware GPU or obtained a WebGPU adapter. On the release binary the harness could not read the GPU process's library map in the doe arm, so whether Doe was mapped there is recorded as unknown.",
-  "reviewedClickCases": {
-    "cpu": {
-      "passed": true,
-      "cases": "22/22",
-      "unrelatedAnimation": {
-        "none": "20/20",
-        "compositor": "20/20",
-        "main-thread": "20/20",
-        "raf-canvas": "20/20"
-      },
-      "refusedCaptures": 0,
-      "staleClicksInCasesBuiltToRefuse": 9,
-      "admittedThenCancelledInCasesBuiltToCancel": 8
-    },
-    "dawn": {
-      "passed": true,
-      "cases": "22/22",
-      "unrelatedAnimation": {
-        "none": "20/20",
-        "compositor": "20/20",
-        "main-thread": "20/20",
-        "raf-canvas": "20/20"
-      },
-      "refusedCaptures": 0,
-      "staleClicksInCasesBuiltToRefuse": 9,
-      "admittedThenCancelledInCasesBuiltToCancel": 8
-    },
-    "doe": {
-      "passed": true,
-      "cases": "22/22",
-      "unrelatedAnimation": {
-        "none": "20/20",
-        "compositor": "20/20",
-        "main-thread": "20/20",
-        "raf-canvas": "20/20"
-      },
-      "refusedCaptures": 0,
-      "staleClicksInCasesBuiltToRefuse": 9,
-      "admittedThenCancelledInCasesBuiltToCancel": 8
-    }
-  },
-  "loadTest": {
-    "cpu": {
-      "compositing": "disabled_software",
-      "attempts": 300,
-      "delivered": 300,
-      "refusals": {
-        "capture": 0,
-        "staleClick": 0,
-        "admittedThenCancelled": 0
-      },
-      "clickMs": {
-        "p50": 17.04,
-        "p90": 20.18,
-        "p99": 22.0,
-        "max": 22.89
-      },
-      "captureMsP99": 18.73,
-      "phasesMsP99": {
-        "validatedToAdmission": 0.06,
-        "admissionToVerdict": 2.23,
-        "verdictToDelivery": 4.29
-      },
-      "fpsIdleVsReviewOpen": [
-        60,
-        60
-      ],
-      "longFramesIdleVsReviewOpen": [
-        0,
-        0
-      ],
-      "gpuProcessRssMiB": [
-        93,
-        97,
-        99
-      ],
-      "vizVerificationCopies": 901
-    },
-    "dawn": {
-      "compositing": "enabled",
-      "attempts": 300,
-      "delivered": 300,
-      "refusals": {
-        "capture": 0,
-        "staleClick": 0,
-        "admittedThenCancelled": 0
-      },
-      "clickMs": {
-        "p50": 34.12,
-        "p90": 36.45,
-        "p99": 38.12,
-        "max": 38.7
-      },
-      "captureMsP99": 17.51,
-      "phasesMsP99": {
-        "validatedToAdmission": 0.05,
-        "admissionToVerdict": 19.08,
-        "verdictToDelivery": 3.99
-      },
-      "fpsIdleVsReviewOpen": [
-        60,
-        60
-      ],
-      "longFramesIdleVsReviewOpen": [
-        0,
-        0
-      ],
-      "gpuProcessRssMiB": [
-        127,
-        127,
-        129
-      ],
-      "vizVerificationCopies": 1179
-    },
-    "doe": {
-      "compositing": "disabled_software",
-      "attempts": 300,
-      "delivered": 300,
-      "refusals": {
-        "capture": 0,
-        "staleClick": 0,
-        "admittedThenCancelled": 0
-      },
-      "clickMs": {
-        "p50": 34.37,
-        "p90": 36.63,
-        "p99": 38.38,
-        "max": 38.52
-      },
-      "captureMsP99": 17.49,
-      "phasesMsP99": {
-        "validatedToAdmission": 0.09,
-        "admissionToVerdict": 2.23,
-        "verdictToDelivery": 4.21
-      },
-      "fpsIdleVsReviewOpen": [
-        60,
-        60
-      ],
-      "longFramesIdleVsReviewOpen": [
-        0,
-        0
-      ],
-      "gpuProcessRssMiB": [
-        139,
-        145,
-        147
-      ],
-      "vizVerificationCopies": 1203
-    }
-  },
-  "loadTestNote": "300 clicks per arm with compositor, main-thread and canvas animation outside the reviewed rectangle and 4 ms of main-thread work every 16 ms. The doe arm composites in software like cpu but measured a frame slower end to end; not investigated.",
-  "workspaceAndInbox": {
-    "compositing": "software in both runtime modes: probed with the same launcher under the same virtual display. The workspace's own launch flags were not captured.",
-    "workspace": {
-      "dawn": {
-        "runs": 25,
-        "passed": 25,
-        "captureRefusalsRecovered": 25,
-        "staleSiteAttempts": 0,
-        "freshWrites": 25
-      },
-      "doe": {
-        "runs": 25,
-        "passed": 25,
-        "captureRefusalsRecovered": 25,
-        "staleSiteAttempts": 0,
-        "freshWrites": 25
-      }
-    },
-    "inbox": {
-      "dawn": {
-        "runs": 25,
-        "passed": 25,
-        "failedCaptures": 0,
-        "staleApprovals": 25,
-        "refusedFinishes": 50,
-        "unsafeDeliveries": 0,
-        "declinedNavigations": 0,
-        "browserDeliveries": 75,
-        "applicationCommits": 75,
-        "applicationAttempts": 75,
-        "reviewedAgain": 50,
-        "msToAuthorizedOutcome": {
-          "unrelated-motion-holds-across-handoff": {
-            "min": 2851,
-            "median": 2923,
-            "max": 2972
-          },
-          "revised-amount-needs-fresh-look": {
-            "min": 1661,
-            "median": 1737,
-            "max": 1758
-          },
-          "lookalike-target-swap-cancelled": {
-            "min": 1461,
-            "median": 1482,
-            "max": 1551
-          }
-        }
-      },
-      "doe": {
-        "runs": 25,
-        "passed": 25,
-        "failedCaptures": 0,
-        "staleApprovals": 25,
-        "refusedFinishes": 50,
-        "unsafeDeliveries": 0,
-        "declinedNavigations": 0,
-        "browserDeliveries": 75,
-        "applicationCommits": 75,
-        "applicationAttempts": 75,
-        "reviewedAgain": 50,
-        "msToAuthorizedOutcome": {
-          "unrelated-motion-holds-across-handoff": {
-            "min": 2856,
-            "median": 2919,
-            "max": 2981
-          },
-          "revised-amount-needs-fresh-look": {
-            "min": 1666,
-            "median": 1692,
-            "max": 1784
-          },
-          "lookalike-target-swap-cancelled": {
-            "min": 1464,
-            "median": 1487,
-            "max": 1560
-          }
-        }
-      }
-    },
-    "inboxFirstRun": {
-      "result": {
-        "dawn": {
-          "passed": 22,
-          "stale page after a declined navigation the test ignored": 3
-        },
-        "doe": {
-          "passed": 22,
-          "stale page after a declined navigation the test ignored": 3
-        }
-      },
-      "cause": "After a click that makes the page change itself, the workspace declined the next navigate as stale and returned a not-dispatched record. The test ignored that record and continued on the previous invoice's page; the scripted reviewers approved the image they were shown. Every click went to the control whose pixels were captured and approved, and the application refused the write on its version check. The test now checks the navigate result and that the proposer is on the requested invoice."
-    },
-    "countsKeptApart": "browserDeliveries are trusted clicks the page received; applicationCommits are writes the application accepted; refusedFinishes and staleApprovals are from flows built to refuse; failedCaptures and unsafeDeliveries are zero."
-  },
-  "extensionGate": {
-    "criteria": "extension-gate-criteria.json, committed at f967f2f0b9 before any controlled-ordering result",
-    "harnessChangesAfterFreeze": [
-      "extension-control/background.js: the pause handle was cleared before the harness released it; all three extension arms stopped on the first paused case. Fixed; the browser-owned arm had already completed and was not rerun.",
-      "reviewed-click-extension-control.mjs: the two one-frame cases reverted the change before any frame was painted (the browser-owned path reported 'holds' in 10 of 10). Changed to hold the change for one painted frame and reran those two cases on all four implementations (oneframe-*.json). The first, invalid results remain in forced-*.json."
-    ],
-    "requirements": {
-      "fawn": {
-        "R1": true,
-        "R2": true,
-        "R3": true,
-        "R4": true
-      },
-      "extension-trusted": {
-        "R1": true,
-        "R2": true,
-        "R3": true,
-        "R4": true
-      },
-      "extension-fenced": {
-        "R1": true,
-        "R2": true,
-        "R3": true,
-        "R4": true
-      },
-      "extension-atomic": {
-        "R1": true,
-        "R2": true,
-        "R3": true,
-        "R4": false
-      }
-    },
-    "controlledOrdering": {
-      "unchanged-control": {
-        "fawn": {
-          "delivered": 10,
-          "deliveredToReviewedTarget": 10,
-          "deliveredToLookalike": 0,
-          "deliveredWhileChangedPixelsShowing": 0,
-          "applicationCommits": 10,
-          "commitsByLookalike": 0,
-          "observedAs": {
-            "admitted:delivered": 10
-          }
-        },
-        "extension-trusted": {
-          "delivered": 10,
-          "deliveredToReviewedTarget": 10,
-          "deliveredToLookalike": 0,
-          "deliveredWhileChangedPixelsShowing": 0,
-          "applicationCommits": 10,
-          "commitsByLookalike": 0,
-          "observedAs": {
-            "delivered": 10
-          }
-        },
-        "extension-fenced": {
-          "delivered": 10,
-          "deliveredToReviewedTarget": 10,
-          "deliveredToLookalike": 0,
-          "deliveredWhileChangedPixelsShowing": 0,
-          "applicationCommits": 10,
-          "commitsByLookalike": 0,
-          "observedAs": {
-            "delivered": 10
-          }
-        },
-        "extension-atomic": {
-          "delivered": 10,
-          "deliveredToReviewedTarget": 10,
-          "deliveredToLookalike": 0,
-          "deliveredWhileChangedPixelsShowing": 0,
-          "applicationCommits": 10,
-          "commitsByLookalike": 0,
-          "observedAs": {
-            "delivered": 10
-          }
-        }
-      },
-      "unchanged-control-paused-after-final-check": {
-        "fawn": {
-          "delivered": 10,
-          "deliveredToReviewedTarget": 10,
-          "deliveredToLookalike": 0,
-          "deliveredWhileChangedPixelsShowing": 0,
-          "applicationCommits": 10,
-          "commitsByLookalike": 0,
-          "observedAs": {
-            "admitted:delivered": 10
-          }
-        },
-        "extension-trusted": {
-          "delivered": 10,
-          "deliveredToReviewedTarget": 10,
-          "deliveredToLookalike": 0,
-          "deliveredWhileChangedPixelsShowing": 0,
-          "applicationCommits": 10,
-          "commitsByLookalike": 0,
-          "observedAs": {
-            "delivered": 10
-          }
-        },
-        "extension-fenced": {
-          "delivered": 10,
-          "deliveredToReviewedTarget": 10,
-          "deliveredToLookalike": 0,
-          "deliveredWhileChangedPixelsShowing": 0,
-          "applicationCommits": 10,
-          "commitsByLookalike": 0,
-          "observedAs": {
-            "delivered": 10
-          }
-        },
-        "extension-atomic": {
-          "delivered": 10,
-          "deliveredToReviewedTarget": 10,
-          "deliveredToLookalike": 0,
-          "deliveredWhileChangedPixelsShowing": 0,
-          "applicationCommits": 10,
-          "commitsByLookalike": 0,
-          "observedAs": {
-            "delivered": 10
-          }
-        }
-      },
-      "pixels-changed-and-still-showing-before-click": {
-        "fawn": {
-          "delivered": 0,
-          "deliveredToReviewedTarget": 0,
-          "deliveredToLookalike": 0,
-          "deliveredWhileChangedPixelsShowing": 0,
-          "applicationCommits": 0,
-          "commitsByLookalike": 0,
-          "observedAs": {
-            "not-admitted:stale-compositor-revision": 10
-          }
-        },
-        "extension-trusted": {
-          "delivered": 0,
-          "deliveredToReviewedTarget": 0,
-          "deliveredToLookalike": 0,
-          "deliveredWhileChangedPixelsShowing": 0,
-          "applicationCommits": 0,
-          "commitsByLookalike": 0,
-          "observedAs": {
-            "stale-pixels": 10
-          }
-        },
-        "extension-fenced": {
-          "delivered": 0,
-          "deliveredToReviewedTarget": 0,
-          "deliveredToLookalike": 0,
-          "deliveredWhileChangedPixelsShowing": 0,
-          "applicationCommits": 0,
-          "commitsByLookalike": 0,
-          "observedAs": {
-            "stale-pixels": 10
-          }
-        },
-        "extension-atomic": {
-          "delivered": 0,
-          "deliveredToReviewedTarget": 0,
-          "deliveredToLookalike": 0,
-          "deliveredWhileChangedPixelsShowing": 0,
-          "applicationCommits": 0,
-          "commitsByLookalike": 0,
-          "observedAs": {
-            "stale-pixels": 10
-          }
-        }
-      },
-      "pixels-changed-after-final-check": {
-        "fawn": {
-          "delivered": 10,
-          "deliveredToReviewedTarget": 10,
-          "deliveredToLookalike": 0,
-          "deliveredWhileChangedPixelsShowing": 10,
-          "applicationCommits": 10,
-          "commitsByLookalike": 0,
-          "observedAs": {
-            "admitted:delivered": 10
-          }
-        },
-        "extension-trusted": {
-          "delivered": 10,
-          "deliveredToReviewedTarget": 10,
-          "deliveredToLookalike": 0,
-          "deliveredWhileChangedPixelsShowing": 10,
-          "applicationCommits": 10,
-          "commitsByLookalike": 0,
-          "observedAs": {
-            "delivered": 10
-          }
-        },
-        "extension-fenced": {
-          "delivered": 10,
-          "deliveredToReviewedTarget": 10,
-          "deliveredToLookalike": 0,
-          "deliveredWhileChangedPixelsShowing": 10,
-          "applicationCommits": 10,
-          "commitsByLookalike": 0,
-          "observedAs": {
-            "delivered": 10
-          }
-        },
-        "extension-atomic": {
-          "delivered": 10,
-          "deliveredToReviewedTarget": 10,
-          "deliveredToLookalike": 0,
-          "deliveredWhileChangedPixelsShowing": 10,
-          "applicationCommits": 10,
-          "commitsByLookalike": 0,
-          "observedAs": {
-            "delivered": 10
-          }
-        }
-      },
-      "target-swapped-after-final-check": {
-        "fawn": {
-          "delivered": 0,
-          "deliveredToReviewedTarget": 0,
-          "deliveredToLookalike": 0,
-          "deliveredWhileChangedPixelsShowing": 0,
-          "applicationCommits": 0,
-          "commitsByLookalike": 0,
-          "observedAs": {
-            "admitted:target-changed": 10
-          }
-        },
-        "extension-trusted": {
-          "delivered": 0,
-          "deliveredToReviewedTarget": 0,
-          "deliveredToLookalike": 0,
-          "deliveredWhileChangedPixelsShowing": 0,
-          "applicationCommits": 0,
-          "commitsByLookalike": 0,
-          "observedAs": {
-            "target-changed": 10
-          }
-        },
-        "extension-fenced": {
-          "delivered": 0,
-          "deliveredToReviewedTarget": 0,
-          "deliveredToLookalike": 0,
-          "deliveredWhileChangedPixelsShowing": 0,
-          "applicationCommits": 0,
-          "commitsByLookalike": 0,
-          "observedAs": {
-            "target-changed": 10
-          }
-        },
-        "extension-atomic": {
-          "delivered": 0,
-          "deliveredToReviewedTarget": 0,
-          "deliveredToLookalike": 0,
-          "deliveredWhileChangedPixelsShowing": 0,
-          "applicationCommits": 0,
-          "commitsByLookalike": 0,
-          "observedAs": {
-            "target-changed": 10
-          }
-        }
-      },
-      "closed-shadow-unchanged-control-paused-after-final-check": {
-        "fawn": {
-          "delivered": 10,
-          "deliveredToReviewedTarget": 10,
-          "deliveredToLookalike": 0,
-          "deliveredWhileChangedPixelsShowing": 0,
-          "applicationCommits": 10,
-          "commitsByLookalike": 0,
-          "observedAs": {
-            "admitted:delivered": 10
-          }
-        },
-        "extension-trusted": {
-          "delivered": 10,
-          "deliveredToReviewedTarget": 10,
-          "deliveredToLookalike": 0,
-          "deliveredWhileChangedPixelsShowing": 0,
-          "applicationCommits": 10,
-          "commitsByLookalike": 0,
-          "observedAs": {
-            "delivered": 10
-          }
-        },
-        "extension-fenced": {
-          "delivered": 10,
-          "deliveredToReviewedTarget": 10,
-          "deliveredToLookalike": 0,
-          "deliveredWhileChangedPixelsShowing": 0,
-          "applicationCommits": 10,
-          "commitsByLookalike": 0,
-          "observedAs": {
-            "delivered": 10
-          }
-        },
-        "extension-atomic": {
-          "delivered": 0,
-          "deliveredToReviewedTarget": 0,
-          "deliveredToLookalike": 0,
-          "deliveredWhileChangedPixelsShowing": 0,
-          "applicationCommits": 0,
-          "commitsByLookalike": 0,
-          "observedAs": {
-            "delivered": 10
-          }
-        }
-      },
-      "closed-shadow-target-swapped-after-final-check": {
-        "fawn": {
-          "delivered": 0,
-          "deliveredToReviewedTarget": 0,
-          "deliveredToLookalike": 0,
-          "deliveredWhileChangedPixelsShowing": 0,
-          "applicationCommits": 0,
-          "commitsByLookalike": 0,
-          "observedAs": {
-            "admitted:target-changed": 10
-          }
-        },
-        "extension-trusted": {
-          "delivered": 10,
-          "deliveredToReviewedTarget": 0,
-          "deliveredToLookalike": 10,
-          "deliveredWhileChangedPixelsShowing": 0,
-          "applicationCommits": 10,
-          "commitsByLookalike": 10,
-          "observedAs": {
-            "delivered": 10
-          }
-        },
-        "extension-fenced": {
-          "delivered": 10,
-          "deliveredToReviewedTarget": 0,
-          "deliveredToLookalike": 10,
-          "deliveredWhileChangedPixelsShowing": 0,
-          "applicationCommits": 10,
-          "commitsByLookalike": 10,
-          "observedAs": {
-            "delivered": 10
-          }
-        },
-        "extension-atomic": {
-          "delivered": 0,
-          "deliveredToReviewedTarget": 0,
-          "deliveredToLookalike": 0,
-          "deliveredWhileChangedPixelsShowing": 0,
-          "applicationCommits": 0,
-          "commitsByLookalike": 0,
-          "observedAs": {
-            "delivered": 10
-          }
-        }
-      }
-    },
-    "oneFrameCasesCorrected": {
-      "one-frame-pixel-change-reverted-before-click": {
-        "fawn": {
-          "delivered": 0,
-          "deliveredToReviewedTarget": 0,
-          "deliveredToLookalike": 0,
-          "deliveredWhileChangedPixelsShowing": 0,
-          "applicationCommits": 0,
-          "commitsByLookalike": 0,
-          "observedAs": {
-            "not-admitted:stale-compositor-revision": 10
-          }
-        },
-        "extension-trusted": {
-          "delivered": 10,
-          "deliveredToReviewedTarget": 10,
-          "deliveredToLookalike": 0,
-          "deliveredWhileChangedPixelsShowing": 0,
-          "applicationCommits": 10,
-          "commitsByLookalike": 0,
-          "observedAs": {
-            "delivered": 10
-          }
-        },
-        "extension-fenced": {
-          "delivered": 10,
-          "deliveredToReviewedTarget": 10,
-          "deliveredToLookalike": 0,
-          "deliveredWhileChangedPixelsShowing": 0,
-          "applicationCommits": 10,
-          "commitsByLookalike": 0,
-          "observedAs": {
-            "delivered": 10
-          }
-        },
-        "extension-atomic": {
-          "delivered": 10,
-          "deliveredToReviewedTarget": 10,
-          "deliveredToLookalike": 0,
-          "deliveredWhileChangedPixelsShowing": 0,
-          "applicationCommits": 10,
-          "commitsByLookalike": 0,
-          "observedAs": {
-            "delivered": 10
-          }
-        }
-      },
-      "one-frame-target-swap-removed-after-final-check": {
-        "fawn": {
-          "delivered": 10,
-          "deliveredToReviewedTarget": 10,
-          "deliveredToLookalike": 0,
-          "deliveredWhileChangedPixelsShowing": 0,
-          "applicationCommits": 10,
-          "commitsByLookalike": 0,
-          "observedAs": {
-            "admitted:delivered": 10
-          }
-        },
-        "extension-trusted": {
-          "delivered": 10,
-          "deliveredToReviewedTarget": 10,
-          "deliveredToLookalike": 0,
-          "deliveredWhileChangedPixelsShowing": 0,
-          "applicationCommits": 10,
-          "commitsByLookalike": 0,
-          "observedAs": {
-            "delivered": 10
-          }
-        },
-        "extension-fenced": {
-          "delivered": 10,
-          "deliveredToReviewedTarget": 10,
-          "deliveredToLookalike": 0,
-          "deliveredWhileChangedPixelsShowing": 0,
-          "applicationCommits": 10,
-          "commitsByLookalike": 0,
-          "observedAs": {
-            "delivered": 10
-          }
-        },
-        "extension-atomic": {
-          "delivered": 10,
-          "deliveredToReviewedTarget": 10,
-          "deliveredToLookalike": 0,
-          "deliveredWhileChangedPixelsShowing": 0,
-          "applicationCommits": 10,
-          "commitsByLookalike": 0,
-          "observedAs": {
-            "delivered": 10
-          }
-        }
-      }
-    },
-    "extensionBindsAt": {
-      "canvasControl": "canvas#approve",
-      "closedShadowControl": "div#widget"
-    },
-    "randomTiming": {
-      "fawn-w150": {
-        "none": {
-          "trials": 300,
-          "delivered": 300,
-          "unsafe": 0,
-          "deliveredToLookalike": 0,
-          "deliveredAfterChangedFrame": 0,
-          "untrustedDeliveries": 0,
-          "refused": {}
-        },
-        "pixels": {
-          "trials": 300,
-          "delivered": 276,
-          "unsafe": 0,
-          "deliveredToLookalike": 0,
-          "deliveredAfterChangedFrame": 0,
-          "untrustedDeliveries": 0,
-          "refused": {
-            "stale-compositor-revision": 24
-          }
-        },
-        "target": {
-          "trials": 300,
-          "delivered": 275,
-          "unsafe": 0,
-          "deliveredToLookalike": 0,
-          "deliveredAfterChangedFrame": 0,
-          "untrustedDeliveries": 0,
-          "refused": {
-            "target-changed": 25
-          }
-        }
-      },
-      "extension-trusted-w150": {
-        "none": {
-          "trials": 300,
-          "delivered": 300,
-          "unsafe": 0,
-          "deliveredToLookalike": 0,
-          "deliveredAfterChangedFrame": 0,
-          "untrustedDeliveries": 0,
-          "refused": {}
-        },
-        "pixels": {
-          "trials": 300,
-          "delivered": 243,
-          "unsafe": 0,
-          "deliveredToLookalike": 0,
-          "deliveredAfterChangedFrame": 0,
-          "untrustedDeliveries": 0,
-          "refused": {
-            "stale-pixels": 57
-          }
-        },
-        "target": {
-          "trials": 300,
-          "delivered": 236,
-          "unsafe": 0,
-          "deliveredToLookalike": 0,
-          "deliveredAfterChangedFrame": 0,
-          "untrustedDeliveries": 0,
-          "refused": {
-            "target-changed": 64
-          }
-        }
-      },
-      "extension-atomic-w150": {
-        "none": {
-          "trials": 300,
-          "delivered": 300,
-          "unsafe": 0,
-          "deliveredToLookalike": 0,
-          "deliveredAfterChangedFrame": 0,
-          "untrustedDeliveries": 300,
-          "refused": {}
-        },
-        "pixels": {
-          "trials": 300,
-          "delivered": 235,
-          "unsafe": 0,
-          "deliveredToLookalike": 0,
-          "deliveredAfterChangedFrame": 0,
-          "untrustedDeliveries": 235,
-          "refused": {
-            "stale-pixels": 65
-          }
-        },
-        "target": {
-          "trials": 300,
-          "delivered": 238,
-          "unsafe": 0,
-          "deliveredToLookalike": 0,
-          "deliveredAfterChangedFrame": 0,
-          "untrustedDeliveries": 238,
-          "refused": {
-            "target-changed": 62
-          }
-        }
-      },
-      "fawn-w40": {
-        "none": {
-          "trials": 300,
-          "delivered": 300,
-          "unsafe": 0,
-          "deliveredToLookalike": 0,
-          "deliveredAfterChangedFrame": 0,
-          "untrustedDeliveries": 0,
-          "refused": {}
-        },
-        "pixels": {
-          "trials": 300,
-          "delivered": 221,
-          "unsafe": 0,
-          "deliveredToLookalike": 0,
-          "deliveredAfterChangedFrame": 0,
-          "untrustedDeliveries": 0,
-          "refused": {
-            "stale-compositor-revision": 79
-          }
-        },
-        "target": {
-          "trials": 300,
-          "delivered": 176,
-          "unsafe": 0,
-          "deliveredToLookalike": 0,
-          "deliveredAfterChangedFrame": 0,
-          "untrustedDeliveries": 0,
-          "refused": {
-            "target-changed": 124
-          }
-        }
-      },
-      "extension-trusted-w40": {
-        "none": {
-          "trials": 300,
-          "delivered": 300,
-          "unsafe": 0,
-          "deliveredToLookalike": 0,
-          "deliveredAfterChangedFrame": 0,
-          "untrustedDeliveries": 0,
-          "refused": {}
-        },
-        "pixels": {
-          "trials": 300,
-          "delivered": 74,
-          "unsafe": 0,
-          "deliveredToLookalike": 0,
-          "deliveredAfterChangedFrame": 0,
-          "untrustedDeliveries": 0,
-          "refused": {
-            "stale-pixels": 226
-          }
-        },
-        "target": {
-          "trials": 300,
-          "delivered": 64,
-          "unsafe": 9,
-          "deliveredToLookalike": 9,
-          "deliveredAfterChangedFrame": 0,
-          "untrustedDeliveries": 0,
-          "refused": {
-            "target-changed": 236
-          }
-        }
-      },
-      "extension-atomic-w40": {
-        "none": {
-          "trials": 300,
-          "delivered": 300,
-          "unsafe": 0,
-          "deliveredToLookalike": 0,
-          "deliveredAfterChangedFrame": 0,
-          "untrustedDeliveries": 300,
-          "refused": {}
-        },
-        "pixels": {
-          "trials": 300,
-          "delivered": 87,
-          "unsafe": 0,
-          "deliveredToLookalike": 0,
-          "deliveredAfterChangedFrame": 0,
-          "untrustedDeliveries": 87,
-          "refused": {
-            "stale-pixels": 213
-          }
-        },
-        "target": {
-          "trials": 300,
-          "delivered": 62,
-          "unsafe": 0,
-          "deliveredToLookalike": 0,
-          "deliveredAfterChangedFrame": 0,
-          "untrustedDeliveries": 62,
-          "refused": {
-            "target-changed": 238
-          }
-        }
-      },
-      "extension-fenced-w40": {
-        "none": {
-          "trials": 300,
-          "delivered": 300,
-          "unsafe": 0,
-          "deliveredToLookalike": 0,
-          "deliveredAfterChangedFrame": 0,
-          "untrustedDeliveries": 0,
-          "refused": {}
-        },
-        "pixels": {
-          "trials": 300,
-          "delivered": 86,
-          "unsafe": 0,
-          "deliveredToLookalike": 0,
-          "deliveredAfterChangedFrame": 0,
-          "untrustedDeliveries": 0,
-          "refused": {
-            "stale-pixels": 214
-          }
-        },
-        "target": {
-          "trials": 300,
-          "delivered": 51,
-          "unsafe": 0,
-          "deliveredToLookalike": 0,
-          "deliveredAfterChangedFrame": 0,
-          "untrustedDeliveries": 0,
-          "refused": {
-            "target-changed": 249
-          }
-        }
-      }
-    },
-    "findings": [
-      "Fenced extension: R1 to R4 pass in every trial, and zero unsafe deliveries in 300 tuned-timing trials per attack.",
-      "Plain trusted extension: passes the controlled cases, but its target check and its click are separate steps; under tuned timing 9 of 300 clicks reached the look-alike.",
-      "In-page extension: fails R4 by construction (synthetic click). It cannot click a button inside a closed shadow root and still reports 'delivered'.",
-      "Pixels changed after the final check: all four implementations deliver and the application commits the changed amount. Only the application's version check can catch this.",
-      "Closed shadow root: the extension binds the host element. With a swap inside the component, the browser-owned path refused 10 of 10; both trusted extension modes delivered to the look-alike 10 of 10 and reported success.",
-      "One-frame pixel change that reverts: the browser-owned path refused 10 of 10; every extension mode delivered 10 of 10. Recorded as a differentiator, not a requirement.",
-      "The extension needs the debugger permission and shows the browser's debugging bar."
-    ],
-    "replayOnFinalHarness": {
-      "why": "One consistent run of every controlled case on all four implementations after the two post-freeze harness corrections. This table is the one to cite; forced-*.json and oneframe-*.json are the earlier partial runs.",
-      "harnessSha256": "3fb21ef0eca55a8f06402c01c1c829f1c0f5aa19311095e4d6a973de2e9e5236",
-      "extensionBackgroundSha256": "0b4762c900677a79ae70b4dc3829561aba220a7a3e0bea9329fbd7a4f04115be",
-      "extensionFenceSha256": "035b87102bf3906ce59e67b1501c4be621badd94cb06c787e795baaeab88cfa4",
-      "trialsPerCase": 10,
-      "cases": {
-        "unchanged-control": {
-          "fawn": {
-            "delivered": 10,
-            "deliveredToReviewedTarget": 10,
-            "deliveredToLookalike": 0,
-            "deliveredWhileChangedPixelsShowing": 0,
-            "untrustedDeliveries": 0,
-            "applicationCommits": 10,
-            "commitsByLookalike": 0,
-            "observedAs": {
-              "admitted:delivered": 10
-            }
-          },
-          "extension-trusted": {
-            "delivered": 10,
-            "deliveredToReviewedTarget": 10,
-            "deliveredToLookalike": 0,
-            "deliveredWhileChangedPixelsShowing": 0,
-            "untrustedDeliveries": 0,
-            "applicationCommits": 10,
-            "commitsByLookalike": 0,
-            "observedAs": {
-              "delivered": 10
-            }
-          },
-          "extension-fenced": {
-            "delivered": 10,
-            "deliveredToReviewedTarget": 10,
-            "deliveredToLookalike": 0,
-            "deliveredWhileChangedPixelsShowing": 0,
-            "untrustedDeliveries": 0,
-            "applicationCommits": 10,
-            "commitsByLookalike": 0,
-            "observedAs": {
-              "delivered": 10
-            }
-          },
-          "extension-atomic": {
-            "delivered": 10,
-            "deliveredToReviewedTarget": 10,
-            "deliveredToLookalike": 0,
-            "deliveredWhileChangedPixelsShowing": 0,
-            "untrustedDeliveries": 10,
-            "applicationCommits": 10,
-            "commitsByLookalike": 0,
-            "observedAs": {
-              "delivered": 10
-            }
-          }
-        },
-        "unchanged-control-paused-after-final-check": {
-          "fawn": {
-            "delivered": 10,
-            "deliveredToReviewedTarget": 10,
-            "deliveredToLookalike": 0,
-            "deliveredWhileChangedPixelsShowing": 0,
-            "untrustedDeliveries": 0,
-            "applicationCommits": 10,
-            "commitsByLookalike": 0,
-            "observedAs": {
-              "admitted:delivered": 10
-            }
-          },
-          "extension-trusted": {
-            "delivered": 10,
-            "deliveredToReviewedTarget": 10,
-            "deliveredToLookalike": 0,
-            "deliveredWhileChangedPixelsShowing": 0,
-            "untrustedDeliveries": 0,
-            "applicationCommits": 10,
-            "commitsByLookalike": 0,
-            "observedAs": {
-              "delivered": 10
-            }
-          },
-          "extension-fenced": {
-            "delivered": 10,
-            "deliveredToReviewedTarget": 10,
-            "deliveredToLookalike": 0,
-            "deliveredWhileChangedPixelsShowing": 0,
-            "untrustedDeliveries": 0,
-            "applicationCommits": 10,
-            "commitsByLookalike": 0,
-            "observedAs": {
-              "delivered": 10
-            }
-          },
-          "extension-atomic": {
-            "delivered": 10,
-            "deliveredToReviewedTarget": 10,
-            "deliveredToLookalike": 0,
-            "deliveredWhileChangedPixelsShowing": 0,
-            "untrustedDeliveries": 10,
-            "applicationCommits": 10,
-            "commitsByLookalike": 0,
-            "observedAs": {
-              "delivered": 10
-            }
-          }
-        },
-        "pixels-changed-and-still-showing-before-click": {
-          "fawn": {
-            "delivered": 0,
-            "deliveredToReviewedTarget": 0,
-            "deliveredToLookalike": 0,
-            "deliveredWhileChangedPixelsShowing": 0,
-            "untrustedDeliveries": 0,
-            "applicationCommits": 0,
-            "commitsByLookalike": 0,
-            "observedAs": {
-              "not-admitted:stale-compositor-revision": 10
-            }
-          },
-          "extension-trusted": {
-            "delivered": 0,
-            "deliveredToReviewedTarget": 0,
-            "deliveredToLookalike": 0,
-            "deliveredWhileChangedPixelsShowing": 0,
-            "untrustedDeliveries": 0,
-            "applicationCommits": 0,
-            "commitsByLookalike": 0,
-            "observedAs": {
-              "stale-pixels": 10
-            }
-          },
-          "extension-fenced": {
-            "delivered": 0,
-            "deliveredToReviewedTarget": 0,
-            "deliveredToLookalike": 0,
-            "deliveredWhileChangedPixelsShowing": 0,
-            "untrustedDeliveries": 0,
-            "applicationCommits": 0,
-            "commitsByLookalike": 0,
-            "observedAs": {
-              "stale-pixels": 10
-            }
-          },
-          "extension-atomic": {
-            "delivered": 0,
-            "deliveredToReviewedTarget": 0,
-            "deliveredToLookalike": 0,
-            "deliveredWhileChangedPixelsShowing": 0,
-            "untrustedDeliveries": 0,
-            "applicationCommits": 0,
-            "commitsByLookalike": 0,
-            "observedAs": {
-              "stale-pixels": 10
-            }
-          }
-        },
-        "one-frame-pixel-change-reverted-before-click": {
-          "fawn": {
-            "delivered": 0,
-            "deliveredToReviewedTarget": 0,
-            "deliveredToLookalike": 0,
-            "deliveredWhileChangedPixelsShowing": 0,
-            "untrustedDeliveries": 0,
-            "applicationCommits": 0,
-            "commitsByLookalike": 0,
-            "observedAs": {
-              "not-admitted:stale-compositor-revision": 10
-            }
-          },
-          "extension-trusted": {
-            "delivered": 10,
-            "deliveredToReviewedTarget": 10,
-            "deliveredToLookalike": 0,
-            "deliveredWhileChangedPixelsShowing": 0,
-            "untrustedDeliveries": 0,
-            "applicationCommits": 10,
-            "commitsByLookalike": 0,
-            "observedAs": {
-              "delivered": 10
-            }
-          },
-          "extension-fenced": {
-            "delivered": 10,
-            "deliveredToReviewedTarget": 10,
-            "deliveredToLookalike": 0,
-            "deliveredWhileChangedPixelsShowing": 0,
-            "untrustedDeliveries": 0,
-            "applicationCommits": 10,
-            "commitsByLookalike": 0,
-            "observedAs": {
-              "delivered": 10
-            }
-          },
-          "extension-atomic": {
-            "delivered": 10,
-            "deliveredToReviewedTarget": 10,
-            "deliveredToLookalike": 0,
-            "deliveredWhileChangedPixelsShowing": 0,
-            "untrustedDeliveries": 10,
-            "applicationCommits": 10,
-            "commitsByLookalike": 0,
-            "observedAs": {
-              "delivered": 10
-            }
-          }
-        },
-        "pixels-changed-after-final-check": {
-          "fawn": {
-            "delivered": 10,
-            "deliveredToReviewedTarget": 10,
-            "deliveredToLookalike": 0,
-            "deliveredWhileChangedPixelsShowing": 10,
-            "untrustedDeliveries": 0,
-            "applicationCommits": 10,
-            "commitsByLookalike": 0,
-            "observedAs": {
-              "admitted:delivered": 10
-            }
-          },
-          "extension-trusted": {
-            "delivered": 10,
-            "deliveredToReviewedTarget": 10,
-            "deliveredToLookalike": 0,
-            "deliveredWhileChangedPixelsShowing": 10,
-            "untrustedDeliveries": 0,
-            "applicationCommits": 10,
-            "commitsByLookalike": 0,
-            "observedAs": {
-              "delivered": 10
-            }
-          },
-          "extension-fenced": {
-            "delivered": 10,
-            "deliveredToReviewedTarget": 10,
-            "deliveredToLookalike": 0,
-            "deliveredWhileChangedPixelsShowing": 10,
-            "untrustedDeliveries": 0,
-            "applicationCommits": 10,
-            "commitsByLookalike": 0,
-            "observedAs": {
-              "delivered": 10
-            }
-          },
-          "extension-atomic": {
-            "delivered": 10,
-            "deliveredToReviewedTarget": 10,
-            "deliveredToLookalike": 0,
-            "deliveredWhileChangedPixelsShowing": 10,
-            "untrustedDeliveries": 10,
-            "applicationCommits": 10,
-            "commitsByLookalike": 0,
-            "observedAs": {
-              "delivered": 10
-            }
-          }
-        },
-        "target-swapped-after-final-check": {
-          "fawn": {
-            "delivered": 0,
-            "deliveredToReviewedTarget": 0,
-            "deliveredToLookalike": 0,
-            "deliveredWhileChangedPixelsShowing": 0,
-            "untrustedDeliveries": 0,
-            "applicationCommits": 0,
-            "commitsByLookalike": 0,
-            "observedAs": {
-              "admitted:target-changed": 10
-            }
-          },
-          "extension-trusted": {
-            "delivered": 0,
-            "deliveredToReviewedTarget": 0,
-            "deliveredToLookalike": 0,
-            "deliveredWhileChangedPixelsShowing": 0,
-            "untrustedDeliveries": 0,
-            "applicationCommits": 0,
-            "commitsByLookalike": 0,
-            "observedAs": {
-              "target-changed": 10
-            }
-          },
-          "extension-fenced": {
-            "delivered": 0,
-            "deliveredToReviewedTarget": 0,
-            "deliveredToLookalike": 0,
-            "deliveredWhileChangedPixelsShowing": 0,
-            "untrustedDeliveries": 0,
-            "applicationCommits": 0,
-            "commitsByLookalike": 0,
-            "observedAs": {
-              "target-changed": 10
-            }
-          },
-          "extension-atomic": {
-            "delivered": 0,
-            "deliveredToReviewedTarget": 0,
-            "deliveredToLookalike": 0,
-            "deliveredWhileChangedPixelsShowing": 0,
-            "untrustedDeliveries": 0,
-            "applicationCommits": 0,
-            "commitsByLookalike": 0,
-            "observedAs": {
-              "target-changed": 10
-            }
-          }
-        },
-        "one-frame-target-swap-removed-after-final-check": {
-          "fawn": {
-            "delivered": 10,
-            "deliveredToReviewedTarget": 10,
-            "deliveredToLookalike": 0,
-            "deliveredWhileChangedPixelsShowing": 0,
-            "untrustedDeliveries": 0,
-            "applicationCommits": 10,
-            "commitsByLookalike": 0,
-            "observedAs": {
-              "admitted:delivered": 10
-            }
-          },
-          "extension-trusted": {
-            "delivered": 10,
-            "deliveredToReviewedTarget": 10,
-            "deliveredToLookalike": 0,
-            "deliveredWhileChangedPixelsShowing": 0,
-            "untrustedDeliveries": 0,
-            "applicationCommits": 10,
-            "commitsByLookalike": 0,
-            "observedAs": {
-              "delivered": 10
-            }
-          },
-          "extension-fenced": {
-            "delivered": 10,
-            "deliveredToReviewedTarget": 10,
-            "deliveredToLookalike": 0,
-            "deliveredWhileChangedPixelsShowing": 0,
-            "untrustedDeliveries": 0,
-            "applicationCommits": 10,
-            "commitsByLookalike": 0,
-            "observedAs": {
-              "delivered": 10
-            }
-          },
-          "extension-atomic": {
-            "delivered": 10,
-            "deliveredToReviewedTarget": 10,
-            "deliveredToLookalike": 0,
-            "deliveredWhileChangedPixelsShowing": 0,
-            "untrustedDeliveries": 10,
-            "applicationCommits": 10,
-            "commitsByLookalike": 0,
-            "observedAs": {
-              "delivered": 10
-            }
-          }
-        },
-        "closed-shadow-unchanged-control-paused-after-final-check": {
-          "fawn": {
-            "delivered": 10,
-            "deliveredToReviewedTarget": 10,
-            "deliveredToLookalike": 0,
-            "deliveredWhileChangedPixelsShowing": 0,
-            "untrustedDeliveries": 0,
-            "applicationCommits": 10,
-            "commitsByLookalike": 0,
-            "observedAs": {
-              "admitted:delivered": 10
-            }
-          },
-          "extension-trusted": {
-            "delivered": 10,
-            "deliveredToReviewedTarget": 10,
-            "deliveredToLookalike": 0,
-            "deliveredWhileChangedPixelsShowing": 0,
-            "untrustedDeliveries": 0,
-            "applicationCommits": 10,
-            "commitsByLookalike": 0,
-            "observedAs": {
-              "delivered": 10
-            }
-          },
-          "extension-fenced": {
-            "delivered": 10,
-            "deliveredToReviewedTarget": 10,
-            "deliveredToLookalike": 0,
-            "deliveredWhileChangedPixelsShowing": 0,
-            "untrustedDeliveries": 0,
-            "applicationCommits": 10,
-            "commitsByLookalike": 0,
-            "observedAs": {
-              "delivered": 10
-            }
-          },
-          "extension-atomic": {
-            "delivered": 0,
-            "deliveredToReviewedTarget": 0,
-            "deliveredToLookalike": 0,
-            "deliveredWhileChangedPixelsShowing": 0,
-            "untrustedDeliveries": 0,
-            "applicationCommits": 0,
-            "commitsByLookalike": 0,
-            "observedAs": {
-              "delivered": 10
-            }
-          }
-        },
-        "closed-shadow-target-swapped-after-final-check": {
-          "fawn": {
-            "delivered": 0,
-            "deliveredToReviewedTarget": 0,
-            "deliveredToLookalike": 0,
-            "deliveredWhileChangedPixelsShowing": 0,
-            "untrustedDeliveries": 0,
-            "applicationCommits": 0,
-            "commitsByLookalike": 0,
-            "observedAs": {
-              "admitted:target-changed": 10
-            }
-          },
-          "extension-trusted": {
-            "delivered": 10,
-            "deliveredToReviewedTarget": 0,
-            "deliveredToLookalike": 10,
-            "deliveredWhileChangedPixelsShowing": 0,
-            "untrustedDeliveries": 0,
-            "applicationCommits": 10,
-            "commitsByLookalike": 10,
-            "observedAs": {
-              "delivered": 10
-            }
-          },
-          "extension-fenced": {
-            "delivered": 10,
-            "deliveredToReviewedTarget": 0,
-            "deliveredToLookalike": 10,
-            "deliveredWhileChangedPixelsShowing": 0,
-            "untrustedDeliveries": 0,
-            "applicationCommits": 10,
-            "commitsByLookalike": 10,
-            "observedAs": {
-              "delivered": 10
-            }
-          },
-          "extension-atomic": {
-            "delivered": 0,
-            "deliveredToReviewedTarget": 0,
-            "deliveredToLookalike": 0,
-            "deliveredWhileChangedPixelsShowing": 0,
-            "untrustedDeliveries": 0,
-            "applicationCommits": 0,
-            "commitsByLookalike": 0,
-            "observedAs": {
-              "delivered": 10
-            }
-          }
-        }
-      },
-      "extensionBindsAt": {
-        "canvasControl": "canvas#approve",
-        "closedShadowControl": "div#widget"
-      }
-    },
-    "recipientRequirementScope": "R3 as frozen was tested on a recipient that page-level DOM can identify. There the fenced extension refused every swap. It does not hold for a recipient inside a closed shadow root: the extension binds the host element, and with a swap inside the component both trusted extension modes delivered to the wrong internal target in 10 of 10 trials and reported success. 'No delivery to a different element' is therefore established for the extension only where the actual recipient can be verified from the page's DOM."
-  },
-  "assumptions": [
-    "A reviewed click covers one top-level document, one compositor surface, device scale 1 and page scale 1; frames with child surfaces, video or overlay-candidate resources end a review.",
-    "A repaint after admission does not cancel the click; the recipient is re-checked in the page process at delivery.",
-    "Renderer restart, navigation and GPU-process loss end a review; a fresh review works afterwards (lifecycle.json and the invalidation cases).",
-    "The browser cannot promise anything about later server writes. Record identity, version checks and duplicate suppression belong to the application.",
-    "The workspace's reviewed click and inbox accept only a canvas target today. The browser commands accept any rectangle; a DOM button passes at browser level (dom-button-delivers).",
-    "The agent that prepares the change in the inbox test is a scripted stand-in. No model was called and nothing was paid."
+ "consumer": "clocksmith/deco#81",
+ "kind": "fawn.reviewed-click-release-receipt/v1",
+ "observedDateUTC": "2026-11-22",
+ "verdict": {
+  "cpuReviewedClicks": "qualified on the tested non-PGO, non-component build for the tested cases",
+  "extensionGate": "The fenced extension meets frozen requirements R1 to R4 on recipients that page-level DOM can identify. It does not identify a recipient inside a closed shadow root.",
+  "forkBuysOnly": [
+   "the actual recipient inside a closed shadow root",
+   "every drawn frame inspected, so a one-frame change closes the review",
+   "no debugger permission or debugging bar",
+   "status of a review without polling screenshots"
   ],
-  "notRun": [
-    "hardware GPU of any kind",
-    "official or PGO build",
-    "an outside user or a model-driven agent"
-  ]
+  "doe": "not measured: no arm had a hardware GPU or a WebGPU adapter",
+  "pilotChoice": "Owner decision, 2026-11-22: build the DOM-button pilot on the fenced extension in stock Chrome and keep the browser-owned CPU path behind the same workspace interface. This is a pilot choice, not a claim that the extension gives the same guarantee everywhere. Use the extension only where the actual recipient can be verified; if a workflow needs a target it cannot verify, or the debugger warning is unacceptable, use the browser-owned path or leave that action manual. The transient-change refusal is a real difference and is not a pilot requirement without a user need."
+ },
+ "build": {
+  "description": "Linux x86_64, is_component_build=false, is_debug=false, is_official_build=false, chrome_pgo_phase=0, symbol_level=0. Non-component, not official, no profile-guided optimization.",
+  "chromeSha256": "148d641a1545dcd90c68e7e71958a39d2c556d1ef1af2b9c74defbebeb9565ae",
+  "frozenManifestSha256": "efa4f494b7ac9a52cd1598f6448f625366263759817322c73b9c591d68c81f7b",
+  "chromium": "4a6fb385",
+  "patches": {
+   "chromium-reviewed-input.patch": "b0647891d0091875fef456199de65a6c399b190d74105f8ff3b87ad22401e645",
+   "chromium-doe-runtime.patch": "bcf41516f4647e19e67971e024cc1213d462d629de626d98186a380746758f37"
+  },
+  "sourceIdentity": "Each of the 72 touched Chromium files in the build overlay equals pinned Chromium plus chromium-doe-runtime.patch plus chromium-reviewed-input.patch, checked file by file before the build started."
+ },
+ "compositingPerArm": {
+  "cpu": {
+   "gpuCompositing": "disabled_software",
+   "webgpu": "unavailable_software",
+   "doeLibraryMapped": false
+  },
+  "dawn": {
+   "gpuCompositing": "enabled",
+   "webgpu": "unavailable_software",
+   "doeLibraryMapped": false
+  },
+  "doe": {
+   "gpuCompositing": "disabled_software",
+   "webgpu": "disabled_off",
+   "doeLibraryMapped": "unknown"
+  }
+ },
+ "compositingNote": "cpu: Viz software compositing. dawn: SwiftShader GL, a software stand-in for a GPU. doe: --gpu-sandbox-start-early keeps SwiftShader GL from starting, so it composites in software. No arm used a hardware GPU or obtained a WebGPU adapter. On the release binary the harness could not read the GPU process's library map in the doe arm, so whether Doe was mapped there is recorded as unknown.",
+ "reviewedClickCases": {
+  "cpu": {
+   "passed": true,
+   "cases": "22/22",
+   "unrelatedAnimation": {
+    "none": "20/20",
+    "compositor": "20/20",
+    "main-thread": "20/20",
+    "raf-canvas": "20/20"
+   },
+   "refusedCaptures": 0,
+   "staleClicksInCasesBuiltToRefuse": 9,
+   "admittedThenCancelledInCasesBuiltToCancel": 8
+  },
+  "dawn": {
+   "passed": true,
+   "cases": "22/22",
+   "unrelatedAnimation": {
+    "none": "20/20",
+    "compositor": "20/20",
+    "main-thread": "20/20",
+    "raf-canvas": "20/20"
+   },
+   "refusedCaptures": 0,
+   "staleClicksInCasesBuiltToRefuse": 9,
+   "admittedThenCancelledInCasesBuiltToCancel": 8
+  },
+  "doe": {
+   "passed": true,
+   "cases": "22/22",
+   "unrelatedAnimation": {
+    "none": "20/20",
+    "compositor": "20/20",
+    "main-thread": "20/20",
+    "raf-canvas": "20/20"
+   },
+   "refusedCaptures": 0,
+   "staleClicksInCasesBuiltToRefuse": 9,
+   "admittedThenCancelledInCasesBuiltToCancel": 8
+  }
+ },
+ "loadTest": {
+  "cpu": {
+   "compositing": "disabled_software",
+   "attempts": 300,
+   "delivered": 300,
+   "refusals": {
+    "capture": 0,
+    "staleClick": 0,
+    "admittedThenCancelled": 0
+   },
+   "clickMs": {
+    "p50": 17.04,
+    "p90": 20.18,
+    "p99": 22.0,
+    "max": 22.89
+   },
+   "captureMsP99": 18.73,
+   "phasesMsP99": {
+    "validatedToAdmission": 0.06,
+    "admissionToVerdict": 2.23,
+    "verdictToDelivery": 4.29
+   },
+   "fpsIdleVsReviewOpen": [
+    60,
+    60
+   ],
+   "longFramesIdleVsReviewOpen": [
+    0,
+    0
+   ],
+   "gpuProcessRssMiB": [
+    93,
+    97,
+    99
+   ],
+   "vizVerificationCopies": 901
+  },
+  "dawn": {
+   "compositing": "enabled",
+   "attempts": 300,
+   "delivered": 300,
+   "refusals": {
+    "capture": 0,
+    "staleClick": 0,
+    "admittedThenCancelled": 0
+   },
+   "clickMs": {
+    "p50": 34.12,
+    "p90": 36.45,
+    "p99": 38.12,
+    "max": 38.7
+   },
+   "captureMsP99": 17.51,
+   "phasesMsP99": {
+    "validatedToAdmission": 0.05,
+    "admissionToVerdict": 19.08,
+    "verdictToDelivery": 3.99
+   },
+   "fpsIdleVsReviewOpen": [
+    60,
+    60
+   ],
+   "longFramesIdleVsReviewOpen": [
+    0,
+    0
+   ],
+   "gpuProcessRssMiB": [
+    127,
+    127,
+    129
+   ],
+   "vizVerificationCopies": 1179
+  },
+  "doe": {
+   "compositing": "disabled_software",
+   "attempts": 300,
+   "delivered": 300,
+   "refusals": {
+    "capture": 0,
+    "staleClick": 0,
+    "admittedThenCancelled": 0
+   },
+   "clickMs": {
+    "p50": 34.37,
+    "p90": 36.63,
+    "p99": 38.38,
+    "max": 38.52
+   },
+   "captureMsP99": 17.49,
+   "phasesMsP99": {
+    "validatedToAdmission": 0.09,
+    "admissionToVerdict": 2.23,
+    "verdictToDelivery": 4.21
+   },
+   "fpsIdleVsReviewOpen": [
+    60,
+    60
+   ],
+   "longFramesIdleVsReviewOpen": [
+    0,
+    0
+   ],
+   "gpuProcessRssMiB": [
+    139,
+    145,
+    147
+   ],
+   "vizVerificationCopies": 1203
+  }
+ },
+ "loadTestNote": "300 clicks per arm with compositor, main-thread and canvas animation outside the reviewed rectangle and 4 ms of main-thread work every 16 ms. The doe arm composites in software like cpu but measured a frame slower end to end; not investigated.",
+ "workspaceAndInbox": {
+  "compositing": "software in both runtime modes: probed with the same launcher under the same virtual display. The workspace's own launch flags were not captured. The cpu entry below removes that gap for the release candidate: its launch wrapper forces software compositing and its launch arguments were captured.",
+  "workspace": {
+   "dawn": {
+    "runs": 25,
+    "passed": 25,
+    "captureRefusalsRecovered": 25,
+    "staleSiteAttempts": 0,
+    "freshWrites": 25
+   },
+   "doe": {
+    "runs": 25,
+    "passed": 25,
+    "captureRefusalsRecovered": 25,
+    "staleSiteAttempts": 0,
+    "freshWrites": 25
+   }
+  },
+  "inbox": {
+   "dawn": {
+    "runs": 25,
+    "passed": 25,
+    "failedCaptures": 0,
+    "staleApprovals": 25,
+    "refusedFinishes": 50,
+    "unsafeDeliveries": 0,
+    "declinedNavigations": 0,
+    "browserDeliveries": 75,
+    "applicationCommits": 75,
+    "applicationAttempts": 75,
+    "reviewedAgain": 50,
+    "msToAuthorizedOutcome": {
+     "unrelated-motion-holds-across-handoff": {
+      "min": 2851,
+      "median": 2923,
+      "max": 2972
+     },
+     "revised-amount-needs-fresh-look": {
+      "min": 1661,
+      "median": 1737,
+      "max": 1758
+     },
+     "lookalike-target-swap-cancelled": {
+      "min": 1461,
+      "median": 1482,
+      "max": 1551
+     }
+    }
+   },
+   "doe": {
+    "runs": 25,
+    "passed": 25,
+    "failedCaptures": 0,
+    "staleApprovals": 25,
+    "refusedFinishes": 50,
+    "unsafeDeliveries": 0,
+    "declinedNavigations": 0,
+    "browserDeliveries": 75,
+    "applicationCommits": 75,
+    "applicationAttempts": 75,
+    "reviewedAgain": 50,
+    "msToAuthorizedOutcome": {
+     "unrelated-motion-holds-across-handoff": {
+      "min": 2856,
+      "median": 2919,
+      "max": 2981
+     },
+     "revised-amount-needs-fresh-look": {
+      "min": 1666,
+      "median": 1692,
+      "max": 1784
+     },
+     "lookalike-target-swap-cancelled": {
+      "min": 1464,
+      "median": 1487,
+      "max": 1560
+     }
+    }
+   }
+  },
+  "inboxFirstRun": {
+   "result": {
+    "dawn": {
+     "passed": 22,
+     "stale page after a declined navigation the test ignored": 3
+    },
+    "doe": {
+     "passed": 22,
+     "stale page after a declined navigation the test ignored": 3
+    }
+   },
+   "cause": "After a click that makes the page change itself, the workspace declined the next navigate as stale and returned a not-dispatched record. The test ignored that record and continued on the previous invoice's page; the scripted reviewers approved the image they were shown. Every click went to the control whose pixels were captured and approved, and the application refused the write on its version check. The test now checks the navigate result and that the proposer is on the requested invoice."
+  },
+  "countsKeptApart": "browserDeliveries are trusted clicks the page received; applicationCommits are writes the application accepted; refusedFinishes and staleApprovals are from flows built to refuse; failedCaptures and unsafeDeliveries are zero.",
+  "cpu": {
+   "what": "The same two suites rerun on the frozen binary with --disable-gpu-compositing added by the launch wrapper, 25 runs each. Evidence: workspace-inbox-cpu.json.",
+   "chromeSha256": "148d641a1545dcd90c68e7e71958a39d2c556d1ef1af2b9c74defbebeb9565ae",
+   "wrapper": "exec \"/home/x/.local/share/fawn/visual-admission-native-81/frozen-release/chrome\" --auto-accept-this-tab-capture --ozone-platform=x11 --disable-gpu-compositing \"$@\"",
+   "workspaceLaunchArguments": [
+    "--remote-debugging-pipe",
+    "--no-first-run",
+    "--no-default-browser-check",
+    "--disable-background-networking",
+    "--use-webgpu-runtime=dawn",
+    "about:blank"
+   ],
+   "workspace": {
+    "runs": 25,
+    "passed": 25,
+    "captureRefusalsRecovered": 25,
+    "siteAttemptsFromEarlierApproval": 0,
+    "staleSiteAttempts": 0,
+    "freshWrites": 25
+   },
+   "inbox": {
+    "runs": 25,
+    "passed": 25,
+    "failedCaptures": 0,
+    "staleApprovals": 25,
+    "refusedFinishes": 50,
+    "unsafeDeliveries": 0,
+    "declinedNavigations": 6,
+    "browserDeliveries": 75,
+    "applicationCommits": 75,
+    "applicationAttempts": 75,
+    "reviewedAgain": 50,
+    "msToAuthorizedOutcome": {
+     "unrelated-motion-holds-across-handoff": {
+      "min": 2848,
+      "median": 2889,
+      "max": 2979
+     },
+     "revised-amount-needs-fresh-look": {
+      "min": 1662,
+      "median": 1734,
+      "max": 1857
+     },
+     "lookalike-target-swap-cancelled": {
+      "min": 1464,
+      "median": 1485,
+      "max": 1643
+     }
+    }
+   },
+   "countedSeparately": {
+    "applicationAttempts": 75,
+    "validBrowserDeliveries": 75,
+    "applicationCommits": 75,
+    "unsafeDeliveries": 0,
+    "refusalsRequiredByTheCase": 50,
+    "avoidableRefusals": {
+     "failedFirstCaptures": 0,
+     "navigationsDeclinedAsStaleAndRepeated": 6,
+     "note": "A declined navigation is refused before any click exists and the test repeats it. No reviewed click on unchanged content was refused."
+    }
+   }
+  }
+ },
+ "extensionGate": {
+  "criteria": "extension-gate-criteria.json, committed at f967f2f0b9 before any controlled-ordering result",
+  "harnessChangesAfterFreeze": [
+   "extension-control/background.js: the pause handle was cleared before the harness released it; all three extension arms stopped on the first paused case. Fixed; the browser-owned arm had already completed and was not rerun.",
+   "reviewed-click-extension-control.mjs: the two one-frame cases reverted the change before any frame was painted (the browser-owned path reported 'holds' in 10 of 10). Changed to hold the change for one painted frame and reran those two cases on all four implementations (oneframe-*.json). The first, invalid results remain in forced-*.json."
+  ],
+  "requirements": {
+   "fawn": {
+    "R1": true,
+    "R2": true,
+    "R3": true,
+    "R4": true
+   },
+   "extension-trusted": {
+    "R1": true,
+    "R2": true,
+    "R3": true,
+    "R4": true
+   },
+   "extension-fenced": {
+    "R1": true,
+    "R2": true,
+    "R3": true,
+    "R4": true
+   },
+   "extension-atomic": {
+    "R1": true,
+    "R2": true,
+    "R3": true,
+    "R4": false
+   }
+  },
+  "controlledOrdering": {
+   "unchanged-control": {
+    "fawn": {
+     "delivered": 10,
+     "deliveredToReviewedTarget": 10,
+     "deliveredToLookalike": 0,
+     "deliveredWhileChangedPixelsShowing": 0,
+     "applicationCommits": 10,
+     "commitsByLookalike": 0,
+     "observedAs": {
+      "admitted:delivered": 10
+     }
+    },
+    "extension-trusted": {
+     "delivered": 10,
+     "deliveredToReviewedTarget": 10,
+     "deliveredToLookalike": 0,
+     "deliveredWhileChangedPixelsShowing": 0,
+     "applicationCommits": 10,
+     "commitsByLookalike": 0,
+     "observedAs": {
+      "delivered": 10
+     }
+    },
+    "extension-fenced": {
+     "delivered": 10,
+     "deliveredToReviewedTarget": 10,
+     "deliveredToLookalike": 0,
+     "deliveredWhileChangedPixelsShowing": 0,
+     "applicationCommits": 10,
+     "commitsByLookalike": 0,
+     "observedAs": {
+      "delivered": 10
+     }
+    },
+    "extension-atomic": {
+     "delivered": 10,
+     "deliveredToReviewedTarget": 10,
+     "deliveredToLookalike": 0,
+     "deliveredWhileChangedPixelsShowing": 0,
+     "applicationCommits": 10,
+     "commitsByLookalike": 0,
+     "observedAs": {
+      "delivered": 10
+     }
+    }
+   },
+   "unchanged-control-paused-after-final-check": {
+    "fawn": {
+     "delivered": 10,
+     "deliveredToReviewedTarget": 10,
+     "deliveredToLookalike": 0,
+     "deliveredWhileChangedPixelsShowing": 0,
+     "applicationCommits": 10,
+     "commitsByLookalike": 0,
+     "observedAs": {
+      "admitted:delivered": 10
+     }
+    },
+    "extension-trusted": {
+     "delivered": 10,
+     "deliveredToReviewedTarget": 10,
+     "deliveredToLookalike": 0,
+     "deliveredWhileChangedPixelsShowing": 0,
+     "applicationCommits": 10,
+     "commitsByLookalike": 0,
+     "observedAs": {
+      "delivered": 10
+     }
+    },
+    "extension-fenced": {
+     "delivered": 10,
+     "deliveredToReviewedTarget": 10,
+     "deliveredToLookalike": 0,
+     "deliveredWhileChangedPixelsShowing": 0,
+     "applicationCommits": 10,
+     "commitsByLookalike": 0,
+     "observedAs": {
+      "delivered": 10
+     }
+    },
+    "extension-atomic": {
+     "delivered": 10,
+     "deliveredToReviewedTarget": 10,
+     "deliveredToLookalike": 0,
+     "deliveredWhileChangedPixelsShowing": 0,
+     "applicationCommits": 10,
+     "commitsByLookalike": 0,
+     "observedAs": {
+      "delivered": 10
+     }
+    }
+   },
+   "pixels-changed-and-still-showing-before-click": {
+    "fawn": {
+     "delivered": 0,
+     "deliveredToReviewedTarget": 0,
+     "deliveredToLookalike": 0,
+     "deliveredWhileChangedPixelsShowing": 0,
+     "applicationCommits": 0,
+     "commitsByLookalike": 0,
+     "observedAs": {
+      "not-admitted:stale-compositor-revision": 10
+     }
+    },
+    "extension-trusted": {
+     "delivered": 0,
+     "deliveredToReviewedTarget": 0,
+     "deliveredToLookalike": 0,
+     "deliveredWhileChangedPixelsShowing": 0,
+     "applicationCommits": 0,
+     "commitsByLookalike": 0,
+     "observedAs": {
+      "stale-pixels": 10
+     }
+    },
+    "extension-fenced": {
+     "delivered": 0,
+     "deliveredToReviewedTarget": 0,
+     "deliveredToLookalike": 0,
+     "deliveredWhileChangedPixelsShowing": 0,
+     "applicationCommits": 0,
+     "commitsByLookalike": 0,
+     "observedAs": {
+      "stale-pixels": 10
+     }
+    },
+    "extension-atomic": {
+     "delivered": 0,
+     "deliveredToReviewedTarget": 0,
+     "deliveredToLookalike": 0,
+     "deliveredWhileChangedPixelsShowing": 0,
+     "applicationCommits": 0,
+     "commitsByLookalike": 0,
+     "observedAs": {
+      "stale-pixels": 10
+     }
+    }
+   },
+   "pixels-changed-after-final-check": {
+    "fawn": {
+     "delivered": 10,
+     "deliveredToReviewedTarget": 10,
+     "deliveredToLookalike": 0,
+     "deliveredWhileChangedPixelsShowing": 10,
+     "applicationCommits": 10,
+     "commitsByLookalike": 0,
+     "observedAs": {
+      "admitted:delivered": 10
+     }
+    },
+    "extension-trusted": {
+     "delivered": 10,
+     "deliveredToReviewedTarget": 10,
+     "deliveredToLookalike": 0,
+     "deliveredWhileChangedPixelsShowing": 10,
+     "applicationCommits": 10,
+     "commitsByLookalike": 0,
+     "observedAs": {
+      "delivered": 10
+     }
+    },
+    "extension-fenced": {
+     "delivered": 10,
+     "deliveredToReviewedTarget": 10,
+     "deliveredToLookalike": 0,
+     "deliveredWhileChangedPixelsShowing": 10,
+     "applicationCommits": 10,
+     "commitsByLookalike": 0,
+     "observedAs": {
+      "delivered": 10
+     }
+    },
+    "extension-atomic": {
+     "delivered": 10,
+     "deliveredToReviewedTarget": 10,
+     "deliveredToLookalike": 0,
+     "deliveredWhileChangedPixelsShowing": 10,
+     "applicationCommits": 10,
+     "commitsByLookalike": 0,
+     "observedAs": {
+      "delivered": 10
+     }
+    }
+   },
+   "target-swapped-after-final-check": {
+    "fawn": {
+     "delivered": 0,
+     "deliveredToReviewedTarget": 0,
+     "deliveredToLookalike": 0,
+     "deliveredWhileChangedPixelsShowing": 0,
+     "applicationCommits": 0,
+     "commitsByLookalike": 0,
+     "observedAs": {
+      "admitted:target-changed": 10
+     }
+    },
+    "extension-trusted": {
+     "delivered": 0,
+     "deliveredToReviewedTarget": 0,
+     "deliveredToLookalike": 0,
+     "deliveredWhileChangedPixelsShowing": 0,
+     "applicationCommits": 0,
+     "commitsByLookalike": 0,
+     "observedAs": {
+      "target-changed": 10
+     }
+    },
+    "extension-fenced": {
+     "delivered": 0,
+     "deliveredToReviewedTarget": 0,
+     "deliveredToLookalike": 0,
+     "deliveredWhileChangedPixelsShowing": 0,
+     "applicationCommits": 0,
+     "commitsByLookalike": 0,
+     "observedAs": {
+      "target-changed": 10
+     }
+    },
+    "extension-atomic": {
+     "delivered": 0,
+     "deliveredToReviewedTarget": 0,
+     "deliveredToLookalike": 0,
+     "deliveredWhileChangedPixelsShowing": 0,
+     "applicationCommits": 0,
+     "commitsByLookalike": 0,
+     "observedAs": {
+      "target-changed": 10
+     }
+    }
+   },
+   "closed-shadow-unchanged-control-paused-after-final-check": {
+    "fawn": {
+     "delivered": 10,
+     "deliveredToReviewedTarget": 10,
+     "deliveredToLookalike": 0,
+     "deliveredWhileChangedPixelsShowing": 0,
+     "applicationCommits": 10,
+     "commitsByLookalike": 0,
+     "observedAs": {
+      "admitted:delivered": 10
+     }
+    },
+    "extension-trusted": {
+     "delivered": 10,
+     "deliveredToReviewedTarget": 10,
+     "deliveredToLookalike": 0,
+     "deliveredWhileChangedPixelsShowing": 0,
+     "applicationCommits": 10,
+     "commitsByLookalike": 0,
+     "observedAs": {
+      "delivered": 10
+     }
+    },
+    "extension-fenced": {
+     "delivered": 10,
+     "deliveredToReviewedTarget": 10,
+     "deliveredToLookalike": 0,
+     "deliveredWhileChangedPixelsShowing": 0,
+     "applicationCommits": 10,
+     "commitsByLookalike": 0,
+     "observedAs": {
+      "delivered": 10
+     }
+    },
+    "extension-atomic": {
+     "delivered": 0,
+     "deliveredToReviewedTarget": 0,
+     "deliveredToLookalike": 0,
+     "deliveredWhileChangedPixelsShowing": 0,
+     "applicationCommits": 0,
+     "commitsByLookalike": 0,
+     "observedAs": {
+      "delivered": 10
+     }
+    }
+   },
+   "closed-shadow-target-swapped-after-final-check": {
+    "fawn": {
+     "delivered": 0,
+     "deliveredToReviewedTarget": 0,
+     "deliveredToLookalike": 0,
+     "deliveredWhileChangedPixelsShowing": 0,
+     "applicationCommits": 0,
+     "commitsByLookalike": 0,
+     "observedAs": {
+      "admitted:target-changed": 10
+     }
+    },
+    "extension-trusted": {
+     "delivered": 10,
+     "deliveredToReviewedTarget": 0,
+     "deliveredToLookalike": 10,
+     "deliveredWhileChangedPixelsShowing": 0,
+     "applicationCommits": 10,
+     "commitsByLookalike": 10,
+     "observedAs": {
+      "delivered": 10
+     }
+    },
+    "extension-fenced": {
+     "delivered": 10,
+     "deliveredToReviewedTarget": 0,
+     "deliveredToLookalike": 10,
+     "deliveredWhileChangedPixelsShowing": 0,
+     "applicationCommits": 10,
+     "commitsByLookalike": 10,
+     "observedAs": {
+      "delivered": 10
+     }
+    },
+    "extension-atomic": {
+     "delivered": 0,
+     "deliveredToReviewedTarget": 0,
+     "deliveredToLookalike": 0,
+     "deliveredWhileChangedPixelsShowing": 0,
+     "applicationCommits": 0,
+     "commitsByLookalike": 0,
+     "observedAs": {
+      "delivered": 10
+     }
+    }
+   }
+  },
+  "oneFrameCasesCorrected": {
+   "one-frame-pixel-change-reverted-before-click": {
+    "fawn": {
+     "delivered": 0,
+     "deliveredToReviewedTarget": 0,
+     "deliveredToLookalike": 0,
+     "deliveredWhileChangedPixelsShowing": 0,
+     "applicationCommits": 0,
+     "commitsByLookalike": 0,
+     "observedAs": {
+      "not-admitted:stale-compositor-revision": 10
+     }
+    },
+    "extension-trusted": {
+     "delivered": 10,
+     "deliveredToReviewedTarget": 10,
+     "deliveredToLookalike": 0,
+     "deliveredWhileChangedPixelsShowing": 0,
+     "applicationCommits": 10,
+     "commitsByLookalike": 0,
+     "observedAs": {
+      "delivered": 10
+     }
+    },
+    "extension-fenced": {
+     "delivered": 10,
+     "deliveredToReviewedTarget": 10,
+     "deliveredToLookalike": 0,
+     "deliveredWhileChangedPixelsShowing": 0,
+     "applicationCommits": 10,
+     "commitsByLookalike": 0,
+     "observedAs": {
+      "delivered": 10
+     }
+    },
+    "extension-atomic": {
+     "delivered": 10,
+     "deliveredToReviewedTarget": 10,
+     "deliveredToLookalike": 0,
+     "deliveredWhileChangedPixelsShowing": 0,
+     "applicationCommits": 10,
+     "commitsByLookalike": 0,
+     "observedAs": {
+      "delivered": 10
+     }
+    }
+   },
+   "one-frame-target-swap-removed-after-final-check": {
+    "fawn": {
+     "delivered": 10,
+     "deliveredToReviewedTarget": 10,
+     "deliveredToLookalike": 0,
+     "deliveredWhileChangedPixelsShowing": 0,
+     "applicationCommits": 10,
+     "commitsByLookalike": 0,
+     "observedAs": {
+      "admitted:delivered": 10
+     }
+    },
+    "extension-trusted": {
+     "delivered": 10,
+     "deliveredToReviewedTarget": 10,
+     "deliveredToLookalike": 0,
+     "deliveredWhileChangedPixelsShowing": 0,
+     "applicationCommits": 10,
+     "commitsByLookalike": 0,
+     "observedAs": {
+      "delivered": 10
+     }
+    },
+    "extension-fenced": {
+     "delivered": 10,
+     "deliveredToReviewedTarget": 10,
+     "deliveredToLookalike": 0,
+     "deliveredWhileChangedPixelsShowing": 0,
+     "applicationCommits": 10,
+     "commitsByLookalike": 0,
+     "observedAs": {
+      "delivered": 10
+     }
+    },
+    "extension-atomic": {
+     "delivered": 10,
+     "deliveredToReviewedTarget": 10,
+     "deliveredToLookalike": 0,
+     "deliveredWhileChangedPixelsShowing": 0,
+     "applicationCommits": 10,
+     "commitsByLookalike": 0,
+     "observedAs": {
+      "delivered": 10
+     }
+    }
+   }
+  },
+  "extensionBindsAt": {
+   "canvasControl": "canvas#approve",
+   "closedShadowControl": "div#widget"
+  },
+  "randomTiming": {
+   "fawn-w150": {
+    "none": {
+     "trials": 300,
+     "delivered": 300,
+     "unsafe": 0,
+     "deliveredToLookalike": 0,
+     "deliveredAfterChangedFrame": 0,
+     "untrustedDeliveries": 0,
+     "refused": {}
+    },
+    "pixels": {
+     "trials": 300,
+     "delivered": 276,
+     "unsafe": 0,
+     "deliveredToLookalike": 0,
+     "deliveredAfterChangedFrame": 0,
+     "untrustedDeliveries": 0,
+     "refused": {
+      "stale-compositor-revision": 24
+     }
+    },
+    "target": {
+     "trials": 300,
+     "delivered": 275,
+     "unsafe": 0,
+     "deliveredToLookalike": 0,
+     "deliveredAfterChangedFrame": 0,
+     "untrustedDeliveries": 0,
+     "refused": {
+      "target-changed": 25
+     }
+    }
+   },
+   "extension-trusted-w150": {
+    "none": {
+     "trials": 300,
+     "delivered": 300,
+     "unsafe": 0,
+     "deliveredToLookalike": 0,
+     "deliveredAfterChangedFrame": 0,
+     "untrustedDeliveries": 0,
+     "refused": {}
+    },
+    "pixels": {
+     "trials": 300,
+     "delivered": 243,
+     "unsafe": 0,
+     "deliveredToLookalike": 0,
+     "deliveredAfterChangedFrame": 0,
+     "untrustedDeliveries": 0,
+     "refused": {
+      "stale-pixels": 57
+     }
+    },
+    "target": {
+     "trials": 300,
+     "delivered": 236,
+     "unsafe": 0,
+     "deliveredToLookalike": 0,
+     "deliveredAfterChangedFrame": 0,
+     "untrustedDeliveries": 0,
+     "refused": {
+      "target-changed": 64
+     }
+    }
+   },
+   "extension-atomic-w150": {
+    "none": {
+     "trials": 300,
+     "delivered": 300,
+     "unsafe": 0,
+     "deliveredToLookalike": 0,
+     "deliveredAfterChangedFrame": 0,
+     "untrustedDeliveries": 300,
+     "refused": {}
+    },
+    "pixels": {
+     "trials": 300,
+     "delivered": 235,
+     "unsafe": 0,
+     "deliveredToLookalike": 0,
+     "deliveredAfterChangedFrame": 0,
+     "untrustedDeliveries": 235,
+     "refused": {
+      "stale-pixels": 65
+     }
+    },
+    "target": {
+     "trials": 300,
+     "delivered": 238,
+     "unsafe": 0,
+     "deliveredToLookalike": 0,
+     "deliveredAfterChangedFrame": 0,
+     "untrustedDeliveries": 238,
+     "refused": {
+      "target-changed": 62
+     }
+    }
+   },
+   "fawn-w40": {
+    "none": {
+     "trials": 300,
+     "delivered": 300,
+     "unsafe": 0,
+     "deliveredToLookalike": 0,
+     "deliveredAfterChangedFrame": 0,
+     "untrustedDeliveries": 0,
+     "refused": {}
+    },
+    "pixels": {
+     "trials": 300,
+     "delivered": 221,
+     "unsafe": 0,
+     "deliveredToLookalike": 0,
+     "deliveredAfterChangedFrame": 0,
+     "untrustedDeliveries": 0,
+     "refused": {
+      "stale-compositor-revision": 79
+     }
+    },
+    "target": {
+     "trials": 300,
+     "delivered": 176,
+     "unsafe": 0,
+     "deliveredToLookalike": 0,
+     "deliveredAfterChangedFrame": 0,
+     "untrustedDeliveries": 0,
+     "refused": {
+      "target-changed": 124
+     }
+    }
+   },
+   "extension-trusted-w40": {
+    "none": {
+     "trials": 300,
+     "delivered": 300,
+     "unsafe": 0,
+     "deliveredToLookalike": 0,
+     "deliveredAfterChangedFrame": 0,
+     "untrustedDeliveries": 0,
+     "refused": {}
+    },
+    "pixels": {
+     "trials": 300,
+     "delivered": 74,
+     "unsafe": 0,
+     "deliveredToLookalike": 0,
+     "deliveredAfterChangedFrame": 0,
+     "untrustedDeliveries": 0,
+     "refused": {
+      "stale-pixels": 226
+     }
+    },
+    "target": {
+     "trials": 300,
+     "delivered": 64,
+     "unsafe": 9,
+     "deliveredToLookalike": 9,
+     "deliveredAfterChangedFrame": 0,
+     "untrustedDeliveries": 0,
+     "refused": {
+      "target-changed": 236
+     }
+    }
+   },
+   "extension-atomic-w40": {
+    "none": {
+     "trials": 300,
+     "delivered": 300,
+     "unsafe": 0,
+     "deliveredToLookalike": 0,
+     "deliveredAfterChangedFrame": 0,
+     "untrustedDeliveries": 300,
+     "refused": {}
+    },
+    "pixels": {
+     "trials": 300,
+     "delivered": 87,
+     "unsafe": 0,
+     "deliveredToLookalike": 0,
+     "deliveredAfterChangedFrame": 0,
+     "untrustedDeliveries": 87,
+     "refused": {
+      "stale-pixels": 213
+     }
+    },
+    "target": {
+     "trials": 300,
+     "delivered": 62,
+     "unsafe": 0,
+     "deliveredToLookalike": 0,
+     "deliveredAfterChangedFrame": 0,
+     "untrustedDeliveries": 62,
+     "refused": {
+      "target-changed": 238
+     }
+    }
+   },
+   "extension-fenced-w40": {
+    "none": {
+     "trials": 300,
+     "delivered": 300,
+     "unsafe": 0,
+     "deliveredToLookalike": 0,
+     "deliveredAfterChangedFrame": 0,
+     "untrustedDeliveries": 0,
+     "refused": {}
+    },
+    "pixels": {
+     "trials": 300,
+     "delivered": 86,
+     "unsafe": 0,
+     "deliveredToLookalike": 0,
+     "deliveredAfterChangedFrame": 0,
+     "untrustedDeliveries": 0,
+     "refused": {
+      "stale-pixels": 214
+     }
+    },
+    "target": {
+     "trials": 300,
+     "delivered": 51,
+     "unsafe": 0,
+     "deliveredToLookalike": 0,
+     "deliveredAfterChangedFrame": 0,
+     "untrustedDeliveries": 0,
+     "refused": {
+      "target-changed": 249
+     }
+    }
+   }
+  },
+  "findings": [
+   "Fenced extension: R1 to R4 pass in every trial, and zero unsafe deliveries in 300 tuned-timing trials per attack.",
+   "Plain trusted extension: passes the controlled cases, but its target check and its click are separate steps; under tuned timing 9 of 300 clicks reached the look-alike.",
+   "In-page extension: fails R4 by construction (synthetic click). It cannot click a button inside a closed shadow root and still reports 'delivered'.",
+   "Pixels changed after the final check: all four implementations deliver and the application commits the changed amount. Only the application's version check can catch this.",
+   "Closed shadow root: the extension binds the host element. With a swap inside the component, the browser-owned path refused 10 of 10; both trusted extension modes delivered to the look-alike 10 of 10 and reported success.",
+   "One-frame pixel change that reverts: the browser-owned path refused 10 of 10; every extension mode delivered 10 of 10. Recorded as a differentiator, not a requirement.",
+   "The extension needs the debugger permission and shows the browser's debugging bar."
+  ],
+  "replayOnFinalHarness": {
+   "why": "One consistent run of every controlled case on all four implementations after the two post-freeze harness corrections. This table is the one to cite; forced-*.json and oneframe-*.json are the earlier partial runs.",
+   "harnessSha256": "3fb21ef0eca55a8f06402c01c1c829f1c0f5aa19311095e4d6a973de2e9e5236",
+   "extensionBackgroundSha256": "0b4762c900677a79ae70b4dc3829561aba220a7a3e0bea9329fbd7a4f04115be",
+   "extensionFenceSha256": "035b87102bf3906ce59e67b1501c4be621badd94cb06c787e795baaeab88cfa4",
+   "trialsPerCase": 10,
+   "cases": {
+    "unchanged-control": {
+     "fawn": {
+      "delivered": 10,
+      "deliveredToReviewedTarget": 10,
+      "deliveredToLookalike": 0,
+      "deliveredWhileChangedPixelsShowing": 0,
+      "untrustedDeliveries": 0,
+      "applicationCommits": 10,
+      "commitsByLookalike": 0,
+      "observedAs": {
+       "admitted:delivered": 10
+      }
+     },
+     "extension-trusted": {
+      "delivered": 10,
+      "deliveredToReviewedTarget": 10,
+      "deliveredToLookalike": 0,
+      "deliveredWhileChangedPixelsShowing": 0,
+      "untrustedDeliveries": 0,
+      "applicationCommits": 10,
+      "commitsByLookalike": 0,
+      "observedAs": {
+       "delivered": 10
+      }
+     },
+     "extension-fenced": {
+      "delivered": 10,
+      "deliveredToReviewedTarget": 10,
+      "deliveredToLookalike": 0,
+      "deliveredWhileChangedPixelsShowing": 0,
+      "untrustedDeliveries": 0,
+      "applicationCommits": 10,
+      "commitsByLookalike": 0,
+      "observedAs": {
+       "delivered": 10
+      }
+     },
+     "extension-atomic": {
+      "delivered": 10,
+      "deliveredToReviewedTarget": 10,
+      "deliveredToLookalike": 0,
+      "deliveredWhileChangedPixelsShowing": 0,
+      "untrustedDeliveries": 10,
+      "applicationCommits": 10,
+      "commitsByLookalike": 0,
+      "observedAs": {
+       "delivered": 10
+      }
+     }
+    },
+    "unchanged-control-paused-after-final-check": {
+     "fawn": {
+      "delivered": 10,
+      "deliveredToReviewedTarget": 10,
+      "deliveredToLookalike": 0,
+      "deliveredWhileChangedPixelsShowing": 0,
+      "untrustedDeliveries": 0,
+      "applicationCommits": 10,
+      "commitsByLookalike": 0,
+      "observedAs": {
+       "admitted:delivered": 10
+      }
+     },
+     "extension-trusted": {
+      "delivered": 10,
+      "deliveredToReviewedTarget": 10,
+      "deliveredToLookalike": 0,
+      "deliveredWhileChangedPixelsShowing": 0,
+      "untrustedDeliveries": 0,
+      "applicationCommits": 10,
+      "commitsByLookalike": 0,
+      "observedAs": {
+       "delivered": 10
+      }
+     },
+     "extension-fenced": {
+      "delivered": 10,
+      "deliveredToReviewedTarget": 10,
+      "deliveredToLookalike": 0,
+      "deliveredWhileChangedPixelsShowing": 0,
+      "untrustedDeliveries": 0,
+      "applicationCommits": 10,
+      "commitsByLookalike": 0,
+      "observedAs": {
+       "delivered": 10
+      }
+     },
+     "extension-atomic": {
+      "delivered": 10,
+      "deliveredToReviewedTarget": 10,
+      "deliveredToLookalike": 0,
+      "deliveredWhileChangedPixelsShowing": 0,
+      "untrustedDeliveries": 10,
+      "applicationCommits": 10,
+      "commitsByLookalike": 0,
+      "observedAs": {
+       "delivered": 10
+      }
+     }
+    },
+    "pixels-changed-and-still-showing-before-click": {
+     "fawn": {
+      "delivered": 0,
+      "deliveredToReviewedTarget": 0,
+      "deliveredToLookalike": 0,
+      "deliveredWhileChangedPixelsShowing": 0,
+      "untrustedDeliveries": 0,
+      "applicationCommits": 0,
+      "commitsByLookalike": 0,
+      "observedAs": {
+       "not-admitted:stale-compositor-revision": 10
+      }
+     },
+     "extension-trusted": {
+      "delivered": 0,
+      "deliveredToReviewedTarget": 0,
+      "deliveredToLookalike": 0,
+      "deliveredWhileChangedPixelsShowing": 0,
+      "untrustedDeliveries": 0,
+      "applicationCommits": 0,
+      "commitsByLookalike": 0,
+      "observedAs": {
+       "stale-pixels": 10
+      }
+     },
+     "extension-fenced": {
+      "delivered": 0,
+      "deliveredToReviewedTarget": 0,
+      "deliveredToLookalike": 0,
+      "deliveredWhileChangedPixelsShowing": 0,
+      "untrustedDeliveries": 0,
+      "applicationCommits": 0,
+      "commitsByLookalike": 0,
+      "observedAs": {
+       "stale-pixels": 10
+      }
+     },
+     "extension-atomic": {
+      "delivered": 0,
+      "deliveredToReviewedTarget": 0,
+      "deliveredToLookalike": 0,
+      "deliveredWhileChangedPixelsShowing": 0,
+      "untrustedDeliveries": 0,
+      "applicationCommits": 0,
+      "commitsByLookalike": 0,
+      "observedAs": {
+       "stale-pixels": 10
+      }
+     }
+    },
+    "one-frame-pixel-change-reverted-before-click": {
+     "fawn": {
+      "delivered": 0,
+      "deliveredToReviewedTarget": 0,
+      "deliveredToLookalike": 0,
+      "deliveredWhileChangedPixelsShowing": 0,
+      "untrustedDeliveries": 0,
+      "applicationCommits": 0,
+      "commitsByLookalike": 0,
+      "observedAs": {
+       "not-admitted:stale-compositor-revision": 10
+      }
+     },
+     "extension-trusted": {
+      "delivered": 10,
+      "deliveredToReviewedTarget": 10,
+      "deliveredToLookalike": 0,
+      "deliveredWhileChangedPixelsShowing": 0,
+      "untrustedDeliveries": 0,
+      "applicationCommits": 10,
+      "commitsByLookalike": 0,
+      "observedAs": {
+       "delivered": 10
+      }
+     },
+     "extension-fenced": {
+      "delivered": 10,
+      "deliveredToReviewedTarget": 10,
+      "deliveredToLookalike": 0,
+      "deliveredWhileChangedPixelsShowing": 0,
+      "untrustedDeliveries": 0,
+      "applicationCommits": 10,
+      "commitsByLookalike": 0,
+      "observedAs": {
+       "delivered": 10
+      }
+     },
+     "extension-atomic": {
+      "delivered": 10,
+      "deliveredToReviewedTarget": 10,
+      "deliveredToLookalike": 0,
+      "deliveredWhileChangedPixelsShowing": 0,
+      "untrustedDeliveries": 10,
+      "applicationCommits": 10,
+      "commitsByLookalike": 0,
+      "observedAs": {
+       "delivered": 10
+      }
+     }
+    },
+    "pixels-changed-after-final-check": {
+     "fawn": {
+      "delivered": 10,
+      "deliveredToReviewedTarget": 10,
+      "deliveredToLookalike": 0,
+      "deliveredWhileChangedPixelsShowing": 10,
+      "untrustedDeliveries": 0,
+      "applicationCommits": 10,
+      "commitsByLookalike": 0,
+      "observedAs": {
+       "admitted:delivered": 10
+      }
+     },
+     "extension-trusted": {
+      "delivered": 10,
+      "deliveredToReviewedTarget": 10,
+      "deliveredToLookalike": 0,
+      "deliveredWhileChangedPixelsShowing": 10,
+      "untrustedDeliveries": 0,
+      "applicationCommits": 10,
+      "commitsByLookalike": 0,
+      "observedAs": {
+       "delivered": 10
+      }
+     },
+     "extension-fenced": {
+      "delivered": 10,
+      "deliveredToReviewedTarget": 10,
+      "deliveredToLookalike": 0,
+      "deliveredWhileChangedPixelsShowing": 10,
+      "untrustedDeliveries": 0,
+      "applicationCommits": 10,
+      "commitsByLookalike": 0,
+      "observedAs": {
+       "delivered": 10
+      }
+     },
+     "extension-atomic": {
+      "delivered": 10,
+      "deliveredToReviewedTarget": 10,
+      "deliveredToLookalike": 0,
+      "deliveredWhileChangedPixelsShowing": 10,
+      "untrustedDeliveries": 10,
+      "applicationCommits": 10,
+      "commitsByLookalike": 0,
+      "observedAs": {
+       "delivered": 10
+      }
+     }
+    },
+    "target-swapped-after-final-check": {
+     "fawn": {
+      "delivered": 0,
+      "deliveredToReviewedTarget": 0,
+      "deliveredToLookalike": 0,
+      "deliveredWhileChangedPixelsShowing": 0,
+      "untrustedDeliveries": 0,
+      "applicationCommits": 0,
+      "commitsByLookalike": 0,
+      "observedAs": {
+       "admitted:target-changed": 10
+      }
+     },
+     "extension-trusted": {
+      "delivered": 0,
+      "deliveredToReviewedTarget": 0,
+      "deliveredToLookalike": 0,
+      "deliveredWhileChangedPixelsShowing": 0,
+      "untrustedDeliveries": 0,
+      "applicationCommits": 0,
+      "commitsByLookalike": 0,
+      "observedAs": {
+       "target-changed": 10
+      }
+     },
+     "extension-fenced": {
+      "delivered": 0,
+      "deliveredToReviewedTarget": 0,
+      "deliveredToLookalike": 0,
+      "deliveredWhileChangedPixelsShowing": 0,
+      "untrustedDeliveries": 0,
+      "applicationCommits": 0,
+      "commitsByLookalike": 0,
+      "observedAs": {
+       "target-changed": 10
+      }
+     },
+     "extension-atomic": {
+      "delivered": 0,
+      "deliveredToReviewedTarget": 0,
+      "deliveredToLookalike": 0,
+      "deliveredWhileChangedPixelsShowing": 0,
+      "untrustedDeliveries": 0,
+      "applicationCommits": 0,
+      "commitsByLookalike": 0,
+      "observedAs": {
+       "target-changed": 10
+      }
+     }
+    },
+    "one-frame-target-swap-removed-after-final-check": {
+     "fawn": {
+      "delivered": 10,
+      "deliveredToReviewedTarget": 10,
+      "deliveredToLookalike": 0,
+      "deliveredWhileChangedPixelsShowing": 0,
+      "untrustedDeliveries": 0,
+      "applicationCommits": 10,
+      "commitsByLookalike": 0,
+      "observedAs": {
+       "admitted:delivered": 10
+      }
+     },
+     "extension-trusted": {
+      "delivered": 10,
+      "deliveredToReviewedTarget": 10,
+      "deliveredToLookalike": 0,
+      "deliveredWhileChangedPixelsShowing": 0,
+      "untrustedDeliveries": 0,
+      "applicationCommits": 10,
+      "commitsByLookalike": 0,
+      "observedAs": {
+       "delivered": 10
+      }
+     },
+     "extension-fenced": {
+      "delivered": 10,
+      "deliveredToReviewedTarget": 10,
+      "deliveredToLookalike": 0,
+      "deliveredWhileChangedPixelsShowing": 0,
+      "untrustedDeliveries": 0,
+      "applicationCommits": 10,
+      "commitsByLookalike": 0,
+      "observedAs": {
+       "delivered": 10
+      }
+     },
+     "extension-atomic": {
+      "delivered": 10,
+      "deliveredToReviewedTarget": 10,
+      "deliveredToLookalike": 0,
+      "deliveredWhileChangedPixelsShowing": 0,
+      "untrustedDeliveries": 10,
+      "applicationCommits": 10,
+      "commitsByLookalike": 0,
+      "observedAs": {
+       "delivered": 10
+      }
+     }
+    },
+    "closed-shadow-unchanged-control-paused-after-final-check": {
+     "fawn": {
+      "delivered": 10,
+      "deliveredToReviewedTarget": 10,
+      "deliveredToLookalike": 0,
+      "deliveredWhileChangedPixelsShowing": 0,
+      "untrustedDeliveries": 0,
+      "applicationCommits": 10,
+      "commitsByLookalike": 0,
+      "observedAs": {
+       "admitted:delivered": 10
+      }
+     },
+     "extension-trusted": {
+      "delivered": 10,
+      "deliveredToReviewedTarget": 10,
+      "deliveredToLookalike": 0,
+      "deliveredWhileChangedPixelsShowing": 0,
+      "untrustedDeliveries": 0,
+      "applicationCommits": 10,
+      "commitsByLookalike": 0,
+      "observedAs": {
+       "delivered": 10
+      }
+     },
+     "extension-fenced": {
+      "delivered": 10,
+      "deliveredToReviewedTarget": 10,
+      "deliveredToLookalike": 0,
+      "deliveredWhileChangedPixelsShowing": 0,
+      "untrustedDeliveries": 0,
+      "applicationCommits": 10,
+      "commitsByLookalike": 0,
+      "observedAs": {
+       "delivered": 10
+      }
+     },
+     "extension-atomic": {
+      "delivered": 0,
+      "deliveredToReviewedTarget": 0,
+      "deliveredToLookalike": 0,
+      "deliveredWhileChangedPixelsShowing": 0,
+      "untrustedDeliveries": 0,
+      "applicationCommits": 0,
+      "commitsByLookalike": 0,
+      "observedAs": {
+       "delivered": 10
+      }
+     }
+    },
+    "closed-shadow-target-swapped-after-final-check": {
+     "fawn": {
+      "delivered": 0,
+      "deliveredToReviewedTarget": 0,
+      "deliveredToLookalike": 0,
+      "deliveredWhileChangedPixelsShowing": 0,
+      "untrustedDeliveries": 0,
+      "applicationCommits": 0,
+      "commitsByLookalike": 0,
+      "observedAs": {
+       "admitted:target-changed": 10
+      }
+     },
+     "extension-trusted": {
+      "delivered": 10,
+      "deliveredToReviewedTarget": 0,
+      "deliveredToLookalike": 10,
+      "deliveredWhileChangedPixelsShowing": 0,
+      "untrustedDeliveries": 0,
+      "applicationCommits": 10,
+      "commitsByLookalike": 10,
+      "observedAs": {
+       "delivered": 10
+      }
+     },
+     "extension-fenced": {
+      "delivered": 10,
+      "deliveredToReviewedTarget": 0,
+      "deliveredToLookalike": 10,
+      "deliveredWhileChangedPixelsShowing": 0,
+      "untrustedDeliveries": 0,
+      "applicationCommits": 10,
+      "commitsByLookalike": 10,
+      "observedAs": {
+       "delivered": 10
+      }
+     },
+     "extension-atomic": {
+      "delivered": 0,
+      "deliveredToReviewedTarget": 0,
+      "deliveredToLookalike": 0,
+      "deliveredWhileChangedPixelsShowing": 0,
+      "untrustedDeliveries": 0,
+      "applicationCommits": 0,
+      "commitsByLookalike": 0,
+      "observedAs": {
+       "delivered": 10
+      }
+     }
+    }
+   },
+   "extensionBindsAt": {
+    "canvasControl": "canvas#approve",
+    "closedShadowControl": "div#widget"
+   }
+  },
+  "recipientRequirementScope": "R3 as frozen was tested on a recipient that page-level DOM can identify. There the fenced extension refused every swap. It does not hold for a recipient inside a closed shadow root: the extension binds the host element, and with a swap inside the component both trusted extension modes delivered to the wrong internal target in 10 of 10 trials and reported success. 'No delivery to a different element' is therefore established for the extension only where the actual recipient can be verified from the page's DOM."
+ },
+ "assumptions": [
+  "A reviewed click covers one top-level document, one compositor surface, device scale 1 and page scale 1; frames with child surfaces, video or overlay-candidate resources end a review.",
+  "A repaint after admission does not cancel the click; the recipient is re-checked in the page process at delivery.",
+  "Renderer restart, navigation and GPU-process loss end a review; a fresh review works afterwards (lifecycle.json and the invalidation cases).",
+  "The browser cannot promise anything about later server writes. Record identity, version checks and duplicate suppression belong to the application.",
+  "The workspace's reviewed click and inbox accept only a canvas target today. The browser commands accept any rectangle; a DOM button passes at browser level (dom-button-delivers).",
+  "The agent that prepares the change in the inbox test is a scripted stand-in. No model was called and nothing was paid."
+ ],
+ "notRun": [
+  "hardware GPU of any kind",
+  "official or PGO build",
+  "an outside user or a model-driven agent"
+ ],
+ "domButtonOnBrowserOwnedPath": {
+  "status": "not working in the workspace yet",
+  "observed": "The inbox flow with an ordinary <button> in place of the canvas control (FAWN_INBOX_CONTROL=dom) stops at the first review with \"No live restricted compositor frame\".",
+  "cause": "browser/workspace/src/adapters/compositor-capture.js accepts only canvas elements for a restricted capture, and a review needs that capture even when a person selects a visible rectangle. The browser-level reviewed click already delivers to a DOM button (case dom-button-delivers).",
+  "consequence": "Either pilot path needs workspace code before an ordinary DOM approval can be reviewed and handed off."
+ }
 }
