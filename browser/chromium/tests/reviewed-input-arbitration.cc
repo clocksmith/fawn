@@ -59,6 +59,11 @@ void Check(Order order) {
   assert(gate->state.load() == (admitted ? Gate::kAdmitted : Gate::kStale));
   if (order != Order::kConcurrent)
     assert(admitted == (order == Order::kInputFirst));
+  // Viz names the first replacement frame whichever side won.
+  assert(gate->replaced_by.load() == 0);
+  gate->RecordReplacement(7);
+  gate->RecordReplacement(9);
+  assert(gate->replaced_by.load() == 7);
   close(done[0]);
   close(release[1]);
   gate->~Gate();

@@ -33,7 +33,8 @@ try {
     return { page, session: await context.newCDPSession(page) };
   }
   async function capture(session) {
-    const evidence = await session.send('Input.captureVisualEvidence', rect);
+    const evidence = await session.send('Input.captureVisualEvidence',
+      { ...rect, targetX: point.x, targetY: point.y });
     assert.equal(evidence.pixelWidth, rect.width);
     assert.equal(evidence.pixelHeight, rect.height);
     const rgba = Buffer.from(evidence.rgba, 'base64');
@@ -49,13 +50,13 @@ try {
     assert.deepEqual([...Buffer.from(receipt.rgba, 'base64').subarray(0, 4)], [200, 0, 0, 255]);
     const outcome = await click(session, receipt);
     result.unchangedTrials.push({ frame: receipt.frameRevision, ...outcome });
-    assert.equal(outcome.admitted, true);
+    assert.deepEqual(outcome, { admitted: true, delivered: true, reason: 'delivered' });
     await page.waitForFunction(n => clicks === n, i + 1, { timeout: 3000 });
     assert.equal((await click(session, receipt)).admitted, false);
   }
   result.steps.push('unchanged-and-one-shot');
   const outside = await capture(session);
-  assert.equal((await click(session, outside, { x: 20, y: 16 })).admitted, false);
+  assert.equal((await click(session, outside, { x: 20, y: 16 })).reason, 'outside-reviewed-target');
   assert.equal((await click(session, outside)).admitted, false);
   const foreign = await context.newCDPSession(page);
   const owned = await capture(session);
@@ -101,7 +102,7 @@ try {
   assert.equal((await click(session, beforeGpuLoss)).admitted, false);
   assert.equal(await page.evaluate(() => clicks), 3);
   const recovered = await capture(session);
-  assert.equal((await click(session, recovered)).admitted, true);
+  assert.equal((await click(session, recovered)).delivered, true);
   await page.waitForFunction(() => clicks === 4, undefined, { timeout: 3000 });
   result.steps.push('gpu-process-loss-and-fresh-recovery');
 
@@ -113,7 +114,7 @@ try {
   ({ page, session } = await open());
   assert.equal((await click(session, beforeRendererLoss)).admitted, false);
   const fresh = await capture(session);
-  assert.equal((await click(session, fresh)).admitted, true);
+  assert.equal((await click(session, fresh)).delivered, true);
   await page.waitForFunction(() => clicks === 1, undefined, { timeout: 3000 });
   result.steps.push('renderer-loss-and-fresh-target');
   result.passed = true;
