@@ -1,0 +1,68 @@
+{
+  "consumer": "clocksmith/deco#81",
+  "kind": "fawn.pilot-target-check/v1",
+  "observedDateUTC": "2026-11-22",
+  "workflow": "Approve a payment by merging its pull request in Forgejo 17.0.2 (release binary, checksum verified), run locally with two test accounts. The approval control is the confirm button of the merge form.",
+  "whyThisOne": "An ordinary DOM approval in a real application whose commit carries the record version: the merge form posts head_commit_id and the server refuses the merge if the branch head moved.",
+  "target": {
+    "control": {
+      "text": "Create merge commit",
+      "tag": "BUTTON",
+      "type": "submit",
+      "rect": [
+        87,
+        764,
+        188,
+        38
+      ],
+      "inDocumentRoot": true,
+      "hitIsControlOrInside": true,
+      "insideShadowHost": false
+    },
+    "form": {
+      "action": "/ana/payables/pulls/2/merge",
+      "method": "post",
+      "hidden": [
+        [
+          "head_commit_id",
+          "5723ab7b95f4"
+        ],
+        [
+          "merge_when_checks_succeed",
+          "false"
+        ],
+        [
+          "force_merge",
+          "false"
+        ]
+      ]
+    },
+    "shadowHostsOnPage": [
+      "RELATIVE-TIME"
+    ],
+    "verifiableByExtension": "Yes. The button is in the main document, not inside any shadow host; the element at its center is the button or its label span. The only shadow hosts on the page are timestamp widgets."
+  },
+  "applicationVersionCheck": {
+    "headWhenFormOpened": "5723ab7b95",
+    "branchMovedStatus": 200,
+    "headAtCommit": "4d307c4ab8",
+    "merged": false,
+    "state": "open",
+    "messages": [
+      "Merge failed: Whilst generating the merge, the head was updated. Hint: Try again."
+    ],
+    "url": "/ana/payables/pulls/2"
+  },
+  "applicationVersionCheckResult": "After another account moved the branch while the merge form was open, confirming the merge was refused and the pull request stayed open.",
+  "debuggerWarning": {
+    "text": "\"Reviewed click control\" started debugging this browser, with a Cancel button",
+    "shownWhile": "the extension is attached",
+    "notYetJudgedByAPerson": true
+  },
+  "stockChromeInstall": "Branded Chrome 146 ignored --load-extension, so a pilot install goes through chrome://extensions in developer mode, a packaged extension, or policy.",
+  "notDone": [
+    "no person has yet looked at the debugger warning",
+    "no extension-path workspace code written",
+    "no agent, no paid run"
+  ]
+}
