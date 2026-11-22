@@ -31,6 +31,7 @@ const REJECTION_CODES = Object.freeze({
   JOURNAL_LOCKED: 'journal-locked',
   JOURNAL_CORRUPT: 'journal-corrupt',
   INVALID_CONFIG: 'invalid-config',
+  REVIEW_CAPTURE_REFUSED: 'review-capture-refused',
 });
 
 /**

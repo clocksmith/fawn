@@ -45,7 +45,7 @@ try {
       'content-type': 'application/json', ...(cookie ? { cookie } : {}) }, body: JSON.stringify(body) });
     cookie ??= response.headers.get('set-cookie')?.split(';')[0];
     const data = await response.json();
-    if (!response.ok) throw Error(data.error);
+    if (!response.ok) throw Object.assign(Error(data.error), { code: data.code, details: data.details });
     return data;
   }
   const command = (operation, input) => post('/api/command', { operation, projectId, input });
@@ -77,8 +77,37 @@ try {
   const fresh = await act(renewed, 'fresh');
   assert.equal(fresh.outcome, 'completed', JSON.stringify(fresh));
   assert.equal(site.receipts.size, 1);
+  // A refused capture interrupts the reviewer but leaves no approval behind:
+  // the earlier review cannot be spent, and one fresh review restores progress.
+  // Device emulation is one condition the browser refuses to capture under.
+  // A fresh document, so its completion check starts unmet.
+  await command('navigate', { pageId: 'main', url: site.login('recipient') });
+  const { frameTree: { frame: next } } = await cdp.send('Page.getFrameTree', {}, sessionId);
+  Object.assign(frame, { url: next.url, loaderId: next.loaderId });
+  const earlier = await capture();
+  const attemptsBeforeRefusal = site.attempts.length;
+  const { innerWidth: width, innerHeight: height } = await adapter._evaluate({ workspaceId: projectId, pageId: 'main' },
+    '({ innerWidth, innerHeight })');
+  await cdp.send('Emulation.setDeviceMetricsOverride', { width, height, deviceScaleFactor: 1, mobile: false }, sessionId);
+  const refused = await capture().then(() => null, error => error);
+  await cdp.send('Emulation.clearDeviceMetricsOverride', {}, sessionId);
+  assert(refused, 'capture under device emulation must be refused');
+  assert.equal(refused.code, 'review-capture-refused', refused.message);
+  assert.equal(refused.details.retryable, true);
+  assert.equal(refused.details.priorApprovalCleared, true);
+  const spent = await act(earlier, 'after-refusal');
+  assert.notEqual(spent.outcome, 'completed', JSON.stringify(spent));
+  assert.equal(site.attempts.length, attemptsBeforeRefusal);
+  assert.equal(spent.outcomeBasis, 'review-expired', JSON.stringify(spent));
+  // The fresh review is delivered and reaches the application, which applies
+  // its own record-version check to the second write.
+  const recovered = await act(await capture(), 'recovered');
+  assert.equal(recovered.evidence?.effect?.delivered, true, JSON.stringify(recovered));
+  assert.equal(site.attempts.length, attemptsBeforeRefusal + 1);
   console.log(JSON.stringify({ authenticatedWorkspaceApi: true, staleInput: stale.outcomeBasis,
-    staleSiteAttempts: 0, freshWrites: site.receipts.size, account: site.attempts[0].account }));
+    staleSiteAttempts: 0, freshWrites: 1, account: site.attempts[0].account,
+    captureRefusal: { code: refused.code, reason: refused.details.reason, earlierApproval: spent.outcomeBasis ?? spent.outcome,
+      siteAttemptsFromEarlierApproval: 0, freshReviewDelivered: true } }));
 } finally {
   try { await server?.close(); await controller?.close(); await service?.close(); }
   finally { await site.close(); rmSync(root, { recursive: true, force: true }); }

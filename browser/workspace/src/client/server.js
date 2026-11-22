@@ -77,7 +77,7 @@ export async function startWorkspaceServer({ controller, config, port = config.p
       };
       if (!Object.hasOwn(operations, operation)) return send(400, { error: 'Unknown workspace command' });
       send(200, await operations[operation]());
-    } catch (error) { send(400, { error: error.message, code: error.code ?? null }); }
+    } catch (error) { send(400, { error: error.message, code: error.code ?? null, details: error.details ?? null }); }
   });
   await new Promise((resolve, reject) => { server.once('error', reject); server.listen(port, config.host, resolve); });
   origin = `http://${config.host}:${server.address().port}`;

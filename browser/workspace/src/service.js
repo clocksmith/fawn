@@ -551,7 +551,16 @@ class WorkspaceService {
       if (command.reviewedClick) {
         if (!this.#adapter.prepareReviewedClick) throw workspaceError(REJECTION_CODES.INVALID_CONFIG, 'Browser adapter lacks native reviewed clicks');
         const selected = command.compositorRegion;
-        const capture = await this.#bounded(this.#adapter.prepareReviewedClick(workspace.workspaceId, pageId, selected, snapshot, command.visibleRectangle));
+        let capture;
+        try {
+          capture = await this.#bounded(this.#adapter.prepareReviewedClick(workspace.workspaceId, pageId, selected, snapshot, command.visibleRectangle));
+        } catch (error) {
+          if (error.reviewCaptureRefused === undefined) throw error;
+          // Interrupts the reviewer but never reuses an earlier approval: none remains.
+          throw workspaceError(REJECTION_CODES.REVIEW_CAPTURE_REFUSED,
+            `The browser could not capture the selected region (${error.reviewCaptureRefused}). Review it again.`,
+            { retryable: true, reason: error.reviewCaptureRefused, priorApprovalCleared: true });
+        }
         // Grants can expire during asynchronous readback, even while the mutex is held.
         const grant = readGrant(workspace, command, snapshot.url, this.#nowMs());
         const frame = snapshot.frameEvidence[selected];
