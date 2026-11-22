@@ -139,6 +139,20 @@ running stock or opposite-provider profile. An explicit absolute
 `--user-data-dir=/path` is preserved; use a fresh isolated profile for build
 verification and close it before changing the selected provider.
 
+On Ubuntu 24.04 and later, AppArmor can restrict unprivileged user namespaces.
+The verified standalone launch on a host with this restriction used an existing,
+administrator-installed Chromium sandbox helper. Set its absolute path when
+launching the unpacked browser. With the helper from Google Chrome, run
+
+```bash
+CHROME_DEVEL_SANDBOX=/opt/google/chrome/chrome-sandbox ./chrome-wrapper
+```
+
+This example assumes the matching helper is installed at that path, owned by
+root, with mode 4755. The archive does not install the privileged helper.
+A missing helper can cause Chromium to
+exit with `No usable sandbox!` before it opens the page.
+
 The installer also stages Fawn branding under `fawn/`: the same
 `resources/fawn-*.{html,svg,js}` start-page set the macOS bundle carries, the
 compiled Linux icons from `assets/logo/compiled/linux` as
@@ -163,15 +177,15 @@ The platform policy declares no Windows release platform, so
 diagnostic zip, with Dawn's fallback member being the versioned `chrome.dll`.
 
 
-The Linux C frontdoor requests early GPU sandbox startup. On X11 with ANGLE's
-GLX backend, the managed pre-sandbox hook maps the fixed GLVND/Mesa library
-closure without querying GLX capabilities. It admits existing DRM character
+The Linux C frontdoor requests early GPU sandbox startup. Under forced Doe with
+ANGLE GL on X11, Wayland or headless Ozone, the managed pre-sandbox hook maps
+the fixed GLVND/Mesa EGL and GLX libraries before sealing the GPU process. It admits existing DRM character
 nodes only after matching the collected GPU vendor and rechecking node identity.
 The broker receives exact read-only GPU metadata/topology paths and trusted
 system drirc files; metadata/config writes, home configuration and unrelated
 files/devices remain denied. GLX capabilities and driver helper threads start
-after the sandbox seals. Native Dawn, Wayland, explicit ANGLE Vulkan/software
-and late-sandbox policies keep their existing behavior.
+after the sandbox seals. Native Dawn, explicit ANGLE Vulkan/software and
+late-sandbox policies keep their existing behavior.
 
 That same route queries Vulkan's instance-extension metadata before sealing,
 while the existing SONAME preloads keep ICDs resident. This lets the loader
