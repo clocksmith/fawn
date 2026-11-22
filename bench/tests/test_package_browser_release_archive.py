@@ -290,6 +290,12 @@ class PackageBrowserReleaseArchiveTests(unittest.TestCase):
                 )
 
                 with zipfile.ZipFile(archive) as package:
+                    executable_path = payload["members"]["browserExecutable"]["archivePath"]
+                    self.assertTrue(stat.S_ISREG(package.getinfo(executable_path).external_attr >> 16))
+                    if sys.platform == "darwin":
+                        extracted = root / "native-extraction"
+                        subprocess.run(["/usr/bin/ditto", "-x", "-k", archive, extracted], check=True)
+                        self.assertTrue(os.access(extracted / executable_path, os.X_OK))
                     self.assertEqual(
                         package.read("Fawn.app/Contents/Frameworks/libwebgpu_doe.so"),
                         b"packaged doe runtime\n",

@@ -140,6 +140,7 @@ def zip_records(archive_path: Path) -> tuple[dict[str, dict[str, Any]], list[dic
                 "byteLength": len(data),
                 "executable": bool(mode & stat.S_IXUSR),
                 "mode": mode & 0o777,
+                "unixRegularFile": info.create_system == 3 and stat.S_ISREG(mode),
             }
     return records, failures
 
@@ -219,6 +220,11 @@ def check_static_contract(
                 failure("manifest_member_missing", "releaseArchiveManifest.archiveMembers", f"archive lacks {path_text}")
             )
             continue
+        if contract and contract["os"] == "macos" and actual["executable"] and not actual["unixRegularFile"]:
+            failures.append(failure(
+                "native_macos_executable_mode_lost", "releaseArchiveManifest.archiveMembers",
+                f"macOS archive extraction requires a Unix regular-file mode on {path_text}",
+            ))
         for key in ("sha256", "byteLength", "executable"):
             if actual.get(key) != expected.get(key):
                 failures.append(

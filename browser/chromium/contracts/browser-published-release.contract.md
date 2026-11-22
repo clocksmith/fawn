@@ -185,6 +185,28 @@ browser metadata JSON member. That metadata must bind the same browser product,
 platform tuple, executable member path, Doe runtime member path, and Dawn
 fallback runtime member path as the release bundle.
 
+## Standalone replacement qualification
+
+Run the following check from the Fawn checkout with Python 3.11+ and Python Playwright.
+Supply two trusted release archives and their manifests for the same product and
+platform. The tool launches the executable from each extracted package.
+
+```bash
+python3 -m bench.tools.check_browser_archive_upgrade \
+  --old-archive previous.zip --old-manifest previous.manifest.json \
+  --new-archive candidate.zip --new-manifest candidate.manifest.json \
+  --out /tmp/fawn-archive-upgrade.json
+```
+
+The checker installs the first package, replaces it with the candidate at the
+same path, then reinstalls the candidate. On macOS it extracts each bundle with
+Apple’s `ditto` and checks the executable permissions on disk. Each launch uses a temporary home and
+the same disposable profile. It verifies navigation, the page's Content Security
+Policy, and persistence of a value across both replacements. The receipt records
+whether the Chromium version advanced. A same-version pair exercises package
+replacement only. WebGPU execution, enterprise policies, and upstream security
+updates require separate evidence.
+
 ## Per-run receipts
 
 Every WebGPU run in the published browser proof lane must emit a receipt that

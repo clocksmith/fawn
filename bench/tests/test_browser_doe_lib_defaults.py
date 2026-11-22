@@ -713,6 +713,13 @@ class BrowserDoeLibDefaultTests(unittest.TestCase):
             default_profile = next(value for value in arguments if value.startswith("--user-data-dir="))
             self.assertEqual(default_profile, f"--user-data-dir={env['HOME']}/Library/Application Support/Fawn/doe-c")
             launcher = str(moved / "Contents/MacOS/Chromium")
+            explicit_url = "https://example.invalid/target"
+            headless = subprocess.check_output(
+                [launcher, "--headless=new", "--dump-dom", explicit_url], env=env, text=True
+            ).splitlines()
+            self.assertNotIn("--new-window", headless)
+            self.assertEqual(headless[-1], explicit_url)
+            self.assertIn("--homepage=" + homepage, headless)
             dawn = subprocess.run([launcher, " -use-webgpu-runtime=dawn ", "--ordinary=keep"],
                                   env=env, check=True, capture_output=True, text=True).stdout.splitlines()
             self.assertIn("--use-webgpu-runtime=dawn", dawn)

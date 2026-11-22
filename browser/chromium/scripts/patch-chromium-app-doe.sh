@@ -247,6 +247,8 @@ MODE_SEEN=0
 PROFILE_SEEN=0
 LIBRARY_SEEN=0
 POSITIONAL=0
+HEADLESS=0
+HAS_TARGET=0
 FORWARDED=(--no-first-run)
 for ARGUMENT in "$@"; do
   VIEW="${ARGUMENT#"${ARGUMENT%%[!$' \t\r\n\v\f']*}"}"
@@ -260,6 +262,7 @@ for ARGUMENT in "$@"; do
     if [[ "${KEY}" == *=* ]]; then VALUE="${KEY#*=}"; fi
     KEY="${KEY%%=*}"
     case "${KEY}" in
+      headless) HEADLESS=1 ;;
       use-webgpu-runtime)
         if [[ "${MODE_SEEN}" -ne 0 || ( "${VALUE}" != doe && "${VALUE}" != dawn ) ]]; then
           echo "Fawn: select exactly one explicit doe or dawn runtime" >&2
@@ -287,6 +290,8 @@ for ARGUMENT in "$@"; do
         PROFILE_SEEN=1
         ;;
     esac
+  elif [[ -n "${VIEW}" ]]; then
+    HAS_TARGET=1
   fi
   FORWARDED+=("${ARGUMENT}")
 done
@@ -316,10 +321,12 @@ if [[ "${PROFILE_SEEN}" -eq 0 ]]; then
 fi
 FAWN_START="${SCRIPT_DIR}/../Resources/fawn-cycle.html"
 
-exec -a fawn-doe "${REAL_BINARY}" "${SELECTED[@]}" \
-  --homepage="file://${FAWN_START}" \
-  --new-window "file://${FAWN_START}" \
-  "${FORWARDED[@]}"
+SELECTED+=(--homepage="file://${FAWN_START}")
+# Headless Chromium accepts one startup target. Preserve the caller's URL.
+if [[ "${HEADLESS}" -eq 0 || "${HAS_TARGET}" -eq 0 ]]; then
+  SELECTED+=(--new-window "file://${FAWN_START}")
+fi
+exec -a fawn-doe "${REAL_BINARY}" "${SELECTED[@]}" "${FORWARDED[@]}"
 EOF
   chmod 0755 "${MACOS_BIN}"
 fi
