@@ -276,8 +276,22 @@ class CdpWorkspaceAdapter {
     const client = reviewedClicks(session);
     // The reviewed click lands at the rectangle's center; the browser binds the
     // node the page hits there when it captures.
-    const review = await client.capture(rect,
-      { x: rect.x + Math.floor(rect.width / 2), y: rect.y + Math.floor(rect.height / 2) });
+    let review;
+    try {
+      review = await client.capture(rect,
+        { x: rect.x + Math.floor(rect.width / 2), y: rect.y + Math.floor(rect.height / 2) });
+    } catch (error) {
+      // The browser refused to capture. No approval exists: the previous one was
+      // cleared above and the browser superseded its own. The caller reviews again.
+      if (page.pendingReview === attempt) page.pendingReview = null;
+      // A RangeError is a caller mistake, not a browser refusal.
+      if (!(error instanceof RangeError)) {
+        const text = error.message.replace(/\s*\(-?\d+\)\s*$/, '');
+        error.reviewCaptureRefused = /\(([a-z:-]+)\)\s*$/.exec(text)?.[1]
+          ?? text.trim().toLowerCase().replace(/[^a-z]+/g, '-').replace(/^-|-$/g, '').slice(0, 64);
+      }
+      throw error;
+    }
     const current = await session.send('Page.getFrameTree', {});
     if (current.frameTree.frame.loaderId !== frame.loaderId || (visibleRectangle && current.frameTree.frame.url !== visibleRectangle.url)
         || review.deviceScaleFactor !== frame.binding.deviceScaleFactor
