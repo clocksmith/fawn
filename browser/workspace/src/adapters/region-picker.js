@@ -30,7 +30,9 @@ export function pickRegion(timeoutMs) {
     };
     const click = event => {
       event.preventDefault(); event.stopImmediatePropagation();
-      finish(null, { selector: selectorFor(event.target), preview: (event.target.innerText ?? '').slice(0, 200) });
+      const { x, y, width, height } = event.target.getBoundingClientRect();
+      finish(null, { selector: selectorFor(event.target), preview: (event.target.innerText ?? '').slice(0, 200),
+        viewportRect: { x, y, width, height } });
     };
     const key = event => { if (event.key === 'Escape') { event.preventDefault(); finish(Error('Selection cancelled')); } };
     document.addEventListener('mousemove', move, true); document.addEventListener('click', click, true); document.addEventListener('keydown', key, true);

@@ -22,7 +22,7 @@ const wire = { async send(method) {
 } };
 const cdp = createCdpAdapter({});
 cdp._workspaces.set('work', { cdp: wire, pages: new Map([['main', { sessionId: 'session' }]]) });
-const frame = { loaderId: 'load', sessionId: 'capture', surfaceId: 'selected', bindingDigest: 'bound',
+const frame = { loaderId: 'load', grantId: 'pixels', sessionId: 'capture', surfaceId: 'selected', bindingDigest: 'bound',
   binding: { deviceScaleFactor: 1, viewportRect: rect } };
 const bitmap = { format: 'compositor-element-canonical-srgb-rgba8-v2', width: 1, height: 1, tileSize: 64, hashes: [baselineDigest] };
 const snap = { frameEvidence: { '#name': frame }, regionBitmaps: { '#name': bitmap } };
@@ -32,6 +32,9 @@ bitmap.hashes = ['different-granted-pixels'];
 await assert.rejects(prepare(), /pixels differ/);
 assert.equal((await cdp.executeReviewedClick('work', 'main', first.binding.id)).admitted, false);
 bitmap.hashes = [baselineDigest];
+const revoked = await prepare();
+cdp.invalidateReviewedClicks('work', 'pixels');
+assert.equal((await cdp.executeReviewedClick('work', 'main', revoked.binding.id)).reason, 'review-expired');
 
 const root = mkdtempSync(join(tmpdir(), 'fawn-reviewed-input-'));
 const config = structuredClone(loadServiceConfig());
@@ -62,6 +65,8 @@ try {
   const act = (obs, actionId, handle = 'hname') => service.submitAction({ ...owner, pageId: 'main', actionId, authorizedIntent: 'review',
     kind: 'click', target: { handle }, observationVersion: obs.observationVersion, requireReviewedClick: true }).then(x => x.result);
   const plain = await service.observe(owner);
+  await assert.rejects(service.observe({ ...owner, visibleRectangle: rect, reviewedClick: true }), { code: 'unauthenticated' });
+  await assert.rejects(service.observe({ ...owner, ...admin, visibleRectangle: rect, reviewedClick: true }), { code: 'unauthorized-target' });
   await assert.rejects(act(plain, 'unreviewed'), { code: 'stale-observation' });
   const reviewed = await observe();
   assert.equal(reviewed.reviewedRgba, evidence.rgba);

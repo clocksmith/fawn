@@ -137,10 +137,11 @@ export class WorkspaceController {
       kind: 'navigate', target: { url: target.href }, observationVersion: observation.observationVersion });
     return admitted.result;
   }
-  async reviewClickTarget(id, { pageId = 'main', selector, compositorSession = 'start' }) {
+  async reviewClickTarget(id, { pageId = 'main', selector, compositorSession = 'start', visibleRectangle }) {
     if (typeof selector !== 'string' || !selector) throw Error('Select the region to review');
     const owner = await this.humanPage(id, pageId, [], [selector]);
-    const obs = await this.service.observe({ ...owner, pageId, regions: [selector], compositorRegion: selector,
+    const obs = await this.service.observe({ ...owner, ...(visibleRectangle !== undefined ? { ...this.admin(id), visibleRectangle } : {}),
+      pageId, regions: [selector], compositorRegion: selector,
       compositorSession, reviewedClick: true });
     const target = obs.elements.find(element => element.selector === selector && element.handle);
     if (!target || target.formAction) throw Error('Select an interactive region that accepts a plain click');

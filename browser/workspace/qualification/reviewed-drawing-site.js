@@ -43,6 +43,11 @@ export async function openDrawingSite() {
             method: 'POST', headers: {'content-type':'application/json'}, body: JSON.stringify(request)
           });
           window.lastReply = {status:response.status, receipt:await response.json()};
+          if (response.ok) {
+            const ack = document.createElement('span');
+            ack.id = 'write-receipt'; ack.textContent = window.lastReply.receipt.writeId;
+            canvas.replaceChildren(ack);
+          }
         };
         </script>`);
       return;

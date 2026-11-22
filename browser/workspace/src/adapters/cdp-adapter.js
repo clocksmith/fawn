@@ -256,7 +256,7 @@ class CdpWorkspaceAdapter {
     return this._evaluate(workspaceId, `(${queryPage.toString()})(${JSON.stringify(args)})`);
   }
 
-  async prepareReviewedClick(workspaceId, pageId, selector, snapshot) {
+  async prepareReviewedClick(workspaceId, pageId, selector, snapshot, visibleRectangle) {
     const { cdp, pages } = this._entry(workspaceId);
     const page = pages.get(pageId);
     const frame = snapshot.frameEvidence?.[selector];
@@ -264,29 +264,47 @@ class CdpWorkspaceAdapter {
     if (!frame?.binding || bitmap?.format !== 'compositor-element-canonical-srgb-rgba8-v2') {
       throw Error('The selected element needs a current restricted RGBA capture');
     }
-    const attempt = Symbol();
+    const rect = frame.binding.viewportRect;
+    if (visibleRectangle && (visibleRectangle.url !== snapshot.url || visibleRectangle.loaderId !== frame.loaderId
+        || visibleRectangle.selector !== selector || ['x', 'y', 'width', 'height'].some(key => visibleRectangle[key] !== rect[key]))) {
+      throw Error('The selected viewport rectangle or document changed. Select it again.');
+    }
+    const attempt = { grantId: frame.grantId };
     page.pendingReview = attempt;
     page.visualReview = null;
     const session = { send: (method, args) => cdp.send(method, args, page.sessionId) };
     const client = reviewedClicks(session);
-    const review = await client.capture(frame.binding.viewportRect);
+    const review = await client.capture(rect);
     const current = await session.send('Page.getFrameTree', {});
-    if (current.frameTree.frame.loaderId !== frame.loaderId || review.deviceScaleFactor !== frame.binding.deviceScaleFactor
+    if (current.frameTree.frame.loaderId !== frame.loaderId || (visibleRectangle && current.frameTree.frame.url !== visibleRectangle.url)
+        || review.deviceScaleFactor !== frame.binding.deviceScaleFactor
         || review.pixelWidth !== bitmap.width || review.pixelHeight !== bitmap.height) {
       throw Error('Browser review does not match the granted capture geometry and document');
     }
     // A root-surface read can include an occluding or neighboring element. Never
     // disclose it as a restricted capture unless every authorized pixel agrees.
-    const pixels = Buffer.from(review.rgba, 'base64');
-    const { record } = await canonicalRgbaTiles(pixels, bitmap.width, bitmap.height, bitmap.tileSize);
-    if (record.hashes.length !== bitmap.hashes.length || record.hashes.some((hash, i) => hash !== bitmap.hashes[i])) {
-      throw Error('Browser review pixels differ from the granted element');
+    if (!visibleRectangle) {
+      const pixels = Buffer.from(review.rgba, 'base64');
+      const { record } = await canonicalRgbaTiles(pixels, bitmap.width, bitmap.height, bitmap.tileSize);
+      if (record.hashes.length !== bitmap.hashes.length || record.hashes.some((hash, i) => hash !== bitmap.hashes[i])) {
+        throw Error('Browser review pixels differ from the granted element');
+      }
     }
     if (page.pendingReview !== attempt || page.closed) throw Error('Review was superseded');
     const { rgba, ...binding } = review;
     const id = randomUUID();
-    page.visualReview = { id, client, review };
-    return { binding: { id, ...binding }, rgba };
+    page.visualReview = { id, client, review, grantId: frame.grantId };
+    page.pendingReview = null;
+    return { binding: { id, ...binding, pixelScope: visibleRectangle ? 'visible-rectangle' : 'restricted-element' }, rgba };
+  }
+
+  invalidateReviewedClicks(workspaceId, grantId) {
+    const pages = this._workspaces.get(workspaceId)?.pages;
+    if (!pages) return;
+    for (const page of pages.values()) {
+      if (!grantId || page.pendingReview?.grantId === grantId) page.pendingReview = null;
+      if (!grantId || page.visualReview?.grantId === grantId) page.visualReview = null;
+    }
   }
 
   async executeReviewedClick(workspaceId, pageId, id) {
@@ -410,7 +428,14 @@ class CdpWorkspaceAdapter {
 
   async selectRegion(workspaceId, pageId) {
     await this.focusPage(workspaceId, pageId);
-    return this._evaluate({ workspaceId, pageId }, `(${pickRegion.toString()})(${this._config.dispatch.actionTimeoutMs})`);
+    const { cdp, sessionId } = this._entry({ workspaceId, pageId });
+    const frame = async () => (await cdp.send('Page.getFrameTree', {}, sessionId)).frameTree.frame;
+    const before = await frame();
+    const selection = await this._evaluate({ workspaceId, pageId }, `(${pickRegion.toString()})(${this._config.dispatch.actionTimeoutMs})`);
+    const after = await frame();
+    if (after.loaderId !== before.loaderId || after.url !== before.url) throw Error('Document changed during region selection');
+    return { ...selection, visibleRectangle: { ...selection.viewportRect, selector: selection.selector,
+      url: after.url, loaderId: after.loaderId } };
   }
 
   async focusPage(workspaceId, pageId) {

@@ -454,6 +454,7 @@ class WorkspaceService {
         this.#uploads.discard(files);
         throw error;
       }
+      this.#adapter.invalidateReviewedClicks?.(workspaceId, grantId);
       await this.#adapter.compositor?.release(workspaceId, grantId);
       return { grantId, ...(files.length ? { uploadFiles: files } : {}) };
     });
@@ -464,6 +465,7 @@ class WorkspaceService {
     authenticateAdmin(workspace, adminCredential);
     return this.#runtimeFor(workspaceId).mutex.run(async () => {
       this.#append(RECORD_TYPES.AUTHORIZATION_REVOKED, { workspaceId, grantId });
+      this.#adapter.invalidateReviewedClicks?.(workspaceId, grantId);
       await this.#adapter.compositor?.release(workspaceId, grantId);
       return { grantId };
     });
@@ -491,6 +493,7 @@ class WorkspaceService {
         ownerCredentialHash: credentialHash,
         previous,
       });
+      this.#adapter.invalidateReviewedClicks?.(workspaceId);
       await this.#adapter.compositor?.release(workspaceId);
       for (const action of workspace.actions.values()) {
         if (action.status !== ACTION_STATUS.QUEUED) continue;
@@ -522,6 +525,13 @@ class WorkspaceService {
   async observe(command) {
     const workspace = this.#workspace(command.workspaceId);
     authenticateOwner(workspace, command);
+    if (command.visibleRectangle !== undefined) {
+      authenticateAdmin(workspace, command.adminCredential);
+      if (command.ownerId !== 'human' || command.reviewedClick !== true || !command.visibleRectangle
+          || typeof command.visibleRectangle !== 'object') {
+        throw workspaceError(REJECTION_CODES.UNAUTHORIZED_TARGET, 'A visible rectangle needs explicit approval from the current human owner');
+      }
+    }
     if (this.#config.protocolVersion < 4 && command.pageId && command.pageId !== MAIN_PAGE) throw workspaceError(REJECTION_CODES.INVALID_COMMAND, 'Additional pages require protocol 4');
     const requested = validateObservationRead(command, this.#config);
     const pageId = command.pageId ?? MAIN_PAGE;
@@ -541,7 +551,7 @@ class WorkspaceService {
       if (command.reviewedClick) {
         if (!this.#adapter.prepareReviewedClick) throw workspaceError(REJECTION_CODES.INVALID_CONFIG, 'Browser adapter lacks native reviewed clicks');
         const selected = command.compositorRegion;
-        const capture = await this.#bounded(this.#adapter.prepareReviewedClick(workspace.workspaceId, pageId, selected, snapshot));
+        const capture = await this.#bounded(this.#adapter.prepareReviewedClick(workspace.workspaceId, pageId, selected, snapshot, command.visibleRectangle));
         // Grants can expire during asynchronous readback, even while the mutex is held.
         const grant = readGrant(workspace, command, snapshot.url, this.#nowMs());
         const frame = snapshot.frameEvidence[selected];
