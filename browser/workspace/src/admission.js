@@ -274,7 +274,10 @@ function checkObservation(workspace, command, nowMs, live = null) {
   const scope = command.observationScope ?? PAGE_SCOPE;
   const captured = Object.keys(cited.frameEvidence ?? {});
   const reviewed = captured.find(selector => cited.frameEvidence[selector].reviewedClick);
-  if (command.requireReviewedClick !== undefined && (command.requireReviewedClick !== true || !reviewed)) {
+  if (command.requireReviewedClick !== undefined && typeof command.requireReviewedClick !== 'boolean') {
+    reject(REJECTION_CODES.INVALID_COMMAND, 'requireReviewedClick must be a boolean');
+  }
+  if (command.requireReviewedClick && !reviewed) {
     reject(REJECTION_CODES.STALE_OBSERVATION, 'A native review of the click target is required');
   }
   if (reviewed && (command.kind !== 'click' || command.target.selector !== reviewed)) {

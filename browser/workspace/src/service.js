@@ -88,7 +88,8 @@ function validateObservationRead(command, config) {
       || typeof command.compositorRegion !== 'string' || command.regionGroups?.length)) {
     throw workspaceError(REJECTION_CODES.INVALID_COMMAND, 'Name one requested region for compositor capture');
   }
-  if (command.reviewedClick !== undefined && (command.reviewedClick !== true || !command.compositorRegion || read.view !== FULL_VIEW)) {
+  if ((command.reviewedClick !== undefined && typeof command.reviewedClick !== 'boolean')
+      || (command.reviewedClick && (!command.compositorRegion || read.view !== FULL_VIEW))) {
     throw workspaceError(REJECTION_CODES.INVALID_COMMAND, 'A reviewed click needs a full observation of the selected compositor region');
   }
   return read;
