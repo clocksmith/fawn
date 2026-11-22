@@ -5,6 +5,7 @@ import { createResidentCanvasReader } from './resident-canvas.js';
 import { createGpuTileDigest } from './gpu-tile-sha256.js';
 import { NativeFrameHelper } from './native-frame-helper.js';
 import { queryPage } from './page-query.js';
+import { canonicalJson, sha256Hex } from '../journal.js';
 
 // Serialized into the isolated capture world. An external texture can discard visible color
 // distinctions during conversion. Only canonical RGBA or its verified digest can clear a tile.
@@ -126,6 +127,14 @@ function createElementCapture(id, resident, capture, leaseMs, scopeProbe, canoni
   function assertCurrent() {
     if (!isCurrent() || (track && track.readyState !== 'live')) { stop(); throw Error('Selected surface or sharing permission ended'); }
   }
+  function readGeometry() {
+    const { x, y, width, height } = element.getBoundingClientRect();
+    const scale = window.devicePixelRatio;
+    if (![x, y, width, height, scale].every(Number.isFinite) || width <= 0 || height <= 0 || scale <= 0) {
+      throw Error('Selected surface has no valid viewport geometry');
+    }
+    return { x, y, width, height, scale };
+  }
   function renew() {
     if (ended) return false;
     clearTimeout(watchdog); watchdog = setTimeout(stop, leaseMs);
@@ -173,8 +182,9 @@ function createElementCapture(id, resident, capture, leaseMs, scopeProbe, canoni
       if (newStream) await start(selected);
       if (element !== selected) throw Error('The selected element was replaced');
       assertCurrent();
-      // The processor can hold a frame from before this observation. Discard
-      // the queued frame and consume the next restricted compositor update.
+      // Geometry comes from the isolated DOM world, sampled on both sides of the frame read.
+      const geometry = readGeometry();
+      // Discard the queued frame and consume the next restricted compositor update.
       let closedFrames = 0;
       if (!newStream) {
         diagnosticPhase = 'discard prior frame';
@@ -256,6 +266,12 @@ function createElementCapture(id, resident, capture, leaseMs, scopeProbe, canoni
           evidence.bitmap = { format: 'compositor-element-canonical-srgb-rgba8-v2', width, height, tileSize, hashes: authority };
         }
         assertCurrent();
+        const endGeometry = readGeometry();
+        if (Object.keys(geometry).some(key => geometry[key] !== endGeometry[key])) {
+          throw Error('Selected surface geometry changed during capture');
+        }
+        const { x, y, width: cssWidth, height: cssHeight, scale } = geometry;
+        evidence.frame.binding = { deviceScaleFactor: scale, viewportRect: { x, y, width: cssWidth, height: cssHeight } };
         return evidence;
       } finally { frame.close(); }
     }
@@ -398,7 +414,15 @@ export class CompositorSessions {
         entry.frameSample = (entry.frameSample ?? 0) + 1;
         selected.frame.frameImportOrdinal = entry.frameSample;
       }
-      Object.assign(selected.frame, { loaderId, grantId: capture.grantId, grantRevision: capture.grantRevision });
+      const binding = selected.frame.binding;
+      if (!binding?.viewportRect || selected.frame.surfaceId !== entry.id || selected.frame.sessionId !== entry.id) {
+        throw Error('Restricted frame has no current geometry or surface identity');
+      }
+      // The digest identifies the coordinate space and surface across samples. Frame timestamps
+      // and sample ordinals advance even when nothing in the rendered region changes.
+      Object.assign(binding, { pageId, frameId, loaderId, selector: capture.selector, surfaceId: entry.id });
+      Object.assign(selected.frame, { loaderId, grantId: capture.grantId, grantRevision: capture.grantRevision,
+        bindingDigest: sha256Hex(canonicalJson(binding)) });
       return raw;
     } catch (error) { await this.end(entry); throw error; }
     finally { signal?.removeEventListener('abort', abort); }
