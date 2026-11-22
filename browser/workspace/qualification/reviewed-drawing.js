@@ -27,9 +27,9 @@ let browser, page, client, helper;
 const report = { arm, modelCalls: 0 };
 
 async function openReviewer(account) {
-  browser = await chromium.launch({ ...launch, headless: true });
+  browser = await chromium.launch({ ...launch, args: [...(launch.args ?? []), '--window-size=800,600'], headless: true });
   report.browser = browser.version();
-  const context = await browser.newContext({ viewport: { width: 320, height: 200 }, deviceScaleFactor: 1 });
+  const context = await browser.newContext({ viewport: null });
   page = await context.newPage();
   await page.goto(site.login(account));
   client = reviewedClicks(await context.newCDPSession(page));
@@ -158,6 +158,25 @@ try {
   }
   report.pixelOnlyStaleWrites = [...site.receipts.values()].filter(r => r.record === 'visual-only').length;
   assert.equal(report.pixelOnlyStaleWrites, native ? 0 : 1);
+  // Admit current input, then let the record change while the server is processing
+  // that request. Even perfect browser evidence cannot authorize the eventual write.
+  await page.goto(site.origin + '/draw/late-write');
+  const late = await capture();
+  await validateStock(late);
+  const held = site.pauseCommit('late-write');
+  const deadline = AbortSignal.timeout(5000);
+  try {
+    const delivered = await send(late);
+    if (native) assert.equal(delivered.admitted, true);
+    await Promise.race([held.arrived, new Promise((_, reject) => {
+      if (deadline.aborted) reject(deadline.reason);
+      else deadline.addEventListener('abort', () => reject(deadline.reason), { once: true });
+    })]);
+    site.revise('late-write');
+  } finally { held.release(); }
+  assert.equal((await waitForReply()).status, 409);
+  assert.ok(![...site.receipts.values()].some(r => r.record === 'late-write'));
+  report.changeAfterInputRejectedByApplication = true;
   report.completed = true;
 } catch (error) {
   report.completed = false;

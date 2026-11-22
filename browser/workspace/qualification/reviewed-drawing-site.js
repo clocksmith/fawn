@@ -6,9 +6,10 @@ import { once } from 'node:events';
 
 export async function openDrawingSite() {
   const accounts = new Map(['sender', 'recipient'].map(name => [randomUUID(), name]));
-  const records = new Map(['repair', 'lookalike', 'visual-only'].map(name => [name, { revision: 1 }]));
+  const records = new Map(['repair', 'lookalike', 'visual-only', 'late-write'].map(name => [name, { revision: 1 }]));
   const receipts = new Map();
   const attempts = [];
+  let pause = null;
   const form = (account, record, revision) => ({ account, record, revision, key: randomUUID() });
   const server = createServer(async (req, res) => {
     const path = new URL(req.url, 'http://localhost').pathname.split('/');
@@ -56,6 +57,12 @@ export async function openDrawingSite() {
     attempts.push({ account, record: path[2], revision: input?.revision });
     if (!input || account !== input.account || input.record !== path[2] || typeof input.key !== 'string'
         || !input.key || !Number.isSafeInteger(input.revision)) return reply(403, { error: 'wrong-record-or-account' });
+    if (pause?.record === input.record) {
+      const held = pause;
+      pause = null;
+      held.arrived.resolve();
+      await held.resume.promise;
+    }
     const identity = JSON.stringify([account, input.key]);
     const prior = receipts.get(identity);
     if (prior) {
@@ -72,6 +79,12 @@ export async function openDrawingSite() {
   await once(server, 'listening');
   const origin = 'http://127.0.0.1:' + server.address().port;
   return { origin, attempts, receipts, revise: name => records.get(name).revision++,
+    pauseCommit(record) {
+      if (pause) throw Error('Already holding a fixture commit');
+      const arrived = Promise.withResolvers(), resume = Promise.withResolvers();
+      pause = { record, arrived, resume };
+      return { arrived: arrived.promise, release: resume.resolve };
+    },
     login: name => origin + '/login/' + [...accounts].find(([, value]) => value === name)[0],
     async close() { const closed = once(server, 'close'); server.close(); server.closeAllConnections(); await closed; } };
 }
