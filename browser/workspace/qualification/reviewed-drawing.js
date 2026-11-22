@@ -26,12 +26,19 @@ const point = { x: 16, y: 16 };
 let browser, page, client, helper;
 const report = { arm, modelCalls: 0 };
 
+async function settleDrawing() {
+  // Navigation completion can precede presentation of the drawing. Give the
+  // document a paint before requesting evidence, on exactly the same terms in every arm.
+  await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+}
+
 async function openReviewer(account) {
   browser = await chromium.launch({ ...launch, args: [...(launch.args ?? []), '--window-size=800,600'], headless: true });
   report.browser = browser.version();
   const context = await browser.newContext({ viewport: null });
   page = await context.newPage();
   await page.goto(site.login(account));
+  await settleDrawing();
   client = reviewedClicks(await context.newCDPSession(page));
   if (arm === 'stock-helper') helper = new NativeFrameHelper();
 }
@@ -117,6 +124,7 @@ try {
   report.versionChangeWrites = site.receipts.size;
   // Two pages show identical drawings but represent different records.
   await page.reload();
+  await settleDrawing();
   const original = await capture();
   await page.goto(site.origin + '/draw/lookalike');
   assert.equal(original.rgba, (await screenshot()).toString('base64'));
@@ -125,6 +133,7 @@ try {
   assert.equal(site.attempts.length, report.versionChangeAttemptsAtApplication);
   // Fresh authorized review of the intended record. The server is the oracle.
   await page.goto(site.origin + '/draw/repair');
+  await settleDrawing();
   const fresh = await capture();
   verifyRed(fresh);
   await validateStock(fresh);
@@ -147,6 +156,7 @@ try {
   // Isolate the browser guarantee: pixel-only damage need not change the site's
   // version. This deliberately disposable record lets a stale click have an effect.
   await page.goto(site.origin + '/draw/visual-only');
+  await settleDrawing();
   const unversionedRepaint = await capture();
   await validateStock(unversionedRepaint);
   await repaint();
@@ -161,6 +171,7 @@ try {
   // Admit current input, then let the record change while the server is processing
   // that request. Even perfect browser evidence cannot authorize the eventual write.
   await page.goto(site.origin + '/draw/late-write');
+  await settleDrawing();
   const late = await capture();
   await validateStock(late);
   const held = site.pauseCommit('late-write');
