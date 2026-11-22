@@ -603,7 +603,9 @@ def write_zip(archive_path: Path, member_sources: dict[str, MemberSource]) -> No
             source = member_sources[member_path]
             info = zipfile.ZipInfo(member_path, FIXED_ZIP_DATE_TIME)
             info.compress_type = zipfile.ZIP_DEFLATED
-            info.external_attr = source.mode << 16
+            # Apple ditto restores Unix permissions only on typed Unix entries.
+            info.create_system = 3
+            info.external_attr = (stat.S_IFREG | source.mode) << 16
             archive.writestr(info, source.data)
 
 
