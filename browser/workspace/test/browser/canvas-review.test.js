@@ -254,8 +254,20 @@ try {
       };
       const execute = adapter.execute.bind(adapter);
       adapter.execute = async (id, request, files) => {
-        // A new revision lands after Blitzen's final check, before site commit.
-        if (request.actionId === 'revision-race') current = { ...current, revision: current.revision + 1 };
+        // The service has validated this request. Hold the adapter here until the
+        // page has repainted and the application has advanced its write version.
+        if (request.actionId === 'revision-race') {
+          const colors = await adapter._page(id, request.pageId).locator('#cell').evaluate(canvas => {
+            const ctx = canvas.getContext('2d');
+            const readPixel = () => Array.from(ctx.getImageData(0, 0, 1, 1).data);
+            const before = readPixel();
+            ctx.fillStyle = 'blue';
+            ctx.fillRect(0, 0, 1, 1);
+            return [before, readPixel()];
+          });
+          assert.deepEqual(colors, [[255, 0, 0, 255], [0, 0, 255, 255]]);
+          current = { ...current, revision: current.revision + 1 };
+        }
         const result = await execute(id, request, files);
         if (request.actionId === 'lost-ack') throw Error('Test discarded the acknowledgment after commit');
         return result;
@@ -352,6 +364,12 @@ try {
   assert.equal(raced.outcome, 'failed');
   assert.deepEqual(attempts, ['/queue/B-r1']);
   assert.deepEqual(committed(), []);
+  const postValidationRace = {
+    pixelChanged: true,
+    staleRequestsAtSite: attempts.length,
+    staleCommits: committed().length,
+    refusal: 'site-revision-conflict',
+  };
 
   await navigate('reopen', '/schedule');
   await cell.evaluate(el => {
@@ -497,8 +515,8 @@ try {
         frameScope = { frameId: document.id, loaderId: document.loaderId, executionContextId: entry.contextId,
           grantId: entry.grantId, grantRevision: base.grantRevision, captureId: session };
       }
-      const gpu = (await adapter.compositor.control(entry, 'adapterInfo')).result?.value ?? null;
-      checkpoint({ phase: 'ready', targetId: targetInfo.targetId, surfaceId: session, browser: version, browserPid, gpuProcessPid,
+      const gpu = useCompositor ? (await adapter.compositor.control(entry, 'adapterInfo')).result?.value ?? null : null;
+      checkpoint({ phase: 'ready', targetId: targetInfo.targetId, surfaceId: useCompositor ? session : null, browser: version, browserPid, gpuProcessPid,
         ...(frameScope ? { frameImportScope: frameScope } : {}), ...(softwareSandbox ? { softwareSandbox } : {}),
         ...(observedRuntime ? { observedRuntime } : {}), gpu, commandLabel: null,
         selection: config.browser.fawnBuild ?? { channel: config.browser.channel } });
@@ -592,7 +610,7 @@ try {
     pixelAuthority = { schema: 'blitzen.canonical-capture/v1', representation: frame.pixelRepresentation, stale: stalePixelControl,
       fresh: { reviewed: freshReviewed, checked: freshChecked, effectCount: committed().length, reconciliation: 'effect-present' } };
   }
-  const receipt = { clock: 'request-repaint-through-authoritative-reconciliation', canvasBackend, ...(pixelAuthority ? { pixelAuthority } : {}),
+  const receipt = { clock: 'request-repaint-through-authoritative-reconciliation', canvasBackend, postValidationRace, ...(pixelAuthority ? { pixelAuthority } : {}),
     ...(matchedSparse ? { grantRefresh, stockSourceImageReadBytesBeforeCapture:
       compositor === 'stock-i420' ? adapter._workspaces.get(workspaceId).stockSourceImageReadBytes : null } : {}),
     ...(linkedSparse ? { diagnosticOnly: true, linkedSparseOracle: qualifySparseReview(sparseSamples, pixelAuthority) } : {}),
