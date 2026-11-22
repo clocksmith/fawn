@@ -53,7 +53,7 @@ async function screenshot() {
   return data;
 }
 async function capture() {
-  if (native) return client.capture(clip);
+  if (native) return client.capture(clip, point);
   const pixels = await screenshot();
   const digest = helper ? (await helper.sample(clip.width, clip.height, pixels.toString('base64'), true)).hashes.join(',')
     : createHash('sha256').update(pixels).digest('hex');
@@ -138,7 +138,7 @@ try {
   verifyRed(fresh);
   await validateStock(fresh);
   const admitted = await send(fresh);
-  if (native) assert.equal(admitted.admitted, true);
+  if (native) assert.equal(admitted.delivered, true);
   const result = await waitForReply();
   assert.equal(result.status, 200);
   assert.equal(result.receipt.record, 'repair'); assert.equal(result.receipt.account, 'recipient');
@@ -178,7 +178,7 @@ try {
   const deadline = AbortSignal.timeout(5000);
   try {
     const delivered = await send(late);
-    if (native) assert.equal(delivered.admitted, true);
+    if (native) assert.equal(delivered.delivered, true);
     await Promise.race([held.arrived, new Promise((_, reject) => {
       if (deadline.aborted) reject(deadline.reason);
       else deadline.addEventListener('abort', () => reject(deadline.reason), { once: true });
