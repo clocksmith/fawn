@@ -924,3 +924,11 @@ node qualification/compare-compositor-digests.js "$out/cpu.json" "$out/webgpu.js
 For a separately authorized four-arm run, `resident-comparison.py run
 --compositor-digest webgpu` selects the GPU digest on the three browser GPU
 arms and keeps the native helper's CPU path.
+
+## Reviewed regional clicks
+
+On a browser build with Fawn's native input commands, the local authenticated workspace API accepts `reviewClickTarget` with a `pageId` and the selector of an interactive canvas. The current human owner grants that region and completes the normal browser capture chooser. The response includes the exact RGBA image, its pixel dimensions, its SHA-256 digest, a target handle, and an observation version. Display those returned pixels for review. They are verified against the restricted capture before disclosure.
+
+After approval, call `clickReviewedTarget` with the same page, handle, observation version, and a fresh action ID. The click is at the center of the reviewed rectangle. Declare the external effect and its application completion condition for a write. A browser refusal means no input was admitted. A disconnected acknowledgment leaves the outcome unknown and must be reconciled. A new owner takes a fresh capture. Stock Chromium does not implement the two native commands.
+
+Run `node qualification/reviewed-drawing.js stock` or `node qualification/reviewed-drawing.js stock-helper` from this directory for the disposable drawing comparison. The `fawn-dawn` and `fawn-doe` arms require their respective hash-pinned browser profiles as the next argument. The comparison records a pixel-only edit and a separate application revision change. Every arm must recover under the recipient account, reject a lookalike document, and deduplicate a repeated commit. Timings from this correctness run are diagnostic.

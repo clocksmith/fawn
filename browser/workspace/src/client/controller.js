@@ -137,6 +137,25 @@ export class WorkspaceController {
       kind: 'navigate', target: { url: target.href }, observationVersion: observation.observationVersion });
     return admitted.result;
   }
+  async reviewClickTarget(id, { pageId = 'main', selector, compositorSession = 'start' }) {
+    if (typeof selector !== 'string' || !selector) throw Error('Select the region to review');
+    const owner = await this.humanPage(id, pageId, [], [selector]);
+    const obs = await this.service.observe({ ...owner, pageId, regions: [selector], compositorRegion: selector,
+      compositorSession, reviewedClick: true });
+    const target = obs.elements.find(element => element.selector === selector && element.handle);
+    if (!target || target.formAction) throw Error('Select an interactive region that accepts a plain click');
+    const { reviewedClick } = obs.frameEvidence[selector];
+    return { pageId, observationVersion: obs.observationVersion, handle: target.handle,
+      ...reviewedClick, rgba: obs.reviewedRgba };
+  }
+
+  async clickReviewedTarget(id, { pageId = 'main', observationVersion, handle, actionId, effect, completion }) {
+    const owner = this.owner(id);
+    if (owner.ownerId !== 'human') throw Error('Take over before issuing a human action');
+    const admitted = await this.service.submitAction({ ...owner, pageId, observationVersion, actionId,
+      authorizedIntent: 'human', kind: 'click', target: { handle }, requireReviewedClick: true, effect, completion });
+    return admitted.result;
+  }
   async capture(id, { pageId, regions = [], compositorRegion, compositorSession, sinceVersion, artifactId, expectedRevision = 0 }, owner = null, onObservation = null) {
     const previous = artifactId ? this.store.get(id).artifacts[artifactId] : null;
     const previousSelector = previous?.source?.compositor?.selector;
@@ -484,6 +503,7 @@ export class WorkspaceController {
       }
       const admitted = await this.service.submitAction({ ...owner, pageId, actionId: callId, authorizedIntent: 'delegated-task',
         kind: input.kind, target: input.target, params: input.params, completion: input.completion, effect: input.effect,
+        ...(input.requireReviewedClick !== undefined ? { requireReviewedClick: input.requireReviewedClick } : {}),
         observationVersion: observed.observationVersion });
       observations.delete(pageId); return navigationNotice(input, await admitted.result);
     };

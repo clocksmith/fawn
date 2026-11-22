@@ -46,6 +46,8 @@ export async function startWorkspaceServer({ controller, config, port = config.p
         openPage: () => controller.service.openPage(controller.admin(projectId)),
         focusPage: () => controller.service.focusPage({ ...controller.admin(projectId), pageId: input.pageId }),
         selectRegion: () => controller.service.selectRegion({ ...controller.admin(projectId), pageId: input.pageId }),
+        reviewClickTarget: () => controller.reviewClickTarget(projectId, input),
+        clickReviewedTarget: () => controller.clickReviewedTarget(projectId, input),
         capture: () => controller.capture(projectId, input), record: () => controller.record(projectId, input),
         repositoryRead: () => controller.readRepository(projectId, input),
         checkSources: () => controller.checkSources(projectId, input),

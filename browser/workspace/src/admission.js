@@ -273,6 +273,13 @@ function checkObservation(workspace, command, nowMs, live = null) {
   }
   const scope = command.observationScope ?? PAGE_SCOPE;
   const captured = Object.keys(cited.frameEvidence ?? {});
+  const reviewed = captured.find(selector => cited.frameEvidence[selector].reviewedClick);
+  if (command.requireReviewedClick !== undefined && (command.requireReviewedClick !== true || !reviewed)) {
+    reject(REJECTION_CODES.STALE_OBSERVATION, 'A native review of the click target is required');
+  }
+  if (reviewed && (command.kind !== 'click' || command.target.selector !== reviewed)) {
+    reject(REJECTION_CODES.INVALID_COMMAND, 'A native visual review authorizes only a click on that selected region');
+  }
   if (scope.kind === REGIONS_SCOPE && captured.some(selector => !scope.selectors.includes(selector))) {
     reject(REJECTION_CODES.STALE_OBSERVATION, 'A regional action using compositor evidence must bind the selected surface');
   }
