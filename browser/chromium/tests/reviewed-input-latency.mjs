@@ -88,7 +88,7 @@ const rss = async pid => {
 const report = {
   schema: 'fawn.reviewed-input-latency/v1', arm: values.arm, flags,
   chromeSha256: await sha256(binary),
-  libcontentSha256: await sha256(join(dirname(binary), 'libcontent.so')),
+  libcontentSha256: await sha256(join(dirname(binary), 'libcontent.so')).catch(() => null),
   libvizServiceSha256: await sha256(join(dirname(binary), 'libcomponents_viz_service.so')).catch(() => null),
   harnessSha256: await sha256(new URL(import.meta.url)),
   patchSha256: values.patch ? await sha256(values.patch) : null,
@@ -182,6 +182,11 @@ try {
   report.trials = trials;
   report.delivered = delivered.length;
   report.refused = refused;
+  report.refusals = {
+    capture: Object.entries(refused).filter(([k]) => k.startsWith('capture-refused')).reduce((n, [, v]) => n + v, 0),
+    staleClick: refused['stale-compositor-revision'] ?? 0,
+    admittedThenCancelled: Object.entries(refused).filter(([k]) => k.startsWith('admitted-')).reduce((n, [, v]) => n + v, 0),
+  };
   report.unnecessaryRefusalRate = (trials - delivered.length) / trials;
   report.captureMs = stats(delivered.map(r => r.captureMs));
   report.clickMs = stats(delivered.map(r => r.clickMs));

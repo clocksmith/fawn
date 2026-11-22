@@ -12,10 +12,10 @@ index cf97a6d..6b3b8c6 100644
      "surfaces/surface_info.cc",
 diff --git a/components/viz/common/surfaces/fawn_visual_review.h b/components/viz/common/surfaces/fawn_visual_review.h
 new file mode 100644
-index 0000000..48d23d1
+index 0000000..84e4ea5
 --- /dev/null
 +++ b/components/viz/common/surfaces/fawn_visual_review.h
-@@ -0,0 +1,90 @@
+@@ -0,0 +1,93 @@
 +// Copyright 2026 The Chromium Authors
 +// Use of this source code is governed by a BSD-style license that can be
 +// found in the LICENSE file.
@@ -51,6 +51,9 @@ index 0000000..48d23d1
 +  };
 +  std::atomic<uint32_t> state{kOpen};
 +  std::atomic<uint32_t> refusal{kNoRefusal};
++  // Set by the browser when it no longer needs the review, so Viz can stop
++  // copying for it.
++  std::atomic<uint32_t> released{0};
 +  // First frame Viz activated on the reviewed surface after the reference.
 +  std::atomic<uint32_t> replaced_by{0};
 +  // Latest frame Viz activated on the reviewed surface.
@@ -154,7 +157,7 @@ index 891beb5..6169b11 100644
                             std::unique_ptr<CopyOutputRequest> request,
                             bool capture_exact_surface_id = false,
 diff --git a/components/viz/service/frame_sinks/compositor_frame_sink_support.cc b/components/viz/service/frame_sinks/compositor_frame_sink_support.cc
-index 798d043..1194ffc 100644
+index 798d043..76e9c82 100644
 --- a/components/viz/service/frame_sinks/compositor_frame_sink_support.cc
 +++ b/components/viz/service/frame_sinks/compositor_frame_sink_support.cc
 @@ -10,6 +10,7 @@
@@ -165,7 +168,7 @@ index 798d043..1194ffc 100644
  #include "base/check.h"
  #include "base/containers/map_util.h"
  #include "base/debug/crash_logging.h"
-@@ -153,7 +154,53 @@ CompositorFrameSinkSupport::CompositorFrameSinkSupport(
+@@ -153,7 +154,56 @@ CompositorFrameSinkSupport::CompositorFrameSinkSupport(
    frame_sink_manager_->RegisterCompositorFrameSinkSupport(frame_sink_id_, this);
  }
 
@@ -182,8 +185,11 @@ index 798d043..1194ffc 100644
 +    base::UnsafeSharedMemoryRegion state,
 +    base::File owner,
 +    base::OnceCallback<void(uint32_t, std::vector<uint8_t>)> callback) {
-+  InvalidateFawnVisualReview();
 +  auto* surface = surface_manager_->GetSurfaceForId(id);
++  // Reviews of an earlier surface of this sink end; reviews of the same
++  // surface stay open beside the new one.
++  if (fawn_reviewed_surface_ && fawn_reviewed_surface_.get() != surface)
++    InvalidateFawnVisualReview();
 +  const auto refuse = [&](uint32_t reason) {
 +    if (auto mapping = state.Map(); mapping.IsValid())
 +      mapping.GetMemoryAs<FawnVisualReviewGate>()->RecordRefusal(reason);
@@ -219,7 +225,7 @@ index 798d043..1194ffc 100644
    // Shut down the layer context so that it no longer calls into
    // |this|, before doing other tear down.
    layer_context_.reset();
-@@ -596,6 +643,7 @@ CompositorFrameSinkSupport::TakeCopyOutputRequests(
+@@ -596,6 +646,7 @@ CompositorFrameSinkSupport::TakeCopyOutputRequests(
  }
 
  void CompositorFrameSinkSupport::EvictSurface(const LocalSurfaceId& id) {
@@ -227,7 +233,7 @@ index 798d043..1194ffc 100644
    DCHECK(id.embed_token() != last_evicted_local_surface_id_.embed_token() ||
           id.parent_sequence_number() >=
               last_evicted_local_surface_id_.parent_sequence_number());
-@@ -752,6 +800,15 @@ SubmitResult CompositorFrameSinkSupport::MaybeSubmitCompositorFrame(
+@@ -752,6 +803,15 @@ SubmitResult CompositorFrameSinkSupport::MaybeSubmitCompositorFrame(
      CompositorFrame frame,
      std::optional<HitTestRegionList> hit_test_region_list,
      uint64_t submit_time) {
@@ -386,7 +392,7 @@ index 5b3399a..35c085c 100644
    // message pipes from the client, the client will see the connection error and
    // recreate the CompositorFrameSink+Display.
 diff --git a/components/viz/service/surfaces/surface.cc b/components/viz/service/surfaces/surface.cc
-index f0e122c..5e3f88a 100644
+index f0e122c..2ccfad1 100644
 --- a/components/viz/service/surfaces/surface.cc
 +++ b/components/viz/service/surfaces/surface.cc
 @@ -3,6 +3,7 @@
@@ -423,7 +429,7 @@ index f0e122c..5e3f88a 100644
  #include "ui/gfx/swap_result.h"
 
  namespace viz {
-@@ -134,7 +140,174 @@ Surface::Surface(const SurfaceInfo& surface_info,
+@@ -134,7 +140,190 @@ Surface::Surface(const SurfaceInfo& surface_info,
        allocation_group_->GetLastReference().IsNewerThan(surface_id());
  }
 
@@ -444,18 +450,21 @@ index f0e122c..5e3f88a 100644
 +  return true;
 +}
 +
++Surface::FawnReview::FawnReview() = default;
++Surface::FawnReview::~FawnReview() = default;
++
 +bool Surface::ArmFawnVisualReview(base::UnsafeSharedMemoryRegion state,
 +                                  base::File owner,
 +                                  const gfx::Rect& rect,
 +                                  FawnReferenceCallback callback) {
-+  ReleaseFawnVisualReview();
 +  if (!state.IsValid() || state.GetSize() != sizeof(FawnVisualReviewGate) ||
 +      !owner.IsValid())
 +    return false;
-+  auto mapping = state.Map();
-+  if (!mapping.IsValid())
++  auto review = std::make_unique<FawnReview>();
++  review->state = state.Map();
++  if (!review->state.IsValid())
 +    return false;
-+  auto* gate = mapping.GetMemoryAs<FawnVisualReviewGate>();
++  auto* gate = review->gate();
 +  if (!HasActiveFrame() || rect.IsEmpty() ||
 +      !gfx::Rect(GetActiveFrame().size_in_pixels()).Contains(rect)) {
 +    gate->RecordRefusal(FawnVisualReviewGate::kUnsupportedScope);
@@ -467,79 +476,92 @@ index f0e122c..5e3f88a 100644
 +  }
 +  if (!gate->Open())
 +    return false;
-+  fawn_visual_state_ = std::move(mapping);
-+  fawn_visual_owner_ = std::move(owner);
-+  fawn_visual_rect_ = rect;
-+  fawn_reference_callback_ = std::move(callback);
-+  fawn_last_copied_frame_ = 0;
-+  fawn_verifying_ = true;
-+  ++fawn_visual_arm_id_;
-+  fawn_visual_state_.GetMemoryAs<FawnVisualReviewGate>()->active_frame.store(
-+      GetActiveFrameIndex());
++  // Reviews the browser has finished with make room first, then the oldest.
++  std::erase_if(fawn_reviews_, [](const std::unique_ptr<FawnReview>& r) {
++    return r->gate()->released.load();
++  });
++  if (fawn_reviews_.size() >= kMaxFawnReviews) {
++    InvalidateFawnReview(*fawn_reviews_.front(), FawnVisualReviewGate::kEnded);
++    fawn_reviews_.erase(fawn_reviews_.begin());
++  }
++  review->id = ++fawn_next_review_id_;
++  review->owner = std::move(owner);
++  review->rect = rect;
++  review->reference_callback = std::move(callback);
++  gate->active_frame.store(GetActiveFrameIndex());
++  fawn_reviews_.push_back(std::move(review));
 +  return true;
 +}
 +
-+// Invalidation means Viz can no longer verify this surface. It closes the
-+// owner at once, which also cancels an admitted input still waiting for a
-+// verdict. The mapping stays so later activations remain attributable.
-+void Surface::InvalidateFawnVisualReview(uint32_t reason) {
-+  if (!fawn_visual_state_.IsValid())
-+    return;
-+  auto* gate = fawn_visual_state_.GetMemoryAs<FawnVisualReviewGate>();
-+  if (fawn_verifying_ || gate->Open())
++// Invalidation means Viz can no longer verify a review. It closes the owner at
++// once, which also cancels an admitted input still waiting for a verdict. The
++// mapping stays so later activations remain attributable.
++void Surface::InvalidateFawnReview(FawnReview& review, uint32_t reason) {
++  auto* gate = review.gate();
++  if (review.verifying || gate->Open())
 +    gate->RecordRefusal(reason);
 +  gate->Invalidate();
-+  fawn_visual_owner_.Close();
-+  fawn_verifying_ = false;
-+  fawn_pending_copies_.clear();
-+  if (fawn_reference_callback_)
-+    std::move(fawn_reference_callback_).Run(0, {});
++  review.owner.Close();
++  review.verifying = false;
++  review.pending_copies.clear();
++  if (review.reference_callback)
++    std::move(review.reference_callback).Run(0, {});
++}
++
++void Surface::InvalidateFawnVisualReview(uint32_t reason) {
++  for (auto& review : fawn_reviews_)
++    InvalidateFawnReview(*review, reason);
 +}
 +
 +void Surface::ReleaseFawnVisualReview() {
 +  InvalidateFawnVisualReview();
-+  fawn_visual_state_ = {};
-+  fawn_visual_reference_.clear();
-+  ++fawn_visual_arm_id_;
++  fawn_reviews_.clear();
 +}
 +
 +// Called when the aggregator collects this surface's copy requests for a
-+// draw, so the request is bound to the frame drawn now and forces that draw.
++// draw, so each request is bound to the frame drawn now and forces that draw.
 +// A request still on the frame when a newer one activates is dropped in
 +// ActivateFrame, never carried over. Frames replaced before any draw were
 +// never shown and need no verdict.
 +void Surface::MaybeRequestFawnVerification() {
-+  if (!fawn_verifying_ || !active_frame_data_ ||
-+      GetActiveFrameIndex() == fawn_last_copied_frame_)
++  if (fawn_reviews_.empty() || !active_frame_data_)
 +    return;
++  std::erase_if(fawn_reviews_, [](const std::unique_ptr<FawnReview>& r) {
++    return r->gate()->released.load();
++  });
 +  const uint32_t frame_index = GetActiveFrameIndex();
-+  fawn_last_copied_frame_ = frame_index;
-+  auto request = std::make_unique<CopyOutputRequest>(
-+      CopyOutputResult::Format::RGBA,
-+      CopyOutputResult::Destination::kSystemMemory,
-+      base::BindOnce(&Surface::OnFawnVerificationCopied,
-+                     weak_factory_.GetWeakPtr(), fawn_visual_arm_id_,
-+                     frame_index));
-+  request->set_area(fawn_visual_rect_);
-+  request->set_source(fawn_copy_source_);
-+  request->set_result_task_runner(
-+      base::SequencedTaskRunner::GetCurrentDefault());
-+  fawn_pending_copies_.push_back({frame_index});
-+  RequestCopyOfOutputOnRootRenderPass(std::move(request));
++  for (auto& review : fawn_reviews_) {
++    if (!review->verifying || review->last_copied_frame == frame_index)
++      continue;
++    review->last_copied_frame = frame_index;
++    auto request = std::make_unique<CopyOutputRequest>(
++        CopyOutputResult::Format::RGBA,
++        CopyOutputResult::Destination::kSystemMemory,
++        base::BindOnce(&Surface::OnFawnVerificationCopied,
++                       weak_factory_.GetWeakPtr(), review->id, frame_index));
++    request->set_area(review->rect);
++    request->set_source(review->copy_source);
++    request->set_result_task_runner(
++        base::SequencedTaskRunner::GetCurrentDefault());
++    review->pending_copies.push_back({frame_index});
++    RequestCopyOfOutputOnRootRenderPass(std::move(request));
++  }
 +}
 +
 +void Surface::OnFawnVerificationCopied(
-+    uint64_t arm_id,
++    uint64_t review_id,
 +    uint32_t frame_index,
 +    std::unique_ptr<CopyOutputResult> result) {
-+  if (arm_id != fawn_visual_arm_id_ || !fawn_verifying_)
++  auto it = std::ranges::find(fawn_reviews_, review_id, &FawnReview::id);
++  if (it == fawn_reviews_.end() || !(*it)->verifying)
 +    return;
-+  for (auto& pending : fawn_pending_copies_) {
++  FawnReview& review = **it;
++  for (auto& pending : review.pending_copies) {
 +    if (pending.frame_index != frame_index)
 +      continue;
 +    pending.done = true;
-+    const int width = fawn_visual_rect_.width();
-+    const int height = fawn_visual_rect_.height();
++    const int width = review.rect.width();
++    const int height = review.rect.height();
 +    if (!result->IsEmpty()) {
 +      auto access = result->ScopedAccessSkBitmap();
 +      const SkBitmap bitmap = access.bitmap();
@@ -553,33 +575,33 @@ index f0e122c..5e3f88a 100644
 +    }
 +    break;
 +  }
-+  PublishFawnVerdicts();
++  PublishFawnVerdicts(review);
 +}
 +
 +// Verdicts are published strictly in frame order. A missing copy cannot be
 +// verified, so it refutes like a changed pixel.
-+void Surface::PublishFawnVerdicts() {
-+  auto* gate = fawn_visual_state_.GetMemoryAs<FawnVisualReviewGate>();
-+  while (fawn_verifying_ && !fawn_pending_copies_.empty() &&
-+         fawn_pending_copies_.front().done) {
-+    FawnPendingCopy copy = std::move(fawn_pending_copies_.front());
-+    fawn_pending_copies_.pop_front();
-+    if (fawn_reference_callback_) {
++void Surface::PublishFawnVerdicts(FawnReview& review) {
++  auto* gate = review.gate();
++  while (review.verifying && !review.pending_copies.empty() &&
++         review.pending_copies.front().done) {
++    FawnPendingCopy copy = std::move(review.pending_copies.front());
++    review.pending_copies.pop_front();
++    if (review.reference_callback) {
 +      if (copy.rgba.empty()) {
-+        InvalidateFawnVisualReview(FawnVisualReviewGate::kReferenceCopyFailed);
++        InvalidateFawnReview(review,
++                             FawnVisualReviewGate::kReferenceCopyFailed);
 +        return;
 +      }
-+      fawn_visual_reference_ = copy.rgba;
++      review.reference = copy.rgba;
 +      gate->RecordVerdict(copy.frame_index, true);
 +      TRACE_EVENT_INSTANT("viz", "FawnReview.Reference", "surface",
 +                          surface_id().ToString(), "revision",
 +                          copy.frame_index);
-+      std::move(fawn_reference_callback_)
++      std::move(review.reference_callback)
 +          .Run(copy.frame_index, std::move(copy.rgba));
 +      continue;
 +    }
-+    const bool matched =
-+        !copy.rgba.empty() && copy.rgba == fawn_visual_reference_;
++    const bool matched = !copy.rgba.empty() && copy.rgba == review.reference;
 +    gate->RecordVerdict(copy.frame_index, matched);
 +    TRACE_EVENT_INSTANT("viz", "FawnReview.Verdict", "surface",
 +                        surface_id().ToString(), "revision", copy.frame_index,
@@ -587,8 +609,8 @@ index f0e122c..5e3f88a 100644
 +    if (!matched) {
 +      // Keep the owner open: an input admitted on an earlier verified frame
 +      // may still be delivered. Nothing later can be verified.
-+      fawn_verifying_ = false;
-+      fawn_pending_copies_.clear();
++      review.verifying = false;
++      review.pending_copies.clear();
 +    }
 +  }
 +}
@@ -598,17 +620,16 @@ index f0e122c..5e3f88a 100644
    ClearCopyRequests();
 
    surface_manager_->SurfaceDestroyed(this);
-@@ -695,6 +868,9 @@ void Surface::RecomputeActiveFrameContentColorUsage() {
+@@ -695,6 +884,8 @@ void Surface::RecomputeActiveFrameContentColorUsage() {
  // A frame is activated if all its Surface ID dependencies are active or a
  // deadline has hit and the frame was forcibly activated.
  void Surface::ActivateFrame(FrameData frame_data) {
-+  if (fawn_visual_state_.IsValid() &&
-+      !IsFawnVerifiableFrame(frame_data.frame))
++  if (!fawn_reviews_.empty() && !IsFawnVerifiableFrame(frame_data.frame))
 +    InvalidateFawnVisualReview(FawnVisualReviewGate::kUnverifiableReplacement);
    TRACE_EVENT1("viz", "Surface::ActivateFrame", "SurfaceId",
                 surface_id().ToString());
 
-@@ -706,6 +882,23 @@ void Surface::ActivateFrame(FrameData frame_data) {
+@@ -706,6 +897,25 @@ void Surface::ActivateFrame(FrameData frame_data) {
    if (active_frame_data_) {
      std::swap(old_copy_requests,
                active_frame_data_->frame.render_pass_list.back()->copy_requests);
@@ -616,42 +637,44 @@ index f0e122c..5e3f88a 100644
 +    // Forget it rather than let it copy the new frame under the old index.
 +    // The pending entry goes first, so the dropped request's empty result
 +    // finds nothing to refute.
-+    const auto undrawn = [&](const std::unique_ptr<CopyOutputRequest>& r) {
-+      return r->has_source() && r->source() == fawn_copy_source_;
-+    };
-+    if (std::ranges::any_of(old_copy_requests, undrawn)) {
-+      const uint32_t outgoing = GetActiveFrameIndex();
-+      base::EraseIf(fawn_pending_copies_, [&](const FawnPendingCopy& c) {
++    const uint32_t outgoing = GetActiveFrameIndex();
++    for (auto& review : fawn_reviews_) {
++      const auto undrawn = [&](const std::unique_ptr<CopyOutputRequest>& r) {
++        return r->has_source() && r->source() == review->copy_source;
++      };
++      if (!std::ranges::any_of(old_copy_requests, undrawn))
++        continue;
++      base::EraseIf(review->pending_copies, [&](const FawnPendingCopy& c) {
 +        return c.frame_index == outgoing;
 +      });
 +      std::erase_if(old_copy_requests, undrawn);
-+      if (fawn_last_copied_frame_ == outgoing)
-+        fawn_last_copied_frame_ = 0;
-+      PublishFawnVerdicts();
++      if (review->last_copied_frame == outgoing)
++        review->last_copied_frame = 0;
++      PublishFawnVerdicts(*review);
 +    }
    }
 
    ClearCopyRequests();
-@@ -715,6 +908,18 @@ void Surface::ActivateFrame(FrameData frame_data) {
+@@ -715,6 +925,18 @@ void Surface::ActivateFrame(FrameData frame_data) {
    std::optional<FrameData> previous_frame_data = std::move(active_frame_data_);
 
    active_frame_data_ = std::move(frame_data);
-+  if (fawn_visual_state_.IsValid()) {
-+    auto* gate = fawn_visual_state_.GetMemoryAs<FawnVisualReviewGate>();
++  for (auto& review : fawn_reviews_) {
++    auto* gate = review->gate();
 +    // The replacement is the first frame after the reference, not after arming.
-+    const bool first = !fawn_reference_callback_ && !gate->replaced_by.load();
++    const bool first = !review->reference_callback && !gate->replaced_by.load();
 +    gate->active_frame.store(GetActiveFrameIndex());
-+    if (first)
++    if (first) {
 +      gate->RecordReplacement(GetActiveFrameIndex());
-+    if (first)
 +      TRACE_EVENT_INSTANT("viz", "FawnReview.Replaced", "surface",
 +                          surface_id().ToString(), "revision",
 +                          GetActiveFrameIndex());
++    }
 +  }
 
    // We no longer have a pending frame, so unregister self from
    // |blocking_allocation_groups_|.
-@@ -960,6 +1165,7 @@ void Surface::TakeCopyOutputRequests(Surface::CopyRequestsMap* copy_requests) {
+@@ -960,6 +1182,7 @@ void Surface::TakeCopyOutputRequests(Surface::CopyRequestsMap* copy_requests) {
  }
 
  void Surface::TakeCopyOutputRequestsFromClient() {
@@ -659,7 +682,7 @@ index f0e122c..5e3f88a 100644
    if (!surface_client_)
      return;
    for (std::unique_ptr<PendingCopyOutputRequest>& request_params :
-@@ -989,6 +1195,7 @@ const FrameIntervalInputs& Surface::GetFrameIntervalInputs() const {
+@@ -989,6 +1212,7 @@ const FrameIntervalInputs& Surface::GetFrameIntervalInputs() const {
  }
 
  void Surface::SetActiveFrameForViewTransition(CompositorFrame frame) {
@@ -668,7 +691,7 @@ index f0e122c..5e3f88a 100644
 
    active_frame_data_->frame = std::move(frame);
 diff --git a/components/viz/service/surfaces/surface.h b/components/viz/service/surfaces/surface.h
-index 95357ab..5d6c472 100644
+index 95357ab..a418861 100644
 --- a/components/viz/service/surfaces/surface.h
 +++ b/components/viz/service/surfaces/surface.h
 @@ -17,15 +17,18 @@
@@ -720,7 +743,7 @@ index 95357ab..5d6c472 100644
    base::WeakPtr<Surface> GetWeakPtr() { return weak_factory_.GetWeakPtr(); }
 
    // Always placed the given |copy_request| on the root render pass.
-@@ -486,6 +505,28 @@ class VIZ_SERVICE_EXPORT Surface final : public FrameSinkObserver {
+@@ -486,6 +505,40 @@ class VIZ_SERVICE_EXPORT Surface final : public FrameSinkObserver {
    FrameActivationReason frame_activation_reason_ =
        FrameActivationReason::kNotSet;
 
@@ -729,23 +752,35 @@ index 95357ab..5d6c472 100644
 +    bool done = false;
 +    std::vector<uint8_t> rgba;
 +  };
++  // One browser review of this surface. Several can be open at once, each with
++  // its own gate, rectangle, reference pixels and stream of verification copies.
++  struct FawnReview {
++    FawnReview();
++    ~FawnReview();
++    FawnVisualReviewGate* gate() {
++      return state.GetMemoryAs<FawnVisualReviewGate>();
++    }
++    uint64_t id = 0;
++    base::WritableSharedMemoryMapping state;
++    base::File owner;
++    gfx::Rect rect;
++    std::vector<uint8_t> reference;
++    FawnReferenceCallback reference_callback;
++    base::circular_deque<FawnPendingCopy> pending_copies;
++    base::UnguessableToken copy_source = base::UnguessableToken::Create();
++    uint32_t last_copied_frame = 0;
++    bool verifying = true;
++  };
++  static constexpr size_t kMaxFawnReviews = 16;
++  void InvalidateFawnReview(FawnReview& review, uint32_t reason);
 +  void MaybeRequestFawnVerification();
-+  void OnFawnVerificationCopied(uint64_t arm_id,
++  void OnFawnVerificationCopied(uint64_t review_id,
 +                                uint32_t frame_index,
 +                                std::unique_ptr<CopyOutputResult> result);
-+  void PublishFawnVerdicts();
++  void PublishFawnVerdicts(FawnReview& review);
 +
-+  base::WritableSharedMemoryMapping fawn_visual_state_;
-+  base::File fawn_visual_owner_;
-+  gfx::Rect fawn_visual_rect_;
-+  std::vector<uint8_t> fawn_visual_reference_;
-+  FawnReferenceCallback fawn_reference_callback_;
-+  base::circular_deque<FawnPendingCopy> fawn_pending_copies_;
-+  uint64_t fawn_visual_arm_id_ = 0;
-+  const base::UnguessableToken fawn_copy_source_ =
-+      base::UnguessableToken::Create();
-+  uint32_t fawn_last_copied_frame_ = 0;
-+  bool fawn_verifying_ = false;
++  std::vector<std::unique_ptr<FawnReview>> fawn_reviews_;
++  uint64_t fawn_next_review_id_ = 0;
    base::WeakPtrFactory<Surface> weak_factory_{this};
  };
 
@@ -776,20 +811,22 @@ index 629ce42..1e31793 100644
                             std::unique_ptr<CopyOutputRequest> request,
                             bool capture_exact_surface_id,
 diff --git a/content/browser/devtools/protocol/input_handler.cc b/content/browser/devtools/protocol/input_handler.cc
-index 8468f4d..934071c 100644
+index 8468f4d..3aac8d4 100644
 --- a/content/browser/devtools/protocol/input_handler.cc
 +++ b/content/browser/devtools/protocol/input_handler.cc
-@@ -4,6 +4,9 @@
+@@ -4,6 +4,11 @@
 
  #include "content/browser/devtools/protocol/input_handler.h"
 
 +#if BUILDFLAG(IS_LINUX)
 +#include <poll.h>
++
++#include <string_view>
 +#endif
  #include <stddef.h>
 
  #include <memory>
-@@ -13,26 +16,42 @@
+@@ -13,26 +18,42 @@
 
  #include "base/check.h"
  #include "base/check_deref.h"
@@ -832,7 +869,7 @@ index 8468f4d..934071c 100644
  #include "content/common/input/synthetic_pinch_gesture.h"
  #include "content/common/input/synthetic_pinch_gesture_params.h"
  #include "content/common/input/synthetic_pointer_action.h"
-@@ -41,11 +60,17 @@
+@@ -41,11 +62,17 @@
  #include "content/common/input/synthetic_smooth_scroll_gesture_params.h"
  #include "content/common/input/synthetic_tap_gesture.h"
  #include "content/common/input/synthetic_tap_gesture_params.h"
@@ -850,7 +887,7 @@ index 8468f4d..934071c 100644
  #include "ui/base/clipboard/clipboard_constants.h"
  #include "ui/base/dragdrop/mojom/drag_drop_types.mojom-shared.h"
  #include "ui/events/base_event_utils.h"
-@@ -1134,6 +1159,190 @@ void InputHandler::DragController::EndDraggingWithRenderWidgetHostAtPoint(
+@@ -1134,6 +1161,195 @@ void InputHandler::DragController::EndDraggingWithRenderWidgetHostAtPoint(
                       std::move(callback)));
  }
 
@@ -989,6 +1026,11 @@ index 8468f4d..934071c 100644
 +struct InputHandler::VisualReview : public WebContentsObserver {
 +  explicit VisualReview(WebContents* contents)
 +      : WebContentsObserver(contents) {}
++  // Tells Viz it can stop verifying for this review.
++  ~VisualReview() override {
++    if (mapping.IsValid())
++      gate()->released.store(1);
++  }
 +  void DidStartNavigation(NavigationHandle*) override {
 +    valid_document = false;
 +  }
@@ -1041,35 +1083,50 @@ index 8468f4d..934071c 100644
  InputHandler::InputHandler(bool allow_file_access,
                             bool allow_sending_input_to_browser)
      : DevToolsDomainHandler(Input::Metainfo::domainName),
-@@ -1358,6 +1567,380 @@ void InputHandler::ImeSetComposition(
+@@ -1358,6 +1574,472 @@ void InputHandler::ImeSetComposition(
        /*target_dom_node_id=*/blink::DOMNodeIdType(), std::move(closure));
  }
 
-+bool InputHandler::CanUseVisualReview(const VisualReview& review) {
++// The first condition that keeps `review` from being used, or nullptr.
++const char* InputHandler::VisualReviewBlocker(const VisualReview& review) {
 +  auto* agent_host =
 +      host_ ? RenderFrameDevToolsAgentHost::GetFor(host_) : nullptr;
-+  if (!agent_host)
-+    return false;
++  if (!agent_host || !web_contents_)
++    return "no-target";
 +  for (auto* emulation : EmulationHandler::ForAgentHost(agent_host)) {
 +    if (emulation->device_emulation_enabled())
-+      return false;
++      return "device-emulation";
 +  }
-+  return web_contents_ && review.valid_document &&
-+         review.generation == visual_review_generation_ &&
-+         host_->GetRenderWidgetHost() &&
-+         !web_contents_->GetOuterWebContents() && host_->IsActive() &&
-+         host_->IsRenderFrameLive() && host_->IsInPrimaryMainFrame() &&
-+         host_->child_count() == 0 &&
-+         !web_contents_->HasUncommittedNavigationInPrimaryMainFrame() &&
-+         !ignore_input_events_ && !host_->GetRenderWidgetHost()->IsHidden() &&
-+         host_->GetView() && host_->GetView()->IsShowing() &&
-+         !host_->GetView()->IsPointerLocked() &&
-+         host_->GetDocumentToken().ToString() == review.document &&
-+         host_->GetView()->GetCurrentSurfaceId() == review.surface &&
-+         host_->GetView()->GetDeviceScaleFactor() == 1.f &&
-+         ScaleFactor() == 1.f &&
-+         gfx::Rect(host_->GetView()->GetVisibleViewportSize())
-+             .Contains(review.rect);
++  if (!review.valid_document ||
++      host_->GetDocumentToken().ToString() != review.document)
++    return "document-changed";
++  if (review.generation != visual_review_generation_)
++    return "superseded";
++  if (!host_->GetRenderWidgetHost() || web_contents_->GetOuterWebContents() ||
++      !host_->IsActive() || !host_->IsRenderFrameLive() ||
++      !host_->IsInPrimaryMainFrame())
++    return "frame-unavailable";
++  if (host_->child_count() != 0)
++    return "child-frames";
++  if (web_contents_->HasUncommittedNavigationInPrimaryMainFrame())
++    return "navigation-pending";
++  if (ignore_input_events_ || host_->GetRenderWidgetHost()->IsHidden() ||
++      !host_->GetView() || !host_->GetView()->IsShowing())
++    return "page-hidden";
++  if (host_->GetView()->IsPointerLocked())
++    return "pointer-locked";
++  if (host_->GetView()->GetDeviceScaleFactor() != 1.f || ScaleFactor() != 1.f)
++    return "scaled";
++  if (!gfx::Rect(host_->GetView()->GetVisibleViewportSize())
++           .Contains(review.rect))
++    return "outside-viewport";
++  if (host_->GetView()->GetCurrentSurfaceId() != review.surface)
++    return "surface-changed";
++  return nullptr;
++}
++
++bool InputHandler::CanUseVisualReview(const VisualReview& review) {
++  return !VisualReviewBlocker(review);
 +}
 +
 +void InputHandler::CaptureVisualEvidence(
@@ -1099,37 +1156,72 @@ index 8468f4d..934071c 100644
 +  review->document_token = host_->GetDocumentToken();
 +  review->document = review->document_token.ToString();
 +  review->surface = host_->GetView()->GetCurrentSurfaceId();
-+  if (!review->surface.is_valid() || !CanUseVisualReview(*review)) {
-+    callback->sendFailure(Response::ServerError("unsupported visual surface"));
++  const char* blocker = review->surface.is_valid()
++                            ? VisualReviewBlocker(*review)
++                            : "surface-changed";
++  if (blocker) {
++    callback->sendFailure(Response::ServerError(
++        std::string("unsupported visual surface (browser:") + blocker + ")"));
 +    return;
 +  }
 +  // Bind the renderer target before arming Viz. Any later change to the node
 +  // under the point is caught by the renderer at delivery.
 +  host_->GetRemoteAssociatedInterfaces()->GetInterface(&review->renderer);
 +  const auto id = review->id;
-+  const auto document = review->document_token;
-+  const auto point = review->target_point;
 +  visual_review_ = std::move(review);
-+  visual_review_->renderer->BindTarget(
-+      document, point,
-+      mojo::WrapCallbackWithDefaultInvokeIfNotRun(
-+          base::BindOnce(&InputHandler::OnVisualReviewTargetBound,
-+                         weak_factory_.GetWeakPtr(), id, std::move(callback)),
-+          uint64_t{0}));
++  BindVisualReviewTarget(id, std::move(callback), 0);
 +#else
 +  callback->sendFailure(
 +      Response::ServerError("visual review unsupported on this platform"));
 +#endif
 +}
 +
++void InputHandler::BindVisualReviewTarget(
++    std::string id,
++    std::unique_ptr<CaptureVisualEvidenceCallback> callback,
++    int attempt) {
++  if (!visual_review_ || visual_review_->id != id ||
++      !visual_review_->renderer.is_connected()) {
++    callback->sendFailure(Response::ServerError(
++        "visual target changed or unsupported (browser:superseded)"));
++    return;
++  }
++  const auto document = visual_review_->document_token;
++  const auto point = visual_review_->target_point;
++  visual_review_->renderer->BindTarget(
++      document, point,
++      mojo::WrapCallbackWithDefaultInvokeIfNotRun(
++          base::BindOnce(&InputHandler::OnVisualReviewTargetBound,
++                         weak_factory_.GetWeakPtr(), id, std::move(callback),
++                         attempt),
++          uint64_t{0}));
++}
++
 +void InputHandler::OnVisualReviewTargetBound(
 +    std::string id,
 +    std::unique_ptr<CaptureVisualEvidenceCallback> callback,
++    int attempt,
 +    uint64_t target) {
-+  if (!visual_review_ || visual_review_->id != id || !target ||
-+      !CanUseVisualReview(*visual_review_)) {
-+    callback->sendFailure(
-+        Response::ServerError("visual target changed or unsupported"));
++  const bool same = visual_review_ && visual_review_->id == id;
++  const char* blocker = same ? VisualReviewBlocker(*visual_review_) : "superseded";
++  // A new surface is not a reason to stop: arming uses the current one.
++  if (blocker && std::string_view(blocker) == "surface-changed")
++    blocker = nullptr;
++  // The page had nothing to hit at the point yet. Nothing has been shown to a
++  // reviewer, so ask again a frame later.
++  if (same && !blocker && !target && attempt < 2) {
++    base::SequencedTaskRunner::GetCurrentDefault()->PostDelayedTask(
++        FROM_HERE,
++        base::BindOnce(&InputHandler::BindVisualReviewTarget,
++                       weak_factory_.GetWeakPtr(), id, std::move(callback),
++                       attempt + 1),
++        base::Milliseconds(16));
++    return;
++  }
++  if (blocker || !target) {
++    callback->sendFailure(Response::ServerError(
++        std::string("visual target changed or unsupported (browser:") +
++        (blocker ? blocker : "no-target-at-point") + ")"));
 +    return;
 +  }
 +  visual_review_->target = target;
@@ -1143,10 +1235,15 @@ index 8468f4d..934071c 100644
 +    std::string id,
 +    std::unique_ptr<CaptureVisualEvidenceCallback> callback,
 +    int attempt) {
-+  if (!visual_review_ || visual_review_->id != id ||
-+      !CanUseVisualReview(*visual_review_) || !host_->GetView()) {
-+    callback->sendFailure(
-+        Response::ServerError("visual surface changed or unsupported"));
++  const char* blocker =
++      visual_review_ && visual_review_->id == id
++          ? VisualReviewBlocker(*visual_review_)
++          : "superseded";
++  // A new surface is expected here: each attempt arms the current one.
++  if (blocker && std::string_view(blocker) != "surface-changed") {
++    callback->sendFailure(Response::ServerError(
++        std::string("visual surface changed or unsupported (browser:") +
++        blocker + ")"));
 +    return;
 +  }
 +  VisualReview& review = *visual_review_;
@@ -1160,6 +1257,8 @@ index 8468f4d..934071c 100644
 +        Response::ServerError("visual lease allocation failed"));
 +    return;
 +  }
++  if (review.mapping.IsValid())
++    review.gate()->released.store(1);
 +  review.mapping = state.Map();
 +  if (!review.mapping.IsValid()) {
 +    callback->sendFailure(Response::ServerError("visual lease mapping failed"));
@@ -1186,18 +1285,26 @@ index 8468f4d..934071c 100644
 +    int attempt,
 +    uint32_t revision,
 +    const std::vector<uint8_t>& rgba) {
-+  const bool current = visual_review_ && visual_review_->id == id &&
-+                       CanUseVisualReview(*visual_review_);
-+  const uint32_t refusal =
-+      current ? visual_review_->gate()->refusal.load() : 0;
++  const bool same = visual_review_ && visual_review_->id == id;
++  const char* blocker = same ? VisualReviewBlocker(*visual_review_) : "superseded";
++  const bool current = !blocker;
++  const uint32_t refusal = same ? visual_review_->gate()->refusal.load() : 0;
++  // The view moved to a new surface while Viz armed the old one. Nothing has
++  // been shown to a reviewer yet, so arm again on the new surface.
++  const bool surface_moved =
++      blocker && std::string_view(blocker) == "surface-changed";
++  const std::string reason =
++      blocker ? std::string("browser:") + blocker
++              : std::string("viz:") + ReviewRefusalName(refusal);
 +  TRACE_EVENT_INSTANT("viz", "FawnReview.Armed", "revision", revision,
-+                      "refusal", ReviewRefusalName(refusal), "attempt",
-+                      attempt);
++                      "refusal", reason, "attempt", attempt);
 +  const bool transient =
-+      refusal == viz::FawnVisualReviewGate::kFramePending ||
-+      refusal == viz::FawnVisualReviewGate::kNotCurrentSurface ||
-+      refusal == viz::FawnVisualReviewGate::kOtherSurfaceSubmitted;
-+  if (current && !revision && transient && attempt < 2) {
++      surface_moved ||
++      (current && !revision &&
++       (refusal == viz::FawnVisualReviewGate::kFramePending ||
++        refusal == viz::FawnVisualReviewGate::kNotCurrentSurface ||
++        refusal == viz::FawnVisualReviewGate::kOtherSurfaceSubmitted));
++  if (same && transient && attempt < 2) {
 +    base::SequencedTaskRunner::GetCurrentDefault()->PostDelayedTask(
 +        FROM_HERE,
 +        base::BindOnce(&InputHandler::ArmVisualReview,
@@ -1208,8 +1315,7 @@ index 8468f4d..934071c 100644
 +  }
 +  if (!current || !revision) {
 +    callback->sendFailure(Response::ServerError(
-+        std::string("visual surface changed or unsupported (") +
-+        ReviewRefusalName(refusal) + ")"));
++        "visual surface changed or unsupported (" + reason + ")"));
 +    return;
 +  }
 +  VisualReview& review = *visual_review_;
@@ -1226,6 +1332,34 @@ index 8468f4d..934071c 100644
 +  callback->sendSuccess(review.id, review.document, review.surface.ToString(),
 +                        1., base::NumberToString(revision), review.digest,
 +                        width, height, Binary::fromVector(rgba));
++}
++
++Response InputHandler::GetVisualEvidenceStatus(
++    const std::string& evidence_id,
++    bool* holds,
++    std::string* reason,
++    std::string* verified_revision) {
++  *holds = false;
++  *verified_revision = "0";
++  if (!visual_review_ || visual_review_->id != evidence_id ||
++      !visual_review_->captured) {
++    *reason = "unknown-review";
++    return Response::Success();
++  }
++  VisualReview& review = *visual_review_;
++  auto* gate = review.gate();
++  *verified_revision = base::NumberToString(gate->verified_through.load());
++  if (const char* blocker = VisualReviewBlocker(review)) {
++    *reason = std::string("browser:") + blocker;
++  } else if (gate->refuted_at.load()) {
++    *reason = "viz:pixels-changed";
++  } else if (!gate->Open() || !review.VizAlive()) {
++    *reason = std::string("viz:") + ReviewRefusalName(gate->refusal.load());
++  } else {
++    *holds = true;
++    *reason = "holds";
++  }
++  return Response::Success();
 +}
 +
 +void InputHandler::DispatchReviewedClick(
@@ -1422,7 +1556,7 @@ index 8468f4d..934071c 100644
  void InputHandler::DispatchMouseEvent(
      const std::string& event_type,
      double x,
-@@ -2302,6 +2885,8 @@ void InputHandler::SynthesizeTapGesture(
+@@ -2302,6 +2984,8 @@ void InputHandler::SynthesizeTapGesture(
  }
 
  void InputHandler::ClearInputState() {
@@ -1432,7 +1566,7 @@ index 8468f4d..934071c 100644
      (*injectors_.begin())->Cleanup();
    // TODO(dgozman): cleanup touch callbacks as well?
 diff --git a/content/browser/devtools/protocol/input_handler.h b/content/browser/devtools/protocol/input_handler.h
-index 4c25a8c..22e42e8 100644
+index 4c25a8c..604bfe5 100644
 --- a/content/browser/devtools/protocol/input_handler.h
 +++ b/content/browser/devtools/protocol/input_handler.h
 @@ -29,6 +29,10 @@
@@ -1446,7 +1580,7 @@ index 4c25a8c..22e42e8 100644
  namespace content {
  class DevToolsAgentHostImpl;
  class RenderFrameHostImpl;
-@@ -106,6 +110,19 @@ class InputHandler : public DevToolsDomainHandler, public Input::Backend {
+@@ -106,6 +110,23 @@ class InputHandler : public DevToolsDomainHandler, public Input::Backend {
        std::optional<int> replacement_end,
        std::unique_ptr<ImeSetCompositionCallback> callback) override;
 
@@ -1463,18 +1597,28 @@ index 4c25a8c..22e42e8 100644
 +      int x,
 +      int y,
 +      std::unique_ptr<DispatchReviewedClickCallback> callback) override;
++  Response GetVisualEvidenceStatus(const std::string& evidence_id,
++                                   bool* holds,
++                                   std::string* reason,
++                                   std::string* verified_revision) override;
    void DispatchMouseEvent(
        const std::string& event_type,
        double x,
-@@ -348,6 +365,49 @@ class InputHandler : public DevToolsDomainHandler, public Input::Backend {
+@@ -348,6 +369,55 @@ class InputHandler : public DevToolsDomainHandler, public Input::Backend {
 
    float ScaleFactor();
 
 +  struct VisualReview;
++  const char* VisualReviewBlocker(const VisualReview& review);
 +  bool CanUseVisualReview(const VisualReview& review);
++  void BindVisualReviewTarget(
++      std::string id,
++      std::unique_ptr<CaptureVisualEvidenceCallback> callback,
++      int attempt);
 +  void OnVisualReviewTargetBound(
 +      std::string id,
 +      std::unique_ptr<CaptureVisualEvidenceCallback> callback,
++      int attempt,
 +      uint64_t target);
 +  void ArmVisualReview(std::string id,
 +                       std::unique_ptr<CaptureVisualEvidenceCallback> callback,
@@ -1578,10 +1722,18 @@ index 0000000..d97dd2d
 +      => (FawnReviewedClickResult result);
 +};
 diff --git a/content/renderer/render_frame_impl.cc b/content/renderer/render_frame_impl.cc
-index 5b14824..6e123db 100644
+index 5b14824..ca9396e 100644
 --- a/content/renderer/render_frame_impl.cc
 +++ b/content/renderer/render_frame_impl.cc
-@@ -60,6 +60,7 @@
+@@ -5,6 +5,7 @@
+ #include "content/renderer/render_frame_impl.h"
+
+ #include <algorithm>
++#include <map>
+ #include <memory>
+ #include <optional>
+ #include <string>
+@@ -60,6 +61,7 @@
  #include "content/common/associated_interfaces.mojom.h"
  #include "content/common/content_navigation_policy.h"
  #include "content/common/content_switches_internal.h"
@@ -1589,7 +1741,7 @@ index 5b14824..6e123db 100644
  #include "content/common/debug_utils.h"
  #include "content/common/features.h"
  #include "content/common/frame.mojom.h"
-@@ -222,6 +223,10 @@
+@@ -222,6 +224,10 @@
  #include "third_party/blink/public/web/web_frame_owner_properties.h"
  #include "third_party/blink/public/web/web_frame_serializer.h"
  #include "third_party/blink/public/web/web_frame_widget.h"
@@ -1600,7 +1752,7 @@ index 5b14824..6e123db 100644
  #include "third_party/blink/public/web/web_input_method_controller.h"
  #include "third_party/blink/public/web/web_local_frame.h"
  #include "third_party/blink/public/web/web_navigation_control.h"
-@@ -310,6 +315,108 @@ namespace content {
+@@ -310,6 +316,119 @@ namespace content {
 
  namespace {
 
@@ -1625,15 +1777,17 @@ index 5b14824..6e123db 100644
 +  void BindTarget(const blink::DocumentToken& document,
 +                  const gfx::Point& point,
 +                  BindTargetCallback callback) override {
-+    bound_node_.Reset();
 +    blink::WebNode node = HitNode(document, point);
 +    if (node.IsNull()) {
 +      std::move(callback).Run(0);
 +      return;
 +    }
-+    bound_node_ = node;
-+    bound_document_ = document;
-+    std::move(callback).Run(++serial_);
++    // Each review keeps its own bound node, so several reviews of one page can
++    // stay open. The oldest is dropped past a small bound.
++    bound_[++serial_] = {node, document};
++    if (bound_.size() > kMaxBoundTargets)
++      bound_.erase(bound_.begin());
++    std::move(callback).Run(serial_);
 +  }
 +
 +  void DeliverClick(const blink::DocumentToken& document,
@@ -1642,8 +1796,12 @@ index 5b14824..6e123db 100644
 +                    const gfx::PointF& screen_point,
 +                    DeliverClickCallback callback) override {
 +    using Result = mojom::FawnReviewedClickResult;
-+    blink::WebNode bound = bound_node_;
-+    bound_node_.Reset();
++    // One delivery attempt per binding, whatever the outcome.
++    Bound bound;
++    if (auto it = bound_.find(target); it != bound_.end()) {
++      bound = it->second;
++      bound_.erase(it);
++    }
 +    blink::WebLocalFrame* frame =
 +        render_frame() ? render_frame()->GetWebFrame() : nullptr;
 +    if (!frame || frame->Parent() || !frame->FrameWidget()) {
@@ -1652,12 +1810,12 @@ index 5b14824..6e123db 100644
 +    }
 +    if (frame->GetDocument().IsNull() ||
 +        frame->GetDocument().Token() != document ||
-+        !bound_document_ || *bound_document_ != document) {
++        (bound.document && *bound.document != document)) {
 +      std::move(callback).Run(Result::kDocumentChanged);
 +      return;
 +    }
-+    if (!target || target != serial_ || bound.IsNull() ||
-+        HitNode(document, point) != bound) {
++    if (!target || !bound.document || bound.node.IsNull() ||
++        HitNode(document, point) != bound.node) {
 +      std::move(callback).Run(Result::kTargetChanged);
 +      return;
 +    }
@@ -1699,9 +1857,14 @@ index 5b14824..6e123db 100644
 +    return frame->FrameWidget()->HitTestResultAt(gfx::PointF(point)).GetNode();
 +  }
 +
++  struct Bound {
++    blink::WebNode node;
++    std::optional<blink::DocumentToken> document;
++  };
++  static constexpr size_t kMaxBoundTargets = 64;
++
 +  mojo::AssociatedReceiverSet<mojom::FawnReviewedInputTarget> receivers_;
-+  blink::WebNode bound_node_;
-+  std::optional<blink::DocumentToken> bound_document_;
++  std::map<uint64_t, Bound> bound_;
 +  uint64_t serial_ = 0;
 +  base::WeakPtrFactory<FawnReviewedInputTargetImpl> weak_factory_{this};
 +};
@@ -1709,7 +1872,7 @@ index 5b14824..6e123db 100644
  const int kExtraCharsBeforeAndAfterSelection = 100;
  const size_t kMaxURLLogChars = 1024;
  const char kCommitRenderFrame[] = "Navigation.CommitRenderFrame";
-@@ -6797,6 +6904,11 @@ media::MediaPermission* RenderFrameImpl::GetMediaPermission() {
+@@ -6797,6 +6916,11 @@ media::MediaPermission* RenderFrameImpl::GetMediaPermission() {
  }
 
  void RenderFrameImpl::RegisterMojoInterfaces() {
@@ -1751,10 +1914,10 @@ index a360316..b86dcc0 100644
 
  // The FrameSinkManagerClient interface is implemented by the Display
 diff --git a/third_party/blink/public/devtools_protocol/domains/Input.pdl b/third_party/blink/public/devtools_protocol/domains/Input.pdl
-index 815bf7c..45293f9 100644
+index 815bf7c..4a21c4f 100644
 --- a/third_party/blink/public/devtools_protocol/domains/Input.pdl
 +++ b/third_party/blink/public/devtools_protocol/domains/Input.pdl
-@@ -329,6 +329,42 @@ domain Input
+@@ -329,6 +329,55 @@ domain Input
        # for the preferred input type).
        optional GestureSourceType gestureSourceType
 
@@ -1793,6 +1956,19 @@ index 815bf7c..45293f9 100644
 +      boolean admitted
 +      boolean delivered
 +      string reason
++
++  # Reports whether a visual review on this session still holds, without
++  # consuming it. `holds` means the browser could still admit a click on it now:
++  # the document, surface and target scope are unchanged and Viz has found no
++  # changed reviewed pixel. `reason` names the first condition that fails.
++  # `verifiedRevision` is the latest drawn frame Viz verified.
++  experimental command getVisualEvidenceStatus
++    parameters
++      string evidenceId
++    returns
++      boolean holds
++      string reason
++      string verifiedRevision
 +
    # Emitted only when `Input.setInterceptDrags` is enabled. Use this data with `Input.dispatchDragEvent` to
    # restore normal drag and drop behavior.

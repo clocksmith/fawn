@@ -1,0 +1,61 @@
+{
+  "consumer": "clocksmith/deco#81",
+  "status": "frozen-before-controlled-ordering-results",
+  "frozenDateUTC": "2026-11-22",
+  "question": "Does an ordinary extension meet the behavior a reviewed click requires, on a controlled page with known event order?",
+  "knownBeforeFreezing": [
+    "Blind random-timing trials on the release binary: zero unsafe deliveries in 300 trials per attack for the browser-owned path, the trusted-click extension and the in-page extension. That is a tie on that test.",
+    "No controlled-ordering trial has been run on any implementation.",
+    "The in-page extension mode clicks with a synthetic event, so it cannot meet R4 by construction."
+  ],
+  "harness": {
+    "file": "browser/chromium/tests/reviewed-click-extension-control.mjs",
+    "sha256": "677d33f64715c677055c641c8ece7078fab721f147f9e3442d5039b1d975c5d9",
+    "extensionBackgroundSha256": "d47eccc0e06323c0125741fc24f5fd6e5477c1fc559a179b6162423fc0a5e213",
+    "extensionFenceSha256": "035b87102bf3906ce59e67b1501c4be621badd94cb06c787e795baaeab88cfa4"
+  },
+  "implementations": {
+    "fawn": "Browser-owned review: Input.captureVisualEvidence and Input.dispatchReviewedClick. Its pause after the final pixel check is the delivery barrier.",
+    "extension-trusted": "Screenshot recheck, content-script target check, then a trusted click through chrome.debugger.",
+    "extension-fenced": "The same trusted click with a capture-phase fence, registered at document_start in every frame, that stops the event unless it lands on the bound element.",
+    "extension-atomic": "Screenshot recheck, then target check and a synthetic click in one page task."
+  },
+  "requirements": {
+    "R1": {
+      "statement": "An unchanged review delivers exactly one click to the approved recipient and the application makes exactly one expected commit.",
+      "cases": ["unchanged-control", "unchanged-control-paused-after-final-check"],
+      "passes": "In every trial: one click on the reviewed control, one commit of the reviewed amount, no commit by anything else."
+    },
+    "R2": {
+      "statement": "If changed pixels are visible at the final check, refuse.",
+      "cases": ["pixels-changed-and-still-showing-before-click"],
+      "passes": "In every trial: no click reaches the page and the application commits nothing."
+    },
+    "R3": {
+      "statement": "If the recipient changes before delivery, refuse.",
+      "cases": ["target-swapped-after-final-check"],
+      "passes": "In every trial: no click reaches the look-alike or the reviewed control, and the application commits nothing."
+    },
+    "R4": {
+      "statement": "The delivered click is a trusted input event.",
+      "cases": ["unchanged-control", "unchanged-control-paused-after-final-check"],
+      "passes": "No delivery in the control cases is untrusted."
+    }
+  },
+  "recordedButNotRequired": {
+    "one-frame-pixel-change-reverted-before-click": "Differentiator. Refusing shows every drawn frame was inspected; delivering is acceptable because the reviewed pixels are showing at the final check.",
+    "pixels-changed-after-final-check": "Not a browser requirement. No browser result replaces the application's record-version check at commit. Recorded for both sides.",
+    "one-frame-target-swap-removed-after-final-check": "The reviewed recipient is back at delivery. Delivering to it is correct; refusing is an avoidable refusal. Recorded.",
+    "closed-shadow-unchanged-control-paused-after-final-check": "Whether each implementation can deliver to a button inside a closed shadow root at all.",
+    "closed-shadow-target-swapped-after-final-check": "Whether each implementation identifies the actual recipient inside a closed shadow root. Does not decide the product unless a real workflow needs it.",
+    "debuggerWarning": "The extension needs the debugger permission and shows the browser's debugging bar. Differentiator.",
+    "pollingFreeStatus": "The browser-owned path reports whether a review still holds from per-frame verification. Differentiator."
+  },
+  "recordedPerTrial": ["what the implementation reported (which check observed the change)", "whether input reached the page and which element received it", "whether the event was trusted", "what was showing when it arrived", "application commits, counted apart from input"],
+  "decision": {
+    "extensionMeetsRequirements": "If any single extension mode passes R1, R2, R3 and R4 in every trial, the default is to ship the extension. The fork is kept only for a named differentiator that a real workflow needs.",
+    "extensionFails": "If no extension mode passes all four, name the requirement it fails and the concrete guarantee the fork provides instead.",
+    "browserFails": "If the browser-owned path fails any requirement, that blocks its release."
+  },
+  "trials": "10 per case per implementation, on the frozen release binary, CPU path (software compositing)."
+}

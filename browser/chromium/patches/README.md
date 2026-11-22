@@ -181,14 +181,19 @@ directories remain denied. Native Dawn and non-ANGLE-GL routes stay unchanged.
 
 ## Reviewed coordinate input on Linux
 
-The Linux patch set adds two experimental CDP Input commands. Capture takes an
+The Linux patch set adds three experimental CDP Input commands. Capture takes an
 integer rectangle in root viewport CSS pixels and the point to click inside it.
 It returns the exact unpremultiplied sRGB RGBA8 bytes, their SHA-256 digest,
 document token, surface ID, device scale and Viz frame index. The bytes are
 Viz's own reference copy of the rectangle from the frame it drew next. Before Viz
 is armed, the renderer binds the node it hits at the point. The returned
 evidence ID belongs to the creating CDP session and pays for one click at that
-point. A second capture supersedes the previous review. The initial scope
+point. A second capture in the same session supersedes the previous review.
+Reviews in different sessions of one page stay open together: Viz keeps up to
+16 reviews per surface, each with its own gate, rectangle and reference, and
+the page keeps one bound node per review. `Input.getVisualEvidenceStatus`
+reports whether a review still holds without spending it, with the first
+failing condition and the latest frame Viz verified. The initial scope
 requires a visible top-level page, one surface, unit device scale and zoom, and
 a region at most 1024 pixels per side. Concurrent-write textures, overlay
 candidates, child frames, transition content and video are unsupported.
@@ -239,10 +244,14 @@ Animation outside the reviewed rectangle no longer refuses clicks. The cost is
 one readback of the rectangle per drawn frame of the reviewed surface while a
 review is open, and the reviewed surface's root pass drawn separately for it.
 
-A capture Viz refuses names its reason in the error, for example
-`visual surface changed or unsupported (frame-pending)`. Refusals that only
-mean the surface was mid-update are retried twice, a frame apart, with a fresh
-gate; nothing has been shown to a reviewer before the reference returns.
+A refused capture names who refused and why, for example
+`visual surface changed or unsupported (viz:frame-pending)` or
+`(browser:surface-changed)`. Refusals that only mean the surface was mid-update
+(Viz `frame-pending`, `not-current-surface`, `other-surface-submitted`, or the
+view moving to a new surface during capture) are retried twice, a frame apart,
+on the view's current surface with a fresh gate; nothing has been shown to a
+reviewer before the reference returns. Any other refusal is final, and no
+earlier approval survives it: the caller reviews again.
 
 On the qualification host (no hardware GPU), 300 clicks under unrelated
 animation and main-thread load delivered 300 in every arm. Click round trip
@@ -252,6 +261,25 @@ admission itself is about 0.1 ms. The Doe arm's `--gpu-sandbox-start-early`
 makes Viz fall back to software compositing, and no arm gets a WebGPU adapter,
 so this does not compare Dawn with Doe. See
 `reports/fawn-workspace/20261122-pixel-verified-review/decision.json`.
+
+### Release qualification and the extension gate
+
+`reports/fawn-workspace/20261122-release-qualification/release-receipt.json` records the non-component
+build of this patch: every reviewed-click case on the cpu, dawn and doe arms, the load test, the workspace
+and inbox repeats, and a comparison with an ordinary extension. The pass criteria for that comparison were
+committed in `extension-gate-criteria.json` before any controlled-ordering result.
+
+```sh
+node browser/chromium/tests/reviewed-click-extension-control.mjs --arm fawn --browser "$FAWN_BROWSER" \
+  --out "$FAWN_JSON" --attacks "" --forced-trials 10
+xvfb-run -a node browser/chromium/tests/reviewed-click-extension-control.mjs --arm extension-fenced \
+  --browser "$FAWN_BROWSER" --out "$EXTENSION_JSON" --attacks "" --forced-trials 10
+```
+
+`tests/extension-control/` is the control: the strongest reviewed click an ordinary MV3 extension can give,
+in three modes. It runs in the same binary using only stock extension APIs. On the frozen requirements the
+fenced mode matches the browser-owned path. The browser-owned path alone identifies the recipient inside a
+closed shadow root, closes a review on a one-frame change, and needs no debugger permission.
 
 ### Qualification
 
