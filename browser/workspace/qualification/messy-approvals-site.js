@@ -10,7 +10,8 @@ import { once } from 'node:events';
 
 const money = cents => '$' + (cents / 100).toLocaleString('en-US', { minimumFractionDigits: 2 });
 
-export async function openApprovalsSite() {
+// `control` is 'canvas' (a drawn control) or 'dom' (an ordinary button element).
+export async function openApprovalsSite({ control = 'canvas' } = {}) {
   const accounts = new Map([[randomUUID(), 'payables']]);
   const invoices = new Map();
   const inputs = [], attempts = [], commits = [], receipts = new Map();
@@ -50,17 +51,21 @@ body{margin:0;font:14px/1.3 sans-serif;background:#f4f1ea;color:#1d1d1b}
 #feed{position:absolute;left:16px;top:160px;margin:0;padding-left:18px;width:500px}
 </style>
 <div id="ticker"></div><div id="banner"></div><div id="pulse"></div>
-<canvas id="approve" role="button" tabindex="0" aria-label="Approve payment" width="320" height="64"></canvas>
+${control === 'dom'
+  ? '<button id="approve" type="button" style="width:320px;height:64px;border:2px solid #1d1d1b;background:#fff;color:#1d1d1b;text-align:left;padding:0 12px;font:14px sans-serif"><b style="display:block;font-size:15px">Approve payment</b><span id="approve-summary"></span></button>'
+  : '<canvas id="approve" role="button" tabindex="0" aria-label="Approve payment" width="320" height="64"></canvas>'}
 <ol id="feed"></ol>
 <script>
 const invoiceId = ${JSON.stringify(current.id)};
 let state = ${JSON.stringify(current)};
 // The approve control is drawn, as in canvas-rendered applications. What it
 // shows is what a click on it commits.
-const approve = document.getElementById('approve'), ink = approve.getContext('2d'), feed = document.getElementById('feed');
+const approve = document.getElementById('approve'), ink = approve.getContext?.('2d'), feed = document.getElementById('feed');
 const money = cents => '$' + (cents / 100).toLocaleString('en-US', {minimumFractionDigits: 2});
 const summary = () => state.payee + ' · ' + money(state.cents) + ' · ' + state.id;
 const show = () => {
+  approve.dataset.summary = summary();
+  if (!ink) { document.getElementById('approve-summary').textContent = summary(); return; }
   ink.fillStyle = '#fff'; ink.fillRect(0, 0, 320, 64);
   ink.strokeStyle = '#1d1d1b'; ink.lineWidth = 2; ink.strokeRect(1, 1, 318, 62);
   ink.fillStyle = '#1d1d1b'; ink.font = 'bold 15px sans-serif'; ink.fillText('Approve payment', 12, 26);
@@ -88,7 +93,7 @@ approve.onclick = async event => {
     body: JSON.stringify({ invoice: invoiceId, cents: state.cents, payee: state.payee, revision: state.revision, key }) });
   window.lastReply = { status: response.status, body: await response.json() };
   if (response.ok) { const ack = document.createElement('span'); ack.id = 'receipt'; ack.textContent = 'Approved ' + window.lastReply.body.commitId;
-    approve.replaceChildren(ack); }
+    if (ink) approve.replaceChildren(ack); else { ack.hidden = true; approve.append(ack); } }
 };
 </script>`);
       return;
