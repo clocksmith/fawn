@@ -2,7 +2,7 @@
 
 The source revisions in
 [`apply-runtime-patches.sh`](../scripts/apply-runtime-patches.sh) pin the Chromium
-checkout and its Dawn dependency. The script checks both revisions and both
+checkout and its Dawn dependency. The script checks the revisions and all applicable
 patches before applying changes, accepts an already-applied patch set, and rejects
 partial or conflicting applications. Source checkout and toolchain downloads
 remain Chromium's `fetch`/`gclient` workflow.
@@ -177,3 +177,37 @@ closures prior to sealing, and grants broker read-only access only to regular,
 root-owned, non-writable GLVND EGL vendor JSON manifests
 (`/usr/share/glvnd/egl_vendor.d`, `/etc/glvnd/egl_vendor.d`) while driver library
 directories remain denied. Native Dawn and non-ANGLE-GL routes stay unchanged.
+
+
+## Reviewed coordinate input on Linux
+
+The Linux patch set adds two experimental CDP Input commands. Capture takes an
+integer rectangle in root viewport CSS pixels and returns the exact unpremultiplied
+sRGB RGBA8 bytes, their SHA-256 digest, document token, surface ID, device scale,
+and Viz active-frame index. The returned evidence ID belongs to the creating CDP
+session and pays for one click inside the rectangle. A second capture supersedes
+the previous review. The initial scope requires a visible top-level page, one
+surface, unit device scale and zoom, and a region at most 1024 pixels per side.
+Concurrent-write textures, overlay candidates, child frames, transition content,
+and video are unsupported.
+
+Viz invalidates the review before processing a new submission on that frame sink,
+before replacing active frame contents, and during eviction, sink teardown or
+display context loss. A lock-free shared compare-and-exchange orders invalidation
+against browser input admission. After final document, surface, scale, region and
+native widget hit testing, the browser consumes the open review and checks the
+original Viz owner's pipe is still alive. A successful admission forwards the
+button events only to the resolved widget. The receipt describes the click's
+admission at that boundary. An application still enforces authorization, record
+version and idempotency when it writes. Pages can change application state without
+a paint, and input delivery can fail after admission.
+
+Run the shared arbitration test against the actual patched source, then run the
+lifecycle controls with a disposable Linux browser. The second command launches
+its own browser and intentionally crashes only its own GPU process and renderer.
+
+```sh
+c++ -std=c++20 -I "$CHROMIUM_SRC" browser/chromium/tests/reviewed-input-arbitration.cc -o "$TMPDIR/reviewed-input-control"
+"$TMPDIR/reviewed-input-control"
+node browser/chromium/tests/reviewed-input-lifecycle.mjs --browser "$FAWN_BROWSER" --out "$RESULT_JSON"
+```
