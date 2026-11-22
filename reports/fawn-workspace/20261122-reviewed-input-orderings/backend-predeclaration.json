@@ -1,0 +1,30 @@
+{
+  "consumer": "clocksmith/deco#81",
+  "status": "predeclared",
+  "declaredDateUTC": "2026-11-22",
+  "precondition": "The reviewed-input qualification passes in every arm on the same Fawn and Chromium revisions before any timing is taken.",
+  "question": "Does Doe materially lower p99 reviewed-click admission latency under load compared with CPU and native Dawn, on identical surfaces and semantics?",
+  "currentPath": "Native admission does no WebGPU work: capture is a Viz CopyOutputRequest of the reviewed rectangle to system memory and a browser SHA-256; admission is a shared compare-and-exchange. Dawn and Doe differ only in the runtime loaded by the GPU process. A Doe or Dawn admission arm needs a GPU-resident capture-and-compare stage that keeps the Viz backing on the GPU and reads back only a digest or mask; that stage does not exist yet.",
+  "arms": {
+    "cpu": "Current path: Viz system-memory copy plus browser SHA-256. Stays in the test and in the product.",
+    "dawn": "Same capture semantics with the reviewed backing compared on the GPU through native Dawn.",
+    "doe": "Same capture semantics with the reviewed backing compared on the GPU through Doe."
+  },
+  "identicalAcrossArms": ["Fawn commit", "Chromium revision and patch hashes", "drawing", "reviewed rectangle and point", "load workload", "browser flags other than the runtime selection", "host and power state"],
+  "metric": {
+    "primary": "Wall time from captureVisualEvidence send to dispatchReviewedClick result with delivered=true, per reviewed click",
+    "secondary": ["capture-only latency", "Validated-to-Admission trace interval", "admission-to-Delivery trace interval"],
+    "statistic": "p99 with a 95% bootstrap confidence interval (10000 resamples)"
+  },
+  "load": "A second disposable tab on the same GPU running a WebGPU compute and canvas workload, so it produces no frames on the reviewed surface. Idle runs are reported separately and decide nothing.",
+  "samples": "16 warmups, then 512 measured clicks per arm in interleaved CPU/Dawn/Doe blocks of 32, repeated on 3 browser launches.",
+  "materialWin": "Doe p99 is at most 0.8 times the better of CPU p99 and Dawn p99, the absolute p99 improvement is at least 1 ms, and the confidence interval of the difference excludes zero.",
+  "limits": {
+    "jank": "The load tab's dropped-frame rate rises by at most 2 percentage points and its p99 frame time by at most 10% relative to the best other arm.",
+    "memory": "GPU-process peak resident memory and allocated GPU memory rise by at most 10% or 64 MiB, whichever is smaller, relative to the best other arm.",
+    "falseRefusals": "On the static drawing every arm delivers every unchanged-target click; refusal rates under unrelated animation are reported for each arm and may not exceed the CPU arm."
+  },
+  "amdTrace": "On AMD, trace each mailbox to its SharedImage backing and allocation, confirm the producer fence or semaphore is waited before the read, and count blits, staging copies and CPU readbacks per click. Driver-internal transfers that cannot be observed are recorded as unknown, never as zero.",
+  "hosts": "AMD only in a GPU window that does not overlap the Flash service's reservation; Apple M3 as a secondary platform. No timing from a host whose GPU another lane holds.",
+  "decision": "If Doe misses the material win or breaches any limit, ship guarded clicks on the CPU path without making Doe a requirement."
+}

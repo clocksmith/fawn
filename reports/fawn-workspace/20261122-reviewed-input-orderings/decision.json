@@ -1,0 +1,814 @@
+{
+  "consumer": "clocksmith/deco#81",
+  "pullRequest": "clocksmith/fawn#10",
+  "status": "qualification-accepted",
+  "observedDateUTC": "2026-11-22",
+  "question": "Is a reviewed click bound to the reviewed compositor revision, and is an admitted click delivered only to its bound document and node, in both orderings, with Dawn and Doe?",
+  "revisions": {
+    "fawnHeadBeforeEvidence": "7f7b3f345b101d2bb51511168aa7d141d7f8dbb4",
+    "fawnBase": "a281360ff04321f08e5627c5309503d0259a0e70",
+    "chromium": "4a6fb38567da21dc86f8ba468ac0ca9002f4f606",
+    "dawn": "758e5e6a974e8ca8039b1d7b209646dabccbcb7f",
+    "patches": {
+      "chromium-doe-runtime.patch": "bcf41516f4647e19e67971e024cc1213d462d629de626d98186a380746758f37",
+      "dawn-doe-runtime.patch": "b7236a5d1985818f112c6feb11872126b5a45529a682744190f7ad7a5fb8b4c5",
+      "chromium-reviewed-input.patch": "32b68850113e2e64a3c1a6d78c6a701ee1d6e42c38f31d877f6668a4f106ccfb"
+    },
+    "sourceIdentity": "Each of the 72 touched Chromium files equals pinned Chromium plus chromium-doe-runtime.patch plus chromium-reviewed-input.patch; Dawn equals pinned Dawn plus dawn-doe-runtime.patch. Two unreferenced untracked files from the donor build tree remained on disk and are referenced by no build file.",
+    "build": "Linux x86_64 component build (is_debug=false, dcheck_always_on=false, dawn_enable_webgpu_on_webgpu=true). Diagnostic configuration, not the release profile.",
+    "browser": {
+      "chromeSha256": "d5901025f38027ed2768a88505fa83d3ce532bb1a44ffb0617bef141f7d4d3a2",
+      "libcontentSha256": "d98c7d977796a9870014423857089bde72ea38852fb7a61600229a778818fbd3",
+      "runtimeFileManifest": "frozen-merge.sha256",
+      "runtimeFileManifestSha256": "1ce5de1b77d3b0705c6273a2a8d86d9d25db476fd421ba4d5da900e4d8c4c0aa",
+      "version": "158.0.8108.0"
+    },
+    "doe": {
+      "libwebgpu_doe_c.so": "f2d1d260739fb65e4e8a5d5897ded8f0700772ea7582c5c3c2ec5ff6a04f18f8",
+      "sourceCommit": "aad2f10063e2b95a406fef6d0c79199bd2988cc4",
+      "sourceNote": "Ancestor of the Fawn base with no runtime changes since."
+    },
+    "harness": {
+      "reviewed-input-qualification.mjs": "562a917b222d56186e9dfb811ae6214eb4d7e48fb32b128f5d7c04d1a703cc7b"
+    }
+  },
+  "environment": "Disposable headless browsers per run. Viz and the 2D drawing composited on SwiftShader in both arms; no hardware GPU was used, so the drawing does not exercise WebGPU. The Doe arm GPU process mapped libwebgpu_doe_c; the Dawn arm did not.",
+  "runtimeMapped": {
+    "dawn": false,
+    "doe": true
+  },
+  "orderings": {
+    "first": "Approve red, pause before admission, paint one pixel blue, Viz acknowledges the replacement frame active on the reviewed surface, release. Result: stale-compositor-revision, zero site input events, zero application attempts and writes.",
+    "second": "Admit on red, then Viz activates blue before renderer delivery. The click is delivered to the bound canvas once; a repaint after admission is not a stale admission. With a pixel-identical overlay or a navigation instead, the admitted click is cancelled and nothing reaches either document."
+  },
+  "cases": {
+    "ordering-1-replacement-active-before-admission": {
+      "dawn": {
+        "passed": true,
+        "outcome": {
+          "admitted": false,
+          "delivered": false,
+          "reason": "stale-compositor-revision"
+        },
+        "counts": {
+          "siteInputEvents": 0,
+          "applicationAttempts": 0,
+          "applicationWrites": 0
+        },
+        "barrierAcknowledgments": {
+          "reached": {
+            "event": "reached",
+            "phase": "admission",
+            "reviewedRevision": 2,
+            "replacementRevision": 0,
+            "gate": "open",
+            "atUnixMs": 1795328259264.071
+          },
+          "vizActivation": {
+            "event": "viz-replacement-active",
+            "phase": "admission",
+            "reviewedRevision": 2,
+            "replacementRevision": 3,
+            "gate": "stale",
+            "atUnixMs": 1795328259275.868
+          },
+          "continued": {
+            "event": "released",
+            "phase": "admission",
+            "reviewedRevision": 2,
+            "replacementRevision": 3,
+            "gate": "stale",
+            "atUnixMs": 1795328259281.173
+          }
+        },
+        "trace": [
+          {
+            "name": "FawnReview.Validated",
+            "ts": 323178712473
+          },
+          {
+            "name": "FawnReview.Replaced",
+            "ts": 323178724028,
+            "revision": 3
+          },
+          {
+            "name": "FawnReview.Admission",
+            "ts": 323178729737,
+            "admitted": false
+          }
+        ]
+      },
+      "doe": {
+        "passed": true,
+        "outcome": {
+          "admitted": false,
+          "delivered": false,
+          "reason": "stale-compositor-revision"
+        },
+        "counts": {
+          "siteInputEvents": 0,
+          "applicationAttempts": 0,
+          "applicationWrites": 0
+        },
+        "barrierAcknowledgments": {
+          "reached": {
+            "event": "reached",
+            "phase": "admission",
+            "reviewedRevision": 3,
+            "replacementRevision": 0,
+            "gate": "open",
+            "atUnixMs": 1795328279261.955
+          },
+          "vizActivation": {
+            "event": "viz-replacement-active",
+            "phase": "admission",
+            "reviewedRevision": 3,
+            "replacementRevision": 4,
+            "gate": "stale",
+            "atUnixMs": 1795328279274.615
+          },
+          "continued": {
+            "event": "released",
+            "phase": "admission",
+            "reviewedRevision": 3,
+            "replacementRevision": 4,
+            "gate": "stale",
+            "atUnixMs": 1795328279275.691
+          }
+        },
+        "trace": [
+          {
+            "name": "FawnReview.Validated",
+            "ts": 323198710389
+          },
+          {
+            "name": "FawnReview.Replaced",
+            "ts": 323198722523,
+            "revision": 4
+          },
+          {
+            "name": "FawnReview.Admission",
+            "ts": 323198724214,
+            "admitted": false
+          }
+        ]
+      }
+    },
+    "ordering-2-replacement-active-after-admission": {
+      "dawn": {
+        "passed": true,
+        "outcome": {
+          "admitted": true,
+          "delivered": true,
+          "reason": "delivered"
+        },
+        "counts": {
+          "siteInputEvents": 5,
+          "applicationAttempts": 1,
+          "applicationWrites": 1
+        },
+        "barrierAcknowledgments": {
+          "reached": {
+            "event": "reached",
+            "phase": "delivery",
+            "reviewedRevision": 5,
+            "replacementRevision": 0,
+            "gate": "admitted",
+            "atUnixMs": 1795328259978.968
+          },
+          "vizActivation": {
+            "event": "viz-replacement-active",
+            "phase": "delivery",
+            "reviewedRevision": 5,
+            "replacementRevision": 6,
+            "gate": "admitted",
+            "atUnixMs": 1795328259992.72
+          },
+          "continued": {
+            "event": "released",
+            "phase": "delivery",
+            "reviewedRevision": 5,
+            "replacementRevision": 6,
+            "gate": "admitted",
+            "atUnixMs": 1795328259998.035
+          }
+        },
+        "trace": [
+          {
+            "name": "FawnReview.Validated",
+            "ts": 323179427390
+          },
+          {
+            "name": "FawnReview.Admission",
+            "ts": 323179427442,
+            "admitted": true
+          },
+          {
+            "name": "FawnReview.Replaced",
+            "ts": 323179440612,
+            "revision": 6
+          },
+          {
+            "name": "FawnReview.Delivery",
+            "ts": 323179461414,
+            "result": 0
+          }
+        ]
+      },
+      "doe": {
+        "passed": true,
+        "outcome": {
+          "admitted": true,
+          "delivered": true,
+          "reason": "delivered"
+        },
+        "counts": {
+          "siteInputEvents": 5,
+          "applicationAttempts": 1,
+          "applicationWrites": 1
+        },
+        "barrierAcknowledgments": {
+          "reached": {
+            "event": "reached",
+            "phase": "delivery",
+            "reviewedRevision": 6,
+            "replacementRevision": 0,
+            "gate": "admitted",
+            "atUnixMs": 1795328279959.468
+          },
+          "vizActivation": {
+            "event": "viz-replacement-active",
+            "phase": "delivery",
+            "reviewedRevision": 6,
+            "replacementRevision": 7,
+            "gate": "admitted",
+            "atUnixMs": 1795328279974.284
+          },
+          "continued": {
+            "event": "released",
+            "phase": "delivery",
+            "reviewedRevision": 6,
+            "replacementRevision": 7,
+            "gate": "admitted",
+            "atUnixMs": 1795328279977.461
+          }
+        },
+        "trace": [
+          {
+            "name": "FawnReview.Validated",
+            "ts": 323199407899
+          },
+          {
+            "name": "FawnReview.Admission",
+            "ts": 323199407943,
+            "admitted": true
+          },
+          {
+            "name": "FawnReview.Replaced",
+            "ts": 323199422140,
+            "revision": 7
+          },
+          {
+            "name": "FawnReview.Delivery",
+            "ts": 323199431228,
+            "result": 0
+          }
+        ]
+      }
+    },
+    "ordering-2-overlay-after-admission": {
+      "dawn": {
+        "passed": true,
+        "outcome": {
+          "admitted": true,
+          "delivered": false,
+          "reason": "target-changed"
+        },
+        "counts": {
+          "siteInputEvents": 0,
+          "applicationAttempts": 0,
+          "applicationWrites": 0
+        },
+        "barrierAcknowledgments": {
+          "reached": {
+            "event": "reached",
+            "phase": "delivery",
+            "reviewedRevision": 9,
+            "replacementRevision": 0,
+            "gate": "admitted",
+            "atUnixMs": 1795328260441.416
+          },
+          "continued": {
+            "event": "released",
+            "phase": "delivery",
+            "reviewedRevision": 9,
+            "replacementRevision": 0,
+            "gate": "admitted",
+            "atUnixMs": 1795328260458.324
+          }
+        }
+      },
+      "doe": {
+        "passed": true,
+        "outcome": {
+          "admitted": true,
+          "delivered": false,
+          "reason": "target-changed"
+        },
+        "counts": {
+          "siteInputEvents": 0,
+          "applicationAttempts": 0,
+          "applicationWrites": 0
+        },
+        "barrierAcknowledgments": {
+          "reached": {
+            "event": "reached",
+            "phase": "delivery",
+            "reviewedRevision": 9,
+            "replacementRevision": 0,
+            "gate": "admitted",
+            "atUnixMs": 1795328280375.906
+          },
+          "continued": {
+            "event": "released",
+            "phase": "delivery",
+            "reviewedRevision": 9,
+            "replacementRevision": 0,
+            "gate": "admitted",
+            "atUnixMs": 1795328280384.421
+          }
+        }
+      }
+    },
+    "ordering-2-navigation-after-admission": {
+      "dawn": {
+        "passed": true,
+        "outcome": {
+          "admitted": true,
+          "delivered": false,
+          "reason": "recipient-changed"
+        },
+        "counts": {
+          "siteInputEvents": 0,
+          "applicationAttempts": 0,
+          "applicationWrites": 0
+        },
+        "barrierAcknowledgments": {
+          "reached": {
+            "event": "reached",
+            "phase": "delivery",
+            "reviewedRevision": 12,
+            "replacementRevision": 0,
+            "gate": "admitted",
+            "atUnixMs": 1795328261145.489
+          },
+          "continued": {
+            "event": "released",
+            "phase": "delivery",
+            "reviewedRevision": 12,
+            "replacementRevision": 0,
+            "gate": "admitted",
+            "atUnixMs": 1795328261175.055
+          }
+        }
+      },
+      "doe": {
+        "passed": true,
+        "outcome": {
+          "admitted": true,
+          "delivered": false,
+          "reason": "recipient-changed"
+        },
+        "counts": {
+          "siteInputEvents": 0,
+          "applicationAttempts": 0,
+          "applicationWrites": 0
+        },
+        "barrierAcknowledgments": {
+          "reached": {
+            "event": "reached",
+            "phase": "delivery",
+            "reviewedRevision": 11,
+            "replacementRevision": 0,
+            "gate": "admitted",
+            "atUnixMs": 1795328281075.806
+          },
+          "continued": {
+            "event": "released",
+            "phase": "delivery",
+            "reviewedRevision": 11,
+            "replacementRevision": 0,
+            "gate": "admitted",
+            "atUnixMs": 1795328281107.779
+          }
+        }
+      }
+    },
+    "overlay-before-admission-transparent-overlay": {
+      "dawn": {
+        "passed": true,
+        "outcome": {
+          "admitted": true,
+          "delivered": false,
+          "reason": "target-changed"
+        },
+        "counts": {
+          "siteInputEvents": 0,
+          "applicationAttempts": 0,
+          "applicationWrites": 0
+        },
+        "refusedBy": "renderer-bound-target"
+      },
+      "doe": {
+        "passed": true,
+        "outcome": {
+          "admitted": true,
+          "delivered": false,
+          "reason": "target-changed"
+        },
+        "counts": {
+          "siteInputEvents": 0,
+          "applicationAttempts": 0,
+          "applicationWrites": 0
+        },
+        "refusedBy": "renderer-bound-target"
+      }
+    },
+    "overlay-before-admission-opacity-zero-overlay": {
+      "dawn": {
+        "passed": true,
+        "outcome": {
+          "admitted": true,
+          "delivered": false,
+          "reason": "target-changed"
+        },
+        "counts": {
+          "siteInputEvents": 0,
+          "applicationAttempts": 0,
+          "applicationWrites": 0
+        },
+        "refusedBy": "renderer-bound-target"
+      },
+      "doe": {
+        "passed": true,
+        "outcome": {
+          "admitted": true,
+          "delivered": false,
+          "reason": "target-changed"
+        },
+        "counts": {
+          "siteInputEvents": 0,
+          "applicationAttempts": 0,
+          "applicationWrites": 0
+        },
+        "refusedBy": "renderer-bound-target"
+      }
+    },
+    "overlay-before-admission-raised-existing-element": {
+      "dawn": {
+        "passed": true,
+        "outcome": {
+          "admitted": true,
+          "delivered": false,
+          "reason": "target-changed"
+        },
+        "counts": {
+          "siteInputEvents": 0,
+          "applicationAttempts": 0,
+          "applicationWrites": 0
+        },
+        "refusedBy": "renderer-bound-target"
+      },
+      "doe": {
+        "passed": true,
+        "outcome": {
+          "admitted": true,
+          "delivered": false,
+          "reason": "target-changed"
+        },
+        "counts": {
+          "siteInputEvents": 0,
+          "applicationAttempts": 0,
+          "applicationWrites": 0
+        },
+        "refusedBy": "renderer-bound-target"
+      }
+    },
+    "unchanged-target-delivers": {
+      "dawn": {
+        "passed": true,
+        "outcome": {
+          "admitted": true,
+          "delivered": true,
+          "reason": "delivered"
+        },
+        "counts": {
+          "siteInputEvents": 5,
+          "applicationAttempts": 1,
+          "applicationWrites": 1
+        }
+      },
+      "doe": {
+        "passed": true,
+        "outcome": {
+          "admitted": true,
+          "delivered": true,
+          "reason": "delivered"
+        },
+        "counts": {
+          "siteInputEvents": 5,
+          "applicationAttempts": 1,
+          "applicationWrites": 1
+        }
+      }
+    },
+    "consumed-approval-replay-refused": {
+      "dawn": {
+        "passed": true,
+        "outcome": {
+          "admitted": false,
+          "delivered": false,
+          "reason": "unknown-review"
+        },
+        "counts": {
+          "siteInputEvents": 5,
+          "applicationAttempts": 1,
+          "applicationWrites": 1
+        }
+      },
+      "doe": {
+        "passed": true,
+        "outcome": {
+          "admitted": false,
+          "delivered": false,
+          "reason": "unknown-review"
+        },
+        "counts": {
+          "siteInputEvents": 5,
+          "applicationAttempts": 1,
+          "applicationWrites": 1
+        }
+      }
+    },
+    "application-duplicate-commit-returns-original-receipt": {
+      "dawn": {
+        "passed": true,
+        "outcome": null,
+        "counts": {
+          "siteInputEvents": 0,
+          "applicationAttempts": 1,
+          "applicationWrites": 0
+        }
+      },
+      "doe": {
+        "passed": true,
+        "outcome": null,
+        "counts": {
+          "siteInputEvents": 0,
+          "applicationAttempts": 1,
+          "applicationWrites": 0
+        }
+      }
+    },
+    "same-document-navigation-invalidates-then-fresh-review": {
+      "dawn": {
+        "passed": true,
+        "outcome": {
+          "admitted": false,
+          "delivered": false,
+          "reason": "stale-document"
+        },
+        "counts": {
+          "siteInputEvents": 5,
+          "applicationAttempts": 1,
+          "applicationWrites": 1
+        }
+      },
+      "doe": {
+        "passed": true,
+        "outcome": {
+          "admitted": false,
+          "delivered": false,
+          "reason": "stale-document"
+        },
+        "counts": {
+          "siteInputEvents": 5,
+          "applicationAttempts": 1,
+          "applicationWrites": 1
+        }
+      }
+    },
+    "cross-document-navigation-invalidates-then-fresh-review": {
+      "dawn": {
+        "passed": true,
+        "outcome": {
+          "admitted": false,
+          "delivered": false,
+          "reason": "stale-document"
+        },
+        "counts": {
+          "siteInputEvents": 5,
+          "applicationAttempts": 1,
+          "applicationWrites": 1
+        }
+      },
+      "doe": {
+        "passed": true,
+        "outcome": {
+          "admitted": false,
+          "delivered": false,
+          "reason": "stale-document"
+        },
+        "counts": {
+          "siteInputEvents": 5,
+          "applicationAttempts": 1,
+          "applicationWrites": 1
+        }
+      }
+    },
+    "renderer-restart-invalidates-then-fresh-review": {
+      "dawn": {
+        "passed": true,
+        "outcome": {
+          "admitted": false,
+          "delivered": false,
+          "reason": "unknown-review"
+        },
+        "counts": {
+          "siteInputEvents": 5,
+          "applicationAttempts": 1,
+          "applicationWrites": 1
+        }
+      },
+      "doe": {
+        "passed": true,
+        "outcome": {
+          "admitted": false,
+          "delivered": false,
+          "reason": "unknown-review"
+        },
+        "counts": {
+          "siteInputEvents": 5,
+          "applicationAttempts": 1,
+          "applicationWrites": 1
+        }
+      }
+    },
+    "gpu-loss-invalidates-then-fresh-review": {
+      "dawn": {
+        "passed": true,
+        "outcome": {
+          "admitted": false,
+          "delivered": false,
+          "reason": "stale-compositor-revision"
+        },
+        "counts": {
+          "siteInputEvents": 5,
+          "applicationAttempts": 1,
+          "applicationWrites": 1
+        }
+      },
+      "doe": {
+        "passed": true,
+        "outcome": {
+          "admitted": false,
+          "delivered": false,
+          "reason": "stale-compositor-revision"
+        },
+        "counts": {
+          "siteInputEvents": 5,
+          "applicationAttempts": 1,
+          "applicationWrites": 1
+        }
+      }
+    }
+  },
+  "unnecessaryRefusals": {
+    "dawn": {
+      "none": {
+        "trials": 20,
+        "delivered": 20,
+        "rate": 0,
+        "refusals": {}
+      },
+      "compositor": {
+        "trials": 20,
+        "delivered": 0,
+        "rate": 1,
+        "refusals": {
+          "capture-refused: cdpSession.send: Protocol error (Input.captureVisualEvidence): unstable visual copy": 20
+        }
+      },
+      "main-thread": {
+        "trials": 20,
+        "delivered": 0,
+        "rate": 1,
+        "refusals": {
+          "capture-refused: cdpSession.send: Protocol error (Input.captureVisualEvidence): unstable visual copy": 20
+        }
+      },
+      "raf-canvas": {
+        "trials": 20,
+        "delivered": 0,
+        "rate": 1,
+        "refusals": {
+          "capture-refused: cdpSession.send: Protocol error (Input.captureVisualEvidence): unstable visual copy": 20
+        }
+      }
+    },
+    "doe": {
+      "none": {
+        "trials": 20,
+        "delivered": 20,
+        "rate": 0,
+        "refusals": {}
+      },
+      "compositor": {
+        "trials": 20,
+        "delivered": 0,
+        "rate": 1,
+        "refusals": {
+          "capture-refused: cdpSession.send: Protocol error (Input.captureVisualEvidence): unstable visual copy": 20
+        }
+      },
+      "main-thread": {
+        "trials": 20,
+        "delivered": 0,
+        "rate": 1,
+        "refusals": {
+          "capture-refused: cdpSession.send: Protocol error (Input.captureVisualEvidence): unstable visual copy": 20
+        }
+      },
+      "raf-canvas": {
+        "trials": 20,
+        "delivered": 0,
+        "rate": 1,
+        "refusals": {
+          "capture-refused: cdpSession.send: Protocol error (Input.captureVisualEvidence): unstable visual copy": 20
+        }
+      }
+    }
+  },
+  "guarantees": {
+    "browserInput": "Admission wins only against the reviewed Viz revision; delivery reaches only the bound document and node or is cancelled.",
+    "application": "Record version, account authorization and duplicate suppression are the site's. Duplicate commits returned the original receipt; a version change after admission was refused by the application; the browser guarantee does not cover writes."
+  },
+  "workspace": {
+    "dawn": {
+      "twoReviewerDrawing": {
+        "arm": "fawn-dawn",
+        "modelCalls": 0,
+        "browser": "158.0.8108.0",
+        "recipientReproducedDrawing": true,
+        "versionChangeAttemptsAtApplication": 0,
+        "versionChangeWrites": 0,
+        "recipientToVerifiedWriteMs": 1040,
+        "lookalikeRejected": true,
+        "freshRepairWrites": 1,
+        "duplicateReturnedOriginalReceipt": true,
+        "pixelOnlyStaleWrites": 0,
+        "changeAfterInputRejectedByApplication": true,
+        "completed": true
+      },
+      "authenticatedWorkspaceApi": {
+        "authenticatedWorkspaceApi": true,
+        "staleInput": "stale-compositor-revision",
+        "staleSiteAttempts": 0,
+        "freshWrites": 1,
+        "account": "recipient"
+      }
+    },
+    "doe": {
+      "twoReviewerDrawing": {
+        "arm": "fawn-doe",
+        "modelCalls": 0,
+        "browser": "158.0.8108.0",
+        "recipientReproducedDrawing": true,
+        "versionChangeAttemptsAtApplication": 0,
+        "versionChangeWrites": 0,
+        "recipientToVerifiedWriteMs": 1076,
+        "lookalikeRejected": true,
+        "freshRepairWrites": 1,
+        "duplicateReturnedOriginalReceipt": true,
+        "pixelOnlyStaleWrites": 0,
+        "changeAfterInputRejectedByApplication": true,
+        "completed": true
+      },
+      "authenticatedWorkspaceApi": {
+        "authenticatedWorkspaceApi": true,
+        "staleInput": "stale-compositor-revision",
+        "staleSiteAttempts": 0,
+        "freshWrites": 1,
+        "account": "recipient"
+      }
+    }
+  },
+  "workspaceConsumer": "Two-reviewer drawing and authenticated workspace runs used qualification/resident-block-resume c2c14415a3 plus fix/reviewed-click-consumer-81 4a658a3f06 (capture names the point; success requires delivery).",
+  "limits": [
+    "Any frame activated on the reviewed surface invalidates the review. Every capture on a page with unrelated compositor, main-thread or rAF canvas animation failed closed (refusal rate 1.0 in both arms).",
+    "Linux only; top-level single-surface pages at unit scale and zoom.",
+    "The renderer re-checks document and node at delivery; a compromised renderer is out of scope.",
+    "No latency or backend performance claim. See backend-predeclaration.json."
+  ],
+  "priorFailure": "pre-fix-overlay-probe.json: the previous head admitted and retargeted clicks under three pixel-identical target changes."
+}
