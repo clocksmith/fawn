@@ -167,3 +167,13 @@ sibling publish together under a content identity. Refreshing never overwrites a
 library that a GPU process may still have mapped. Existing closures must match
 their bytes before reuse; failed preparation preserves the earlier bundle. This
 also keeps selected runtime files within the GPU sandbox's readable app bundle.
+
+On Linux, `--gpu-sandbox-start-early` seals the GPU process (`Seccomp: 2`) before
+Mesa spawns GL worker threads. `content/common/gpu_pre_sandbox_hook_linux.cc`
+extends `UsesEarlyExternalGlxResources()` across `x11`, `wayland`, and `headless`
+ANGLE-GL routes when forced Doe is active, preloads `libEGL.so.1`,
+`libEGL_mesa.so.0`, `libGLESv2.so.2`, and `libgbm.so.1` alongside the GLX/Vulkan
+closures prior to sealing, and grants broker read-only access only to regular,
+root-owned, non-writable GLVND EGL vendor JSON manifests
+(`/usr/share/glvnd/egl_vendor.d`, `/etc/glvnd/egl_vendor.d`) while driver library
+directories remain denied. Native Dawn and non-ANGLE-GL routes stay unchanged.

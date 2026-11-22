@@ -56,7 +56,7 @@ index e41489d4c9..ebce50ab41 100644
      if (use_v4l2_codec) {
        deps += [ "//media/gpu/v4l2" ]
 diff --git a/content/common/gpu_pre_sandbox_hook_linux.cc b/content/common/gpu_pre_sandbox_hook_linux.cc
-index 2e53794fa3..a3b67a2f64 100644
+index 2e53794..32efbf3 100644
 --- a/content/common/gpu_pre_sandbox_hook_linux.cc
 +++ b/content/common/gpu_pre_sandbox_hook_linux.cc
 @@ -6,8 +6,11 @@
@@ -109,7 +109,7 @@ index 2e53794fa3..a3b67a2f64 100644
  
  #if BUILDFLAG(USE_V4L2_CODEC)
  #include "media/gpu/v4l2/v4l2_device.h"
-@@ -46,6 +61,35 @@ using sandbox::syscall_broker::BrokerFilePermission;
+@@ -46,6 +61,37 @@ using sandbox::syscall_broker::BrokerFilePermission;
  using sandbox::syscall_broker::BrokerProcess;
  
  namespace content {
@@ -123,7 +123,9 @@ index 2e53794fa3..a3b67a2f64 100644
 +  if (!early_sandbox ||
 +      command_line->GetSwitchValueASCII(switches::kUseWebGPURuntime) != "doe" ||
 +      command_line->HasSwitch(switches::kDisableWebGPUDoe) ||
-+      ui::OzonePlatform::GetPlatformName() != "x11") {
++      (ui::OzonePlatform::GetPlatformName() != "x11" &&
++       ui::OzonePlatform::GetPlatformName() != "wayland" &&
++       ui::OzonePlatform::GetPlatformName() != "headless")) {
 +    return false;
 +  }
 +  const auto requested =
@@ -145,7 +147,7 @@ index 2e53794fa3..a3b67a2f64 100644
  namespace {
  
  inline bool IsChromeOS() {
-@@ -224,11 +268,192 @@ void AddImgPvrGpuPermissions(std::vector<BrokerFilePermission>* permissions) {
+@@ -224,11 +270,215 @@ void AddImgPvrGpuPermissions(std::vector<BrokerFilePermission>* permissions) {
    permissions->push_back(BrokerFilePermission::ReadWrite(kPvrSyncPath));
  }
  
@@ -325,6 +327,29 @@ index 2e53794fa3..a3b67a2f64 100644
 +  }
 +}
 +
++// GLVND scans system EGL vendor manifests to dispatch to libEGL_mesa.so.0.
++// Admit only regular, root-owned, non-writable JSON manifests; driver .so dirs stay denied.
++void AddSystemGlvndEglManifestPermissions(
++    std::vector<BrokerFilePermission>* permissions) {
++  for (const char* path : {"/usr/share/glvnd/egl_vendor.d", "/etc/glvnd/egl_vendor.d"}) {
++    const base::FilePath directory(path);
++    struct stat info;
++    if (lstat(directory.value().c_str(), &info) != 0 || !S_ISDIR(info.st_mode) ||
++        info.st_uid != 0 || (info.st_mode & 0022)) {
++      continue;
++    }
++    permissions->push_back(BrokerFilePermission::ReadOnly(directory.value()));
++    base::FileEnumerator files(directory, false, base::FileEnumerator::FILES,
++                               FILE_PATH_LITERAL("*.json"));
++    for (auto file = files.Next(); !file.empty(); file = files.Next()) {
++      if (lstat(file.value().c_str(), &info) == 0 && S_ISREG(info.st_mode) &&
++          info.st_uid == 0 && !(info.st_mode & 0022)) {
++        permissions->push_back(BrokerFilePermission::ReadOnly(file.value()));
++      }
++    }
++  }
++}
++
 +void AddDrmGpuDevPermissions(
 +    std::vector<BrokerFilePermission>* permissions,
 +    const std::string& path,
@@ -341,7 +366,7 @@ index 2e53794fa3..a3b67a2f64 100644
      permissions->push_back(BrokerFilePermission::ReadWrite(path));
  
      uint32_t major = (static_cast<uint32_t>(st.st_rdev) >> 8) & 0xff;
-@@ -240,13 +465,16 @@ void AddDrmGpuDevPermissions(std::vector<BrokerFilePermission>* permissions,
+@@ -240,13 +490,16 @@ void AddDrmGpuDevPermissions(std::vector<BrokerFilePermission>* permissions,
    }
  }
  
@@ -362,7 +387,7 @@ index 2e53794fa3..a3b67a2f64 100644
    }
  }
  
-@@ -592,6 +820,37 @@ void LoadVulkanLibraries() {
+@@ -592,6 +845,37 @@ void LoadVulkanLibraries() {
    dlopen("libvulkan_freedreno.so", dlopen_flag);
  }
  
@@ -400,7 +425,7 @@ index 2e53794fa3..a3b67a2f64 100644
  void LoadChromecastV4L2Libraries() {
    for (const char* path : kAllowedChromecastPaths) {
      const std::string library_path(std::string(path) +
-@@ -603,24 +862,38 @@ void LoadChromecastV4L2Libraries() {
+@@ -603,24 +887,38 @@ void LoadChromecastV4L2Libraries() {
  
  }  // namespace
  
@@ -446,7 +471,7 @@ index 2e53794fa3..a3b67a2f64 100644
    // All GPU process policies need this file brokered out.
    static const char kDriRcPath[] = "/etc/drirc";
    std::vector<BrokerFilePermission> permissions = {
-@@ -669,12 +942,42 @@ std::vector<BrokerFilePermission> FilePermissionsForGpu(
+@@ -669,12 +967,49 @@ std::vector<BrokerFilePermission> FilePermissionsForGpu(
    }
  
    AddStandardGpuPermissions(&permissions);
@@ -454,6 +479,7 @@ index 2e53794fa3..a3b67a2f64 100644
 +    AddDrmGpuPermissions(&permissions, &options);
 +    AddSystemDrircPermissions(&permissions);
 +    AddSystemVulkanIcdManifestPermissions(&permissions);
++    AddSystemGlvndEglManifestPermissions(&permissions);
 +    if (const base::FilePath cache = FawnMesaShaderCacheDirectory();
 +        UsesFawnMesaShaderCache(early_sandbox)) {
 +      permissions.push_back(BrokerFilePermission::ReadWriteCreateRecursive(
@@ -481,6 +507,12 @@ index 2e53794fa3..a3b67a2f64 100644
 +      LOG(ERROR) << "runtime_glx_mesa_library_load_failed: " << dlerror();
 +      return false;
 +    }
++    // Preload EGL/Mesa/GBM closures before single-thread seccomp seal so ANGLE-GL
++    // does not need broker access to /usr/lib driver directories after sealing.
++    dlopen("libEGL.so.1", dlopen_flag);
++    dlopen("libEGL_mesa.so.0", dlopen_flag);
++    dlopen("libGLESv2.so.2", dlopen_flag);
++    dlopen("libgbm.so.1", dlopen_flag);
 +  }
    LoadVulkanLibraries();
 +  if (UsesEarlyExternalGlxResources(early_sandbox) &&
@@ -490,7 +522,7 @@ index 2e53794fa3..a3b67a2f64 100644
    if (IsArchitectureArm()) {
      LoadArmGpuLibraries();
    }
-@@ -696,11 +999,39 @@ bool LoadLibrariesForGpu(
+@@ -696,11 +1031,39 @@ bool LoadLibrariesForGpu(
  }
  
  bool GpuPreSandboxHook(sandbox::policy::SandboxLinux::Options options) {
