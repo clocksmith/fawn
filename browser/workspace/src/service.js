@@ -92,6 +92,10 @@ function validateObservationRead(command, config) {
       || (command.reviewedClick && (!command.compositorRegion || read.view !== FULL_VIEW))) {
     throw workspaceError(REJECTION_CODES.INVALID_COMMAND, 'A reviewed click needs a full observation of the selected compositor region');
   }
+  if (command.reviewSlot !== undefined && (!command.reviewedClick || typeof command.reviewSlot !== 'string'
+      || !/^[A-Za-z0-9_-]{1,64}$/.test(command.reviewSlot))) {
+    throw workspaceError(REJECTION_CODES.INVALID_COMMAND, 'reviewSlot names one reviewed click with 1-64 letters, digits, - or _');
+  }
   return read;
 }
 
@@ -553,7 +557,7 @@ class WorkspaceService {
         const selected = command.compositorRegion;
         let capture;
         try {
-          capture = await this.#bounded(this.#adapter.prepareReviewedClick(workspace.workspaceId, pageId, selected, snapshot, command.visibleRectangle));
+          capture = await this.#bounded(this.#adapter.prepareReviewedClick(workspace.workspaceId, pageId, selected, snapshot, command.visibleRectangle, command.reviewSlot));
         } catch (error) {
           if (error.reviewCaptureRefused === undefined) throw error;
           // Interrupts the reviewer but never reuses an earlier approval: none remains.
@@ -1077,6 +1081,20 @@ class WorkspaceService {
     pageView(workspace, pageId);
     await this.#page(workspaceId);
     return this.#bounded(this.#adapter.selectRegion(workspaceId, pageId));
+  }
+
+  /**
+   * Whether a reviewed click recorded in an observation could still be admitted now, without
+   * spending it. The browser answers from its own compositor and document state.
+   */
+  async reviewedClickStatus({ workspaceId, adminCredential, pageId = MAIN_PAGE, reviewId }) {
+    const workspace = this.#workspace(workspaceId);
+    authenticateAdmin(workspace, adminCredential);
+    pageView(workspace, pageId);
+    if (typeof reviewId !== 'string' || !reviewId) throw workspaceError(REJECTION_CODES.INVALID_COMMAND, 'reviewId');
+    if (!this.#adapter.reviewedClickStatus) return { holds: false, reason: 'unsupported', verifiedRevision: '0' };
+    await this.#page(workspaceId);
+    return this.#bounded(this.#adapter.reviewedClickStatus(workspaceId, pageId, reviewId));
   }
 
   async focusPage({ workspaceId, adminCredential, pageId }) {
