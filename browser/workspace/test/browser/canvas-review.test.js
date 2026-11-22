@@ -171,6 +171,7 @@ const log = join(root, 'commits.jsonl');
 const committed = () => existsSync(log) ? readFileSync(log, 'utf8').trim().split('\n').map(line => JSON.parse(line)) : [];
 const attempts = [];
 let applicationHttpRequests = 0;
+let postValidationPixels;
 // The grant only covers the review controls and the canvas. Every route keeps
 // those roots identifiable, including the authoritative GET after a lost reply.
 const layout = controls => `<!doctype html>${sandboxedSoftware ? '<title>Blitzen ephemeral compositor fixture</title>' : ''}<main id="controls">${controls}</main>
@@ -257,7 +258,7 @@ try {
         // The service has validated this request. Hold the adapter here until the
         // page has repainted and the application has advanced its write version.
         if (request.actionId === 'revision-race') {
-          const colors = await adapter._page(id, request.pageId).locator('#cell').evaluate(canvas => {
+          postValidationPixels = await adapter._page(id, request.pageId).locator('#cell').evaluate(canvas => {
             const ctx = canvas.getContext('2d');
             const readPixel = () => Array.from(ctx.getImageData(0, 0, 1, 1).data);
             const before = readPixel();
@@ -265,7 +266,7 @@ try {
             ctx.fillRect(0, 0, 1, 1);
             return [before, readPixel()];
           });
-          assert.deepEqual(colors, [[255, 0, 0, 255], [0, 0, 255, 255]]);
+          assert.deepEqual(postValidationPixels, [[255, 0, 0, 255], [0, 0, 255, 255]]);
           current = { ...current, revision: current.revision + 1 };
         }
         const result = await execute(id, request, files);
@@ -365,7 +366,8 @@ try {
   assert.deepEqual(attempts, ['/queue/B-r1']);
   assert.deepEqual(committed(), []);
   const postValidationRace = {
-    pixelChanged: true,
+    beforeRgba: postValidationPixels[0],
+    afterRgba: postValidationPixels[1],
     staleRequestsAtSite: attempts.length,
     staleCommits: committed().length,
     refusal: 'site-revision-conflict',
