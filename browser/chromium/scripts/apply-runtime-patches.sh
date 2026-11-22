@@ -18,10 +18,16 @@ source_root="${1:-${SCRIPT_DIR}/../src}"
 roots=("${source_root}" "${source_root}/third_party/dawn")
 revisions=("${CHROMIUM_REVISION}" "${DAWN_REVISION}")
 patches=("${PATCH_DIR}/chromium-doe-runtime.patch" "${PATCH_DIR}/dawn-doe-runtime.patch")
+# The process-lifetime witness for reviewed input uses a Linux pipe.
+if [[ "$(uname -s)" == "Linux" ]]; then
+  roots+=("${source_root}")
+  revisions+=("${CHROMIUM_REVISION}")
+  patches+=("${PATCH_DIR}/chromium-reviewed-input.patch")
+fi
 pending=()
 
 # Check both repositories before changing either; preserve unrelated local work.
-for index in 0 1; do
+for index in "${!patches[@]}"; do
   actual="$(git -C "${roots[index]}" rev-parse HEAD)"
   if [[ "${actual}" != "${revisions[index]}" ]]; then
     echo "source revision mismatch: ${roots[index]}: expected ${revisions[index]}, received ${actual}" >&2

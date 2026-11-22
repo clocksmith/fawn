@@ -2,7 +2,7 @@
 
 The source revisions in
 [`apply-runtime-patches.sh`](../scripts/apply-runtime-patches.sh) pin the Chromium
-checkout and its Dawn dependency. The script checks both revisions and both
+checkout and its Dawn dependency. The script checks the revisions and all applicable
 patches before applying changes, accepts an already-applied patch set, and rejects
 partial or conflicting applications. Source checkout and toolchain downloads
 remain Chromium's `fetch`/`gclient` workflow.
@@ -177,3 +177,79 @@ closures prior to sealing, and grants broker read-only access only to regular,
 root-owned, non-writable GLVND EGL vendor JSON manifests
 (`/usr/share/glvnd/egl_vendor.d`, `/etc/glvnd/egl_vendor.d`) while driver library
 directories remain denied. Native Dawn and non-ANGLE-GL routes stay unchanged.
+
+
+## Reviewed coordinate input on Linux
+
+The Linux patch set adds two experimental CDP Input commands. Capture takes an
+integer rectangle in root viewport CSS pixels and the point to click inside it.
+It returns the exact unpremultiplied sRGB RGBA8 bytes, their SHA-256 digest,
+document token, surface ID, device scale and Viz active-frame index. Before Viz
+is armed, the renderer binds the node it hits at the point. The returned
+evidence ID belongs to the creating CDP session and pays for one click at that
+point. A second capture supersedes the previous review. The initial scope
+requires a visible top-level page, one surface, unit device scale and zoom, and
+a region at most 1024 pixels per side. Concurrent-write textures, overlay
+candidates, child frames, transition content and video are unsupported.
+
+Viz invalidates the review before processing a new submission on that frame
+sink, before replacing active frame contents, and during eviction, sink teardown
+or display context loss. A lock-free shared compare-and-exchange orders that
+invalidation against browser admission. Viz also records the first frame it
+activates on the reviewed surface after arming, whichever side won. After final
+document, surface, scale, point and native widget hit testing, the browser
+consumes the open review, checks that the original Viz owner's pipe is alive,
+and admits the click.
+
+Admission does not authorize retargeting. The browser re-checks the bound widget
+and document and sends the click to the renderer that bound the target. In one
+main-thread task the renderer re-checks the document token and that the bound
+node is still hit at the point, then dispatches the press and release, or
+cancels. A pixel-identical overlay, a raised element or a navigation after
+review therefore cancels delivery even when no new frame reached Viz. Results:
+
+| `admitted` | `delivered` | `reason` | Meaning |
+|---|---|---|---|
+| false | false | `stale-compositor-revision`, `stale-document`, `target-changed`, `outside-reviewed-target`, `unknown-review` | Refused before admission |
+| true | false | `recipient-changed`, `document-changed`, `target-changed`, `recipient-gone`, `recipient-unsupported` | Admitted, cancelled before the page saw it |
+| true | true | `delivered` | Delivered to the bound document and node |
+
+A repaint after admission does not make the admission stale: the click is
+delivered to its bound node. The browser guarantee covers which pixels were
+reviewed and which document and node receive the click. An application still
+enforces authorization, record version and idempotency when it writes.
+
+Any frame activated on the reviewed surface invalidates the review, including
+animation outside the reviewed rectangle. On a page with a running unrelated
+animation, captures fail closed with `unstable visual copy`.
+
+### Qualification
+
+`--fawn-reviewed-input-barriers=DIR` enables qualification pause points. They
+stay inert unless the qualification creates `DIR/hold-admission` (pause after
+validation, before the compare-and-exchange) or `DIR/hold-delivery` (pause after
+admission, before renderer delivery). The browser writes `PHASE.ready`, reports
+`PHASE.viz-activation` once Viz has activated a replacement frame on the
+reviewed surface after `PHASE.await-activation` appears, and continues on
+`PHASE.release`. Never set the switch in a product profile.
+
+Run the shared arbitration test against the patched source, then the lifecycle
+controls and the ordering qualification, each launching its own disposable
+browser. The lifecycle test intentionally crashes only its own GPU process and
+renderer.
+
+```sh
+c++ -std=c++20 -I "$CHROMIUM_SRC" browser/chromium/tests/reviewed-input-arbitration.cc -o "$TMPDIR/reviewed-input-control"
+"$TMPDIR/reviewed-input-control"
+node browser/chromium/tests/reviewed-input-lifecycle.mjs --browser "$FAWN_BROWSER" --out "$RESULT_JSON"
+node browser/chromium/tests/reviewed-input-qualification.mjs --arm dawn \
+  --browser "$FAWN_BROWSER" --patch browser/chromium/patches/chromium-reviewed-input.patch --out "$DAWN_JSON"
+node browser/chromium/tests/reviewed-input-qualification.mjs --arm doe --doe-library "$DOE_LIBRARY" \
+  --browser "$FAWN_BROWSER" --patch browser/chromium/patches/chromium-reviewed-input.patch --out "$DOE_JSON"
+```
+
+The qualification runs both orderings on one drawing, pixel-identical target
+changes, an unchanged target, replay of a consumed approval, invalidation on
+navigation, renderer restart and GPU loss with fresh review afterwards, an
+application duplicate commit, and refusal rates with unrelated animation. It
+records barrier acknowledgments, the reviewed-input trace and event counts.

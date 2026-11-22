@@ -1,0 +1,2163 @@
+{
+  "schema": "fawn.reviewed-input-qualification/v1",
+  "arm": "doe",
+  "diagnostic": false,
+  "chromeSha256": "d5901025f38027ed2768a88505fa83d3ce532bb1a44ffb0617bef141f7d4d3a2",
+  "libcontentSha256": "d98c7d977796a9870014423857089bde72ea38852fb7a61600229a778818fbd3",
+  "harnessSha256": "562a917b222d56186e9dfb811ae6214eb4d7e48fb32b128f5d7c04d1a703cc7b",
+  "patchSha256": "32b68850113e2e64a3c1a6d78c6a701ee1d6e42c38f31d877f6668a4f106ccfb",
+  "doeLibrarySha256": "f2d1d260739fb65e4e8a5d5897ded8f0700772ea7582c5c3c2ec5ff6a04f18f8",
+  "cases": [
+    {
+      "name": "ordering-1-replacement-active-before-admission",
+      "review": {
+        "surface": "SurfaceId(FrameSinkId(9, 3), LocalSurfaceId(6, 1, 4781...))",
+        "document": "04CBE1F3229C41A71000505587239193",
+        "revision": "3"
+      },
+      "barrier": {
+        "reached": {
+          "event": "reached",
+          "phase": "admission",
+          "surface": "SurfaceId(FrameSinkId(9, 3), LocalSurfaceId(6, 1, 4781...))",
+          "document": "04CBE1F3229C41A71000505587239193",
+          "reviewedRevision": 3,
+          "replacementRevision": 0,
+          "gate": "open",
+          "atUnixMs": 1795328279261.955
+        },
+        "vizActivation": {
+          "event": "viz-replacement-active",
+          "phase": "admission",
+          "surface": "SurfaceId(FrameSinkId(9, 3), LocalSurfaceId(6, 1, 4781...))",
+          "document": "04CBE1F3229C41A71000505587239193",
+          "reviewedRevision": 3,
+          "replacementRevision": 4,
+          "gate": "stale",
+          "atUnixMs": 1795328279274.615
+        },
+        "continued": {
+          "event": "released",
+          "phase": "admission",
+          "surface": "SurfaceId(FrameSinkId(9, 3), LocalSurfaceId(6, 1, 4781...))",
+          "document": "04CBE1F3229C41A71000505587239193",
+          "reviewedRevision": 3,
+          "replacementRevision": 4,
+          "gate": "stale",
+          "atUnixMs": 1795328279275.691
+        }
+      },
+      "outcome": {
+        "admitted": false,
+        "delivered": false,
+        "reason": "stale-compositor-revision"
+      },
+      "counts": {
+        "siteInputEvents": 0,
+        "applicationAttempts": 0,
+        "applicationWrites": 0
+      },
+      "passed": true
+    },
+    {
+      "name": "ordering-2-replacement-active-after-admission",
+      "review": {
+        "surface": "SurfaceId(FrameSinkId(9, 3), LocalSurfaceId(9, 1, 4781...))",
+        "document": "109F98615F1B1DAE730D67592324E77B",
+        "revision": "6"
+      },
+      "barrier": {
+        "reached": {
+          "event": "reached",
+          "phase": "delivery",
+          "surface": "SurfaceId(FrameSinkId(9, 3), LocalSurfaceId(9, 1, 4781...))",
+          "document": "109F98615F1B1DAE730D67592324E77B",
+          "reviewedRevision": 6,
+          "replacementRevision": 0,
+          "gate": "admitted",
+          "atUnixMs": 1795328279959.468
+        },
+        "vizActivation": {
+          "event": "viz-replacement-active",
+          "phase": "delivery",
+          "surface": "SurfaceId(FrameSinkId(9, 3), LocalSurfaceId(9, 1, 4781...))",
+          "document": "109F98615F1B1DAE730D67592324E77B",
+          "reviewedRevision": 6,
+          "replacementRevision": 7,
+          "gate": "admitted",
+          "atUnixMs": 1795328279974.284
+        },
+        "continued": {
+          "event": "released",
+          "phase": "delivery",
+          "surface": "SurfaceId(FrameSinkId(9, 3), LocalSurfaceId(9, 1, 4781...))",
+          "document": "109F98615F1B1DAE730D67592324E77B",
+          "reviewedRevision": 6,
+          "replacementRevision": 7,
+          "gate": "admitted",
+          "atUnixMs": 1795328279977.461
+        }
+      },
+      "outcome": {
+        "admitted": true,
+        "delivered": true,
+        "reason": "delivered"
+      },
+      "reply": {
+        "status": 200,
+        "receipt": {
+          "record": "ordering-2-2",
+          "revision": 1,
+          "writeId": "eab2b0fd-8f1a-48f3-858b-5155f053aef5"
+        }
+      },
+      "events": [
+        {
+          "type": "pointerdown",
+          "trusted": true,
+          "target": "drawing",
+          "doc": "669f00e0-f381-4dcf-a9d8-a58955706cdf",
+          "path": "/draw/ordering-2-2",
+          "x": 16,
+          "y": 16
+        },
+        {
+          "type": "mousedown",
+          "trusted": true,
+          "target": "drawing",
+          "doc": "669f00e0-f381-4dcf-a9d8-a58955706cdf",
+          "path": "/draw/ordering-2-2",
+          "x": 16,
+          "y": 16
+        },
+        {
+          "type": "pointerup",
+          "trusted": true,
+          "target": "drawing",
+          "doc": "669f00e0-f381-4dcf-a9d8-a58955706cdf",
+          "path": "/draw/ordering-2-2",
+          "x": 16,
+          "y": 16
+        },
+        {
+          "type": "mouseup",
+          "trusted": true,
+          "target": "drawing",
+          "doc": "669f00e0-f381-4dcf-a9d8-a58955706cdf",
+          "path": "/draw/ordering-2-2",
+          "x": 16,
+          "y": 16
+        },
+        {
+          "type": "click",
+          "trusted": true,
+          "target": "drawing",
+          "doc": "669f00e0-f381-4dcf-a9d8-a58955706cdf",
+          "path": "/draw/ordering-2-2",
+          "x": 16,
+          "y": 16
+        }
+      ],
+      "counts": {
+        "siteInputEvents": 5,
+        "applicationAttempts": 1,
+        "applicationWrites": 1
+      },
+      "passed": true
+    },
+    {
+      "name": "ordering-2-overlay-after-admission",
+      "barrier": {
+        "reached": {
+          "event": "reached",
+          "phase": "delivery",
+          "surface": "SurfaceId(FrameSinkId(9, 3), LocalSurfaceId(12, 1, 4781...))",
+          "document": "AC534F5DAC9EC3D3C39283D8A636B10D",
+          "reviewedRevision": 9,
+          "replacementRevision": 0,
+          "gate": "admitted",
+          "atUnixMs": 1795328280375.906
+        },
+        "continued": {
+          "event": "released",
+          "phase": "delivery",
+          "surface": "SurfaceId(FrameSinkId(9, 3), LocalSurfaceId(12, 1, 4781...))",
+          "document": "AC534F5DAC9EC3D3C39283D8A636B10D",
+          "reviewedRevision": 9,
+          "replacementRevision": 0,
+          "gate": "admitted",
+          "atUnixMs": 1795328280384.421
+        }
+      },
+      "outcome": {
+        "admitted": true,
+        "delivered": false,
+        "reason": "target-changed"
+      },
+      "counts": {
+        "siteInputEvents": 0,
+        "applicationAttempts": 0,
+        "applicationWrites": 0
+      },
+      "passed": true
+    },
+    {
+      "name": "ordering-2-navigation-after-admission",
+      "barrier": {
+        "reached": {
+          "event": "reached",
+          "phase": "delivery",
+          "surface": "SurfaceId(FrameSinkId(9, 3), LocalSurfaceId(15, 1, 4781...))",
+          "document": "764BFA066BB9E54A26E8CC792F786DFD",
+          "reviewedRevision": 11,
+          "replacementRevision": 0,
+          "gate": "admitted",
+          "atUnixMs": 1795328281075.806
+        },
+        "continued": {
+          "event": "released",
+          "phase": "delivery",
+          "surface": "SurfaceId(FrameSinkId(9, 3), LocalSurfaceId(15, 1, 4781...))",
+          "document": "764BFA066BB9E54A26E8CC792F786DFD",
+          "reviewedRevision": 11,
+          "replacementRevision": 0,
+          "gate": "admitted",
+          "atUnixMs": 1795328281107.779
+        }
+      },
+      "outcome": {
+        "admitted": true,
+        "delivered": false,
+        "reason": "recipient-changed"
+      },
+      "counts": {
+        "siteInputEvents": 0,
+        "applicationAttempts": 0,
+        "applicationWrites": 0
+      },
+      "passed": true
+    },
+    {
+      "name": "overlay-before-admission-transparent-overlay",
+      "outcome": {
+        "admitted": true,
+        "delivered": false,
+        "reason": "target-changed"
+      },
+      "counts": {
+        "siteInputEvents": 0,
+        "applicationAttempts": 0,
+        "applicationWrites": 0
+      },
+      "refusedBy": "renderer-bound-target",
+      "passed": true
+    },
+    {
+      "name": "overlay-before-admission-opacity-zero-overlay",
+      "outcome": {
+        "admitted": true,
+        "delivered": false,
+        "reason": "target-changed"
+      },
+      "counts": {
+        "siteInputEvents": 0,
+        "applicationAttempts": 0,
+        "applicationWrites": 0
+      },
+      "refusedBy": "renderer-bound-target",
+      "passed": true
+    },
+    {
+      "name": "overlay-before-admission-raised-existing-element",
+      "outcome": {
+        "admitted": true,
+        "delivered": false,
+        "reason": "target-changed"
+      },
+      "counts": {
+        "siteInputEvents": 0,
+        "applicationAttempts": 0,
+        "applicationWrites": 0
+      },
+      "refusedBy": "renderer-bound-target",
+      "passed": true
+    },
+    {
+      "name": "unchanged-target-delivers",
+      "outcome": {
+        "admitted": true,
+        "delivered": true,
+        "reason": "delivered"
+      },
+      "reply": {
+        "status": 200,
+        "receipt": {
+          "record": "unchanged-8",
+          "revision": 1,
+          "writeId": "75e8fcf1-8995-4960-be87-11b54d49254a"
+        }
+      },
+      "events": [
+        {
+          "type": "pointerdown",
+          "trusted": true,
+          "target": "drawing",
+          "doc": "be831405-7b58-4d57-a4f7-db22e122694d",
+          "path": "/draw/unchanged-8",
+          "x": 16,
+          "y": 16
+        },
+        {
+          "type": "mousedown",
+          "trusted": true,
+          "target": "drawing",
+          "doc": "be831405-7b58-4d57-a4f7-db22e122694d",
+          "path": "/draw/unchanged-8",
+          "x": 16,
+          "y": 16
+        },
+        {
+          "type": "pointerup",
+          "trusted": true,
+          "target": "drawing",
+          "doc": "be831405-7b58-4d57-a4f7-db22e122694d",
+          "path": "/draw/unchanged-8",
+          "x": 16,
+          "y": 16
+        },
+        {
+          "type": "mouseup",
+          "trusted": true,
+          "target": "drawing",
+          "doc": "be831405-7b58-4d57-a4f7-db22e122694d",
+          "path": "/draw/unchanged-8",
+          "x": 16,
+          "y": 16
+        },
+        {
+          "type": "click",
+          "trusted": true,
+          "target": "drawing",
+          "doc": "be831405-7b58-4d57-a4f7-db22e122694d",
+          "path": "/draw/unchanged-8",
+          "x": 16,
+          "y": 16
+        }
+      ],
+      "counts": {
+        "siteInputEvents": 5,
+        "applicationAttempts": 1,
+        "applicationWrites": 1
+      },
+      "passed": true
+    },
+    {
+      "name": "consumed-approval-replay-refused",
+      "outcome": {
+        "admitted": false,
+        "delivered": false,
+        "reason": "unknown-review"
+      },
+      "first": {
+        "admitted": true,
+        "delivered": true,
+        "reason": "delivered"
+      },
+      "replayCounts": {
+        "siteInputEvents": 0,
+        "applicationAttempts": 0,
+        "applicationWrites": 0
+      },
+      "counts": {
+        "siteInputEvents": 5,
+        "applicationAttempts": 1,
+        "applicationWrites": 1
+      },
+      "passed": true
+    },
+    {
+      "name": "application-duplicate-commit-returns-original-receipt",
+      "replay": {
+        "status": 200,
+        "receipt": {
+          "record": "replay-9",
+          "revision": 1,
+          "writeId": "1460beae-4fac-4608-8d9f-890937b64779"
+        }
+      },
+      "counts": {
+        "siteInputEvents": 0,
+        "applicationAttempts": 1,
+        "applicationWrites": 0
+      },
+      "passed": true
+    },
+    {
+      "name": "same-document-navigation-invalidates-then-fresh-review",
+      "outcome": {
+        "admitted": false,
+        "delivered": false,
+        "reason": "stale-document"
+      },
+      "fresh": {
+        "admitted": true,
+        "delivered": true,
+        "reason": "delivered"
+      },
+      "counts": {
+        "siteInputEvents": 5,
+        "applicationAttempts": 1,
+        "applicationWrites": 1
+      },
+      "passed": true
+    },
+    {
+      "name": "cross-document-navigation-invalidates-then-fresh-review",
+      "outcome": {
+        "admitted": false,
+        "delivered": false,
+        "reason": "stale-document"
+      },
+      "fresh": {
+        "admitted": true,
+        "delivered": true,
+        "reason": "delivered"
+      },
+      "counts": {
+        "siteInputEvents": 5,
+        "applicationAttempts": 1,
+        "applicationWrites": 1
+      },
+      "passed": true
+    },
+    {
+      "name": "renderer-restart-invalidates-then-fresh-review",
+      "outcome": {
+        "admitted": false,
+        "delivered": false,
+        "reason": "unknown-review"
+      },
+      "fresh": {
+        "admitted": true,
+        "delivered": true,
+        "reason": "delivered"
+      },
+      "counts": {
+        "siteInputEvents": 5,
+        "applicationAttempts": 1,
+        "applicationWrites": 1
+      },
+      "passed": true
+    },
+    {
+      "name": "gpu-loss-invalidates-then-fresh-review",
+      "gpu": {
+        "oldPid": 430488,
+        "newPid": 432364
+      },
+      "outcome": {
+        "admitted": false,
+        "delivered": false,
+        "reason": "stale-compositor-revision"
+      },
+      "fresh": {
+        "admitted": true,
+        "delivered": true,
+        "reason": "delivered"
+      },
+      "counts": {
+        "siteInputEvents": 5,
+        "applicationAttempts": 1,
+        "applicationWrites": 1
+      },
+      "passed": true
+    }
+  ],
+  "animation": {
+    "none": {
+      "trials": 20,
+      "delivered": 20,
+      "refused": {},
+      "unnecessaryRefusalRate": 0
+    },
+    "compositor": {
+      "trials": 20,
+      "delivered": 0,
+      "refused": {
+        "capture-refused: cdpSession.send: Protocol error (Input.captureVisualEvidence): unstable visual copy": 20
+      },
+      "unnecessaryRefusalRate": 1
+    },
+    "main-thread": {
+      "trials": 20,
+      "delivered": 0,
+      "refused": {
+        "capture-refused: cdpSession.send: Protocol error (Input.captureVisualEvidence): unstable visual copy": 20
+      },
+      "unnecessaryRefusalRate": 1
+    },
+    "raf-canvas": {
+      "trials": 20,
+      "delivered": 0,
+      "refused": {
+        "capture-refused: cdpSession.send: Protocol error (Input.captureVisualEvidence): unstable visual copy": 20
+      },
+      "unnecessaryRefusalRate": 1
+    }
+  },
+  "application": {
+    "firstReceipt": {
+      "record": "unchanged-8",
+      "revision": 1,
+      "writeId": "75e8fcf1-8995-4960-be87-11b54d49254a"
+    },
+    "duplicateReturnedOriginalReceipt": true
+  },
+  "flags": [
+    "--use-webgpu-runtime=doe",
+    "--doe-webgpu-library-path=$FAWN_QUAL_ROOT/qual-80-83-20261121/c-stage/lib/libwebgpu_doe_c.so",
+    "--gpu-sandbox-start-early",
+    "--use-gl=angle",
+    "--use-angle=swiftshader",
+    "--disable-accelerated-2d-canvas",
+    "--ozone-platform=headless",
+    "--force-device-scale-factor=1",
+    "--fawn-reviewed-input-barriers=$BARRIER_DIR"
+  ],
+  "browserVersion": "158.0.8108.0",
+  "trace": [
+    {
+      "name": "FawnReview.Validated",
+      "ts": 323198710389,
+      "pid": 430264,
+      "args": {
+        "document": "04CBE1F3229C41A71000505587239193",
+        "surface": "SurfaceId(FrameSinkId(9, 3), LocalSurfaceId(6, 1, 4781...))"
+      }
+    },
+    {
+      "name": "FawnReview.Replaced",
+      "ts": 323198722523,
+      "pid": 430488,
+      "args": {
+        "revision": 4,
+        "surface": "SurfaceId(FrameSinkId(9, 3), LocalSurfaceId(6, 1, 4781...))"
+      }
+    },
+    {
+      "name": "FawnReview.Admission",
+      "ts": 323198724214,
+      "pid": 430264,
+      "args": {
+        "admitted": false,
+        "surface": "SurfaceId(FrameSinkId(9, 3), LocalSurfaceId(6, 1, 4781...))"
+      }
+    },
+    {
+      "name": "FawnReview.Validated",
+      "ts": 323199407899,
+      "pid": 430264,
+      "args": {
+        "document": "109F98615F1B1DAE730D67592324E77B",
+        "surface": "SurfaceId(FrameSinkId(9, 3), LocalSurfaceId(9, 1, 4781...))"
+      }
+    },
+    {
+      "name": "FawnReview.Admission",
+      "ts": 323199407943,
+      "pid": 430264,
+      "args": {
+        "admitted": true,
+        "surface": "SurfaceId(FrameSinkId(9, 3), LocalSurfaceId(9, 1, 4781...))"
+      }
+    },
+    {
+      "name": "FawnReview.Replaced",
+      "ts": 323199422140,
+      "pid": 430488,
+      "args": {
+        "revision": 7,
+        "surface": "SurfaceId(FrameSinkId(9, 3), LocalSurfaceId(9, 1, 4781...))"
+      }
+    },
+    {
+      "name": "FawnReview.Delivery",
+      "ts": 323199431228,
+      "pid": 430264,
+      "args": {
+        "result": 0,
+        "surface": "SurfaceId(FrameSinkId(9, 3), LocalSurfaceId(9, 1, 4781...))"
+      }
+    },
+    {
+      "name": "FawnReview.Validated",
+      "ts": 323199824288,
+      "pid": 430264,
+      "args": {
+        "document": "AC534F5DAC9EC3D3C39283D8A636B10D",
+        "surface": "SurfaceId(FrameSinkId(9, 3), LocalSurfaceId(12, 1, 4781...))"
+      }
+    },
+    {
+      "name": "FawnReview.Admission",
+      "ts": 323199824368,
+      "pid": 430264,
+      "args": {
+        "admitted": true,
+        "surface": "SurfaceId(FrameSinkId(9, 3), LocalSurfaceId(12, 1, 4781...))"
+      }
+    },
+    {
+      "name": "FawnReview.Delivery",
+      "ts": 323199833288,
+      "pid": 430264,
+      "args": {
+        "result": 2,
+        "surface": "SurfaceId(FrameSinkId(9, 3), LocalSurfaceId(12, 1, 4781...))"
+      }
+    },
+    {
+      "name": "FawnReview.Validated",
+      "ts": 323200524204,
+      "pid": 430264,
+      "args": {
+        "document": "764BFA066BB9E54A26E8CC792F786DFD",
+        "surface": "SurfaceId(FrameSinkId(9, 3), LocalSurfaceId(15, 1, 4781...))"
+      }
+    },
+    {
+      "name": "FawnReview.Admission",
+      "ts": 323200524267,
+      "pid": 430264,
+      "args": {
+        "admitted": true,
+        "surface": "SurfaceId(FrameSinkId(9, 3), LocalSurfaceId(15, 1, 4781...))"
+      }
+    },
+    {
+      "name": "FawnReview.Validated",
+      "ts": 323201338691,
+      "pid": 430264,
+      "args": {
+        "document": "38FBDFFBD934F16194669000591AFBCF",
+        "surface": "SurfaceId(FrameSinkId(9, 3), LocalSurfaceId(22, 1, 4781...))"
+      }
+    },
+    {
+      "name": "FawnReview.Admission",
+      "ts": 323201338840,
+      "pid": 430264,
+      "args": {
+        "admitted": true,
+        "surface": "SurfaceId(FrameSinkId(9, 3), LocalSurfaceId(22, 1, 4781...))"
+      }
+    },
+    {
+      "name": "FawnReview.Delivery",
+      "ts": 323201339199,
+      "pid": 430264,
+      "args": {
+        "result": 2,
+        "surface": "SurfaceId(FrameSinkId(9, 3), LocalSurfaceId(22, 1, 4781...))"
+      }
+    },
+    {
+      "name": "FawnReview.Validated",
+      "ts": 323202088700,
+      "pid": 430264,
+      "args": {
+        "document": "28D2BAEBD3C60CB295D966F533891BF6",
+        "surface": "SurfaceId(FrameSinkId(9, 3), LocalSurfaceId(26, 1, 4781...))"
+      }
+    },
+    {
+      "name": "FawnReview.Admission",
+      "ts": 323202088859,
+      "pid": 430264,
+      "args": {
+        "admitted": true,
+        "surface": "SurfaceId(FrameSinkId(9, 3), LocalSurfaceId(26, 1, 4781...))"
+      }
+    },
+    {
+      "name": "FawnReview.Delivery",
+      "ts": 323202089278,
+      "pid": 430264,
+      "args": {
+        "result": 2,
+        "surface": "SurfaceId(FrameSinkId(9, 3), LocalSurfaceId(26, 1, 4781...))"
+      }
+    },
+    {
+      "name": "FawnReview.Validated",
+      "ts": 323202872084,
+      "pid": 430264,
+      "args": {
+        "document": "95147DC29DF5E66347EEA9535EEA376D",
+        "surface": "SurfaceId(FrameSinkId(9, 3), LocalSurfaceId(30, 1, 4781...))"
+      }
+    },
+    {
+      "name": "FawnReview.Admission",
+      "ts": 323202872257,
+      "pid": 430264,
+      "args": {
+        "admitted": true,
+        "surface": "SurfaceId(FrameSinkId(9, 3), LocalSurfaceId(30, 1, 4781...))"
+      }
+    },
+    {
+      "name": "FawnReview.Delivery",
+      "ts": 323202872679,
+      "pid": 430264,
+      "args": {
+        "result": 2,
+        "surface": "SurfaceId(FrameSinkId(9, 3), LocalSurfaceId(30, 1, 4781...))"
+      }
+    },
+    {
+      "name": "FawnReview.Validated",
+      "ts": 323203588856,
+      "pid": 430264,
+      "args": {
+        "document": "816EEB543BA8F4A8D3DC489100FCDC0C",
+        "surface": "SurfaceId(FrameSinkId(9, 3), LocalSurfaceId(33, 1, 4781...))"
+      }
+    },
+    {
+      "name": "FawnReview.Admission",
+      "ts": 323203589007,
+      "pid": 430264,
+      "args": {
+        "admitted": true,
+        "surface": "SurfaceId(FrameSinkId(9, 3), LocalSurfaceId(33, 1, 4781...))"
+      }
+    },
+    {
+      "name": "FawnReview.Delivery",
+      "ts": 323203593333,
+      "pid": 430264,
+      "args": {
+        "result": 0,
+        "surface": "SurfaceId(FrameSinkId(9, 3), LocalSurfaceId(33, 1, 4781...))"
+      }
+    },
+    {
+      "name": "FawnReview.Validated",
+      "ts": 323204022157,
+      "pid": 430264,
+      "args": {
+        "document": "A8102C045331C346B9D469E7ADA14B1D",
+        "surface": "SurfaceId(FrameSinkId(9, 3), LocalSurfaceId(36, 1, 4781...))"
+      }
+    },
+    {
+      "name": "FawnReview.Admission",
+      "ts": 323204022304,
+      "pid": 430264,
+      "args": {
+        "admitted": true,
+        "surface": "SurfaceId(FrameSinkId(9, 3), LocalSurfaceId(36, 1, 4781...))"
+      }
+    },
+    {
+      "name": "FawnReview.Delivery",
+      "ts": 323204025686,
+      "pid": 430264,
+      "args": {
+        "result": 0,
+        "surface": "SurfaceId(FrameSinkId(9, 3), LocalSurfaceId(36, 1, 4781...))"
+      }
+    },
+    {
+      "name": "FawnReview.Replaced",
+      "ts": 323205325766,
+      "pid": 430488,
+      "args": {
+        "revision": 34,
+        "surface": "SurfaceId(FrameSinkId(9, 3), LocalSurfaceId(39, 1, 4781...))"
+      }
+    },
+    {
+      "name": "FawnReview.Validated",
+      "ts": 323205690600,
+      "pid": 430264,
+      "args": {
+        "document": "25636E11476947A9147F0AF51FF3F9F6",
+        "surface": "SurfaceId(FrameSinkId(9, 3), LocalSurfaceId(40, 1, 4781...))"
+      }
+    },
+    {
+      "name": "FawnReview.Admission",
+      "ts": 323205690718,
+      "pid": 430264,
+      "args": {
+        "admitted": true,
+        "surface": "SurfaceId(FrameSinkId(9, 3), LocalSurfaceId(40, 1, 4781...))"
+      }
+    },
+    {
+      "name": "FawnReview.Delivery",
+      "ts": 323205694097,
+      "pid": 430264,
+      "args": {
+        "result": 0,
+        "surface": "SurfaceId(FrameSinkId(9, 3), LocalSurfaceId(40, 1, 4781...))"
+      }
+    },
+    {
+      "name": "FawnReview.Validated",
+      "ts": 323206490020,
+      "pid": 430264,
+      "args": {
+        "document": "124873FE15B21FD0678896949DBC2DAB",
+        "surface": "SurfaceId(FrameSinkId(9, 3), LocalSurfaceId(46, 1, 4781...))"
+      }
+    },
+    {
+      "name": "FawnReview.Admission",
+      "ts": 323206490158,
+      "pid": 430264,
+      "args": {
+        "admitted": true,
+        "surface": "SurfaceId(FrameSinkId(9, 3), LocalSurfaceId(46, 1, 4781...))"
+      }
+    },
+    {
+      "name": "FawnReview.Delivery",
+      "ts": 323206493367,
+      "pid": 430264,
+      "args": {
+        "result": 0,
+        "surface": "SurfaceId(FrameSinkId(9, 3), LocalSurfaceId(46, 1, 4781...))"
+      }
+    },
+    {
+      "name": "FawnReview.Validated",
+      "ts": 323207420792,
+      "pid": 430264,
+      "args": {
+        "document": "3F1FA2456BB868EAEB590D7C8E9D1A2B",
+        "surface": "SurfaceId(FrameSinkId(10, 7), LocalSurfaceId(6, 1, CEBD...))"
+      }
+    },
+    {
+      "name": "FawnReview.Admission",
+      "ts": 323207420934,
+      "pid": 430264,
+      "args": {
+        "admitted": true,
+        "surface": "SurfaceId(FrameSinkId(10, 7), LocalSurfaceId(6, 1, CEBD...))"
+      }
+    },
+    {
+      "name": "FawnReview.Delivery",
+      "ts": 323207428108,
+      "pid": 430264,
+      "args": {
+        "result": 0,
+        "surface": "SurfaceId(FrameSinkId(10, 7), LocalSurfaceId(6, 1, CEBD...))"
+      }
+    },
+    {
+      "name": "FawnReview.Validated",
+      "ts": 323208105058,
+      "pid": 430264,
+      "args": {
+        "document": "120CFA1FA9D3CF0C1CADA263A4941F34",
+        "surface": "SurfaceId(FrameSinkId(10, 7), LocalSurfaceId(10, 2, CEBD...))"
+      }
+    },
+    {
+      "name": "FawnReview.Admission",
+      "ts": 323208105123,
+      "pid": 430264,
+      "args": {
+        "admitted": true,
+        "surface": "SurfaceId(FrameSinkId(10, 7), LocalSurfaceId(10, 2, CEBD...))"
+      }
+    },
+    {
+      "name": "FawnReview.Delivery",
+      "ts": 323208108721,
+      "pid": 430264,
+      "args": {
+        "result": 0,
+        "surface": "SurfaceId(FrameSinkId(10, 7), LocalSurfaceId(10, 2, CEBD...))"
+      }
+    },
+    {
+      "name": "FawnReview.Validated",
+      "ts": 323208507555,
+      "pid": 430264,
+      "args": {
+        "document": "4A175CDC6E87F2825E5786A055329AAA",
+        "surface": "SurfaceId(FrameSinkId(10, 7), LocalSurfaceId(13, 2, CEBD...))"
+      }
+    },
+    {
+      "name": "FawnReview.Admission",
+      "ts": 323208507621,
+      "pid": 430264,
+      "args": {
+        "admitted": true,
+        "surface": "SurfaceId(FrameSinkId(10, 7), LocalSurfaceId(13, 2, CEBD...))"
+      }
+    },
+    {
+      "name": "FawnReview.Delivery",
+      "ts": 323208510956,
+      "pid": 430264,
+      "args": {
+        "result": 0,
+        "surface": "SurfaceId(FrameSinkId(10, 7), LocalSurfaceId(13, 2, CEBD...))"
+      }
+    },
+    {
+      "name": "FawnReview.Validated",
+      "ts": 323208590336,
+      "pid": 430264,
+      "args": {
+        "document": "7E6855147BD4CB203E2CFC2A0BDBB2D0",
+        "surface": "SurfaceId(FrameSinkId(10, 7), LocalSurfaceId(16, 2, CEBD...))"
+      }
+    },
+    {
+      "name": "FawnReview.Admission",
+      "ts": 323208590390,
+      "pid": 430264,
+      "args": {
+        "admitted": true,
+        "surface": "SurfaceId(FrameSinkId(10, 7), LocalSurfaceId(16, 2, CEBD...))"
+      }
+    },
+    {
+      "name": "FawnReview.Delivery",
+      "ts": 323208593712,
+      "pid": 430264,
+      "args": {
+        "result": 0,
+        "surface": "SurfaceId(FrameSinkId(10, 7), LocalSurfaceId(16, 2, CEBD...))"
+      }
+    },
+    {
+      "name": "FawnReview.Validated",
+      "ts": 323208690879,
+      "pid": 430264,
+      "args": {
+        "document": "7B0937BED9963AA5642A4DFFA1F6B37B",
+        "surface": "SurfaceId(FrameSinkId(10, 7), LocalSurfaceId(19, 2, CEBD...))"
+      }
+    },
+    {
+      "name": "FawnReview.Admission",
+      "ts": 323208690924,
+      "pid": 430264,
+      "args": {
+        "admitted": true,
+        "surface": "SurfaceId(FrameSinkId(10, 7), LocalSurfaceId(19, 2, CEBD...))"
+      }
+    },
+    {
+      "name": "FawnReview.Delivery",
+      "ts": 323208694543,
+      "pid": 430264,
+      "args": {
+        "result": 0,
+        "surface": "SurfaceId(FrameSinkId(10, 7), LocalSurfaceId(19, 2, CEBD...))"
+      }
+    },
+    {
+      "name": "FawnReview.Validated",
+      "ts": 323208774657,
+      "pid": 430264,
+      "args": {
+        "document": "7884CE397E8138505354F13E42170D09",
+        "surface": "SurfaceId(FrameSinkId(10, 7), LocalSurfaceId(22, 2, CEBD...))"
+      }
+    },
+    {
+      "name": "FawnReview.Admission",
+      "ts": 323208774758,
+      "pid": 430264,
+      "args": {
+        "admitted": true,
+        "surface": "SurfaceId(FrameSinkId(10, 7), LocalSurfaceId(22, 2, CEBD...))"
+      }
+    },
+    {
+      "name": "FawnReview.Delivery",
+      "ts": 323208777979,
+      "pid": 430264,
+      "args": {
+        "result": 0,
+        "surface": "SurfaceId(FrameSinkId(10, 7), LocalSurfaceId(22, 2, CEBD...))"
+      }
+    },
+    {
+      "name": "FawnReview.Validated",
+      "ts": 323208857640,
+      "pid": 430264,
+      "args": {
+        "document": "98151F2C1DB073133AC9A35976E76BEB",
+        "surface": "SurfaceId(FrameSinkId(10, 7), LocalSurfaceId(25, 2, CEBD...))"
+      }
+    },
+    {
+      "name": "FawnReview.Admission",
+      "ts": 323208857763,
+      "pid": 430264,
+      "args": {
+        "admitted": true,
+        "surface": "SurfaceId(FrameSinkId(10, 7), LocalSurfaceId(25, 2, CEBD...))"
+      }
+    },
+    {
+      "name": "FawnReview.Delivery",
+      "ts": 323208861340,
+      "pid": 430264,
+      "args": {
+        "result": 0,
+        "surface": "SurfaceId(FrameSinkId(10, 7), LocalSurfaceId(25, 2, CEBD...))"
+      }
+    },
+    {
+      "name": "FawnReview.Validated",
+      "ts": 323208940325,
+      "pid": 430264,
+      "args": {
+        "document": "C8AA8DD6B9E158357CB7AA02B8E665F3",
+        "surface": "SurfaceId(FrameSinkId(10, 7), LocalSurfaceId(28, 2, CEBD...))"
+      }
+    },
+    {
+      "name": "FawnReview.Admission",
+      "ts": 323208940365,
+      "pid": 430264,
+      "args": {
+        "admitted": true,
+        "surface": "SurfaceId(FrameSinkId(10, 7), LocalSurfaceId(28, 2, CEBD...))"
+      }
+    },
+    {
+      "name": "FawnReview.Delivery",
+      "ts": 323208943652,
+      "pid": 430264,
+      "args": {
+        "result": 0,
+        "surface": "SurfaceId(FrameSinkId(10, 7), LocalSurfaceId(28, 2, CEBD...))"
+      }
+    },
+    {
+      "name": "FawnReview.Validated",
+      "ts": 323209023667,
+      "pid": 430264,
+      "args": {
+        "document": "C9899E8283214D65B62F23D44BFCA07A",
+        "surface": "SurfaceId(FrameSinkId(10, 7), LocalSurfaceId(31, 2, CEBD...))"
+      }
+    },
+    {
+      "name": "FawnReview.Admission",
+      "ts": 323209023731,
+      "pid": 430264,
+      "args": {
+        "admitted": true,
+        "surface": "SurfaceId(FrameSinkId(10, 7), LocalSurfaceId(31, 2, CEBD...))"
+      }
+    },
+    {
+      "name": "FawnReview.Delivery",
+      "ts": 323209027049,
+      "pid": 430264,
+      "args": {
+        "result": 0,
+        "surface": "SurfaceId(FrameSinkId(10, 7), LocalSurfaceId(31, 2, CEBD...))"
+      }
+    },
+    {
+      "name": "FawnReview.Validated",
+      "ts": 323209122994,
+      "pid": 430264,
+      "args": {
+        "document": "942D436DC51DBCD42B0D7D0387D1BF6B",
+        "surface": "SurfaceId(FrameSinkId(10, 7), LocalSurfaceId(34, 2, CEBD...))"
+      }
+    },
+    {
+      "name": "FawnReview.Admission",
+      "ts": 323209123038,
+      "pid": 430264,
+      "args": {
+        "admitted": true,
+        "surface": "SurfaceId(FrameSinkId(10, 7), LocalSurfaceId(34, 2, CEBD...))"
+      }
+    },
+    {
+      "name": "FawnReview.Delivery",
+      "ts": 323209126178,
+      "pid": 430264,
+      "args": {
+        "result": 0,
+        "surface": "SurfaceId(FrameSinkId(10, 7), LocalSurfaceId(34, 2, CEBD...))"
+      }
+    },
+    {
+      "name": "FawnReview.Validated",
+      "ts": 323209208209,
+      "pid": 430264,
+      "args": {
+        "document": "A2CCB04A690B7D3D64F1ABE57B36D899",
+        "surface": "SurfaceId(FrameSinkId(10, 7), LocalSurfaceId(37, 2, CEBD...))"
+      }
+    },
+    {
+      "name": "FawnReview.Admission",
+      "ts": 323209208316,
+      "pid": 430264,
+      "args": {
+        "admitted": true,
+        "surface": "SurfaceId(FrameSinkId(10, 7), LocalSurfaceId(37, 2, CEBD...))"
+      }
+    },
+    {
+      "name": "FawnReview.Delivery",
+      "ts": 323209211779,
+      "pid": 430264,
+      "args": {
+        "result": 0,
+        "surface": "SurfaceId(FrameSinkId(10, 7), LocalSurfaceId(37, 2, CEBD...))"
+      }
+    },
+    {
+      "name": "FawnReview.Validated",
+      "ts": 323209292865,
+      "pid": 430264,
+      "args": {
+        "document": "6DEBF9CA9E454A28C26E0DE44C61F08E",
+        "surface": "SurfaceId(FrameSinkId(10, 7), LocalSurfaceId(40, 2, CEBD...))"
+      }
+    },
+    {
+      "name": "FawnReview.Admission",
+      "ts": 323209292998,
+      "pid": 430264,
+      "args": {
+        "admitted": true,
+        "surface": "SurfaceId(FrameSinkId(10, 7), LocalSurfaceId(40, 2, CEBD...))"
+      }
+    },
+    {
+      "name": "FawnReview.Delivery",
+      "ts": 323209297078,
+      "pid": 430264,
+      "args": {
+        "result": 0,
+        "surface": "SurfaceId(FrameSinkId(10, 7), LocalSurfaceId(40, 2, CEBD...))"
+      }
+    },
+    {
+      "name": "FawnReview.Validated",
+      "ts": 323209374076,
+      "pid": 430264,
+      "args": {
+        "document": "E4AF7253CBD30052E6781FBA7B79C54E",
+        "surface": "SurfaceId(FrameSinkId(10, 7), LocalSurfaceId(43, 2, CEBD...))"
+      }
+    },
+    {
+      "name": "FawnReview.Admission",
+      "ts": 323209374144,
+      "pid": 430264,
+      "args": {
+        "admitted": true,
+        "surface": "SurfaceId(FrameSinkId(10, 7), LocalSurfaceId(43, 2, CEBD...))"
+      }
+    },
+    {
+      "name": "FawnReview.Delivery",
+      "ts": 323209377100,
+      "pid": 430264,
+      "args": {
+        "result": 0,
+        "surface": "SurfaceId(FrameSinkId(10, 7), LocalSurfaceId(43, 2, CEBD...))"
+      }
+    },
+    {
+      "name": "FawnReview.Validated",
+      "ts": 323209457359,
+      "pid": 430264,
+      "args": {
+        "document": "12CA4CB7D4CC39BDCEFD570048FBEBA1",
+        "surface": "SurfaceId(FrameSinkId(10, 7), LocalSurfaceId(46, 2, CEBD...))"
+      }
+    },
+    {
+      "name": "FawnReview.Admission",
+      "ts": 323209457476,
+      "pid": 430264,
+      "args": {
+        "admitted": true,
+        "surface": "SurfaceId(FrameSinkId(10, 7), LocalSurfaceId(46, 2, CEBD...))"
+      }
+    },
+    {
+      "name": "FawnReview.Delivery",
+      "ts": 323209460339,
+      "pid": 430264,
+      "args": {
+        "result": 0,
+        "surface": "SurfaceId(FrameSinkId(10, 7), LocalSurfaceId(46, 2, CEBD...))"
+      }
+    },
+    {
+      "name": "FawnReview.Validated",
+      "ts": 323209541178,
+      "pid": 430264,
+      "args": {
+        "document": "5D6E7E475597670822EDF50E9B957232",
+        "surface": "SurfaceId(FrameSinkId(10, 7), LocalSurfaceId(49, 2, CEBD...))"
+      }
+    },
+    {
+      "name": "FawnReview.Admission",
+      "ts": 323209541283,
+      "pid": 430264,
+      "args": {
+        "admitted": true,
+        "surface": "SurfaceId(FrameSinkId(10, 7), LocalSurfaceId(49, 2, CEBD...))"
+      }
+    },
+    {
+      "name": "FawnReview.Delivery",
+      "ts": 323209544637,
+      "pid": 430264,
+      "args": {
+        "result": 0,
+        "surface": "SurfaceId(FrameSinkId(10, 7), LocalSurfaceId(49, 2, CEBD...))"
+      }
+    },
+    {
+      "name": "FawnReview.Validated",
+      "ts": 323209641217,
+      "pid": 430264,
+      "args": {
+        "document": "A388CF4B2169EACCC3ECFEAB2907B1BD",
+        "surface": "SurfaceId(FrameSinkId(10, 7), LocalSurfaceId(52, 2, CEBD...))"
+      }
+    },
+    {
+      "name": "FawnReview.Admission",
+      "ts": 323209641358,
+      "pid": 430264,
+      "args": {
+        "admitted": true,
+        "surface": "SurfaceId(FrameSinkId(10, 7), LocalSurfaceId(52, 2, CEBD...))"
+      }
+    },
+    {
+      "name": "FawnReview.Delivery",
+      "ts": 323209644286,
+      "pid": 430264,
+      "args": {
+        "result": 0,
+        "surface": "SurfaceId(FrameSinkId(10, 7), LocalSurfaceId(52, 2, CEBD...))"
+      }
+    },
+    {
+      "name": "FawnReview.Validated",
+      "ts": 323209724962,
+      "pid": 430264,
+      "args": {
+        "document": "5E4DF1BFC7AA5A3D0DEAFB3F04176D07",
+        "surface": "SurfaceId(FrameSinkId(10, 7), LocalSurfaceId(55, 2, CEBD...))"
+      }
+    },
+    {
+      "name": "FawnReview.Admission",
+      "ts": 323209725138,
+      "pid": 430264,
+      "args": {
+        "admitted": true,
+        "surface": "SurfaceId(FrameSinkId(10, 7), LocalSurfaceId(55, 2, CEBD...))"
+      }
+    },
+    {
+      "name": "FawnReview.Delivery",
+      "ts": 323209728158,
+      "pid": 430264,
+      "args": {
+        "result": 0,
+        "surface": "SurfaceId(FrameSinkId(10, 7), LocalSurfaceId(55, 2, CEBD...))"
+      }
+    },
+    {
+      "name": "FawnReview.Validated",
+      "ts": 323209809099,
+      "pid": 430264,
+      "args": {
+        "document": "CD718A74D75C4618252A034D5D0C077D",
+        "surface": "SurfaceId(FrameSinkId(10, 7), LocalSurfaceId(58, 2, CEBD...))"
+      }
+    },
+    {
+      "name": "FawnReview.Admission",
+      "ts": 323209809200,
+      "pid": 430264,
+      "args": {
+        "admitted": true,
+        "surface": "SurfaceId(FrameSinkId(10, 7), LocalSurfaceId(58, 2, CEBD...))"
+      }
+    },
+    {
+      "name": "FawnReview.Delivery",
+      "ts": 323209812163,
+      "pid": 430264,
+      "args": {
+        "result": 0,
+        "surface": "SurfaceId(FrameSinkId(10, 7), LocalSurfaceId(58, 2, CEBD...))"
+      }
+    },
+    {
+      "name": "FawnReview.Validated",
+      "ts": 323209891981,
+      "pid": 430264,
+      "args": {
+        "document": "D0FF4201746CB6A5B16FA6217C5345E6",
+        "surface": "SurfaceId(FrameSinkId(10, 7), LocalSurfaceId(61, 2, CEBD...))"
+      }
+    },
+    {
+      "name": "FawnReview.Admission",
+      "ts": 323209892107,
+      "pid": 430264,
+      "args": {
+        "admitted": true,
+        "surface": "SurfaceId(FrameSinkId(10, 7), LocalSurfaceId(61, 2, CEBD...))"
+      }
+    },
+    {
+      "name": "FawnReview.Delivery",
+      "ts": 323209895578,
+      "pid": 430264,
+      "args": {
+        "result": 0,
+        "surface": "SurfaceId(FrameSinkId(10, 7), LocalSurfaceId(61, 2, CEBD...))"
+      }
+    },
+    {
+      "name": "FawnReview.Validated",
+      "ts": 323209974298,
+      "pid": 430264,
+      "args": {
+        "document": "EF252DE17ACC6950B238DCE25983F434",
+        "surface": "SurfaceId(FrameSinkId(10, 7), LocalSurfaceId(64, 2, CEBD...))"
+      }
+    },
+    {
+      "name": "FawnReview.Admission",
+      "ts": 323209974405,
+      "pid": 430264,
+      "args": {
+        "admitted": true,
+        "surface": "SurfaceId(FrameSinkId(10, 7), LocalSurfaceId(64, 2, CEBD...))"
+      }
+    },
+    {
+      "name": "FawnReview.Delivery",
+      "ts": 323209977089,
+      "pid": 430264,
+      "args": {
+        "result": 0,
+        "surface": "SurfaceId(FrameSinkId(10, 7), LocalSurfaceId(64, 2, CEBD...))"
+      }
+    },
+    {
+      "name": "FawnReview.Validated",
+      "ts": 323210058577,
+      "pid": 430264,
+      "args": {
+        "document": "512322DF75194AC87BD6D19328E59789",
+        "surface": "SurfaceId(FrameSinkId(10, 7), LocalSurfaceId(67, 2, CEBD...))"
+      }
+    },
+    {
+      "name": "FawnReview.Admission",
+      "ts": 323210058768,
+      "pid": 430264,
+      "args": {
+        "admitted": true,
+        "surface": "SurfaceId(FrameSinkId(10, 7), LocalSurfaceId(67, 2, CEBD...))"
+      }
+    },
+    {
+      "name": "FawnReview.Delivery",
+      "ts": 323210061707,
+      "pid": 430264,
+      "args": {
+        "result": 0,
+        "surface": "SurfaceId(FrameSinkId(10, 7), LocalSurfaceId(67, 2, CEBD...))"
+      }
+    },
+    {
+      "name": "FawnReview.Validated",
+      "ts": 323210157080,
+      "pid": 430264,
+      "args": {
+        "document": "5163446B5A68970DF1E13EFB647E7907",
+        "surface": "SurfaceId(FrameSinkId(10, 7), LocalSurfaceId(70, 2, CEBD...))"
+      }
+    },
+    {
+      "name": "FawnReview.Admission",
+      "ts": 323210157186,
+      "pid": 430264,
+      "args": {
+        "admitted": true,
+        "surface": "SurfaceId(FrameSinkId(10, 7), LocalSurfaceId(70, 2, CEBD...))"
+      }
+    },
+    {
+      "name": "FawnReview.Delivery",
+      "ts": 323210160110,
+      "pid": 430264,
+      "args": {
+        "result": 0,
+        "surface": "SurfaceId(FrameSinkId(10, 7), LocalSurfaceId(70, 2, CEBD...))"
+      }
+    },
+    {
+      "name": "FawnReview.Replaced",
+      "ts": 323210238426,
+      "pid": 432364,
+      "args": {
+        "revision": 45,
+        "surface": "SurfaceId(FrameSinkId(10, 7), LocalSurfaceId(73, 2, CEBD...))"
+      }
+    },
+    {
+      "name": "FawnReview.Replaced",
+      "ts": 323210321759,
+      "pid": 432364,
+      "args": {
+        "revision": 50,
+        "surface": "SurfaceId(FrameSinkId(10, 7), LocalSurfaceId(76, 2, CEBD...))"
+      }
+    },
+    {
+      "name": "FawnReview.Replaced",
+      "ts": 323210421891,
+      "pid": 432364,
+      "args": {
+        "revision": 56,
+        "surface": "SurfaceId(FrameSinkId(10, 7), LocalSurfaceId(79, 2, CEBD...))"
+      }
+    },
+    {
+      "name": "FawnReview.Replaced",
+      "ts": 323210505622,
+      "pid": 432364,
+      "args": {
+        "revision": 61,
+        "surface": "SurfaceId(FrameSinkId(10, 7), LocalSurfaceId(82, 2, CEBD...))"
+      }
+    },
+    {
+      "name": "FawnReview.Replaced",
+      "ts": 323210588702,
+      "pid": 432364,
+      "args": {
+        "revision": 66,
+        "surface": "SurfaceId(FrameSinkId(10, 7), LocalSurfaceId(85, 2, CEBD...))"
+      }
+    },
+    {
+      "name": "FawnReview.Replaced",
+      "ts": 323210672022,
+      "pid": 432364,
+      "args": {
+        "revision": 71,
+        "surface": "SurfaceId(FrameSinkId(10, 7), LocalSurfaceId(88, 2, CEBD...))"
+      }
+    },
+    {
+      "name": "FawnReview.Replaced",
+      "ts": 323210755524,
+      "pid": 432364,
+      "args": {
+        "revision": 76,
+        "surface": "SurfaceId(FrameSinkId(10, 7), LocalSurfaceId(91, 2, CEBD...))"
+      }
+    },
+    {
+      "name": "FawnReview.Replaced",
+      "ts": 323210855407,
+      "pid": 432364,
+      "args": {
+        "revision": 82,
+        "surface": "SurfaceId(FrameSinkId(10, 7), LocalSurfaceId(94, 2, CEBD...))"
+      }
+    },
+    {
+      "name": "FawnReview.Replaced",
+      "ts": 323210938990,
+      "pid": 432364,
+      "args": {
+        "revision": 87,
+        "surface": "SurfaceId(FrameSinkId(10, 7), LocalSurfaceId(97, 2, CEBD...))"
+      }
+    },
+    {
+      "name": "FawnReview.Replaced",
+      "ts": 323211038568,
+      "pid": 432364,
+      "args": {
+        "revision": 93,
+        "surface": "SurfaceId(FrameSinkId(10, 7), LocalSurfaceId(100, 2, CEBD...))"
+      }
+    },
+    {
+      "name": "FawnReview.Replaced",
+      "ts": 323211138505,
+      "pid": 432364,
+      "args": {
+        "revision": 99,
+        "surface": "SurfaceId(FrameSinkId(10, 7), LocalSurfaceId(103, 2, CEBD...))"
+      }
+    },
+    {
+      "name": "FawnReview.Replaced",
+      "ts": 323211238609,
+      "pid": 432364,
+      "args": {
+        "revision": 105,
+        "surface": "SurfaceId(FrameSinkId(10, 7), LocalSurfaceId(106, 2, CEBD...))"
+      }
+    },
+    {
+      "name": "FawnReview.Replaced",
+      "ts": 323211339156,
+      "pid": 432364,
+      "args": {
+        "revision": 111,
+        "surface": "SurfaceId(FrameSinkId(10, 7), LocalSurfaceId(109, 2, CEBD...))"
+      }
+    },
+    {
+      "name": "FawnReview.Replaced",
+      "ts": 323211439008,
+      "pid": 432364,
+      "args": {
+        "revision": 117,
+        "surface": "SurfaceId(FrameSinkId(10, 7), LocalSurfaceId(112, 2, CEBD...))"
+      }
+    },
+    {
+      "name": "FawnReview.Replaced",
+      "ts": 323211539105,
+      "pid": 432364,
+      "args": {
+        "revision": 123,
+        "surface": "SurfaceId(FrameSinkId(10, 7), LocalSurfaceId(115, 2, CEBD...))"
+      }
+    },
+    {
+      "name": "FawnReview.Replaced",
+      "ts": 323211638712,
+      "pid": 432364,
+      "args": {
+        "revision": 129,
+        "surface": "SurfaceId(FrameSinkId(10, 7), LocalSurfaceId(118, 2, CEBD...))"
+      }
+    },
+    {
+      "name": "FawnReview.Replaced",
+      "ts": 323211738910,
+      "pid": 432364,
+      "args": {
+        "revision": 135,
+        "surface": "SurfaceId(FrameSinkId(10, 7), LocalSurfaceId(121, 2, CEBD...))"
+      }
+    },
+    {
+      "name": "FawnReview.Replaced",
+      "ts": 323211822038,
+      "pid": 432364,
+      "args": {
+        "revision": 140,
+        "surface": "SurfaceId(FrameSinkId(10, 7), LocalSurfaceId(124, 2, CEBD...))"
+      }
+    },
+    {
+      "name": "FawnReview.Replaced",
+      "ts": 323211922058,
+      "pid": 432364,
+      "args": {
+        "revision": 146,
+        "surface": "SurfaceId(FrameSinkId(10, 7), LocalSurfaceId(127, 2, CEBD...))"
+      }
+    },
+    {
+      "name": "FawnReview.Replaced",
+      "ts": 323212005113,
+      "pid": 432364,
+      "args": {
+        "revision": 151,
+        "surface": "SurfaceId(FrameSinkId(10, 7), LocalSurfaceId(130, 2, CEBD...))"
+      }
+    },
+    {
+      "name": "FawnReview.Replaced",
+      "ts": 323212089112,
+      "pid": 432364,
+      "args": {
+        "revision": 156,
+        "surface": "SurfaceId(FrameSinkId(10, 7), LocalSurfaceId(133, 2, CEBD...))"
+      }
+    },
+    {
+      "name": "FawnReview.Replaced",
+      "ts": 323212172227,
+      "pid": 432364,
+      "args": {
+        "revision": 161,
+        "surface": "SurfaceId(FrameSinkId(10, 7), LocalSurfaceId(136, 2, CEBD...))"
+      }
+    },
+    {
+      "name": "FawnReview.Replaced",
+      "ts": 323212255848,
+      "pid": 432364,
+      "args": {
+        "revision": 166,
+        "surface": "SurfaceId(FrameSinkId(10, 7), LocalSurfaceId(139, 2, CEBD...))"
+      }
+    },
+    {
+      "name": "FawnReview.Replaced",
+      "ts": 323212356172,
+      "pid": 432364,
+      "args": {
+        "revision": 172,
+        "surface": "SurfaceId(FrameSinkId(10, 7), LocalSurfaceId(142, 2, CEBD...))"
+      }
+    },
+    {
+      "name": "FawnReview.Replaced",
+      "ts": 323212438743,
+      "pid": 432364,
+      "args": {
+        "revision": 177,
+        "surface": "SurfaceId(FrameSinkId(10, 7), LocalSurfaceId(145, 2, CEBD...))"
+      }
+    },
+    {
+      "name": "FawnReview.Replaced",
+      "ts": 323212522842,
+      "pid": 432364,
+      "args": {
+        "revision": 182,
+        "surface": "SurfaceId(FrameSinkId(10, 7), LocalSurfaceId(148, 2, CEBD...))"
+      }
+    },
+    {
+      "name": "FawnReview.Replaced",
+      "ts": 323212606363,
+      "pid": 432364,
+      "args": {
+        "revision": 187,
+        "surface": "SurfaceId(FrameSinkId(10, 7), LocalSurfaceId(151, 2, CEBD...))"
+      }
+    },
+    {
+      "name": "FawnReview.Replaced",
+      "ts": 323212689108,
+      "pid": 432364,
+      "args": {
+        "revision": 192,
+        "surface": "SurfaceId(FrameSinkId(10, 7), LocalSurfaceId(154, 2, CEBD...))"
+      }
+    },
+    {
+      "name": "FawnReview.Replaced",
+      "ts": 323212789512,
+      "pid": 432364,
+      "args": {
+        "revision": 198,
+        "surface": "SurfaceId(FrameSinkId(10, 7), LocalSurfaceId(157, 2, CEBD...))"
+      }
+    },
+    {
+      "name": "FawnReview.Replaced",
+      "ts": 323212889380,
+      "pid": 432364,
+      "args": {
+        "revision": 204,
+        "surface": "SurfaceId(FrameSinkId(10, 7), LocalSurfaceId(160, 2, CEBD...))"
+      }
+    },
+    {
+      "name": "FawnReview.Replaced",
+      "ts": 323212972644,
+      "pid": 432364,
+      "args": {
+        "revision": 209,
+        "surface": "SurfaceId(FrameSinkId(10, 7), LocalSurfaceId(163, 2, CEBD...))"
+      }
+    },
+    {
+      "name": "FawnReview.Replaced",
+      "ts": 323213055931,
+      "pid": 432364,
+      "args": {
+        "revision": 214,
+        "surface": "SurfaceId(FrameSinkId(10, 7), LocalSurfaceId(166, 2, CEBD...))"
+      }
+    },
+    {
+      "name": "FawnReview.Replaced",
+      "ts": 323213138917,
+      "pid": 432364,
+      "args": {
+        "revision": 219,
+        "surface": "SurfaceId(FrameSinkId(10, 7), LocalSurfaceId(169, 2, CEBD...))"
+      }
+    },
+    {
+      "name": "FawnReview.Replaced",
+      "ts": 323213239624,
+      "pid": 432364,
+      "args": {
+        "revision": 225,
+        "surface": "SurfaceId(FrameSinkId(10, 7), LocalSurfaceId(172, 2, CEBD...))"
+      }
+    },
+    {
+      "name": "FawnReview.Replaced",
+      "ts": 323213339445,
+      "pid": 432364,
+      "args": {
+        "revision": 231,
+        "surface": "SurfaceId(FrameSinkId(10, 7), LocalSurfaceId(175, 2, CEBD...))"
+      }
+    },
+    {
+      "name": "FawnReview.Replaced",
+      "ts": 323213422844,
+      "pid": 432364,
+      "args": {
+        "revision": 236,
+        "surface": "SurfaceId(FrameSinkId(10, 7), LocalSurfaceId(178, 2, CEBD...))"
+      }
+    },
+    {
+      "name": "FawnReview.Replaced",
+      "ts": 323213522701,
+      "pid": 432364,
+      "args": {
+        "revision": 242,
+        "surface": "SurfaceId(FrameSinkId(10, 7), LocalSurfaceId(181, 2, CEBD...))"
+      }
+    },
+    {
+      "name": "FawnReview.Replaced",
+      "ts": 323213606204,
+      "pid": 432364,
+      "args": {
+        "revision": 247,
+        "surface": "SurfaceId(FrameSinkId(10, 7), LocalSurfaceId(184, 2, CEBD...))"
+      }
+    },
+    {
+      "name": "FawnReview.Replaced",
+      "ts": 323213705836,
+      "pid": 432364,
+      "args": {
+        "revision": 253,
+        "surface": "SurfaceId(FrameSinkId(10, 7), LocalSurfaceId(187, 2, CEBD...))"
+      }
+    },
+    {
+      "name": "FawnReview.Replaced",
+      "ts": 323213805471,
+      "pid": 432364,
+      "args": {
+        "revision": 259,
+        "surface": "SurfaceId(FrameSinkId(10, 7), LocalSurfaceId(190, 2, CEBD...))"
+      }
+    },
+    {
+      "name": "FawnReview.Replaced",
+      "ts": 323213905515,
+      "pid": 432364,
+      "args": {
+        "revision": 265,
+        "surface": "SurfaceId(FrameSinkId(10, 7), LocalSurfaceId(193, 2, CEBD...))"
+      }
+    },
+    {
+      "name": "FawnReview.Replaced",
+      "ts": 323214005378,
+      "pid": 432364,
+      "args": {
+        "revision": 271,
+        "surface": "SurfaceId(FrameSinkId(10, 7), LocalSurfaceId(196, 2, CEBD...))"
+      }
+    },
+    {
+      "name": "FawnReview.Replaced",
+      "ts": 323214088832,
+      "pid": 432364,
+      "args": {
+        "revision": 276,
+        "surface": "SurfaceId(FrameSinkId(10, 7), LocalSurfaceId(199, 2, CEBD...))"
+      }
+    },
+    {
+      "name": "FawnReview.Replaced",
+      "ts": 323214171829,
+      "pid": 432364,
+      "args": {
+        "revision": 281,
+        "surface": "SurfaceId(FrameSinkId(10, 7), LocalSurfaceId(202, 2, CEBD...))"
+      }
+    },
+    {
+      "name": "FawnReview.Replaced",
+      "ts": 323214255037,
+      "pid": 432364,
+      "args": {
+        "revision": 286,
+        "surface": "SurfaceId(FrameSinkId(10, 7), LocalSurfaceId(205, 2, CEBD...))"
+      }
+    },
+    {
+      "name": "FawnReview.Replaced",
+      "ts": 323214338969,
+      "pid": 432364,
+      "args": {
+        "revision": 291,
+        "surface": "SurfaceId(FrameSinkId(10, 7), LocalSurfaceId(208, 2, CEBD...))"
+      }
+    },
+    {
+      "name": "FawnReview.Replaced",
+      "ts": 323214421665,
+      "pid": 432364,
+      "args": {
+        "revision": 296,
+        "surface": "SurfaceId(FrameSinkId(10, 7), LocalSurfaceId(211, 2, CEBD...))"
+      }
+    },
+    {
+      "name": "FawnReview.Replaced",
+      "ts": 323214505100,
+      "pid": 432364,
+      "args": {
+        "revision": 301,
+        "surface": "SurfaceId(FrameSinkId(10, 7), LocalSurfaceId(214, 2, CEBD...))"
+      }
+    },
+    {
+      "name": "FawnReview.Replaced",
+      "ts": 323214588830,
+      "pid": 432364,
+      "args": {
+        "revision": 306,
+        "surface": "SurfaceId(FrameSinkId(10, 7), LocalSurfaceId(217, 2, CEBD...))"
+      }
+    },
+    {
+      "name": "FawnReview.Replaced",
+      "ts": 323214672325,
+      "pid": 432364,
+      "args": {
+        "revision": 311,
+        "surface": "SurfaceId(FrameSinkId(10, 7), LocalSurfaceId(220, 2, CEBD...))"
+      }
+    },
+    {
+      "name": "FawnReview.Replaced",
+      "ts": 323214754975,
+      "pid": 432364,
+      "args": {
+        "revision": 316,
+        "surface": "SurfaceId(FrameSinkId(10, 7), LocalSurfaceId(223, 2, CEBD...))"
+      }
+    },
+    {
+      "name": "FawnReview.Replaced",
+      "ts": 323214838566,
+      "pid": 432364,
+      "args": {
+        "revision": 321,
+        "surface": "SurfaceId(FrameSinkId(10, 7), LocalSurfaceId(226, 2, CEBD...))"
+      }
+    },
+    {
+      "name": "FawnReview.Replaced",
+      "ts": 323214938751,
+      "pid": 432364,
+      "args": {
+        "revision": 327,
+        "surface": "SurfaceId(FrameSinkId(10, 7), LocalSurfaceId(229, 2, CEBD...))"
+      }
+    },
+    {
+      "name": "FawnReview.Replaced",
+      "ts": 323215038899,
+      "pid": 432364,
+      "args": {
+        "revision": 333,
+        "surface": "SurfaceId(FrameSinkId(10, 7), LocalSurfaceId(232, 2, CEBD...))"
+      }
+    },
+    {
+      "name": "FawnReview.Replaced",
+      "ts": 323215121913,
+      "pid": 432364,
+      "args": {
+        "revision": 338,
+        "surface": "SurfaceId(FrameSinkId(10, 7), LocalSurfaceId(235, 2, CEBD...))"
+      }
+    },
+    {
+      "name": "FawnReview.Replaced",
+      "ts": 323215205552,
+      "pid": 432364,
+      "args": {
+        "revision": 343,
+        "surface": "SurfaceId(FrameSinkId(10, 7), LocalSurfaceId(238, 2, CEBD...))"
+      }
+    },
+    {
+      "name": "FawnReview.Replaced",
+      "ts": 323215288967,
+      "pid": 432364,
+      "args": {
+        "revision": 348,
+        "surface": "SurfaceId(FrameSinkId(10, 7), LocalSurfaceId(241, 2, CEBD...))"
+      }
+    },
+    {
+      "name": "FawnReview.Replaced",
+      "ts": 323215372123,
+      "pid": 432364,
+      "args": {
+        "revision": 353,
+        "surface": "SurfaceId(FrameSinkId(10, 7), LocalSurfaceId(244, 2, CEBD...))"
+      }
+    },
+    {
+      "name": "FawnReview.Replaced",
+      "ts": 323215471951,
+      "pid": 432364,
+      "args": {
+        "revision": 359,
+        "surface": "SurfaceId(FrameSinkId(10, 7), LocalSurfaceId(247, 2, CEBD...))"
+      }
+    },
+    {
+      "name": "FawnReview.Replaced",
+      "ts": 323215555285,
+      "pid": 432364,
+      "args": {
+        "revision": 364,
+        "surface": "SurfaceId(FrameSinkId(10, 7), LocalSurfaceId(250, 2, CEBD...))"
+      }
+    }
+  ],
+  "runtimeMapped": {
+    "gpuPid": 430488,
+    "doeLibrary": true
+  },
+  "animationPassed": true,
+  "passed": true,
+  "summary": {
+    "browserInput": {
+      "ordering-1-replacement-active-before-admission": {
+        "passed": true,
+        "outcome": {
+          "admitted": false,
+          "delivered": false,
+          "reason": "stale-compositor-revision"
+        },
+        "counts": {
+          "siteInputEvents": 0,
+          "applicationAttempts": 0,
+          "applicationWrites": 0
+        }
+      },
+      "ordering-2-replacement-active-after-admission": {
+        "passed": true,
+        "outcome": {
+          "admitted": true,
+          "delivered": true,
+          "reason": "delivered"
+        },
+        "counts": {
+          "siteInputEvents": 5,
+          "applicationAttempts": 1,
+          "applicationWrites": 1
+        }
+      },
+      "ordering-2-overlay-after-admission": {
+        "passed": true,
+        "outcome": {
+          "admitted": true,
+          "delivered": false,
+          "reason": "target-changed"
+        },
+        "counts": {
+          "siteInputEvents": 0,
+          "applicationAttempts": 0,
+          "applicationWrites": 0
+        }
+      },
+      "ordering-2-navigation-after-admission": {
+        "passed": true,
+        "outcome": {
+          "admitted": true,
+          "delivered": false,
+          "reason": "recipient-changed"
+        },
+        "counts": {
+          "siteInputEvents": 0,
+          "applicationAttempts": 0,
+          "applicationWrites": 0
+        }
+      },
+      "overlay-before-admission-transparent-overlay": {
+        "passed": true,
+        "outcome": {
+          "admitted": true,
+          "delivered": false,
+          "reason": "target-changed"
+        },
+        "counts": {
+          "siteInputEvents": 0,
+          "applicationAttempts": 0,
+          "applicationWrites": 0
+        }
+      },
+      "overlay-before-admission-opacity-zero-overlay": {
+        "passed": true,
+        "outcome": {
+          "admitted": true,
+          "delivered": false,
+          "reason": "target-changed"
+        },
+        "counts": {
+          "siteInputEvents": 0,
+          "applicationAttempts": 0,
+          "applicationWrites": 0
+        }
+      },
+      "overlay-before-admission-raised-existing-element": {
+        "passed": true,
+        "outcome": {
+          "admitted": true,
+          "delivered": false,
+          "reason": "target-changed"
+        },
+        "counts": {
+          "siteInputEvents": 0,
+          "applicationAttempts": 0,
+          "applicationWrites": 0
+        }
+      },
+      "unchanged-target-delivers": {
+        "passed": true,
+        "outcome": {
+          "admitted": true,
+          "delivered": true,
+          "reason": "delivered"
+        },
+        "counts": {
+          "siteInputEvents": 5,
+          "applicationAttempts": 1,
+          "applicationWrites": 1
+        }
+      },
+      "consumed-approval-replay-refused": {
+        "passed": true,
+        "outcome": {
+          "admitted": false,
+          "delivered": false,
+          "reason": "unknown-review"
+        },
+        "counts": {
+          "siteInputEvents": 5,
+          "applicationAttempts": 1,
+          "applicationWrites": 1
+        }
+      },
+      "same-document-navigation-invalidates-then-fresh-review": {
+        "passed": true,
+        "outcome": {
+          "admitted": false,
+          "delivered": false,
+          "reason": "stale-document"
+        },
+        "counts": {
+          "siteInputEvents": 5,
+          "applicationAttempts": 1,
+          "applicationWrites": 1
+        }
+      },
+      "cross-document-navigation-invalidates-then-fresh-review": {
+        "passed": true,
+        "outcome": {
+          "admitted": false,
+          "delivered": false,
+          "reason": "stale-document"
+        },
+        "counts": {
+          "siteInputEvents": 5,
+          "applicationAttempts": 1,
+          "applicationWrites": 1
+        }
+      },
+      "renderer-restart-invalidates-then-fresh-review": {
+        "passed": true,
+        "outcome": {
+          "admitted": false,
+          "delivered": false,
+          "reason": "unknown-review"
+        },
+        "counts": {
+          "siteInputEvents": 5,
+          "applicationAttempts": 1,
+          "applicationWrites": 1
+        }
+      },
+      "gpu-loss-invalidates-then-fresh-review": {
+        "passed": true,
+        "outcome": {
+          "admitted": false,
+          "delivered": false,
+          "reason": "stale-compositor-revision"
+        },
+        "counts": {
+          "siteInputEvents": 5,
+          "applicationAttempts": 1,
+          "applicationWrites": 1
+        }
+      }
+    },
+    "application": {
+      "firstReceipt": {
+        "record": "unchanged-8",
+        "revision": 1,
+        "writeId": "75e8fcf1-8995-4960-be87-11b54d49254a"
+      },
+      "duplicateReturnedOriginalReceipt": true
+    },
+    "unnecessaryRefusalRate": {
+      "none": 0,
+      "compositor": 1,
+      "main-thread": 1,
+      "raf-canvas": 1
+    }
+  }
+}
