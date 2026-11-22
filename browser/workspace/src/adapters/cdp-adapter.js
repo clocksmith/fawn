@@ -1,5 +1,6 @@
 import { supportsStockCapturePlanes } from './stock-capture-source.js';
-import { CompositorSessions } from './compositor-capture.js';
+import { CompositorSessions, canonicalRgbaTiles } from './compositor-capture.js';
+import { reviewedClicks } from '../../../chromium/scripts/reviewed-click.mjs';
 import { createResidentCanvasReader } from './resident-canvas.js';
 import { pickRegion } from './region-picker.js';
 // Fawn workspace — narrow raw-CDP adapter over stock Chromium
@@ -9,7 +10,7 @@ import { pickRegion } from './region-picker.js';
 // service constructs it. Playwright's registry is used solely to locate the installed binary.
 
 import { spawn } from 'node:child_process';
-import { createHash } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import { mkdirSync, readFileSync, renameSync } from 'node:fs';
 import { join } from 'node:path';
 import playwrightRegistry from 'playwright-core/lib/server/registry/index';
@@ -253,6 +254,48 @@ class CdpWorkspaceAdapter {
 
   _query(workspaceId, args) {
     return this._evaluate(workspaceId, `(${queryPage.toString()})(${JSON.stringify(args)})`);
+  }
+
+  async prepareReviewedClick(workspaceId, pageId, selector, snapshot) {
+    const { cdp, pages } = this._entry(workspaceId);
+    const page = pages.get(pageId);
+    const frame = snapshot.frameEvidence?.[selector];
+    const bitmap = snapshot.regionBitmaps?.[selector];
+    if (!frame?.binding || bitmap?.format !== 'compositor-element-canonical-srgb-rgba8-v2') {
+      throw Error('The selected element needs a current restricted RGBA capture');
+    }
+    const attempt = Symbol();
+    page.pendingReview = attempt;
+    page.visualReview = null;
+    const session = { send: (method, args) => cdp.send(method, args, page.sessionId) };
+    const client = reviewedClicks(session);
+    const review = await client.capture(frame.binding.viewportRect);
+    const current = await session.send('Page.getFrameTree', {});
+    if (current.frameTree.frame.loaderId !== frame.loaderId || review.deviceScaleFactor !== frame.binding.deviceScaleFactor
+        || review.pixelWidth !== bitmap.width || review.pixelHeight !== bitmap.height) {
+      throw Error('Browser review does not match the granted capture geometry and document');
+    }
+    // A root-surface read can include an occluding or neighboring element. Never
+    // disclose it as a restricted capture unless every authorized pixel agrees.
+    const pixels = Buffer.from(review.rgba, 'base64');
+    const { record } = await canonicalRgbaTiles(pixels, bitmap.width, bitmap.height, bitmap.tileSize);
+    if (record.hashes.length !== bitmap.hashes.length || record.hashes.some((hash, i) => hash !== bitmap.hashes[i])) {
+      throw Error('Browser review pixels differ from the granted element');
+    }
+    if (page.pendingReview !== attempt || page.closed) throw Error('Review was superseded');
+    const { rgba, ...binding } = review;
+    const id = randomUUID();
+    page.visualReview = { id, client, review };
+    return { binding: { id, ...binding }, rgba };
+  }
+
+  async executeReviewedClick(workspaceId, pageId, id) {
+    const page = this._entry(workspaceId).pages.get(pageId);
+    const saved = page?.visualReview;
+    if (!saved || saved.id !== id) return { admitted: false, reason: 'review-expired' };
+    page.visualReview = null;
+    const { x, y, width, height } = saved.review.rectangle;
+    return saved.client.click(saved.review, { x: x + Math.floor(width / 2), y: y + Math.floor(height / 2) });
   }
 
   async snapshot(workspaceId, read = {}) {

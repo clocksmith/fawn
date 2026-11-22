@@ -88,6 +88,9 @@ function validateObservationRead(command, config) {
       || typeof command.compositorRegion !== 'string' || command.regionGroups?.length)) {
     throw workspaceError(REJECTION_CODES.INVALID_COMMAND, 'Name one requested region for compositor capture');
   }
+  if (command.reviewedClick !== undefined && (command.reviewedClick !== true || !command.compositorRegion || read.view !== FULL_VIEW)) {
+    throw workspaceError(REJECTION_CODES.INVALID_COMMAND, 'A reviewed click needs a full observation of the selected compositor region');
+  }
   return read;
 }
 
@@ -533,13 +536,27 @@ class WorkspaceService {
           command.compositorRegion, url, this.#config, this.#nowMs(), false, command.compositorSession) : null,
       }, pageId);
       readGrant(workspace, command, snapshot.url, this.#nowMs());
+      let reviewedRgba;
+      if (command.reviewedClick) {
+        if (!this.#adapter.prepareReviewedClick) throw workspaceError(REJECTION_CODES.INVALID_CONFIG, 'Browser adapter lacks native reviewed clicks');
+        const selected = command.compositorRegion;
+        const capture = await this.#bounded(this.#adapter.prepareReviewedClick(workspace.workspaceId, pageId, selected, snapshot));
+        // Grants can expire during asynchronous readback, even while the mutex is held.
+        const grant = readGrant(workspace, command, snapshot.url, this.#nowMs());
+        const frame = snapshot.frameEvidence[selected];
+        if (!grant || frame.grantId !== grant.grantId || frame.grantRevision !== grant.grantRevision) {
+          throw workspaceError(REJECTION_CODES.STALE_OBSERVATION, 'The review grant changed during capture');
+        }
+        snapshot.frameEvidence[selected].reviewedClick = capture.binding;
+        reviewedRgba = capture.rgba;
+      }
       const recorded = this.#recordObservation(workspace, snapshot, 'observe', pageId);
       if (read.view === OUTLINE_VIEW) return { ...outlineView(workspace, recorded, snapshot, read.sinceVersion), ...(command.pageId ? { pageId } : {}) };
       const base = observationBase(workspace, recorded, read.sinceVersion);
       const visualChanges = read.sinceVersion === undefined ? null : Object.fromEntries(
         Object.entries(snapshot.regionBitmaps ?? {}).map(([selector, bitmap]) =>
           [selector, changedCanvasTiles(base?.regionBitmaps?.[selector], bitmap)]));
-      return structuredClone({ ...recorded, ...(visualChanges ? { visualChanges } : {}), ...(workspace.scopedReads ? { readScope: { pageId, regions: read.readRoots ?? null } } : {}), boundary: NONATOMIC_BOUNDARY });
+      return structuredClone({ ...recorded, ...(reviewedRgba ? { reviewedRgba } : {}), ...(visualChanges ? { visualChanges } : {}), ...(workspace.scopedReads ? { readScope: { pageId, regions: read.readRoots ?? null } } : {}), boundary: NONATOMIC_BOUNDARY });
     });
   }
 
@@ -611,7 +628,7 @@ class WorkspaceService {
     const selected = captured[0];
     const regions = scope?.kind === REGIONS_SCOPE ? scope.selectors : captured;
     const earlier = cited?.frameEvidence?.[selected];
-    if (selected && earlier.grantRevision !== permission?.grantRevision) {
+    if (selected && (earlier.grantRevision !== permission?.grantRevision || earlier.grantId !== permission?.grantId)) {
       throw workspaceError(REJECTION_CODES.STALE_OBSERVATION, 'The selected surface grant changed before dispatch');
     }
     const capture = compositorRequest(workspace, permission, selected, url, this.#config, this.#nowMs(), true, earlier?.sessionId);
@@ -692,11 +709,14 @@ class WorkspaceService {
         observationVersion: workspace.observationVersion,
         ...checks,
       });
-      this.#hooks.afterDispatchStarted?.(action.request);
-      return { action };
+      const { request } = action;
+      const cited = pageView(workspace, request.pageId).observations.get(request.observationVersion);
+      const reviewedBinding = cited.frameEvidence?.[request.target?.selector]?.reviewedClick;
+      this.#hooks.afterDispatchStarted?.(request);
+      return { action, reviewedBinding };
     });
     if (begun.settled) return begun.settled;
-    const outcome = await this.#performEffect(workspaceId, begun.action.request);
+    const outcome = await this.#performEffect(workspaceId, begun.action.request, begun.reviewedBinding);
     return runtime.mutex.run(async () => {
       let postObservationVersion = null;
       const postSnapT0 = performance.now();
@@ -736,13 +756,22 @@ class WorkspaceService {
     });
   }
 
-  async #performEffect(workspaceId, request) {
+  async #performEffect(workspaceId, request, reviewedBinding) {
     let effect;
     const execT0 = performance.now();
     try {
       const uploadFiles = request.kind === 'upload'
         ? this.#uploads.resolve(this.#workspace(workspaceId).grants.get(request.grantId), request.params.fileIds) : null;
-      effect = await withTimeout(this.#adapter.execute(workspaceId, request, uploadFiles), this.#config.dispatch.actionTimeoutMs);
+      if (reviewedBinding || request.requireReviewedClick) {
+        if (!reviewedBinding) throw Error('Missing native click review');
+        effect = await this.#bounded(this.#adapter.executeReviewedClick(workspaceId, request.pageId, reviewedBinding.id));
+        if (effect?.admitted === false) return { outcome: OUTCOMES.FAILED, basis: effect.reason,
+          evidence: { inputAdmitted: false, reviewedBinding } };
+        if (effect?.admitted !== true) throw Error('Browser did not confirm input admission');
+        effect = { ...effect, reviewedBinding };
+      } else {
+        effect = await this.#bounded(this.#adapter.execute(workspaceId, request, uploadFiles));
+      }
     } catch (error) {
       return {
         outcome: OUTCOMES.UNKNOWN,
@@ -759,7 +788,8 @@ class WorkspaceService {
     const completion = request.completion;
     if (completion?.completedWhen?.length) return this.#awaitCompletion(workspaceId, completion, effect, request, effectExecuteMs);
     if (VALUE_CONDITIONS[request.kind]) return this.#awaitValue(workspaceId, request, effect, effectExecuteMs);
-    return { outcome: OUTCOMES.COMPLETED, basis: KIND_COMPLETION_BASIS[request.kind], evidence: { effect, effectExecuteMs, valueSettleElapsedMs: 0 } };
+    const basis = reviewedBinding ? 'reviewed-input-admitted' : KIND_COMPLETION_BASIS[request.kind];
+    return { outcome: OUTCOMES.COMPLETED, basis, evidence: { effect, effectExecuteMs, valueSettleElapsedMs: 0 } };
   }
 
   /**
