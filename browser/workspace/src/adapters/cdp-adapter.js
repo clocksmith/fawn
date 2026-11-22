@@ -274,7 +274,10 @@ class CdpWorkspaceAdapter {
     page.visualReview = null;
     const session = { send: (method, args) => cdp.send(method, args, page.sessionId) };
     const client = reviewedClicks(session);
-    const review = await client.capture(rect);
+    // The reviewed click lands at the rectangle's center; the browser binds the
+    // node the page hits there when it captures.
+    const review = await client.capture(rect,
+      { x: rect.x + Math.floor(rect.width / 2), y: rect.y + Math.floor(rect.height / 2) });
     const current = await session.send('Page.getFrameTree', {});
     if (current.frameTree.frame.loaderId !== frame.loaderId || (visibleRectangle && current.frameTree.frame.url !== visibleRectangle.url)
         || review.deviceScaleFactor !== frame.binding.deviceScaleFactor
@@ -310,10 +313,9 @@ class CdpWorkspaceAdapter {
   async executeReviewedClick(workspaceId, pageId, id) {
     const page = this._entry(workspaceId).pages.get(pageId);
     const saved = page?.visualReview;
-    if (!saved || saved.id !== id) return { admitted: false, reason: 'review-expired' };
+    if (!saved || saved.id !== id) return { admitted: false, delivered: false, reason: 'review-expired' };
     page.visualReview = null;
-    const { x, y, width, height } = saved.review.rectangle;
-    return saved.client.click(saved.review, { x: x + Math.floor(width / 2), y: y + Math.floor(height / 2) });
+    return saved.client.click(saved.review);
   }
 
   async snapshot(workspaceId, read = {}) {

@@ -776,9 +776,11 @@ class WorkspaceService {
       if (reviewedBinding || request.requireReviewedClick) {
         if (!reviewedBinding) throw Error('Missing native click review');
         effect = await this.#bounded(this.#adapter.executeReviewedClick(workspaceId, request.pageId, reviewedBinding.id));
-        if (effect?.admitted === false) return { outcome: OUTCOMES.FAILED, basis: effect.reason,
-          evidence: { inputAdmitted: false, reviewedBinding } };
-        if (effect?.admitted !== true) throw Error('Browser did not confirm input admission');
+        // An admitted click whose bound document or node changed was cancelled
+        // before delivery: nothing reached the page, so this is a definite failure.
+        if (effect?.delivered === false && typeof effect.reason === 'string') return { outcome: OUTCOMES.FAILED,
+          basis: effect.reason, evidence: { inputAdmitted: effect.admitted === true, inputDelivered: false, reviewedBinding } };
+        if (effect?.admitted !== true || effect?.delivered !== true) throw Error('Browser did not confirm input delivery');
         effect = { ...effect, reviewedBinding };
       } else {
         effect = await this.#bounded(this.#adapter.execute(workspaceId, request, uploadFiles));
