@@ -71,6 +71,7 @@ try {
   });
   await page.waitForFunction(() => frames.length === 1);
   await assert.rejects(capture(session), /unsupported visual surface|surface changed or unsupported/);
+  result.steps.push('child-rejected');
   await page.evaluate(() => document.querySelector('iframe').remove());
   await page.screenshot();
   const changedScale = await capture(session);
@@ -117,7 +118,7 @@ try {
   result.steps.push('renderer-loss-and-fresh-target');
   result.passed = true;
 } catch (error) {
-  result.error = error.message;
+  result.error = error.stack;
   process.exitCode = 1;
 } finally {
   await browser?.close();

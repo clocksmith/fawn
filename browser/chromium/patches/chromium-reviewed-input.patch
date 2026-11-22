@@ -367,7 +367,7 @@ index 629ce42..cf5c849 100644
                             std::unique_ptr<CopyOutputRequest> request,
                             bool capture_exact_surface_id,
 diff --git a/content/browser/devtools/protocol/input_handler.cc b/content/browser/devtools/protocol/input_handler.cc
-index 8468f4d..2083496 100644
+index 8468f4d..d58d2e0 100644
 --- a/content/browser/devtools/protocol/input_handler.cc
 +++ b/content/browser/devtools/protocol/input_handler.cc
 @@ -4,6 +4,9 @@
@@ -380,7 +380,7 @@ index 8468f4d..2083496 100644
  #include <stddef.h>
 
  #include <memory>
-@@ -13,17 +16,25 @@
+@@ -13,20 +16,30 @@
 
  #include "base/check.h"
  #include "base/check_deref.h"
@@ -404,9 +404,14 @@ index 8468f4d..2083496 100644
 +#include "components/viz/host/host_frame_sink_manager.h"
 +#include "content/browser/compositor/surface_utils.h"
  #include "content/browser/devtools/devtools_agent_host_impl.h"
++#include "content/browser/devtools/protocol/emulation_handler.h"
  #include "content/browser/devtools/protocol/native_input_event_builder.h"
  #include "content/browser/devtools/protocol/protocol.h"
-@@ -41,11 +52,15 @@
++#include "content/browser/devtools/render_frame_devtools_agent_host.h"
+ #include "content/browser/renderer_host/data_transfer_util.h"
+ #include "content/browser/renderer_host/input/touch_emulator_impl.h"
+ #include "content/browser/renderer_host/render_frame_host_impl.h"
+@@ -41,11 +54,15 @@
  #include "content/common/input/synthetic_smooth_scroll_gesture_params.h"
  #include "content/common/input/synthetic_tap_gesture.h"
  #include "content/common/input/synthetic_tap_gesture_params.h"
@@ -422,7 +427,7 @@ index 8468f4d..2083496 100644
  #include "ui/base/clipboard/clipboard_constants.h"
  #include "ui/base/dragdrop/mojom/drag_drop_types.mojom-shared.h"
  #include "ui/events/base_event_utils.h"
-@@ -1134,6 +1149,42 @@ void InputHandler::DragController::EndDraggingWithRenderWidgetHostAtPoint(
+@@ -1134,6 +1151,42 @@ void InputHandler::DragController::EndDraggingWithRenderWidgetHostAtPoint(
                       std::move(callback)));
  }
 
@@ -465,12 +470,20 @@ index 8468f4d..2083496 100644
  InputHandler::InputHandler(bool allow_file_access,
                             bool allow_sending_input_to_browser)
      : DevToolsDomainHandler(Input::Metainfo::domainName),
-@@ -1358,6 +1409,213 @@ void InputHandler::ImeSetComposition(
+@@ -1358,6 +1411,235 @@ void InputHandler::ImeSetComposition(
        /*target_dom_node_id=*/blink::DOMNodeIdType(), std::move(closure));
  }
 
 +bool InputHandler::CanUseVisualReview(const VisualReview& review) {
-+  return host_ && web_contents_ && review.valid_document &&
++  auto* agent_host =
++      host_ ? RenderFrameDevToolsAgentHost::GetFor(host_) : nullptr;
++  if (!agent_host)
++    return false;
++  for (auto* emulation : EmulationHandler::ForAgentHost(agent_host)) {
++    if (emulation->device_emulation_enabled())
++      return false;
++  }
++  return web_contents_ && review.valid_document &&
 +         review.generation == visual_review_generation_ &&
 +         host_->GetRenderWidgetHost() &&
 +         !web_contents_->GetOuterWebContents() && host_->IsActive() &&
@@ -613,8 +626,22 @@ index 8468f4d..2083496 100644
 +  // Move the review out before yielding. It is consumed on every known result.
 +  auto review = std::move(visual_review_);
 +  const gfx::Point point(x, y);
-+  if (!review->rect.Contains(point) || !CanUseVisualReview(*review)) {
-+    callback->sendSuccess(false, "stale-or-outside-review");
++  if (!review->rect.Contains(point)) {
++    callback->sendSuccess(false, "outside-reviewed-region");
++    return;
++  }
++  if (!review->valid_document || !host_ ||
++      host_->GetDocumentToken().ToString() != review->document) {
++    callback->sendSuccess(false, "stale-document");
++    return;
++  }
++  if (!review->mapping.GetMemoryAs<viz::FawnVisualReviewGate>()->Open() ||
++      !review->VizAlive()) {
++    callback->sendSuccess(false, "stale-compositor-revision");
++    return;
++  }
++  if (!CanUseVisualReview(*review)) {
++    callback->sendSuccess(false, "target-changed");
 +    return;
 +  }
 +  auto hit_tested = base::BindOnce(
@@ -679,7 +706,7 @@ index 8468f4d..2083496 100644
  void InputHandler::DispatchMouseEvent(
      const std::string& event_type,
      double x,
-@@ -2302,6 +2560,8 @@ void InputHandler::SynthesizeTapGesture(
+@@ -2302,6 +2584,8 @@ void InputHandler::SynthesizeTapGesture(
  }
 
  void InputHandler::ClearInputState() {
