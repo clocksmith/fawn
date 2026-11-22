@@ -71,10 +71,59 @@ void Check(Order order) {
 }
 }  // namespace
 
+// Pixel verdicts. Viz publishes them in drawn-frame order; an input admitted
+// while frame N was active is released only by a verified frame >= N.
+void CheckVerdicts() {
+  using V = Gate::Verdict;
+  {
+    Gate gate;  // Unrelated animation: every drawn frame matches.
+    gate.RecordVerdict(3, true);  // reference
+    gate.RecordActivation(4);
+    assert(gate.Open() && gate.Admit());
+    const uint32_t admitted = gate.active_frame.load();
+    assert(admitted == 4 && gate.VerdictFor(admitted) == V::kPending);
+    gate.RecordVerdict(4, true);
+    assert(gate.VerdictFor(admitted) == V::kVerified);
+    gate.RecordVerdict(5, false);  // repaint after admission cannot cancel
+    assert(gate.VerdictFor(admitted) == V::kVerified);
+    assert(gate.state.load() == Gate::kAdmitted);
+  }
+  {
+    Gate gate;  // Changed pixel drawn before admission: admission fails.
+    gate.RecordVerdict(3, true);
+    gate.RecordActivation(4);
+    gate.RecordVerdict(4, false);
+    assert(!gate.Open() && !gate.Admit() && gate.refuted_at.load() == 4);
+    gate.RecordVerdict(5, true);  // nothing verifies past a refutation
+    assert(gate.verified_through.load() == 3);
+  }
+  {
+    Gate gate;  // Admitted, then the frame active at admission differs.
+    gate.RecordVerdict(3, true);
+    gate.RecordActivation(4);
+    assert(gate.Admit());
+    const uint32_t admitted = gate.active_frame.load();
+    gate.RecordVerdict(4, false);
+    assert(gate.VerdictFor(admitted) == V::kRefuted);
+  }
+  {
+    Gate gate;  // Frame 4 replaced before any draw; frame 5 drawn changed.
+    gate.RecordVerdict(3, true);
+    gate.RecordActivation(4);
+    assert(gate.Admit());
+    const uint32_t admitted = gate.active_frame.load();
+    gate.RecordActivation(5);
+    gate.RecordVerdict(5, false);
+    assert(gate.VerdictFor(admitted) == V::kRefuted);
+  }
+}
+
 int main() {
+  CheckVerdicts();
   Check(Order::kDamageFirst);
   Check(Order::kInputFirst);
   for (int i = 0; i < 128; ++i)
     Check(Order::kConcurrent);
-  puts("Passed invalidation-first, admission-first, and 128 unordered races.");
+  puts("Passed pixel verdicts, invalidation-first, admission-first, and 128 "
+       "unordered races.");
 }

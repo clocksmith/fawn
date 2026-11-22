@@ -12,10 +12,10 @@ index cf97a6d..6b3b8c6 100644
      "surfaces/surface_info.cc",
 diff --git a/components/viz/common/surfaces/fawn_visual_review.h b/components/viz/common/surfaces/fawn_visual_review.h
 new file mode 100644
-index 0000000..deccd18
+index 0000000..48d23d1
 --- /dev/null
 +++ b/components/viz/common/surfaces/fawn_visual_review.h
-@@ -0,0 +1,39 @@
+@@ -0,0 +1,90 @@
 +// Copyright 2026 The Chromium Authors
 +// Use of this source code is governed by a BSD-style license that can be
 +// found in the LICENSE file.
@@ -29,13 +29,37 @@ index 0000000..deccd18
 +namespace viz {
 +
 +// One gate for one immutable browser review. Only Viz and the browser map it.
-+// The two CAS operations totally order a reviewed input against a Viz update.
-+// Viz also names the first frame it activates on the reviewed surface after
-+// arming, whichever side won, so an ordering is attributable to one frame.
++// The admission CAS totally orders a reviewed input against Viz's pixel
++// verdicts. Viz copies the reviewed rectangle out of every frame it draws for
++// the reviewed surface and compares it with the reference copy, so frames
++// that leave the rectangle unchanged keep the review open. Nothing here comes
++// from the renderer: activation, drawing and the comparison all run in Viz.
 +struct FawnVisualReviewGate {
 +  enum : uint32_t { kOpen, kAdmitted, kStale };
++  // Why Viz refused or ended the review, first reason wins.
++  enum Refusal : uint32_t {
++    kNoRefusal,
++    kNoFrameSink,
++    kNotCurrentSurface,
++    kFramePending,
++    kUnverifiableFrame,
++    kUnsupportedScope,
++    kReferenceCopyFailed,
++    kUnverifiableReplacement,
++    kOtherSurfaceSubmitted,
++    kEnded,
++  };
 +  std::atomic<uint32_t> state{kOpen};
++  std::atomic<uint32_t> refusal{kNoRefusal};
++  // First frame Viz activated on the reviewed surface after the reference.
 +  std::atomic<uint32_t> replaced_by{0};
++  // Latest frame Viz activated on the reviewed surface.
++  std::atomic<uint32_t> active_frame{0};
++  // Every frame Viz drew up to this index showed the reviewed pixels. It never
++  // advances past a refutation.
++  std::atomic<uint32_t> verified_through{0};
++  // First drawn frame whose reviewed pixels differed, or 0.
++  std::atomic<uint32_t> refuted_at{0};
 +  bool Open() const { return state.load() == kOpen; }
 +  bool Admit() {
 +    uint32_t expected = kOpen;
@@ -45,9 +69,36 @@ index 0000000..deccd18
 +    uint32_t expected = kOpen;
 +    state.compare_exchange_strong(expected, kStale);
 +  }
++  void RecordRefusal(uint32_t reason) {
++    uint32_t expected = kNoRefusal;
++    refusal.compare_exchange_strong(expected, reason);
++  }
 +  void RecordReplacement(uint32_t frame_index) {
 +    uint32_t expected = 0;
 +    replaced_by.compare_exchange_strong(expected, frame_index);
++  }
++  void RecordActivation(uint32_t frame_index) {
++    active_frame.store(frame_index);
++    RecordReplacement(frame_index);
++  }
++  // Viz publishes verdicts in frame order: one refutation ends verification.
++  void RecordVerdict(uint32_t frame_index, bool matched) {
++    if (refuted_at.load())
++      return;
++    if (matched) {
++      verified_through.store(frame_index);
++      return;
++    }
++    refuted_at.store(frame_index);
++    Invalidate();
++  }
++  // For an input admitted while `admitted_frame` was active: deliver once Viz
++  // has verified a drawn frame at or after it, cancel once it cannot.
++  enum class Verdict { kPending, kVerified, kRefuted };
++  Verdict VerdictFor(uint32_t admitted_frame) const {
++    if (verified_through.load() >= admitted_frame)
++      return Verdict::kVerified;
++    return refuted_at.load() ? Verdict::kRefuted : Verdict::kPending;
 +  }
 +};
 +static_assert(std::atomic<uint32_t>::is_always_lock_free);
@@ -56,45 +107,65 @@ index 0000000..deccd18
 +
 +#endif  // COMPONENTS_VIZ_COMMON_SURFACES_FAWN_VISUAL_REVIEW_H_
 diff --git a/components/viz/host/host_frame_sink_manager.cc b/components/viz/host/host_frame_sink_manager.cc
-index 0b89f0a..63d8b66 100644
+index 0b89f0a..dda1f77 100644
 --- a/components/viz/host/host_frame_sink_manager.cc
 +++ b/components/viz/host/host_frame_sink_manager.cc
-@@ -381,6 +381,15 @@ void HostFrameSinkManager::EvictSurfaces(
+@@ -381,6 +381,16 @@ void HostFrameSinkManager::EvictSurfaces(
    frame_sink_manager_->EvictSurfaces(surface_ids);
  }
 
 +void HostFrameSinkManager::ArmFawnVisualReview(
 +    const SurfaceId& id,
++    const gfx::Rect& rect,
 +    base::UnsafeSharedMemoryRegion state,
 +    base::File owner,
-+    base::OnceCallback<void(uint32_t)> callback) {
++    base::OnceCallback<void(uint32_t, const std::vector<uint8_t>&)> callback) {
 +  frame_sink_manager_->ArmFawnVisualReview(
-+      id, std::move(state), std::move(owner), std::move(callback));
++      id, rect, std::move(state), std::move(owner), std::move(callback));
 +}
 +
  void HostFrameSinkManager::RequestCopyOfOutput(
      const SurfaceId& surface_id,
      std::unique_ptr<CopyOutputRequest> request,
 diff --git a/components/viz/host/host_frame_sink_manager.h b/components/viz/host/host_frame_sink_manager.h
-index 891beb5..656a552 100644
+index 891beb5..6169b11 100644
 --- a/components/viz/host/host_frame_sink_manager.h
 +++ b/components/viz/host/host_frame_sink_manager.h
-@@ -269,6 +269,10 @@ class VIZ_HOST_EXPORT HostFrameSinkManager
+@@ -42,6 +42,7 @@
+ #include "services/viz/privileged/mojom/compositing/frame_sink_manager_test_api.mojom.h"
+ #include "services/viz/privileged/mojom/compositing/frame_sinks_metrics_recorder.mojom.h"
+ #include "services/viz/public/mojom/compositing/frame_sink_bundle.mojom.h"
++#include "ui/gfx/geometry/rect.h"
+
+ namespace base {
+ class SingleThreadTaskRunner;
+@@ -269,6 +270,13 @@ class VIZ_HOST_EXPORT HostFrameSinkManager
    // When `capture_exact_surface_id` is true, the snapshot will only be
    // taken for the surface whose ID is an exact match to `surface_id`. This is
    // useful to take a snapshot of an old `Surface` post-navigation.
-+  void ArmFawnVisualReview(const SurfaceId& surface_id,
-+                           base::UnsafeSharedMemoryRegion state,
-+                           base::File owner,
-+                           base::OnceCallback<void(uint32_t)> callback);
++  void ArmFawnVisualReview(
++      const SurfaceId& surface_id,
++      const gfx::Rect& rect,
++      base::UnsafeSharedMemoryRegion state,
++      base::File owner,
++      base::OnceCallback<void(uint32_t, const std::vector<uint8_t>&)>
++          callback);
    void RequestCopyOfOutput(const SurfaceId& surface_id,
                             std::unique_ptr<CopyOutputRequest> request,
                             bool capture_exact_surface_id = false,
 diff --git a/components/viz/service/frame_sinks/compositor_frame_sink_support.cc b/components/viz/service/frame_sinks/compositor_frame_sink_support.cc
-index 798d043..7943b87 100644
+index 798d043..1194ffc 100644
 --- a/components/viz/service/frame_sinks/compositor_frame_sink_support.cc
 +++ b/components/viz/service/frame_sinks/compositor_frame_sink_support.cc
-@@ -153,7 +153,46 @@ CompositorFrameSinkSupport::CompositorFrameSinkSupport(
+@@ -10,6 +10,7 @@
+ #include <utility>
+ #include <variant>
+
++#include "components/viz/common/surfaces/fawn_visual_review.h"
+ #include "base/check.h"
+ #include "base/containers/map_util.h"
+ #include "base/debug/crash_logging.h"
+@@ -153,7 +154,53 @@ CompositorFrameSinkSupport::CompositorFrameSinkSupport(
    frame_sink_manager_->RegisterCompositorFrameSinkSupport(frame_sink_id_, this);
  }
 
@@ -105,35 +176,42 @@ index 798d043..7943b87 100644
 +  }
 +}
 +
-+uint32_t CompositorFrameSinkSupport::ArmFawnVisualReview(
++void CompositorFrameSinkSupport::ArmFawnVisualReview(
 +    const SurfaceId& id,
++    const gfx::Rect& rect,
 +    base::UnsafeSharedMemoryRegion state,
-+    base::File owner) {
-+  if (id != last_created_surface_id_ || id != last_activated_surface_id_)
-+    return 0;
++    base::File owner,
++    base::OnceCallback<void(uint32_t, std::vector<uint8_t>)> callback) {
++  InvalidateFawnVisualReview();
 +  auto* surface = surface_manager_->GetSurfaceForId(id);
-+  if (!surface || !surface->HasActiveFrame() || surface->HasPendingFrame() ||
-+      surface->GetActiveFrameIndex() != last_frame_index_)
-+    return 0;
-+  const auto& meta = surface->GetActiveFrameMetadata();
-+  // Child surfaces and video can change independently of this surface.
-+  if (!meta.referenced_surfaces.empty() || meta.may_contain_video ||
-+      meta.has_shared_element_resources ||
-+      !meta.transition_directives.empty() || meta.device_scale_factor != 1.f ||
-+      meta.page_scale_factor != 1.f)
-+    return 0;
-+  for (const auto& resource : surface->GetActiveFrame().resource_list) {
-+    // Single-buffered canvas and overlays may update outside surface
-+    // submission.
-+    if (resource.is_empty() || resource.GetIsOverlayCandidate() ||
-+        resource.shared_image()->usage().Has(
-+            gpu::SHARED_IMAGE_USAGE_CONCURRENT_READ_WRITE))
-+      return 0;
++  const auto refuse = [&](uint32_t reason) {
++    if (auto mapping = state.Map(); mapping.IsValid())
++      mapping.GetMemoryAs<FawnVisualReviewGate>()->RecordRefusal(reason);
++    std::move(callback).Run(0, {});
++  };
++  if (id != last_created_surface_id_ || id != last_activated_surface_id_ ||
++      !surface) {
++    refuse(FawnVisualReviewGate::kNotCurrentSurface);
++    return;
 +  }
-+  if (!surface->ArmFawnVisualReview(std::move(state), std::move(owner)))
-+    return 0;
++  if (surface->HasPendingFrame() ||
++      surface->GetActiveFrameIndex() != last_frame_index_) {
++    refuse(FawnVisualReviewGate::kFramePending);
++    return;
++  }
++  // The callback is moved into the surface only if arming succeeds.
++  auto split = base::SplitOnceCallback(std::move(callback));
++  if (!surface->ArmFawnVisualReview(std::move(state), std::move(owner), rect,
++                                    std::move(split.first))) {
++    std::move(split.second).Run(0, {});
++    return;
++  }
 +  fawn_reviewed_surface_ = surface->GetWeakPtr();
-+  return surface->GetActiveFrameIndex();
++  // Draw once so the reference copy is taken from the frame active now.
++  BeginFrameAck ack;
++  ack.has_damage = true;
++  surface_manager_->SurfaceModified(
++      id, ack, SurfaceObserver::HandleInteraction::kNoChange);
 +}
 +
  CompositorFrameSinkSupport::~CompositorFrameSinkSupport() {
@@ -141,7 +219,7 @@ index 798d043..7943b87 100644
    // Shut down the layer context so that it no longer calls into
    // |this|, before doing other tear down.
    layer_context_.reset();
-@@ -596,6 +635,7 @@ CompositorFrameSinkSupport::TakeCopyOutputRequests(
+@@ -596,6 +643,7 @@ CompositorFrameSinkSupport::TakeCopyOutputRequests(
  }
 
  void CompositorFrameSinkSupport::EvictSurface(const LocalSurfaceId& id) {
@@ -149,16 +227,24 @@ index 798d043..7943b87 100644
    DCHECK(id.embed_token() != last_evicted_local_surface_id_.embed_token() ||
           id.parent_sequence_number() >=
               last_evicted_local_surface_id_.parent_sequence_number());
-@@ -752,6 +792,7 @@ SubmitResult CompositorFrameSinkSupport::MaybeSubmitCompositorFrame(
+@@ -752,6 +800,15 @@ SubmitResult CompositorFrameSinkSupport::MaybeSubmitCompositorFrame(
      CompositorFrame frame,
      std::optional<HitTestRegionList> hit_test_region_list,
      uint64_t submit_time) {
-+  InvalidateFawnVisualReview();
++  // Frames for the reviewed surface are verified by Viz when drawn. A frame
++  // for any other surface of this sink ends the review.
++  if (fawn_reviewed_surface_ &&
++      fawn_reviewed_surface_->surface_id().local_surface_id() !=
++          local_surface_id) {
++    fawn_reviewed_surface_->InvalidateFawnVisualReview(
++        FawnVisualReviewGate::kOtherSurfaceSubmitted);
++    InvalidateFawnVisualReview();
++  }
    if (!client_needs_begin_frame_ && auto_needs_begin_frame_) {
      // SetNeedsBeginFrame(true) below may cause `last_begin_frame_args_` to be
      // updated.
 diff --git a/components/viz/service/frame_sinks/compositor_frame_sink_support.h b/components/viz/service/frame_sinks/compositor_frame_sink_support.h
-index 7865965..39f8104 100644
+index 7865965..41366c8 100644
 --- a/components/viz/service/frame_sinks/compositor_frame_sink_support.h
 +++ b/components/viz/service/frame_sinks/compositor_frame_sink_support.h
 @@ -13,9 +13,11 @@
@@ -173,19 +259,30 @@ index 7865965..39f8104 100644
  #include "base/memory/weak_ptr.h"
  #include "base/time/time.h"
  #include "components/viz/common/frame_sinks/begin_frame_source.h"
-@@ -112,6 +114,11 @@ class VIZ_SERVICE_EXPORT CompositorFrameSinkSupport
+@@ -40,6 +42,7 @@
+ #include "services/viz/public/mojom/compositing/compositor_frame_sink.mojom.h"
+ #include "services/viz/public/mojom/compositing/layer_context.mojom.h"
+ #include "services/viz/public/mojom/hit_test/hit_test_region_list.mojom.h"
++#include "ui/gfx/geometry/rect.h"
+
+ namespace viz {
+
+@@ -112,6 +115,14 @@ class VIZ_SERVICE_EXPORT CompositorFrameSinkSupport
 
    bool is_root() const { return is_root_; }
 
 +  void InvalidateFawnVisualReview();
-+  uint32_t ArmFawnVisualReview(const SurfaceId& id,
-+                               base::UnsafeSharedMemoryRegion state,
-+                               base::File owner);
++  void ArmFawnVisualReview(const SurfaceId& id,
++                           const gfx::Rect& rect,
++                           base::UnsafeSharedMemoryRegion state,
++                           base::File owner,
++                           base::OnceCallback<void(uint32_t, std::vector<uint8_t>)>
++                               callback);
 +
    FrameSinkManagerImpl* frame_sink_manager() { return frame_sink_manager_; }
    BeginFrameSource* begin_frame_source() { return begin_frame_source_; }
 
-@@ -437,6 +444,7 @@ class VIZ_SERVICE_EXPORT CompositorFrameSinkSupport
+@@ -437,6 +448,7 @@ class VIZ_SERVICE_EXPORT CompositorFrameSinkSupport
    // Used for tests only.
    AggregatedDamageCallback aggregated_damage_callback_;
 
@@ -194,10 +291,18 @@ index 7865965..39f8104 100644
 
    // The video capture clients hooking into this instance to observe frame
 diff --git a/components/viz/service/frame_sinks/frame_sink_manager_impl.cc b/components/viz/service/frame_sinks/frame_sink_manager_impl.cc
-index f001bc1..da55ba2 100644
+index f001bc1..72a3cb5 100644
 --- a/components/viz/service/frame_sinks/frame_sink_manager_impl.cc
 +++ b/components/viz/service/frame_sinks/frame_sink_manager_impl.cc
-@@ -243,6 +243,8 @@ void FrameSinkManagerImpl::InvalidateFrameSinkId(
+@@ -13,6 +13,7 @@
+ #include <utility>
+ #include <variant>
+
++#include "components/viz/common/surfaces/fawn_visual_review.h"
+ #include "base/check.h"
+ #include "base/check_op.h"
+ #include "base/command_line.h"
+@@ -243,6 +244,8 @@ void FrameSinkManagerImpl::InvalidateFrameSinkId(
 
    base::ScopedClosureRunner callback_runner(std::move(callback));
 
@@ -206,7 +311,7 @@ index f001bc1..da55ba2 100644
    surface_manager_.InvalidateFrameSinkId(frame_sink_id);
    if (video_detector_)
      video_detector_->OnFrameSinkIdInvalidated(frame_sink_id);
-@@ -603,6 +605,25 @@ void FrameSinkManagerImpl::EvictSurfaces(
+@@ -603,6 +606,36 @@ void FrameSinkManagerImpl::EvictSurfaces(
    surface_manager_.GarbageCollectSurfaces();
  }
 
@@ -218,30 +323,50 @@ index f001bc1..da55ba2 100644
 +
 +void FrameSinkManagerImpl::ArmFawnVisualReview(
 +    const SurfaceId& id,
++    const gfx::Rect& rect,
 +    base::UnsafeSharedMemoryRegion state,
 +    base::File owner,
 +    ArmFawnVisualReviewCallback callback) {
 +  auto* support = base::FindPtrOrNull(support_map_, id.frame_sink_id());
-+  const uint32_t revision =
-+      support
-+          ? support->ArmFawnVisualReview(id, std::move(state), std::move(owner))
-+          : 0;
-+  std::move(callback).Run(revision);
++  if (!support) {
++    if (auto mapping = state.Map(); mapping.IsValid())
++      mapping.GetMemoryAs<FawnVisualReviewGate>()->RecordRefusal(
++          FawnVisualReviewGate::kNoFrameSink);
++    std::move(callback).Run(0, {});
++    return;
++  }
++  support->ArmFawnVisualReview(
++      id, rect, std::move(state), std::move(owner),
++      base::BindOnce(
++          [](ArmFawnVisualReviewCallback callback, uint32_t frame_index,
++             std::vector<uint8_t> rgba) {
++            std::move(callback).Run(frame_index, rgba);
++          },
++          std::move(callback)));
 +}
 +
  void FrameSinkManagerImpl::RequestCopyOfOutput(
      const SurfaceId& surface_id,
      std::unique_ptr<CopyOutputRequest> request,
 diff --git a/components/viz/service/frame_sinks/frame_sink_manager_impl.h b/components/viz/service/frame_sinks/frame_sink_manager_impl.h
-index 2970a27..6aaab83 100644
+index 2970a27..8d5eb77 100644
 --- a/components/viz/service/frame_sinks/frame_sink_manager_impl.h
 +++ b/components/viz/service/frame_sinks/frame_sink_manager_impl.h
-@@ -195,6 +195,11 @@ class VIZ_SERVICE_EXPORT FrameSinkManagerImpl
+@@ -56,6 +56,7 @@
+ #include "services/viz/privileged/mojom/compositing/frame_sink_video_capture.mojom.h"
+ #include "services/viz/privileged/mojom/compositing/frame_sinks_metrics_recorder.mojom.h"
+ #include "services/viz/public/mojom/compositing/video_detector_observer.mojom.h"
++#include "ui/gfx/geometry/rect.h"
+
+ #if BUILDFLAG(IS_MAC)
+ namespace ui {
+@@ -195,6 +196,12 @@ class VIZ_SERVICE_EXPORT FrameSinkManagerImpl
        mojo::PendingReceiver<mojom::FrameSinkVideoCapturer> receiver,
        uint32_t capture_version_source) override;
    void EvictSurfaces(const std::vector<SurfaceId>& surface_ids) override;
 +  void InvalidateFawnVisualReviewsForDisplayLoss();
 +  void ArmFawnVisualReview(const SurfaceId& surface_id,
++                           const gfx::Rect& rect,
 +                           base::UnsafeSharedMemoryRegion state,
 +                           base::File owner,
 +                           ArmFawnVisualReviewCallback callback) override;
@@ -261,7 +386,7 @@ index 5b3399a..35c085c 100644
    // message pipes from the client, the client will see the connection error and
    // recreate the CompositorFrameSink+Display.
 diff --git a/components/viz/service/surfaces/surface.cc b/components/viz/service/surfaces/surface.cc
-index f0e122c..ec442de 100644
+index f0e122c..5e3f88a 100644
 --- a/components/viz/service/surfaces/surface.cc
 +++ b/components/viz/service/surfaces/surface.cc
 @@ -3,6 +3,7 @@
@@ -272,37 +397,200 @@ index f0e122c..ec442de 100644
 
  #include <stddef.h>
  #include <stdint.h>
-@@ -134,7 +135,37 @@ Surface::Surface(const SurfaceInfo& surface_info,
+@@ -19,10 +20,12 @@
+ #include "base/debug/dump_without_crashing.h"
+ #include "base/memory/raw_ptr.h"
+ #include "base/metrics/histogram_functions.h"
++#include "base/task/sequenced_task_runner.h"
+ #include "base/time/tick_clock.h"
+ #include "base/trace_event/trace_event.h"
+ #include "base/trace_event/traced_value.h"
+ #include "components/viz/common/features.h"
++#include "components/viz/common/frame_sinks/copy_output_result.h"
+ #include "components/viz/common/quads/compositor_render_pass.h"
+ #include "components/viz/common/resources/returned_resource.h"
+ #include "components/viz/common/resources/transferable_resource.h"
+@@ -32,9 +35,12 @@
+ #include "components/viz/service/surfaces/surface_client.h"
+ #include "components/viz/service/surfaces/surface_manager.h"
+ #include "components/viz/service/viz_service_export.h"
++#include "gpu/command_buffer/common/shared_image_usage.h"
+ #include "third_party/perfetto/include/perfetto/tracing/track.h"
+ #include "third_party/perfetto/include/perfetto/tracing/track_event_args.h"
+ #include "ui/gfx/presentation_feedback.h"
++#include "third_party/skia/include/core/SkBitmap.h"
++#include "third_party/skia/include/core/SkColorSpace.h"
+ #include "ui/gfx/swap_result.h"
+
+ namespace viz {
+@@ -134,7 +140,174 @@ Surface::Surface(const SurfaceInfo& surface_info,
        allocation_group_->GetLastReference().IsNewerThan(surface_id());
  }
 
++// static
++bool Surface::IsFawnVerifiableFrame(const CompositorFrame& frame) {
++  const auto& meta = frame.metadata;
++  if (!meta.referenced_surfaces.empty() || meta.may_contain_video ||
++      meta.has_shared_element_resources ||
++      !meta.transition_directives.empty() || meta.device_scale_factor != 1.f ||
++      meta.page_scale_factor != 1.f)
++    return false;
++  for (const auto& resource : frame.resource_list) {
++    if (resource.is_empty() || resource.GetIsOverlayCandidate() ||
++        resource.shared_image()->usage().Has(
++            gpu::SHARED_IMAGE_USAGE_CONCURRENT_READ_WRITE))
++      return false;
++  }
++  return true;
++}
++
 +bool Surface::ArmFawnVisualReview(base::UnsafeSharedMemoryRegion state,
-+                                  base::File owner) {
++                                  base::File owner,
++                                  const gfx::Rect& rect,
++                                  FawnReferenceCallback callback) {
 +  ReleaseFawnVisualReview();
 +  if (!state.IsValid() || state.GetSize() != sizeof(FawnVisualReviewGate) ||
 +      !owner.IsValid())
 +    return false;
 +  auto mapping = state.Map();
-+  if (!mapping.IsValid() ||
-+      !mapping.GetMemoryAs<FawnVisualReviewGate>()->Open())
++  if (!mapping.IsValid())
++    return false;
++  auto* gate = mapping.GetMemoryAs<FawnVisualReviewGate>();
++  if (!HasActiveFrame() || rect.IsEmpty() ||
++      !gfx::Rect(GetActiveFrame().size_in_pixels()).Contains(rect)) {
++    gate->RecordRefusal(FawnVisualReviewGate::kUnsupportedScope);
++    return false;
++  }
++  if (!IsFawnVerifiableFrame(GetActiveFrame())) {
++    gate->RecordRefusal(FawnVisualReviewGate::kUnverifiableFrame);
++    return false;
++  }
++  if (!gate->Open())
 +    return false;
 +  fawn_visual_state_ = std::move(mapping);
 +  fawn_visual_owner_ = std::move(owner);
++  fawn_visual_rect_ = rect;
++  fawn_reference_callback_ = std::move(callback);
++  fawn_last_copied_frame_ = 0;
++  fawn_verifying_ = true;
++  ++fawn_visual_arm_id_;
++  fawn_visual_state_.GetMemoryAs<FawnVisualReviewGate>()->active_frame.store(
++      GetActiveFrameIndex());
 +  return true;
 +}
 +
-+// Invalidation closes the owner at once. The mapping stays until this surface
-+// activates a replacement frame, so Viz can name that frame to the browser.
-+void Surface::InvalidateFawnVisualReview() {
++// Invalidation means Viz can no longer verify this surface. It closes the
++// owner at once, which also cancels an admitted input still waiting for a
++// verdict. The mapping stays so later activations remain attributable.
++void Surface::InvalidateFawnVisualReview(uint32_t reason) {
 +  if (!fawn_visual_state_.IsValid())
 +    return;
-+  fawn_visual_state_.GetMemoryAs<FawnVisualReviewGate>()->Invalidate();
++  auto* gate = fawn_visual_state_.GetMemoryAs<FawnVisualReviewGate>();
++  if (fawn_verifying_ || gate->Open())
++    gate->RecordRefusal(reason);
++  gate->Invalidate();
 +  fawn_visual_owner_.Close();
++  fawn_verifying_ = false;
++  fawn_pending_copies_.clear();
++  if (fawn_reference_callback_)
++    std::move(fawn_reference_callback_).Run(0, {});
 +}
 +
 +void Surface::ReleaseFawnVisualReview() {
 +  InvalidateFawnVisualReview();
 +  fawn_visual_state_ = {};
++  fawn_visual_reference_.clear();
++  ++fawn_visual_arm_id_;
++}
++
++// Called when the aggregator collects this surface's copy requests for a
++// draw, so the request is bound to the frame drawn now and forces that draw.
++// A request still on the frame when a newer one activates is dropped in
++// ActivateFrame, never carried over. Frames replaced before any draw were
++// never shown and need no verdict.
++void Surface::MaybeRequestFawnVerification() {
++  if (!fawn_verifying_ || !active_frame_data_ ||
++      GetActiveFrameIndex() == fawn_last_copied_frame_)
++    return;
++  const uint32_t frame_index = GetActiveFrameIndex();
++  fawn_last_copied_frame_ = frame_index;
++  auto request = std::make_unique<CopyOutputRequest>(
++      CopyOutputResult::Format::RGBA,
++      CopyOutputResult::Destination::kSystemMemory,
++      base::BindOnce(&Surface::OnFawnVerificationCopied,
++                     weak_factory_.GetWeakPtr(), fawn_visual_arm_id_,
++                     frame_index));
++  request->set_area(fawn_visual_rect_);
++  request->set_source(fawn_copy_source_);
++  request->set_result_task_runner(
++      base::SequencedTaskRunner::GetCurrentDefault());
++  fawn_pending_copies_.push_back({frame_index});
++  RequestCopyOfOutputOnRootRenderPass(std::move(request));
++}
++
++void Surface::OnFawnVerificationCopied(
++    uint64_t arm_id,
++    uint32_t frame_index,
++    std::unique_ptr<CopyOutputResult> result) {
++  if (arm_id != fawn_visual_arm_id_ || !fawn_verifying_)
++    return;
++  for (auto& pending : fawn_pending_copies_) {
++    if (pending.frame_index != frame_index)
++      continue;
++    pending.done = true;
++    const int width = fawn_visual_rect_.width();
++    const int height = fawn_visual_rect_.height();
++    if (!result->IsEmpty()) {
++      auto access = result->ScopedAccessSkBitmap();
++      const SkBitmap bitmap = access.bitmap();
++      const auto info =
++          SkImageInfo::Make(width, height, kRGBA_8888_SkColorType,
++                            kUnpremul_SkAlphaType, SkColorSpace::MakeSRGB());
++      std::vector<uint8_t> rgba(4u * width * height);
++      if (bitmap.width() == width && bitmap.height() == height &&
++          bitmap.readPixels(info, rgba.data(), 4u * width, 0, 0))
++        pending.rgba = std::move(rgba);
++    }
++    break;
++  }
++  PublishFawnVerdicts();
++}
++
++// Verdicts are published strictly in frame order. A missing copy cannot be
++// verified, so it refutes like a changed pixel.
++void Surface::PublishFawnVerdicts() {
++  auto* gate = fawn_visual_state_.GetMemoryAs<FawnVisualReviewGate>();
++  while (fawn_verifying_ && !fawn_pending_copies_.empty() &&
++         fawn_pending_copies_.front().done) {
++    FawnPendingCopy copy = std::move(fawn_pending_copies_.front());
++    fawn_pending_copies_.pop_front();
++    if (fawn_reference_callback_) {
++      if (copy.rgba.empty()) {
++        InvalidateFawnVisualReview(FawnVisualReviewGate::kReferenceCopyFailed);
++        return;
++      }
++      fawn_visual_reference_ = copy.rgba;
++      gate->RecordVerdict(copy.frame_index, true);
++      TRACE_EVENT_INSTANT("viz", "FawnReview.Reference", "surface",
++                          surface_id().ToString(), "revision",
++                          copy.frame_index);
++      std::move(fawn_reference_callback_)
++          .Run(copy.frame_index, std::move(copy.rgba));
++      continue;
++    }
++    const bool matched =
++        !copy.rgba.empty() && copy.rgba == fawn_visual_reference_;
++    gate->RecordVerdict(copy.frame_index, matched);
++    TRACE_EVENT_INSTANT("viz", "FawnReview.Verdict", "surface",
++                        surface_id().ToString(), "revision", copy.frame_index,
++                        "matched", matched);
++    if (!matched) {
++      // Keep the owner open: an input admitted on an earlier verified frame
++      // may still be delivered. Nothing later can be verified.
++      fawn_verifying_ = false;
++      fawn_pending_copies_.clear();
++    }
++  }
 +}
 +
  Surface::~Surface() {
@@ -310,30 +598,68 @@ index f0e122c..ec442de 100644
    ClearCopyRequests();
 
    surface_manager_->SurfaceDestroyed(this);
-@@ -695,6 +726,7 @@ void Surface::RecomputeActiveFrameContentColorUsage() {
+@@ -695,6 +868,9 @@ void Surface::RecomputeActiveFrameContentColorUsage() {
  // A frame is activated if all its Surface ID dependencies are active or a
  // deadline has hit and the frame was forcibly activated.
  void Surface::ActivateFrame(FrameData frame_data) {
-+  InvalidateFawnVisualReview();
++  if (fawn_visual_state_.IsValid() &&
++      !IsFawnVerifiableFrame(frame_data.frame))
++    InvalidateFawnVisualReview(FawnVisualReviewGate::kUnverifiableReplacement);
    TRACE_EVENT1("viz", "Surface::ActivateFrame", "SurfaceId",
                 surface_id().ToString());
 
-@@ -715,6 +747,14 @@ void Surface::ActivateFrame(FrameData frame_data) {
+@@ -706,6 +882,23 @@ void Surface::ActivateFrame(FrameData frame_data) {
+   if (active_frame_data_) {
+     std::swap(old_copy_requests,
+               active_frame_data_->frame.render_pass_list.back()->copy_requests);
++    // A verification copy bound to the outgoing frame was not drawn with it.
++    // Forget it rather than let it copy the new frame under the old index.
++    // The pending entry goes first, so the dropped request's empty result
++    // finds nothing to refute.
++    const auto undrawn = [&](const std::unique_ptr<CopyOutputRequest>& r) {
++      return r->has_source() && r->source() == fawn_copy_source_;
++    };
++    if (std::ranges::any_of(old_copy_requests, undrawn)) {
++      const uint32_t outgoing = GetActiveFrameIndex();
++      base::EraseIf(fawn_pending_copies_, [&](const FawnPendingCopy& c) {
++        return c.frame_index == outgoing;
++      });
++      std::erase_if(old_copy_requests, undrawn);
++      if (fawn_last_copied_frame_ == outgoing)
++        fawn_last_copied_frame_ = 0;
++      PublishFawnVerdicts();
++    }
+   }
+
+   ClearCopyRequests();
+@@ -715,6 +908,18 @@ void Surface::ActivateFrame(FrameData frame_data) {
    std::optional<FrameData> previous_frame_data = std::move(active_frame_data_);
 
    active_frame_data_ = std::move(frame_data);
 +  if (fawn_visual_state_.IsValid()) {
-+    fawn_visual_state_.GetMemoryAs<FawnVisualReviewGate>()->RecordReplacement(
-+        GetActiveFrameIndex());
-+    fawn_visual_state_ = {};
-+    TRACE_EVENT_INSTANT("viz", "FawnReview.Replaced", "surface",
-+                        surface_id().ToString(), "revision",
-+                        GetActiveFrameIndex());
++    auto* gate = fawn_visual_state_.GetMemoryAs<FawnVisualReviewGate>();
++    // The replacement is the first frame after the reference, not after arming.
++    const bool first = !fawn_reference_callback_ && !gate->replaced_by.load();
++    gate->active_frame.store(GetActiveFrameIndex());
++    if (first)
++      gate->RecordReplacement(GetActiveFrameIndex());
++    if (first)
++      TRACE_EVENT_INSTANT("viz", "FawnReview.Replaced", "surface",
++                          surface_id().ToString(), "revision",
++                          GetActiveFrameIndex());
 +  }
 
    // We no longer have a pending frame, so unregister self from
    // |blocking_allocation_groups_|.
-@@ -989,6 +1029,7 @@ const FrameIntervalInputs& Surface::GetFrameIntervalInputs() const {
+@@ -960,6 +1165,7 @@ void Surface::TakeCopyOutputRequests(Surface::CopyRequestsMap* copy_requests) {
+ }
+
+ void Surface::TakeCopyOutputRequestsFromClient() {
++  MaybeRequestFawnVerification();
+   if (!surface_client_)
+     return;
+   for (std::unique_ptr<PendingCopyOutputRequest>& request_params :
+@@ -989,6 +1195,7 @@ const FrameIntervalInputs& Surface::GetFrameIntervalInputs() const {
  }
 
  void Surface::SetActiveFrameForViewTransition(CompositorFrame frame) {
@@ -342,10 +668,10 @@ index f0e122c..ec442de 100644
 
    active_frame_data_->frame = std::move(frame);
 diff --git a/components/viz/service/surfaces/surface.h b/components/viz/service/surfaces/surface.h
-index 95357ab..8a14001 100644
+index 95357ab..5d6c472 100644
 --- a/components/viz/service/surfaces/surface.h
 +++ b/components/viz/service/surfaces/surface.h
-@@ -17,9 +17,11 @@
+@@ -17,15 +17,18 @@
 
  #include "base/containers/circular_deque.h"
  #include "base/containers/flat_map.h"
@@ -357,46 +683,100 @@ index 95357ab..8a14001 100644
  #include "base/memory/weak_ptr.h"
  #include "base/scoped_observation.h"
  #include "base/threading/platform_thread.h"
-@@ -311,6 +313,11 @@ class VIZ_SERVICE_EXPORT Surface final : public FrameSinkObserver {
+ #include "base/time/time.h"
+ #include "components/viz/common/frame_sinks/copy_output_request.h"
+ #include "components/viz/common/quads/compositor_frame.h"
++#include "components/viz/common/surfaces/fawn_visual_review.h"
+ #include "components/viz/common/surfaces/frame_sink_id.h"
+ #include "components/viz/common/surfaces/surface_info.h"
+ #include "components/viz/common/view_transition_element_resource_id.h"
+@@ -36,6 +39,7 @@
+ #include "components/viz/service/surfaces/surface_dependency_deadline.h"
+ #include "components/viz/service/viz_service_export.h"
+ #include "ui/gfx/display_color_spaces.h"
++#include "ui/gfx/geometry/rect.h"
+ #include "ui/gfx/geometry/size.h"
+
+ namespace gfx {
+@@ -311,6 +315,21 @@ class VIZ_SERVICE_EXPORT Surface final : public FrameSinkObserver {
 
    void ActivateIfDeadlinePassed();
 
++  // Runs once with the reference frame and its reviewed pixels, or with 0.
++  using FawnReferenceCallback =
++      base::OnceCallback<void(uint32_t frame_index, std::vector<uint8_t> rgba)>;
++  // A frame Viz can verify by copying the reviewed rectangle. Child surfaces,
++  // video and buffers written outside submission can change pixels without a
++  // frame on this surface.
++  static bool IsFawnVerifiableFrame(const CompositorFrame& frame);
 +  bool ArmFawnVisualReview(base::UnsafeSharedMemoryRegion state,
-+                           base::File owner);
-+  void InvalidateFawnVisualReview();
++                           base::File owner,
++                           const gfx::Rect& rect,
++                           FawnReferenceCallback callback);
++  void InvalidateFawnVisualReview(
++      uint32_t reason = FawnVisualReviewGate::kEnded);
 +  void ReleaseFawnVisualReview();
 +
    base::WeakPtr<Surface> GetWeakPtr() { return weak_factory_.GetWeakPtr(); }
 
    // Always placed the given |copy_request| on the root render pass.
-@@ -486,6 +493,8 @@ class VIZ_SERVICE_EXPORT Surface final : public FrameSinkObserver {
+@@ -486,6 +505,28 @@ class VIZ_SERVICE_EXPORT Surface final : public FrameSinkObserver {
    FrameActivationReason frame_activation_reason_ =
        FrameActivationReason::kNotSet;
 
++  struct FawnPendingCopy {
++    uint32_t frame_index = 0;
++    bool done = false;
++    std::vector<uint8_t> rgba;
++  };
++  void MaybeRequestFawnVerification();
++  void OnFawnVerificationCopied(uint64_t arm_id,
++                                uint32_t frame_index,
++                                std::unique_ptr<CopyOutputResult> result);
++  void PublishFawnVerdicts();
++
 +  base::WritableSharedMemoryMapping fawn_visual_state_;
 +  base::File fawn_visual_owner_;
++  gfx::Rect fawn_visual_rect_;
++  std::vector<uint8_t> fawn_visual_reference_;
++  FawnReferenceCallback fawn_reference_callback_;
++  base::circular_deque<FawnPendingCopy> fawn_pending_copies_;
++  uint64_t fawn_visual_arm_id_ = 0;
++  const base::UnguessableToken fawn_copy_source_ =
++      base::UnguessableToken::Create();
++  uint32_t fawn_last_copied_frame_ = 0;
++  bool fawn_verifying_ = false;
    base::WeakPtrFactory<Surface> weak_factory_{this};
  };
 
 diff --git a/components/viz/test/test_frame_sink_manager.h b/components/viz/test/test_frame_sink_manager.h
-index 629ce42..cf5c849 100644
+index 629ce42..1e31793 100644
 --- a/components/viz/test/test_frame_sink_manager.h
 +++ b/components/viz/test/test_frame_sink_manager.h
-@@ -78,6 +78,12 @@ class TestFrameSinkManagerImpl : public mojom::FrameSinkManager {
+@@ -19,6 +19,7 @@
+ #include "services/viz/privileged/mojom/compositing/frame_sink_manager.mojom.h"
+ #include "services/viz/privileged/mojom/compositing/frame_sink_manager_test_api.mojom.h"
+ #include "services/viz/privileged/mojom/compositing/frame_sinks_metrics_recorder.mojom.h"
++#include "ui/gfx/geometry/rect.h"
+
+ namespace viz {
+
+@@ -78,6 +79,13 @@ class TestFrameSinkManagerImpl : public mojom::FrameSinkManager {
        mojo::PendingReceiver<mojom::FrameSinkVideoCapturer> receiver,
        uint32_t capture_version_source) override {}
    void EvictSurfaces(const std::vector<SurfaceId>& surface_ids) override {}
 +  void ArmFawnVisualReview(const SurfaceId& id,
++                           const gfx::Rect& rect,
 +                           base::UnsafeSharedMemoryRegion state,
 +                           base::File owner,
 +                           ArmFawnVisualReviewCallback callback) override {
-+    std::move(callback).Run(0);
++    std::move(callback).Run(0, {});
 +  }
    void RequestCopyOfOutput(const SurfaceId& surface_id,
                             std::unique_ptr<CopyOutputRequest> request,
                             bool capture_exact_surface_id,
 diff --git a/content/browser/devtools/protocol/input_handler.cc b/content/browser/devtools/protocol/input_handler.cc
-index 8468f4d..2488a91 100644
+index 8468f4d..934071c 100644
 --- a/content/browser/devtools/protocol/input_handler.cc
 +++ b/content/browser/devtools/protocol/input_handler.cc
 @@ -4,6 +4,9 @@
@@ -409,7 +789,7 @@ index 8468f4d..2488a91 100644
  #include <stddef.h>
 
  #include <memory>
-@@ -13,26 +16,41 @@
+@@ -13,26 +16,42 @@
 
  #include "base/check.h"
  #include "base/check_deref.h"
@@ -425,6 +805,7 @@ index 8468f4d..2488a91 100644
  #include "base/strings/string_split.h"
  #include "base/strings/stringprintf.h"
  #include "base/strings/utf_string_conversions.h"
++#include "base/task/sequenced_task_runner.h"
  #include "base/task/single_thread_task_runner.h"
 +#include "base/task/thread_pool.h"
 +#include "base/threading/platform_thread.h"
@@ -451,7 +832,7 @@ index 8468f4d..2488a91 100644
  #include "content/common/input/synthetic_pinch_gesture.h"
  #include "content/common/input/synthetic_pinch_gesture_params.h"
  #include "content/common/input/synthetic_pointer_action.h"
-@@ -41,11 +59,17 @@
+@@ -41,11 +60,17 @@
  #include "content/common/input/synthetic_smooth_scroll_gesture_params.h"
  #include "content/common/input/synthetic_tap_gesture.h"
  #include "content/common/input/synthetic_tap_gesture_params.h"
@@ -469,7 +850,7 @@ index 8468f4d..2488a91 100644
  #include "ui/base/clipboard/clipboard_constants.h"
  #include "ui/base/dragdrop/mojom/drag_drop_types.mojom-shared.h"
  #include "ui/events/base_event_utils.h"
-@@ -1134,6 +1158,152 @@ void InputHandler::DragController::EndDraggingWithRenderWidgetHostAtPoint(
+@@ -1134,6 +1159,190 @@ void InputHandler::DragController::EndDraggingWithRenderWidgetHostAtPoint(
                       std::move(callback)));
  }
 
@@ -492,6 +873,33 @@ index 8468f4d..2488a91 100644
 +  return "unknown";
 +}
 +
++const char* ReviewRefusalName(uint32_t refusal) {
++  using Gate = viz::FawnVisualReviewGate;
++  switch (refusal) {
++    case Gate::kNoRefusal:
++      return "none";
++    case Gate::kNoFrameSink:
++      return "no-frame-sink";
++    case Gate::kNotCurrentSurface:
++      return "not-current-surface";
++    case Gate::kFramePending:
++      return "frame-pending";
++    case Gate::kUnverifiableFrame:
++      return "unverifiable-frame";
++    case Gate::kUnsupportedScope:
++      return "unsupported-scope";
++    case Gate::kReferenceCopyFailed:
++      return "reference-copy-failed";
++    case Gate::kUnverifiableReplacement:
++      return "unverifiable-replacement";
++    case Gate::kOtherSurfaceSubmitted:
++      return "other-surface-submitted";
++    case Gate::kEnded:
++      return "ended";
++  }
++  return "unknown";
++}
++
 +struct ReviewedInputBarrier {
 +  base::FilePath dir;
 +  std::string phase;
@@ -506,10 +914,13 @@ index 8468f4d..2488a91 100644
 +  return base::StringPrintf(
 +      "{\"event\":\"%s\",\"phase\":\"%s\",\"surface\":\"%s\","
 +      "\"document\":\"%s\",\"reviewedRevision\":%u,"
-+      "\"replacementRevision\":%u,\"gate\":\"%s\",\"atUnixMs\":%.3f}\n",
++      "\"replacementRevision\":%u,\"activeRevision\":%u,"
++      "\"verifiedThrough\":%u,\"refutedAt\":%u,\"gate\":\"%s\","
++      "\"atUnixMs\":%.3f}\n",
 +      event, barrier.phase.c_str(), barrier.surface.c_str(),
 +      barrier.document.c_str(), barrier.reviewed_revision,
-+      barrier.gate->replaced_by.load(),
++      barrier.gate->replaced_by.load(), barrier.gate->active_frame.load(),
++      barrier.gate->verified_through.load(), barrier.gate->refuted_at.load(),
 +      ReviewGateStateName(barrier.gate->state.load()),
 +      base::Time::Now().InMillisecondsFSinceUnixEpoch());
 +}
@@ -529,13 +940,23 @@ index 8468f4d..2488a91 100644
 +  const base::FilePath release = file(".release");
 +  const auto deadline = base::TimeTicks::Now() + base::Seconds(20);
 +  bool acknowledged = false;
++  bool refuted = false;
 +  while (!base::PathExists(release) && base::TimeTicks::Now() < deadline) {
++    const uint32_t replaced = barrier.gate->replaced_by.load();
 +    if (!acknowledged && base::PathExists(file(".await-activation")) &&
-+        barrier.gate->replaced_by.load()) {
++        replaced) {
 +      CHECK(base::WriteFile(
 +          file(".viz-activation"),
 +          DescribeReviewedInputBarrier(barrier, "viz-replacement-active")));
 +      acknowledged = true;
++    }
++    // Viz drew a frame whose reviewed pixels differ from the reference.
++    if (!refuted && base::PathExists(file(".await-refutation")) &&
++        barrier.gate->refuted_at.load()) {
++      CHECK(base::WriteFile(
++          file(".viz-refutation"),
++          DescribeReviewedInputBarrier(barrier, "viz-pixels-refuted")));
++      refuted = true;
 +    }
 +    base::PlatformThread::Sleep(base::Milliseconds(1));
 +  }
@@ -610,8 +1031,6 @@ index 8468f4d..2488a91 100644
 +  uint64_t target = 0;
 +  uint32_t revision = 0;
 +  mojo::AssociatedRemote<mojom::FawnReviewedInputTarget> renderer;
-+  base::UnsafeSharedMemoryRegion pending_state;
-+  base::File pending_owner;
 +  base::WritableSharedMemoryMapping mapping;
 +  base::File owner_read;
 +  bool valid_document = true;
@@ -622,7 +1041,7 @@ index 8468f4d..2488a91 100644
  InputHandler::InputHandler(bool allow_file_access,
                             bool allow_sending_input_to_browser)
      : DevToolsDomainHandler(Input::Metainfo::domainName),
-@@ -1358,6 +1528,329 @@ void InputHandler::ImeSetComposition(
+@@ -1358,6 +1567,380 @@ void InputHandler::ImeSetComposition(
        /*target_dom_node_id=*/blink::DOMNodeIdType(), std::move(closure));
  }
 
@@ -684,24 +1103,6 @@ index 8468f4d..2488a91 100644
 +    callback->sendFailure(Response::ServerError("unsupported visual surface"));
 +    return;
 +  }
-+  auto state =
-+      base::UnsafeSharedMemoryRegion::Create(sizeof(viz::FawnVisualReviewGate));
-+  base::ScopedFD reader, writer;
-+  if (!state.IsValid() || !base::CreatePipe(&reader, &writer, true)) {
-+    callback->sendFailure(
-+        Response::ServerError("visual lease allocation failed"));
-+    return;
-+  }
-+  review->mapping = state.Map();
-+  if (!review->mapping.IsValid()) {
-+    callback->sendFailure(Response::ServerError("visual lease mapping failed"));
-+    return;
-+  }
-+  new (review->mapping.GetMemoryAs<viz::FawnVisualReviewGate>())
-+      viz::FawnVisualReviewGate;
-+  review->owner_read = base::File(std::move(reader));
-+  review->pending_state = std::move(state);
-+  review->pending_owner = base::File(std::move(writer));
 +  // Bind the renderer target before arming Viz. Any later change to the node
 +  // under the point is caught by the renderer at delivery.
 +  host_->GetRemoteAssociatedInterfaces()->GetInterface(&review->renderer);
@@ -732,70 +1133,99 @@ index 8468f4d..2488a91 100644
 +    return;
 +  }
 +  visual_review_->target = target;
-+  GetHostFrameSinkManager()->ArmFawnVisualReview(
-+      visual_review_->surface, std::move(visual_review_->pending_state),
-+      std::move(visual_review_->pending_owner),
-+      mojo::WrapCallbackWithDefaultInvokeIfNotRun(
-+          base::BindOnce(&InputHandler::OnVisualReviewArmed,
-+                         weak_factory_.GetWeakPtr(), id, std::move(callback)),
-+          0u));
++  ArmVisualReview(id, std::move(callback), 0);
 +}
 +
-+void InputHandler::OnVisualReviewArmed(
++// Each attempt arms a fresh gate on the view's current surface. Nothing has
++// been shown to a reviewer before the reference returns, so an attempt Viz
++// refused because the surface was mid-update can be repeated a frame later.
++void InputHandler::ArmVisualReview(
 +    std::string id,
 +    std::unique_ptr<CaptureVisualEvidenceCallback> callback,
-+    uint32_t revision) {
-+  if (!visual_review_ || visual_review_->id != id || !revision ||
-+      !CanUseVisualReview(*visual_review_)) {
++    int attempt) {
++  if (!visual_review_ || visual_review_->id != id ||
++      !CanUseVisualReview(*visual_review_) || !host_->GetView()) {
 +    callback->sendFailure(
 +        Response::ServerError("visual surface changed or unsupported"));
 +    return;
 +  }
-+  visual_review_->revision = revision;
-+  auto request = std::make_unique<viz::CopyOutputRequest>(
-+      viz::CopyOutputResult::Format::RGBA,
-+      viz::CopyOutputResult::Destination::kSystemMemory,
-+      base::BindOnce(&InputHandler::OnVisualReviewCopied,
-+                     weak_factory_.GetWeakPtr(), id, revision,
-+                     std::move(callback)));
-+  request->set_area(visual_review_->rect);
-+  request->set_result_task_runner(
-+      base::SingleThreadTaskRunner::GetCurrentDefault());
-+  GetHostFrameSinkManager()->RequestCopyOfOutput(
-+      visual_review_->surface, std::move(request), true, base::Seconds(2));
++  VisualReview& review = *visual_review_;
++  review.surface = host_->GetView()->GetCurrentSurfaceId();
++  auto state =
++      base::UnsafeSharedMemoryRegion::Create(sizeof(viz::FawnVisualReviewGate));
++  base::ScopedFD reader, writer;
++  if (!review.surface.is_valid() || !state.IsValid() ||
++      !base::CreatePipe(&reader, &writer, true)) {
++    callback->sendFailure(
++        Response::ServerError("visual lease allocation failed"));
++    return;
++  }
++  review.mapping = state.Map();
++  if (!review.mapping.IsValid()) {
++    callback->sendFailure(Response::ServerError("visual lease mapping failed"));
++    return;
++  }
++  new (review.mapping.GetMemoryAs<viz::FawnVisualReviewGate>())
++      viz::FawnVisualReviewGate;
++  review.owner_read = base::File(std::move(reader));
++  GetHostFrameSinkManager()->ArmFawnVisualReview(
++      review.surface, review.rect, std::move(state),
++      base::File(std::move(writer)),
++      mojo::WrapCallbackWithDefaultInvokeIfNotRun(
++          base::BindOnce(&InputHandler::OnVisualReviewArmed,
++                         weak_factory_.GetWeakPtr(), id, std::move(callback),
++                         attempt),
++          0u, std::vector<uint8_t>()));
 +}
 +
-+void InputHandler::OnVisualReviewCopied(
++// The evidence is Viz's reference copy: the same pixels Viz compares every
++// later drawn frame against.
++void InputHandler::OnVisualReviewArmed(
 +    std::string id,
-+    uint32_t revision,
 +    std::unique_ptr<CaptureVisualEvidenceCallback> callback,
-+    std::unique_ptr<viz::CopyOutputResult> result) {
-+  if (!visual_review_ || visual_review_->id != id ||
-+      !CanUseVisualReview(*visual_review_)) {
-+    callback->sendFailure(Response::ServerError("visual review expired"));
++    int attempt,
++    uint32_t revision,
++    const std::vector<uint8_t>& rgba) {
++  const bool current = visual_review_ && visual_review_->id == id &&
++                       CanUseVisualReview(*visual_review_);
++  const uint32_t refusal =
++      current ? visual_review_->gate()->refusal.load() : 0;
++  TRACE_EVENT_INSTANT("viz", "FawnReview.Armed", "revision", revision,
++                      "refusal", ReviewRefusalName(refusal), "attempt",
++                      attempt);
++  const bool transient =
++      refusal == viz::FawnVisualReviewGate::kFramePending ||
++      refusal == viz::FawnVisualReviewGate::kNotCurrentSurface ||
++      refusal == viz::FawnVisualReviewGate::kOtherSurfaceSubmitted;
++  if (current && !revision && transient && attempt < 2) {
++    base::SequencedTaskRunner::GetCurrentDefault()->PostDelayedTask(
++        FROM_HERE,
++        base::BindOnce(&InputHandler::ArmVisualReview,
++                       weak_factory_.GetWeakPtr(), id, std::move(callback),
++                       attempt + 1),
++        base::Milliseconds(16));
++    return;
++  }
++  if (!current || !revision) {
++    callback->sendFailure(Response::ServerError(
++        std::string("visual surface changed or unsupported (") +
++        ReviewRefusalName(refusal) + ")"));
 +    return;
 +  }
 +  VisualReview& review = *visual_review_;
-+  auto access = result->ScopedAccessSkBitmap();
-+  const SkBitmap bitmap = access.bitmap();
 +  const int width = review.rect.width();
 +  const int height = review.rect.height();
-+  std::vector<uint8_t> rgba(4u * width * height);
-+  const auto info =
-+      SkImageInfo::Make(width, height, kRGBA_8888_SkColorType,
-+                        kUnpremul_SkAlphaType, SkColorSpace::MakeSRGB());
-+  if (bitmap.width() != width || bitmap.height() != height ||
-+      !bitmap.readPixels(info, rgba.data(), 4u * width, 0, 0) ||
-+      !review.mapping.GetMemoryAs<viz::FawnVisualReviewGate>()->Open() ||
++  if (rgba.size() != 4u * width * height || !review.gate()->Open() ||
 +      !review.VizAlive()) {
 +    callback->sendFailure(Response::ServerError("unstable visual copy"));
 +    return;
 +  }
++  review.revision = revision;
 +  review.digest = base::HexEncodeLower(crypto::hash::Sha256(rgba));
 +  review.captured = true;
 +  callback->sendSuccess(review.id, review.document, review.surface.ToString(),
 +                        1., base::NumberToString(revision), review.digest,
-+                        width, height, Binary::fromVector(std::move(rgba)));
++                        width, height, Binary::fromVector(rgba));
 +}
 +
 +void InputHandler::DispatchReviewedClick(
@@ -881,10 +1311,50 @@ index 8468f4d..2488a91 100644
 +    gfx::PointF screen,
 +    std::unique_ptr<DispatchReviewedClickCallback> callback) {
 +  const bool admitted = review->gate()->Admit() && review->VizAlive();
++  // Read after the CAS: every frame activated before admission is at or
++  // below this index.
++  const uint32_t admitted_frame = review->gate()->active_frame.load();
 +  TRACE_EVENT_INSTANT("viz", "FawnReview.Admission", "surface",
-+                      review->surface.ToString(), "admitted", admitted);
++                      review->surface.ToString(), "admitted", admitted,
++                      "revision", admitted_frame);
 +  if (!admitted) {
 +    callback->sendSuccess(false, false, "stale-compositor-revision");
++    return;
++  }
++  AwaitReviewedPixels(std::move(review), target, point, screen, admitted_frame,
++                      base::TimeTicks::Now() + base::Seconds(1),
++                      std::move(callback));
++}
++
++// An admitted input is released only after Viz has drawn a frame at or after
++// the one active at admission and found the reviewed pixels unchanged in every
++// drawn frame up to it. Frames after admission cannot cancel it.
++void InputHandler::AwaitReviewedPixels(
++    std::unique_ptr<VisualReview> review,
++    base::WeakPtr<RenderWidgetHostImpl> target,
++    gfx::Point point,
++    gfx::PointF screen,
++    uint32_t admitted_frame,
++    base::TimeTicks deadline,
++    std::unique_ptr<DispatchReviewedClickCallback> callback) {
++  using Verdict = viz::FawnVisualReviewGate::Verdict;
++  const Verdict verdict = review->gate()->VerdictFor(admitted_frame);
++  if (verdict == Verdict::kPending && review->VizAlive() &&
++      base::TimeTicks::Now() < deadline) {
++    base::SequencedTaskRunner::GetCurrentDefault()->PostDelayedTask(
++        FROM_HERE,
++        base::BindOnce(&InputHandler::AwaitReviewedPixels,
++                       weak_factory_.GetWeakPtr(), std::move(review), target,
++                       point, screen, admitted_frame, deadline,
++                       std::move(callback)),
++        base::Milliseconds(1));
++    return;
++  }
++  TRACE_EVENT_INSTANT("viz", "FawnReview.PixelVerdict", "surface",
++                      review->surface.ToString(), "revision", admitted_frame,
++                      "verdict", static_cast<int>(verdict));
++  if (verdict != Verdict::kVerified) {
++    callback->sendSuccess(true, false, "stale-compositor-revision");
 +    return;
 +  }
 +  auto barrier = review->Barrier("delivery");
@@ -952,7 +1422,7 @@ index 8468f4d..2488a91 100644
  void InputHandler::DispatchMouseEvent(
      const std::string& event_type,
      double x,
-@@ -2302,6 +2795,8 @@ void InputHandler::SynthesizeTapGesture(
+@@ -2302,6 +2885,8 @@ void InputHandler::SynthesizeTapGesture(
  }
 
  void InputHandler::ClearInputState() {
@@ -962,7 +1432,7 @@ index 8468f4d..2488a91 100644
      (*injectors_.begin())->Cleanup();
    // TODO(dgozman): cleanup touch callbacks as well?
 diff --git a/content/browser/devtools/protocol/input_handler.h b/content/browser/devtools/protocol/input_handler.h
-index 4c25a8c..14a1b44 100644
+index 4c25a8c..22e42e8 100644
 --- a/content/browser/devtools/protocol/input_handler.h
 +++ b/content/browser/devtools/protocol/input_handler.h
 @@ -29,6 +29,10 @@
@@ -996,7 +1466,7 @@ index 4c25a8c..14a1b44 100644
    void DispatchMouseEvent(
        const std::string& event_type,
        double x,
-@@ -348,6 +365,41 @@ class InputHandler : public DevToolsDomainHandler, public Input::Backend {
+@@ -348,6 +365,49 @@ class InputHandler : public DevToolsDomainHandler, public Input::Backend {
 
    float ScaleFactor();
 
@@ -1006,15 +1476,15 @@ index 4c25a8c..14a1b44 100644
 +      std::string id,
 +      std::unique_ptr<CaptureVisualEvidenceCallback> callback,
 +      uint64_t target);
++  void ArmVisualReview(std::string id,
++                       std::unique_ptr<CaptureVisualEvidenceCallback> callback,
++                       int attempt);
 +  void OnVisualReviewArmed(
 +      std::string id,
 +      std::unique_ptr<CaptureVisualEvidenceCallback> callback,
-+      uint32_t revision);
-+  void OnVisualReviewCopied(
-+      std::string id,
++      int attempt,
 +      uint32_t revision,
-+      std::unique_ptr<CaptureVisualEvidenceCallback> callback,
-+      std::unique_ptr<viz::CopyOutputResult> result);
++      const std::vector<uint8_t>& rgba);
 +  void OnReviewedClickHitTested(
 +      std::unique_ptr<VisualReview> review,
 +      gfx::Point point,
@@ -1026,6 +1496,14 @@ index 4c25a8c..14a1b44 100644
 +      base::WeakPtr<RenderWidgetHostImpl> target,
 +      gfx::Point point,
 +      gfx::PointF screen,
++      std::unique_ptr<DispatchReviewedClickCallback> callback);
++  void AwaitReviewedPixels(
++      std::unique_ptr<VisualReview> review,
++      base::WeakPtr<RenderWidgetHostImpl> target,
++      gfx::Point point,
++      gfx::PointF screen,
++      uint32_t admitted_frame,
++      base::TimeTicks deadline,
 +      std::unique_ptr<DispatchReviewedClickCallback> callback);
 +  void DeliverReviewedClick(
 +      std::unique_ptr<VisualReview> review,
@@ -1244,7 +1722,7 @@ index 5b14824..6e123db 100644
    GetAssociatedInterfaceRegistry()
        ->AddInterface<blink::mojom::AutoplayConfigurationClient>(
 diff --git a/services/viz/privileged/mojom/compositing/frame_sink_manager.mojom b/services/viz/privileged/mojom/compositing/frame_sink_manager.mojom
-index a360316..7672fd4 100644
+index a360316..b86dcc0 100644
 --- a/services/viz/privileged/mojom/compositing/frame_sink_manager.mojom
 +++ b/services/viz/privileged/mojom/compositing/frame_sink_manager.mojom
 @@ -5,6 +5,7 @@
@@ -1255,15 +1733,20 @@ index a360316..7672fd4 100644
  import "mojo/public/mojom/base/shared_memory.mojom";
  import "mojo/public/mojom/base/time.mojom";
  import "mojo/public/mojom/base/unguessable_token.mojom";
-@@ -282,6 +283,11 @@ interface FrameSinkManager {
+@@ -282,6 +283,16 @@ interface FrameSinkManager {
    // from the VizCompositorThread. Safe to call even if the VizCompositorThread
    // is not currently handling input, the request is a no-op in that case.
    RequestInputBack();
 +
-+  // Privileged single-surface review. Zero means the scope could not be armed.
++  // Privileged single-surface review. Viz copies `rect` from the frame it
++  // draws next and returns that reference with its frame index, then verifies
++  // the same rectangle in every later drawn frame through `state`. Zero means
++  // the scope could not be armed.
 +  ArmFawnVisualReview(SurfaceId surface_id,
++                      gfx.mojom.Rect rect,
 +                      mojo_base.mojom.UnsafeSharedMemoryRegion state,
-+                      mojo_base.mojom.File owner) => (uint32 frame_index);
++                      mojo_base.mojom.File owner)
++      => (uint32 frame_index, array<uint8> rgba);
  };
 
  // The FrameSinkManagerClient interface is implemented by the Display
