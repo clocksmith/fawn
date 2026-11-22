@@ -1,0 +1,229 @@
+{
+  "consumer": "clocksmith/deco#81",
+  "status": "qualification-accepted",
+  "observedDateUTC": "2026-11-22",
+  "question": "Can reviewed clicks proceed while unrelated animation runs, using only browser-owned compositor evidence, while a changed reviewed pixel, a visually identical target swap, navigation, renderer restart and device loss still deliver nothing?",
+  "change": "Viz copies the reviewed rectangle out of every frame it draws for the reviewed surface and compares the bytes with its own reference copy. A mismatch or failed copy closes the review through the shared gate; an admitted click is released only after Viz verifies a drawn frame at or after the frame active at admission. Renderer-reported damage is not used. Recipient checks stay in the renderer at delivery.",
+  "previous": "reports/fawn-workspace/20261122-reviewed-input-orderings: any activated frame closed the review; 0 of 20 clicks delivered under unrelated animation.",
+  "revisions": {
+    "fawnBase": "45581bad8e",
+    "patches": {
+      "chromium-reviewed-input.patch": "2626f5826b17896947682210345799082945bc68f3cc2c1e916fdb4469132e42",
+      "chromium-doe-runtime.patch": "bcf41516f4647e19e67971e024cc1213d462d629de626d98186a380746758f37",
+      "dawn-doe-runtime.patch": "b7236a5d1985818f112c6feb11872126b5a45529a682744190f7ad7a5fb8b4c5"
+    },
+    "sourceIdentity": "Each of the 72 touched Chromium files equals pinned Chromium 4a6fb385 plus chromium-doe-runtime.patch plus chromium-reviewed-input.patch, checked file by file against the build overlay.",
+    "build": "Linux x86_64 component build (is_debug=false, dcheck_always_on=false). Diagnostic configuration, not the release profile; the non-component release build of the same source was generated and is still compiling.",
+    "browser": {
+      "chromeSha256": "51f8f047ea4b888b641be0255de665acf427336f097e1a267ac029b72d4595a1",
+      "libcontentSha256": "7ec843674e5815ebf1a4d77219c512985131fc28bcd3bdeb0be415a60287ff3d",
+      "frozenManifestSha256": "4616eeb0ed1495485833f2144e05c35450efdf1dd89a2773e4af02dfb87d6fc4"
+    },
+    "doeLibrarySha256": "f2d1d260739fb65e4e8a5d5897ded8f0700772ea7582c5c3c2ec5ff6a04f18f8"
+  },
+  "browserInput": {
+    "dawn": {
+      "passed": true,
+      "cases": "19/19",
+      "compositing": {
+        "gpuCompositing": "enabled",
+        "rasterization": "enabled",
+        "webgpu": "unavailable_software"
+      },
+      "doeMapped": false,
+      "unrelatedAnimationDelivered": {
+        "none": "20/20",
+        "compositor": "20/20",
+        "main-thread": "20/20",
+        "raf-canvas": "20/20"
+      },
+      "zeroEventCases": [
+        "ordering-1-replacement-active-before-admission",
+        "ordering-1-replacement-active-before-admission-under-compositor-animation",
+        "animation-inside-region-before-admission",
+        "ordering-2-overlay-after-admission",
+        "ordering-2-navigation-after-admission",
+        "overlay-before-admission-transparent-overlay",
+        "overlay-before-admission-transparent-overlay-under-compositor-animation",
+        "overlay-before-admission-opacity-zero-overlay",
+        "overlay-before-admission-opacity-zero-overlay-under-compositor-animation",
+        "overlay-before-admission-raised-existing-element",
+        "overlay-before-admission-raised-existing-element-under-compositor-animation"
+      ]
+    },
+    "doe": {
+      "passed": true,
+      "cases": "19/19",
+      "compositing": {
+        "gpuCompositing": "disabled_software",
+        "rasterization": "disabled_software",
+        "webgpu": "disabled_off"
+      },
+      "doeMapped": true,
+      "unrelatedAnimationDelivered": {
+        "none": "20/20",
+        "compositor": "20/20",
+        "main-thread": "20/20",
+        "raf-canvas": "20/20"
+      },
+      "zeroEventCases": [
+        "ordering-1-replacement-active-before-admission",
+        "ordering-1-replacement-active-before-admission-under-compositor-animation",
+        "animation-inside-region-before-admission",
+        "ordering-2-overlay-after-admission",
+        "ordering-2-navigation-after-admission",
+        "overlay-before-admission-transparent-overlay",
+        "overlay-before-admission-transparent-overlay-under-compositor-animation",
+        "overlay-before-admission-opacity-zero-overlay",
+        "overlay-before-admission-opacity-zero-overlay-under-compositor-animation",
+        "overlay-before-admission-raised-existing-element",
+        "overlay-before-admission-raised-existing-element-under-compositor-animation"
+      ]
+    }
+  },
+  "applicationGuarantees": "Kept separate. Drawing and authenticated workspace runs on both arms: lookalike rejected, one fresh write, duplicate commit returned the original receipt, a late version change refused by the application; workspace test passed 20 of 20 per arm on the final build.",
+  "workspaceRepeats": {
+    "finalBuild": {
+      "dawn": "20/20",
+      "doe": "20/20"
+    },
+    "earlierBuildsSameViz": "4 first-capture refusals ('visual surface changed or unsupported') in 90 earlier runs before refusal reasons were reported; none in 80 runs since. Fail-closed, nothing delivered. Refusals now name their cause."
+  },
+  "profile": {
+    "note": "Profile of the path that ships, not the predeclared backend decision run (backend-predeclaration.json in 20261122-reviewed-input-orderings). Load: compositor, main-thread and canvas animation outside the rectangle plus 4 ms of main-thread work every 16 ms. 300 clicks per arm, one launch each.",
+    "arms": {
+      "cpu": {
+        "compositing": "disabled_software",
+        "webgpuAdapter": false,
+        "doeMapped": false,
+        "delivered": "300/300",
+        "clickMs": {
+          "p50": 17.68,
+          "p90": 20.62,
+          "p99": 22.17,
+          "max": 22.77
+        },
+        "captureMs": {
+          "p50": 15.44,
+          "p99": 18.55
+        },
+        "phasesMsP99": {
+          "validatedToAdmission": 0.09,
+          "admissionToVerdict": 2.26,
+          "verdictToDelivery": 4.39
+        },
+        "vizCopies": {
+          "references": 301,
+          "verifications": 919,
+          "mismatches": 0,
+          "readbackBytes": 11243520,
+          "gpuBlitsAndDriverTransfers": "unknown"
+        },
+        "fpsIdleVsReviewOpen": [
+          60.1,
+          60
+        ],
+        "longFramesIdleVsReviewOpen": [
+          0,
+          0
+        ],
+        "gpuProcessRssMiB": [
+          110,
+          114,
+          116
+        ]
+      },
+      "dawn": {
+        "compositing": "enabled",
+        "webgpuAdapter": false,
+        "doeMapped": false,
+        "delivered": "300/300",
+        "clickMs": {
+          "p50": 51.16,
+          "p90": 53.47,
+          "p99": 55.41,
+          "max": 55.96
+        },
+        "captureMs": {
+          "p50": 15.49,
+          "p99": 17.28
+        },
+        "phasesMsP99": {
+          "validatedToAdmission": 0.1,
+          "admissionToVerdict": 19.79,
+          "verdictToDelivery": 4.41
+        },
+        "vizCopies": {
+          "references": 301,
+          "verifications": 1510,
+          "mismatches": 0,
+          "readbackBytes": 16690176,
+          "gpuBlitsAndDriverTransfers": "unknown"
+        },
+        "fpsIdleVsReviewOpen": [
+          60,
+          60
+        ],
+        "longFramesIdleVsReviewOpen": [
+          0,
+          0
+        ],
+        "gpuProcessRssMiB": [
+          140,
+          143,
+          145
+        ]
+      },
+      "doe": {
+        "compositing": "disabled_software",
+        "webgpuAdapter": false,
+        "doeMapped": true,
+        "delivered": "300/300",
+        "clickMs": {
+          "p50": 17.07,
+          "p90": 20.66,
+          "p99": 22.63,
+          "max": 23.35
+        },
+        "captureMs": {
+          "p50": 16.11,
+          "p99": 18.95
+        },
+        "phasesMsP99": {
+          "validatedToAdmission": 0.05,
+          "admissionToVerdict": 2.27,
+          "verdictToDelivery": 4.29
+        },
+        "vizCopies": {
+          "references": 301,
+          "verifications": 920,
+          "mismatches": 0,
+          "readbackBytes": 11252736,
+          "gpuBlitsAndDriverTransfers": "unknown"
+        },
+        "fpsIdleVsReviewOpen": [
+          60,
+          60
+        ],
+        "longFramesIdleVsReviewOpen": [
+          0,
+          0
+        ],
+        "gpuProcessRssMiB": [
+          156,
+          161,
+          162
+        ]
+      }
+    },
+    "findings": [
+      "Admission itself is ~0.1 ms p99 (validation to compare-and-exchange). The wait is Viz's pixel verdict plus renderer delivery.",
+      "Software compositing (cpu) verifies in ~2.3 ms p99; SwiftShader GL compositing (dawn arm) takes ~20 ms p99 because the readback completes a frame later. Click p99: 22.2 ms cpu, 55.4 ms dawn arm.",
+      "The doe arm's --gpu-sandbox-start-early keeps SwiftShader GL from initializing, so Viz falls back to software compositing; its numbers match the cpu arm. The same flag on the Dawn runtime causes the same fallback.",
+      "No arm obtains a WebGPU adapter on this host (no hardware GPU used), and the reviewed-click path does no WebGPU work. Dawn versus Doe is not measured by this profile.",
+      "An open review costs one 9216-byte readback per drawn frame of the reviewed surface; frame pacing stayed at 60 fps with no long frames, and GPU-process RSS rose 4-6 MiB.",
+      "GPU-internal blits and driver transfers are not observable here and are recorded as unknown."
+    ]
+  },
+  "decision": "Ship the region-scoped Viz verification on the current CPU readback path. Doe is not a requirement for reviewed clicks. A Dawn/Doe decision needs a GPU-resident compare stage and a hardware GPU window (AMD outside the Flash reservation, or Apple M3)."
+}

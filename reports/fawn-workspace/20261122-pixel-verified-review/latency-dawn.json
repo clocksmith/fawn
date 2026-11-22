@@ -1,0 +1,133 @@
+{
+  "schema": "fawn.reviewed-input-latency/v1",
+  "arm": "dawn",
+  "flags": [
+    "--use-webgpu-runtime=dawn",
+    "--use-gl=angle",
+    "--use-angle=swiftshader",
+    "--disable-accelerated-2d-canvas",
+    "--ozone-platform=headless",
+    "--force-device-scale-factor=1"
+  ],
+  "chromeSha256": "51f8f047ea4b888b641be0255de665acf427336f097e1a267ac029b72d4595a1",
+  "libcontentSha256": "7ec843674e5815ebf1a4d77219c512985131fc28bcd3bdeb0be415a60287ff3d",
+  "libvizServiceSha256": "b0c9c4139eb8f2681aea35da0d0187a43bdd6058b86bfbbe5e059a465e9005d1",
+  "harnessSha256": "f1462cac11f33f9b1a64b252ff1c0661a359436b75aaeaf263a69027e3c08b09",
+  "patchSha256": "2626f5826b17896947682210345799082945bc68f3cc2c1e916fdb4469132e42",
+  "doeLibrarySha256": null,
+  "reviewedPixels": 2304,
+  "bytesPerCopy": 9216,
+  "browserVersion": "158.0.8108.0",
+  "gpu": {
+    "devices": [
+      {
+        "vendorId": 65535,
+        "deviceId": 65535,
+        "vendorString": "Google Inc. (Google)",
+        "deviceString": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver-5.0.0)"
+      }
+    ],
+    "compositing": "enabled",
+    "rasterization": "enabled",
+    "webgpu": "unavailable_software"
+  },
+  "webgpuAdapter": false,
+  "memoryBefore": {
+    "browser": null,
+    "gpu": 146526208
+  },
+  "pacingIdle": {
+    "frames": 600,
+    "fps": 60,
+    "frameMs": {
+      "n": 599,
+      "p50": 16.699999999999818,
+      "p90": 16.700000000000728,
+      "p99": 16.800000000000182,
+      "max": 16.80000000000109,
+      "mean": 16.665943238731217
+    },
+    "longFrames": 0
+  },
+  "pacingReviewOpen": {
+    "frames": 600,
+    "fps": 60,
+    "frameMs": {
+      "n": 599,
+      "p50": 16.69999999999891,
+      "p90": 16.700000000000728,
+      "p99": 16.80000000000109,
+      "max": 16.80000000000291,
+      "mean": 16.66594323873122
+    },
+    "longFrames": 0
+  },
+  "memoryReviewOpen": {
+    "browser": null,
+    "gpu": 149966848
+  },
+  "memoryAfter": {
+    "browser": null,
+    "gpu": 152428544
+  },
+  "runtimeMapped": {
+    "gpuPid": 3690487,
+    "doeLibrary": false
+  },
+  "trustedClicksAtPage": 301,
+  "trials": 300,
+  "delivered": 300,
+  "refused": {},
+  "unnecessaryRefusalRate": 0,
+  "captureMs": {
+    "n": 300,
+    "p50": 15.489426000000094,
+    "p90": 16.42725299999438,
+    "p99": 17.281081999997696,
+    "max": 17.444039000001794,
+    "mean": 15.133498606666302
+  },
+  "clickMs": {
+    "n": 300,
+    "p50": 51.16387499999837,
+    "p90": 53.46800599999551,
+    "p99": 55.41437399999995,
+    "max": 55.95797799999855,
+    "mean": 50.85086087333364
+  },
+  "phasesMs": {
+    "validatedToAdmission": {
+      "n": 301,
+      "p50": 0.022,
+      "p90": 0.035,
+      "p99": 0.099,
+      "max": 0.122,
+      "mean": 0.02461461794019931
+    },
+    "admissionToVerdict": {
+      "n": 301,
+      "p50": 18.906,
+      "p90": 19.376,
+      "p99": 19.785,
+      "max": 20.539,
+      "mean": 18.174850498338873
+    },
+    "verdictToDelivery": {
+      "n": 301,
+      "p50": 0.619,
+      "p90": 3.129,
+      "p99": 4.411,
+      "max": 4.578,
+      "mean": 1.1215913621262459
+    }
+  },
+  "vizCopies": {
+    "references": 301,
+    "verifications": 1510,
+    "mismatches": 0,
+    "readbackBytes": 16690176,
+    "gpuBlitsAndDriverTransfers": "unknown"
+  },
+  "correct": true,
+  "passed": true
+}
