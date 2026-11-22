@@ -1,6 +1,8 @@
 import { supportsStockCapturePlanes } from './stock-capture-source.js';
 import { CompositorSessions, canonicalRgbaTiles } from './compositor-capture.js';
 import { reviewedClicks } from '../../../chromium/scripts/reviewed-click.mjs';
+
+const REVIEW_SETTLE_LONG_MS = 1500, REVIEW_SETTLE_SHORT_MS = 200, REVIEW_SETTLE_POLL_MS = 50, REVIEW_MAX_RECAPTURES = 2;
 import { createResidentCanvasReader } from './resident-canvas.js';
 import { pickRegion } from './region-picker.js';
 // Fawn workspace — narrow raw-CDP adapter over stock Chromium
@@ -256,7 +258,10 @@ class CdpWorkspaceAdapter {
     return this._evaluate(workspaceId, `(${queryPage.toString()})(${JSON.stringify(args)})`);
   }
 
-  async prepareReviewedClick(workspaceId, pageId, selector, snapshot, visibleRectangle) {
+  // Each review slot holds at most one review in its own browser session, so
+  // several reviews on one page can stay open at once. A new capture replaces
+  // only the review in its slot; the default slot serves single reviews.
+  async prepareReviewedClick(workspaceId, pageId, selector, snapshot, visibleRectangle, slot = 'default') {
     const { cdp, pages } = this._entry(workspaceId);
     const page = pages.get(pageId);
     const frame = snapshot.frameEvidence?.[selector];
@@ -269,21 +274,44 @@ class CdpWorkspaceAdapter {
         || visibleRectangle.selector !== selector || ['x', 'y', 'width', 'height'].some(key => visibleRectangle[key] !== rect[key]))) {
       throw Error('The selected viewport rectangle or document changed. Select it again.');
     }
-    const attempt = { grantId: frame.grantId };
-    page.pendingReview = attempt;
-    page.visualReview = null;
-    const session = { send: (method, args) => cdp.send(method, args, page.sessionId) };
+    const attempt = { grantId: frame.grantId, slot };
+    page.pendingReviews ??= new Map();
+    page.visualReviews ??= new Map();
+    page.pendingReviews.set(slot, attempt);
+    await this._dropReview(cdp, page, slot);
+    const { sessionId: reviewSession } = await cdp.send('Target.attachToTarget', { targetId: page.targetId, flatten: true });
+    attempt.sessionId = reviewSession;
+    const session = { send: (method, args) => cdp.send(method, args, reviewSession) };
     const client = reviewedClicks(session);
     // The reviewed click lands at the rectangle's center; the browser binds the
     // node the page hits there when it captures.
+    // Starting tab sharing can resize the page a moment later (the browser's
+    // sharing bar), which moves the page to a new compositor surface and ends a
+    // review captured just before. Wait for the viewport to settle and capture
+    // again if that happened; nothing has been shown to a reviewer yet. The long
+    // wait applies only when the viewport differs from the last settled one.
+    const viewport = async () => (await session.send('Runtime.evaluate',
+      { expression: 'innerWidth + "x" + innerHeight', returnByValue: true })).result?.value;
+    let settleMs = page.settledViewport && page.settledViewport === await viewport() ? REVIEW_SETTLE_SHORT_MS : REVIEW_SETTLE_LONG_MS;
     let review;
     try {
-      review = await client.capture(rect,
-        { x: rect.x + Math.floor(rect.width / 2), y: rect.y + Math.floor(rect.height / 2) });
+      for (let recaptures = 0; ; recaptures++) {
+        review = await client.capture(rect,
+          { x: rect.x + Math.floor(rect.width / 2), y: rect.y + Math.floor(rect.height / 2) });
+        let moved = false;
+        for (const deadline = Date.now() + settleMs; Date.now() < deadline && !moved;) {
+          await new Promise(resolve => setTimeout(resolve, REVIEW_SETTLE_POLL_MS));
+          moved = (await client.status(review)).reason === 'browser:surface-changed';
+        }
+        if (!moved || recaptures === REVIEW_MAX_RECAPTURES) break;
+        settleMs = REVIEW_SETTLE_SHORT_MS;
+      }
+      page.settledViewport = await viewport();
     } catch (error) {
       // The browser refused to capture. No approval exists: the previous one was
       // cleared above and the browser superseded its own. The caller reviews again.
-      if (page.pendingReview === attempt) page.pendingReview = null;
+      if (page.pendingReviews.get(slot) === attempt) page.pendingReviews.delete(slot);
+      await cdp.send('Target.detachFromTarget', { sessionId: reviewSession }).catch(() => {});
       // A RangeError is a caller mistake, not a browser refusal.
       if (!(error instanceof RangeError)) {
         const text = error.message.replace(/\s*\(-?\d+\)\s*$/, '');
@@ -307,29 +335,57 @@ class CdpWorkspaceAdapter {
         throw Error('Browser review pixels differ from the granted element');
       }
     }
-    if (page.pendingReview !== attempt || page.closed) throw Error('Review was superseded');
+    if (page.pendingReviews.get(slot) !== attempt || page.closed) {
+      await cdp.send('Target.detachFromTarget', { sessionId: reviewSession }).catch(() => {});
+      throw Error('Review was superseded');
+    }
     const { rgba, ...binding } = review;
     const id = randomUUID();
-    page.visualReview = { id, client, review, grantId: frame.grantId };
-    page.pendingReview = null;
-    return { binding: { id, ...binding, pixelScope: visibleRectangle ? 'visible-rectangle' : 'restricted-element' }, rgba };
+    page.visualReviews.set(slot, { id, client, review, grantId: frame.grantId, sessionId: reviewSession });
+    page.pendingReviews.delete(slot);
+    return { binding: { id, slot, ...binding, pixelScope: visibleRectangle ? 'visible-rectangle' : 'restricted-element' }, rgba };
+  }
+
+  async _dropReview(cdp, page, slot) {
+    const saved = page.visualReviews?.get(slot);
+    if (!saved) return;
+    page.visualReviews.delete(slot);
+    await cdp.send('Target.detachFromTarget', { sessionId: saved.sessionId }).catch(() => {});
+  }
+
+  _findReview(page, id) {
+    for (const [slot, saved] of page?.visualReviews ?? []) if (saved.id === id) return [slot, saved];
+    return [null, null];
   }
 
   invalidateReviewedClicks(workspaceId, grantId) {
-    const pages = this._workspaces.get(workspaceId)?.pages;
-    if (!pages) return;
-    for (const page of pages.values()) {
-      if (!grantId || page.pendingReview?.grantId === grantId) page.pendingReview = null;
-      if (!grantId || page.visualReview?.grantId === grantId) page.visualReview = null;
+    const entry = this._workspaces.get(workspaceId);
+    if (!entry) return;
+    for (const page of entry.pages.values()) {
+      for (const [slot, attempt] of page.pendingReviews ?? []) if (!grantId || attempt.grantId === grantId) page.pendingReviews.delete(slot);
+      for (const [slot, saved] of page.visualReviews ?? []) {
+        if (!grantId || saved.grantId === grantId) void this._dropReview(entry.cdp, page, slot);
+      }
     }
   }
 
   async executeReviewedClick(workspaceId, pageId, id) {
+    const { cdp, pages } = this._entry(workspaceId);
+    const page = pages.get(pageId);
+    const [slot, saved] = this._findReview(page, id);
+    if (!saved) return { admitted: false, delivered: false, reason: 'review-expired' };
+    // Spent on every outcome: the browser consumes its review on dispatch.
+    page.visualReviews.delete(slot);
+    try { return await saved.client.click(saved.review); }
+    finally { await cdp.send('Target.detachFromTarget', { sessionId: saved.sessionId }).catch(() => {}); }
+  }
+
+  // Whether a review could still be admitted now, without spending it.
+  async reviewedClickStatus(workspaceId, pageId, id) {
     const page = this._entry(workspaceId).pages.get(pageId);
-    const saved = page?.visualReview;
-    if (!saved || saved.id !== id) return { admitted: false, delivered: false, reason: 'review-expired' };
-    page.visualReview = null;
-    return saved.client.click(saved.review);
+    const [, saved] = this._findReview(page, id);
+    if (!saved) return { holds: false, reason: 'review-expired', verifiedRevision: '0' };
+    return saved.client.status(saved.review);
   }
 
   async snapshot(workspaceId, read = {}) {

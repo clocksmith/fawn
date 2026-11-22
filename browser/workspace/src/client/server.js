@@ -3,7 +3,9 @@ import { createServer } from 'node:http';
 import { readFile } from 'node:fs/promises';
 import { randomBytes, timingSafeEqual } from 'node:crypto';
 
-const ASSETS = new Map([['/', ['index.html', 'text/html']], ['/app.js', ['app.js', 'text/javascript']], ['/style.css', ['style.css', 'text/css']]]);
+const ASSETS = new Map([['/', ['index.html', 'text/html']], ['/app.js', ['app.js', 'text/javascript']], ['/style.css', ['style.css', 'text/css']],
+  ['/inbox', ['inbox.html', 'text/html']], ['/inbox.js', ['inbox.js', 'text/javascript']]]);
+const cookie = (req, name) => req.headers.cookie?.split(';').map(value => value.trim()).find(value => value.startsWith(name + '='))?.slice(name.length + 1);
 const equal = (a, b) => typeof a === 'string' && a.length === b.length && timingSafeEqual(Buffer.from(a), Buffer.from(b));
 async function body(req, maximum) {
   const chunks = []; let size = 0;
@@ -36,7 +38,25 @@ export async function startWorkspaceServer({ controller, config, port = config.p
         res.setHeader('set-cookie', `blitzen_session=${session}; HttpOnly; SameSite=Strict; Path=/`);
         return send(200, { ready: true });
       }
-      const session = req.headers.cookie?.split(';').map(value => value.trim()).find(value => value.startsWith('blitzen_session='))?.slice('blitzen_session='.length);
+      // People in the review inbox sign in with their own invitation and act only as themselves.
+      if (url.pathname === '/api/inbox/session' && req.method === 'POST') {
+        const { session: personSession, person } = controller.inbox.signIn((await body(req, config.maxBodyBytes)).token);
+        res.setHeader('set-cookie', `fawn_person=${personSession}; HttpOnly; SameSite=Strict; Path=/`);
+        return send(200, { person });
+      }
+      if (url.pathname === '/api/inbox') {
+        let person;
+        try { person = controller.inbox.personFor(cookie(req, 'fawn_person')); }
+        catch (error) { return send(401, { error: error.message }); }
+        if (req.method === 'GET') {
+          return send(200, { person: controller.inbox.publicPerson(person), people: controller.inbox.people(), items: await controller.inbox.list(person) });
+        }
+        const { op, ...input } = await body(req, config.maxBodyBytes);
+        const ops = { approve: 1, handoff: 1, lookAgain: 1, finish: 1, decline: 1 };
+        if (!Object.hasOwn(ops, op)) return send(400, { error: 'Unknown inbox action' });
+        return send(200, await controller.inbox[op](person, input));
+      }
+      const session = cookie(req, 'blitzen_session');
       if (!sessions.has(session)) return send(401, { error: 'Open the login link printed by the local service' });
       if (req.method === 'GET' && url.pathname === '/api/status') return send(200, await controller.status(url.searchParams.get('project')));
       if (req.method !== 'POST' || url.pathname !== '/api/command') return send(404, { error: 'Unknown workspace route' });
@@ -47,6 +67,9 @@ export async function startWorkspaceServer({ controller, config, port = config.p
         focusPage: () => controller.service.focusPage({ ...controller.admin(projectId), pageId: input.pageId }),
         selectRegion: () => controller.service.selectRegion({ ...controller.admin(projectId), pageId: input.pageId }),
         reviewClickTarget: () => controller.reviewClickTarget(projectId, input),
+        invitePerson: () => { const invited = controller.inbox.invite(input); return { ...invited, link: `${origin}/inbox#${invited.token}` }; },
+        proposeReview: () => controller.inbox.propose(projectId, input),
+        inbox: async () => ({ people: controller.inbox.people(), items: await controller.inbox.list() }),
         clickReviewedTarget: () => controller.clickReviewedTarget(projectId, input),
         capture: () => controller.capture(projectId, input), record: () => controller.record(projectId, input),
         repositoryRead: () => controller.readRepository(projectId, input),

@@ -1,0 +1,11 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Review inbox</title><link rel="stylesheet" href="/style.css"></head>
+<body><header><a class="brand" href="/inbox">review<span class="brand-mark">/</span><small>inbox</small></a><div class="header-actions"><span id="who" class="pill"></span></div></header>
+<div id="notice" role="status" aria-live="polite" hidden></div>
+<main>
+<section id="signed-out" class="welcome" hidden><div class="eyebrow">Review inbox</div><h1>Open your invitation link.</h1><p class="lede">Each person signs in with their own link and acts only as themselves.</p></section>
+<section id="inbox" hidden><div class="work-heading"><div><div class="eyebrow">Needs your look</div><h1 id="count"></h1></div></div>
+<p class="muted">You approve the exact image shown. Whoever acts next can only act while the browser confirms that image still holds.</p>
+<div id="items" class="inbox-items"></div>
+<h2 id="closed-heading" hidden>Closed</h2><div id="closed" class="inbox-items"></div></section>
+</main><footer>An approval covers one image. A changed page asks for a fresh look.</footer><script type="module" src="/inbox.js"></script></body></html>

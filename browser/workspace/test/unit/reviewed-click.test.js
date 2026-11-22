@@ -12,8 +12,15 @@ const baselineDigest = createHash('sha256').update(pixels).digest('hex');
 const evidence = { evidenceId: 'browser-only', documentId: 'document', surfaceId: 'surface', frameRevision: '8',
   deviceScaleFactor: 1, pixelWidth: 1, pixelHeight: 1, rgba: pixels.toString('base64'), baselineDigest };
 const rect = { x: 0, y: 0, width: 1, height: 1 };
-let wireResult = { admitted: false, reason: 'stale-compositor-revision' };
-const wire = { async send(method) {
+let wireResult = { admitted: false, delivered: false, reason: 'stale-compositor-revision' };
+const sessions = [];
+const wire = { async send(method, args, sessionId) {
+  // Each review runs in its own browser session on the page's target.
+  if (method === 'Target.attachToTarget') { sessions.push(`review-${sessions.length}`); return { sessionId: sessions.at(-1) }; }
+  if (method === 'Target.detachFromTarget') return {};
+  assert.match(sessionId, /^review-/, `${method} must use the review's own session`);
+  if (method === 'Runtime.evaluate') return { result: { value: '1x1' } };
+  if (method === 'Input.getVisualEvidenceStatus') return { holds: true, reason: 'holds', verifiedRevision: '8' };
   if (method === 'Input.captureVisualEvidence') return evidence;
   if (method === 'Page.getFrameTree') return { frameTree: { frame: { loaderId: 'load' } } };
   assert.equal(method, 'Input.dispatchReviewedClick');
@@ -21,7 +28,7 @@ const wire = { async send(method) {
   return wireResult;
 } };
 const cdp = createCdpAdapter({});
-cdp._workspaces.set('work', { cdp: wire, pages: new Map([['main', { sessionId: 'session' }]]) });
+cdp._workspaces.set('work', { cdp: wire, pages: new Map([['main', { sessionId: 'session', targetId: 'target' }]]) });
 const frame = { loaderId: 'load', grantId: 'pixels', sessionId: 'capture', surfaceId: 'selected', bindingDigest: 'bound',
   binding: { deviceScaleFactor: 1, viewportRect: rect } };
 const bitmap = { format: 'compositor-element-canonical-srgb-rgba8-v2', width: 1, height: 1, tileSize: 64, hashes: [baselineDigest] };
@@ -33,8 +40,14 @@ await assert.rejects(prepare(), /pixels differ/);
 assert.equal((await cdp.executeReviewedClick('work', 'main', first.binding.id)).admitted, false);
 bitmap.hashes = [baselineDigest];
 const revoked = await prepare();
+// Reviews in other slots stay open beside it and report their own status.
+const beside = await cdp.prepareReviewedClick('work', 'main', '#name', snap, undefined, 'item-2');
+assert.equal((await cdp.reviewedClickStatus('work', 'main', revoked.binding.id)).holds, true);
+assert.equal((await cdp.reviewedClickStatus('work', 'main', beside.binding.id)).holds, true);
+assert.notEqual(revoked.binding.id, beside.binding.id);
 cdp.invalidateReviewedClicks('work', 'pixels');
 assert.equal((await cdp.executeReviewedClick('work', 'main', revoked.binding.id)).reason, 'review-expired');
+assert.equal((await cdp.reviewedClickStatus('work', 'main', beside.binding.id)).reason, 'review-expired');
 
 const root = mkdtempSync(join(tmpdir(), 'fawn-reviewed-input-'));
 const config = structuredClone(loadServiceConfig());
@@ -71,10 +84,10 @@ try {
   const reviewed = await observe();
   assert.equal(reviewed.reviewedRgba, evidence.rgba);
   await assert.rejects(act(reviewed, 'wrong-target', 'hemail'), /only a click on that selected region|unknown-target/);
-  wireResult = { admitted: false, reason: 'stale-compositor-revision' };
+  wireResult = { admitted: false, delivered: false, reason: 'stale-compositor-revision' };
   const refused = await act(reviewed, 'late-change');
   assert.equal(refused.outcome, 'failed'); assert.equal(refused.outcomeBasis, wireResult.reason);
-  wireResult = { admitted: true };
+  wireResult = { admitted: true, delivered: true, reason: 'delivered' };
   const accepted = await act(await observe(), 'fresh');
   assert.equal(accepted.outcome, 'completed'); assert.equal(accepted.outcomeBasis, 'reviewed-input-admitted');
   wireResult = Error('connection lost');
