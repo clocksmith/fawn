@@ -116,7 +116,8 @@ function observationBase(workspace, recorded, sinceVersion) {
   const previous = workspace.observations.get(sinceVersion);
   for (const [selector, frame] of Object.entries(recorded.frameEvidence ?? {})) {
     const prior = previous?.frameEvidence?.[selector];
-    if (!prior || prior.loaderId !== frame.loaderId || prior.surfaceId !== frame.surfaceId
+    if (!prior || !frame.bindingDigest || prior.bindingDigest !== frame.bindingDigest
+      || prior.loaderId !== frame.loaderId || prior.surfaceId !== frame.surfaceId
       || prior.sessionId !== frame.sessionId || prior.grantRevision !== frame.grantRevision || prior.transport !== frame.transport) return null;
   }
   return previous && previous.url === recorded.url && previous.ownerGeneration === recorded.ownerGeneration
@@ -620,7 +621,8 @@ class WorkspaceService {
       throw error;
     });
     const latest = snapshot.frameEvidence?.[selected];
-    if (selected && (earlier.loaderId !== latest?.loaderId || earlier.surfaceId !== latest?.surfaceId)) {
+    if (selected && (!earlier.bindingDigest || earlier.bindingDigest !== latest?.bindingDigest
+      || earlier.loaderId !== latest.loaderId || earlier.surfaceId !== latest.surfaceId)) {
       throw workspaceError(REJECTION_CODES.STALE_OBSERVATION, 'The captured surface changed before dispatch');
     }
     readGrant(workspace, request, snapshot.url, this.#nowMs());

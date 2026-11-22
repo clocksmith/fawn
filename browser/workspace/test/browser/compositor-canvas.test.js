@@ -95,7 +95,16 @@ try {
       const { width, height } = original.frameEvidence['#surface'];
       assert.ok(width > 0 && width <= 256 && width === height * 2);
       assert.equal(lastMetric.frameHostCopyBytes, width * height * 4);
-      assert.ok(original.frameEvidence['#surface'].loaderId);
+      const originalFrame = original.frameEvidence['#surface'];
+      assert.equal(originalFrame.binding.pageId, 'main');
+      assert.equal(originalFrame.binding.selector, '#surface');
+      assert.equal(originalFrame.binding.surfaceId, originalFrame.surfaceId);
+      assert.equal(originalFrame.binding.loaderId, originalFrame.loaderId);
+      assert.equal(originalFrame.binding.deviceScaleFactor, await evaluate(() => window.devicePixelRatio));
+      assert.deepEqual(originalFrame.binding.viewportRect, await evaluate(() => {
+        const { x, y, width, height } = document.querySelector('#surface').getBoundingClientRect();
+        return { x, y, width, height };
+      }));
       assert.ok(Number.isSafeInteger(original.frameEvidence['#surface'].mediaTimestampUs));
       // The sibling occludes half the chosen canvas on the compositor. Its
       // color is outside the grant and must not enter the captured pixels.
@@ -161,6 +170,12 @@ try {
         assert.equal(result.neverDispatched?.code, 'stale-observation');
         assert.equal(buttonText, 'ack');
       }
+      const beforeMove = await observe();
+      await evaluate(() => { document.body.style.transform = 'translateX(8px)'; });
+      const moved = await observe(beforeMove.observationVersion);
+      assert.notEqual(moved.frameEvidence['#surface'].bindingDigest, beforeMove.frameEvidence['#surface'].bindingDigest);
+      assert.equal(moved.visualChanges['#surface'].baseline, 'new');
+      assert.equal((await (await submit(beforeMove, 'stale-position')).result).neverDispatched?.code, 'stale-observation');
       const beforeReplacement = await observe();
       await evaluate(() => {
         const old = document.querySelector('canvas'), copy = old.cloneNode();

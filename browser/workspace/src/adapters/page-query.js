@@ -384,9 +384,10 @@ function snapshotArgs(config, { regions = [], regionGroups = [], outline = false
 
 /** A selected canvas also binds its bitmap. Unreadable regions cannot authorize an action. */
 function regionDigest(region) {
-  if (region.count !== 1 || region.bitmap === null) return null;
+  if (region.count !== 1 || region.bitmap === null || (region.frame && !region.frame.bindingDigest)) return null;
   return sha256Hex(canonicalJson({ html: region.html, values: region.values,
-    ...(region.bitmap ? { bitmap: region.bitmap } : {}) }));
+    ...(region.bitmap ? { bitmap: region.bitmap } : {}),
+    ...(region.frame ? { captureBinding: region.frame.bindingDigest } : {}) }));
 }
 
 function elementArgs(selector) {
