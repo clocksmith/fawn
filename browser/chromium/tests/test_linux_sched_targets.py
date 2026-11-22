@@ -140,8 +140,14 @@ def run(args: argparse.Namespace) -> None:
                           [*common, "--policy=" + mode, "--operation=" + operation],
                           mode == "scoped"))
     for name, flags in (
+        ("wayland", ["--use-webgpu-runtime=doe", "--ozone-platform=wayland", "--expect-selected"]),
+        ("headless", ["--use-webgpu-runtime=doe", "--ozone-platform=headless", "--expect-selected"]),
+    ):
+        cases.append((name, binary, ["--type=gpu-process", *flags,
+                                    "--policy=scoped", "--operation=sibling"], True))
+    for name, flags in (
         ("native-dawn", ["--use-webgpu-runtime=dawn", "--ozone-platform=x11"]),
-        ("wayland", ["--use-webgpu-runtime=doe", "--ozone-platform=wayland"]),
+        ("unsupported-ozone", ["--use-webgpu-runtime=doe", "--ozone-platform=cast"]),
         ("vulkan", ["--use-webgpu-runtime=doe", "--ozone-platform=x11", "--use-angle=vulkan"]),
         ("software", ["--use-webgpu-runtime=doe", "--ozone-platform=x11", "--use-angle=swiftshader"]),
         ("disabled", ["--use-webgpu-runtime=doe", "--ozone-platform=x11", "--disable-webgpu-doe"]),
