@@ -28,7 +28,7 @@ const browserConfig = loadClientServiceConfig({ browserChannel: 'fawn', browserC
   headless: false, compositorTransport: 'stock-i420' });
 const site = await openApprovalsSite();
 let server, controller, service, adapter;
-const report = { flows: [], counts: { failedCaptures: 0, staleApprovals: 0, refusedFinishes: 0, unsafeDeliveries: 0 } };
+const report = { flows: [], counts: { failedCaptures: 0, staleApprovals: 0, refusedFinishes: 0, unsafeDeliveries: 0, declinedNavigations: 0 } };
 try {
   service = await WorkspaceService.open({ stateDir: join(root, 'service'), config: browserConfig,
     createAdapter(opts) { adapter = createCdpAdapter(opts); return adapter; } });
@@ -65,13 +65,31 @@ try {
 
   // The scripted stand-in for the agent opens the invoice and files one item for
   // review. No model is called.
+  // The workspace declines a navigation as stale when the page changed after it
+  // was observed (a receipt appearing, for one), and says so in the returned
+  // record. Repeat it then; never continue on the old page.
+  async function open(invoiceId) {
+    for (let attempt = 0; attempt < 5; attempt++) {
+      const result = await command('navigate', { pageId: 'main', url: site.login(invoiceId) });
+      if (result.outcome === 'completed') {
+        assert.equal(await evaluate('location.pathname'), '/approvals/' + invoiceId);
+        return;
+      }
+      assert.equal(result.neverDispatched?.code, 'stale-observation', JSON.stringify(result).slice(0, 400));
+      report.counts.declinedNavigations++;
+      await wait(100);
+    }
+    throw Error('navigation to ' + invoiceId + ' was declined five times');
+  }
   async function prepare(invoiceId, title) {
-    await command('navigate', { pageId: 'main', url: site.login(invoiceId) });
+    await open(invoiceId);
     await command('focusPage', { pageId: 'main' });
     const { cdp, sessionId } = adapter._entry({ workspaceId: projectId, pageId: 'main' });
     const { frameTree: { frame } } = await cdp.send('Page.getFrameTree', {}, sessionId);
     const rect = await evaluate(`(() => { const r = document.querySelector('#approve').getBoundingClientRect();
       return { x: r.x, y: r.y, width: r.width, height: r.height }; })()`);
+    // The stand-in files exactly what it prepared: the invoice it was asked for.
+    assert.match(await evaluate(`document.querySelector('#approve').dataset.summary`), new RegExp(invoiceId + '$'));
     try {
       return await command('proposeReview', { pageId: 'main', selector: '#approve', title,
         completion: { completedWhen: [{ kind: 'element-present', selector: '#approve #receipt' }] },
