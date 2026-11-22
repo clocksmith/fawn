@@ -26,7 +26,9 @@ const root = mkdtempSync(join(tmpdir(), 'review-inbox-'));
 const clientConfig = JSON.parse(readFileSync(new URL('../../../../config/fawn-workspace-client.json', import.meta.url)));
 const browserConfig = loadClientServiceConfig({ browserChannel: 'fawn', browserConfig: profile,
   headless: false, compositorTransport: 'stock-i420' });
-const site = await openApprovalsSite();
+// FAWN_INBOX_CONTROL=dom runs the same flows against an ordinary button element.
+const control = process.env.FAWN_INBOX_CONTROL === 'dom' ? 'dom' : 'canvas';
+const site = await openApprovalsSite({ control });
 let server, controller, service, adapter;
 const report = { flows: [], counts: { failedCaptures: 0, staleApprovals: 0, refusedFinishes: 0, unsafeDeliveries: 0, declinedNavigations: 0 } };
 try {
