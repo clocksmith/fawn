@@ -19,6 +19,8 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v7
+      - name: Check Fawn and Doe workspace independence
+        run: python3 browser/chromium/scripts/check-workspace-independence.py
       - name: Build and consume the C compiler shared library
         run: |
           make -C runtime/c/compiler -j2 build/native_consumer
