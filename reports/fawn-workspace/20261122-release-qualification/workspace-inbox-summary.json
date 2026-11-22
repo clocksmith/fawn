@@ -1,0 +1,90 @@
+{
+  "workspace": {
+    "dawn": {
+      "runs": 25,
+      "passed": 25,
+      "captureRefusalsRecovered": 25,
+      "staleSiteAttempts": 0,
+      "freshWrites": 25
+    },
+    "doe": {
+      "runs": 25,
+      "passed": 25,
+      "captureRefusalsRecovered": 25,
+      "staleSiteAttempts": 0,
+      "freshWrites": 25
+    }
+  },
+  "inbox": {
+    "dawn": {
+      "runs": 25,
+      "passed": 25,
+      "failedCaptures": 0,
+      "staleApprovals": 25,
+      "refusedFinishes": 50,
+      "unsafeDeliveries": 0,
+      "declinedNavigations": 0,
+      "browserDeliveries": 75,
+      "applicationCommits": 75,
+      "applicationAttempts": 75,
+      "reviewedAgain": 50,
+      "msToAuthorizedOutcome": {
+        "unrelated-motion-holds-across-handoff": {
+          "min": 2851,
+          "median": 2923,
+          "max": 2972
+        },
+        "revised-amount-needs-fresh-look": {
+          "min": 1661,
+          "median": 1737,
+          "max": 1758
+        },
+        "lookalike-target-swap-cancelled": {
+          "min": 1461,
+          "median": 1482,
+          "max": 1551
+        }
+      }
+    },
+    "doe": {
+      "runs": 25,
+      "passed": 25,
+      "failedCaptures": 0,
+      "staleApprovals": 25,
+      "refusedFinishes": 50,
+      "unsafeDeliveries": 0,
+      "declinedNavigations": 0,
+      "browserDeliveries": 75,
+      "applicationCommits": 75,
+      "applicationAttempts": 75,
+      "reviewedAgain": 50,
+      "msToAuthorizedOutcome": {
+        "unrelated-motion-holds-across-handoff": {
+          "min": 2856,
+          "median": 2919,
+          "max": 2981
+        },
+        "revised-amount-needs-fresh-look": {
+          "min": 1666,
+          "median": 1692,
+          "max": 1784
+        },
+        "lookalike-target-swap-cancelled": {
+          "min": 1464,
+          "median": 1487,
+          "max": 1560
+        }
+      }
+    }
+  },
+  "inboxFirstRunBeforeHarnessFix": {
+    "dawn": {
+      "passed": 22,
+      "stale page after a declined navigation the test ignored": 3
+    },
+    "doe": {
+      "passed": 22,
+      "stale page after a declined navigation the test ignored": 3
+    }
+  }
+}

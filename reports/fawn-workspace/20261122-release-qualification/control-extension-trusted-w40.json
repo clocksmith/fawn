@@ -1,0 +1,68 @@
+{
+  "schema": "fawn.reviewed-click-extension-control/v1",
+  "arm": "extension-trusted",
+  "chromeSha256": "148d641a1545dcd90c68e7e71958a39d2c556d1ef1af2b9c74defbebeb9565ae",
+  "harnessSha256": "9d06e4e54b849dd44f7f3cd6b9d57a2b8d750b08c3ac04eac72139dc3b310de1",
+  "extensionSha256": "73b22758d08dd0b8879bc2017940b6e0908ae24b81ca115312c0cc7b8e81ea62",
+  "trialsPerAttack": 300,
+  "changeWindowMs": 40,
+  "twoFramesMs": 34,
+  "attacks": {
+    "none": {
+      "trials": 300,
+      "delivered": 300,
+      "refused": {},
+      "unsafe": 0,
+      "deliveredToLookalike": 0,
+      "deliveredAfterChangedFrame": 0,
+      "deliveredWithinTwoFramesOfChange": 0,
+      "deliveredBeforeChange": 300,
+      "untrustedDeliveries": 0,
+      "clickMs": {
+        "n": 300,
+        "p50": 34.24014499999976,
+        "p99": 36.18805799999973
+      },
+      "unnecessaryRefusalRate": 0
+    },
+    "pixels": {
+      "trials": 300,
+      "delivered": 74,
+      "refused": {
+        "stale-pixels": 226
+      },
+      "unsafe": 0,
+      "deliveredToLookalike": 0,
+      "deliveredAfterChangedFrame": 0,
+      "deliveredWithinTwoFramesOfChange": 30,
+      "deliveredBeforeChange": 44,
+      "untrustedDeliveries": 0,
+      "clickMs": {
+        "n": 74,
+        "p50": 33.096667000005255,
+        "p99": 35.48927900000126
+      }
+    },
+    "target": {
+      "trials": 300,
+      "delivered": 64,
+      "refused": {
+        "target-changed": 236
+      },
+      "unsafe": 9,
+      "deliveredToLookalike": 9,
+      "deliveredAfterChangedFrame": 0,
+      "deliveredWithinTwoFramesOfChange": 0,
+      "deliveredBeforeChange": 55,
+      "untrustedDeliveries": 0,
+      "clickMs": {
+        "n": 64,
+        "p50": 33.16991500000586,
+        "p99": 34.814746999996714
+      }
+    }
+  },
+  "browserVersion": "158.0.8108.0",
+  "unsafeDeliveries": 9,
+  "completed": true
+}

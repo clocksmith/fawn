@@ -262,6 +262,25 @@ makes Viz fall back to software compositing, and no arm gets a WebGPU adapter,
 so this does not compare Dawn with Doe. See
 `reports/fawn-workspace/20261122-pixel-verified-review/decision.json`.
 
+### Release qualification and the extension gate
+
+`reports/fawn-workspace/20261122-release-qualification/release-receipt.json` records the non-component
+build of this patch: every reviewed-click case on the cpu, dawn and doe arms, the load test, the workspace
+and inbox repeats, and a comparison with an ordinary extension. The pass criteria for that comparison were
+committed in `extension-gate-criteria.json` before any controlled-ordering result.
+
+```sh
+node browser/chromium/tests/reviewed-click-extension-control.mjs --arm fawn --browser "$FAWN_BROWSER" \
+  --out "$FAWN_JSON" --attacks "" --forced-trials 10
+xvfb-run -a node browser/chromium/tests/reviewed-click-extension-control.mjs --arm extension-fenced \
+  --browser "$FAWN_BROWSER" --out "$EXTENSION_JSON" --attacks "" --forced-trials 10
+```
+
+`tests/extension-control/` is the control: the strongest reviewed click an ordinary MV3 extension can give,
+in three modes. It runs in the same binary using only stock extension APIs. On the frozen requirements the
+fenced mode matches the browser-owned path. The browser-owned path alone identifies the recipient inside a
+closed shadow root, closes a review on a one-frame change, and needs no debugger permission.
+
 ### Qualification
 
 `--fawn-reviewed-input-barriers=DIR` enables qualification pause points. They

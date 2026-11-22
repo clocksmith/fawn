@@ -46,10 +46,12 @@ self.armPause = () => {
   pause.reached = new Promise(resolve => { pause.reach = resolve; });
   pause.released = new Promise(resolve => { pause.release = resolve; });
   self.__pause = pause;
+  self.__pauseHandle = pause;
   return true;
 };
-self.pauseReached = () => self.__pause.reached.then(() => true);
-self.pauseRelease = () => { self.__pause.release(); return true; };
+// The harness keeps its own handle: a click clears __pause when it stops there.
+self.pauseReached = () => self.__pauseHandle.reached.then(() => true);
+self.pauseRelease = () => { self.__pauseHandle.release(); return true; };
 
 // mode 'trusted': re-check, then a trusted click through chrome.debugger.
 // mode 'fenced': the same trusted click, with the content-script fence armed in

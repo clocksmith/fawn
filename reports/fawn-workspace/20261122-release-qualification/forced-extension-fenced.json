@@ -1,0 +1,177 @@
+{
+  "schema": "fawn.reviewed-click-extension-control/v1",
+  "arm": "extension-fenced",
+  "chromeSha256": "148d641a1545dcd90c68e7e71958a39d2c556d1ef1af2b9c74defbebeb9565ae",
+  "harnessSha256": "677d33f64715c677055c641c8ece7078fab721f147f9e3442d5039b1d975c5d9",
+  "extensionSha256": "0b4762c900677a79ae70b4dc3829561aba220a7a3e0bea9329fbd7a4f04115be",
+  "trialsPerAttack": 150,
+  "changeWindowMs": 150,
+  "twoFramesMs": 34,
+  "attacks": {},
+  "browserVersion": "158.0.8108.0",
+  "extensionBinds": {
+    "canvasControl": "canvas#approve",
+    "closedShadowControl": "div#widget"
+  },
+  "forced": {
+    "unchanged-control": {
+      "trials": 10,
+      "delivered": 10,
+      "deliveredToReviewedTarget": 10,
+      "deliveredToLookalike": 0,
+      "deliveredWhileChangedPixelsShowing": 0,
+      "untrustedDeliveries": 0,
+      "refused": {},
+      "statusBeforeClick": {},
+      "observedAs": {
+        "delivered": 10
+      },
+      "applicationCommits": 10,
+      "commitsOfReviewedAmount": 10,
+      "commitsOfChangedAmount": 0,
+      "commitsByLookalike": 0
+    },
+    "unchanged-control-paused-after-final-check": {
+      "trials": 10,
+      "delivered": 10,
+      "deliveredToReviewedTarget": 10,
+      "deliveredToLookalike": 0,
+      "deliveredWhileChangedPixelsShowing": 0,
+      "untrustedDeliveries": 0,
+      "refused": {},
+      "statusBeforeClick": {},
+      "observedAs": {
+        "delivered": 10
+      },
+      "applicationCommits": 10,
+      "commitsOfReviewedAmount": 10,
+      "commitsOfChangedAmount": 0,
+      "commitsByLookalike": 0
+    },
+    "pixels-changed-and-still-showing-before-click": {
+      "trials": 10,
+      "delivered": 0,
+      "deliveredToReviewedTarget": 0,
+      "deliveredToLookalike": 0,
+      "deliveredWhileChangedPixelsShowing": 0,
+      "untrustedDeliveries": 0,
+      "refused": {
+        "stale-pixels": 10
+      },
+      "statusBeforeClick": {},
+      "observedAs": {
+        "stale-pixels": 10
+      },
+      "applicationCommits": 0,
+      "commitsOfReviewedAmount": 0,
+      "commitsOfChangedAmount": 0,
+      "commitsByLookalike": 0
+    },
+    "one-frame-pixel-change-reverted-before-click": {
+      "trials": 10,
+      "delivered": 10,
+      "deliveredToReviewedTarget": 10,
+      "deliveredToLookalike": 0,
+      "deliveredWhileChangedPixelsShowing": 0,
+      "untrustedDeliveries": 0,
+      "refused": {},
+      "statusBeforeClick": {},
+      "observedAs": {
+        "delivered": 10
+      },
+      "applicationCommits": 10,
+      "commitsOfReviewedAmount": 10,
+      "commitsOfChangedAmount": 0,
+      "commitsByLookalike": 0
+    },
+    "pixels-changed-after-final-check": {
+      "trials": 10,
+      "delivered": 10,
+      "deliveredToReviewedTarget": 10,
+      "deliveredToLookalike": 0,
+      "deliveredWhileChangedPixelsShowing": 10,
+      "untrustedDeliveries": 0,
+      "refused": {},
+      "statusBeforeClick": {},
+      "observedAs": {
+        "delivered": 10
+      },
+      "applicationCommits": 10,
+      "commitsOfReviewedAmount": 0,
+      "commitsOfChangedAmount": 10,
+      "commitsByLookalike": 0
+    },
+    "target-swapped-after-final-check": {
+      "trials": 10,
+      "delivered": 0,
+      "deliveredToReviewedTarget": 0,
+      "deliveredToLookalike": 0,
+      "deliveredWhileChangedPixelsShowing": 0,
+      "untrustedDeliveries": 0,
+      "refused": {
+        "target-changed": 10
+      },
+      "statusBeforeClick": {},
+      "observedAs": {
+        "target-changed": 10
+      },
+      "applicationCommits": 0,
+      "commitsOfReviewedAmount": 0,
+      "commitsOfChangedAmount": 0,
+      "commitsByLookalike": 0
+    },
+    "one-frame-target-swap-removed-after-final-check": {
+      "trials": 10,
+      "delivered": 10,
+      "deliveredToReviewedTarget": 10,
+      "deliveredToLookalike": 0,
+      "deliveredWhileChangedPixelsShowing": 0,
+      "untrustedDeliveries": 0,
+      "refused": {},
+      "statusBeforeClick": {},
+      "observedAs": {
+        "delivered": 10
+      },
+      "applicationCommits": 10,
+      "commitsOfReviewedAmount": 10,
+      "commitsOfChangedAmount": 0,
+      "commitsByLookalike": 0
+    },
+    "closed-shadow-unchanged-control-paused-after-final-check": {
+      "trials": 10,
+      "delivered": 10,
+      "deliveredToReviewedTarget": 10,
+      "deliveredToLookalike": 0,
+      "deliveredWhileChangedPixelsShowing": 0,
+      "untrustedDeliveries": 0,
+      "refused": {},
+      "statusBeforeClick": {},
+      "observedAs": {
+        "delivered": 10
+      },
+      "applicationCommits": 10,
+      "commitsOfReviewedAmount": 10,
+      "commitsOfChangedAmount": 0,
+      "commitsByLookalike": 0
+    },
+    "closed-shadow-target-swapped-after-final-check": {
+      "trials": 10,
+      "delivered": 10,
+      "deliveredToReviewedTarget": 0,
+      "deliveredToLookalike": 10,
+      "deliveredWhileChangedPixelsShowing": 0,
+      "untrustedDeliveries": 0,
+      "refused": {},
+      "statusBeforeClick": {},
+      "observedAs": {
+        "delivered": 10
+      },
+      "applicationCommits": 10,
+      "commitsOfReviewedAmount": 0,
+      "commitsOfChangedAmount": 0,
+      "commitsByLookalike": 10
+    }
+  },
+  "unsafeDeliveries": 0,
+  "completed": true
+}

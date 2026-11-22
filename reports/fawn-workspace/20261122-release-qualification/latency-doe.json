@@ -1,0 +1,140 @@
+{
+  "schema": "fawn.reviewed-input-latency/v1",
+  "arm": "doe",
+  "flags": [
+    "--use-webgpu-runtime=doe",
+    "--doe-webgpu-library-path=$FAWN_QUAL_ROOT/qual-80-83-20261121/c-stage/lib/libwebgpu_doe_c.so",
+    "--gpu-sandbox-start-early",
+    "--use-gl=angle",
+    "--use-angle=swiftshader",
+    "--disable-accelerated-2d-canvas",
+    "--ozone-platform=headless",
+    "--force-device-scale-factor=1"
+  ],
+  "chromeSha256": "148d641a1545dcd90c68e7e71958a39d2c556d1ef1af2b9c74defbebeb9565ae",
+  "libcontentSha256": null,
+  "libvizServiceSha256": null,
+  "harnessSha256": "8ba14e129c271bf38471189ed1c3ee1531cce2357c7ecbfb762b2a3194ec98c1",
+  "patchSha256": "b0647891d0091875fef456199de65a6c399b190d74105f8ff3b87ad22401e645",
+  "doeLibrarySha256": "f2d1d260739fb65e4e8a5d5897ded8f0700772ea7582c5c3c2ec5ff6a04f18f8",
+  "reviewedPixels": 2304,
+  "bytesPerCopy": 9216,
+  "browserVersion": "158.0.8108.0",
+  "gpu": {
+    "devices": [
+      {
+        "vendorId": 4098,
+        "deviceId": 5510,
+        "vendorString": "",
+        "deviceString": ""
+      }
+    ],
+    "compositing": "disabled_software",
+    "rasterization": "disabled_software",
+    "webgpu": "disabled_off"
+  },
+  "webgpuAdapter": false,
+  "memoryBefore": {
+    "browser": null,
+    "gpu": 145874944
+  },
+  "pacingIdle": {
+    "frames": 600,
+    "fps": 60,
+    "frameMs": {
+      "n": 599,
+      "p50": 16.699999999999818,
+      "p90": 16.700000000000728,
+      "p99": 16.800000000000182,
+      "max": 16.80000000000109,
+      "mean": 16.665943238731217
+    },
+    "longFrames": 0
+  },
+  "pacingReviewOpen": {
+    "frames": 600,
+    "fps": 60,
+    "frameMs": {
+      "n": 599,
+      "p50": 16.69999999999891,
+      "p90": 16.700000000000728,
+      "p99": 16.80000000000109,
+      "max": 16.80000000000109,
+      "mean": 16.665943238731217
+    },
+    "longFrames": 0
+  },
+  "memoryReviewOpen": {
+    "browser": null,
+    "gpu": 152055808
+  },
+  "memoryAfter": {
+    "browser": null,
+    "gpu": 154562560
+  },
+  "runtimeMapped": {
+    "gpuPid": 931582,
+    "doeLibrary": true
+  },
+  "trustedClicksAtPage": 301,
+  "trials": 300,
+  "delivered": 300,
+  "refused": {},
+  "refusals": {
+    "capture": 0,
+    "staleClick": 0,
+    "admittedThenCancelled": 0
+  },
+  "unnecessaryRefusalRate": 0,
+  "captureMs": {
+    "n": 300,
+    "p50": 15.590367999997397,
+    "p90": 16.570457999998325,
+    "p99": 17.492017000000487,
+    "max": 17.805950000001758,
+    "mean": 15.26837591666658
+  },
+  "clickMs": {
+    "n": 300,
+    "p50": 34.365517000002,
+    "p90": 36.629869000000326,
+    "p99": 38.3810940000003,
+    "max": 38.51799200000096,
+    "mean": 34.72107937333329
+  },
+  "phasesMs": {
+    "validatedToAdmission": {
+      "n": 301,
+      "p50": 0.02,
+      "p90": 0.043,
+      "p99": 0.09,
+      "max": 0.116,
+      "mean": 0.024548172757475076
+    },
+    "admissionToVerdict": {
+      "n": 301,
+      "p50": 1.125,
+      "p90": 1.632,
+      "p99": 2.23,
+      "max": 2.716,
+      "mean": 1.2034485049833896
+    },
+    "verdictToDelivery": {
+      "n": 301,
+      "p50": 0.584,
+      "p90": 3.085,
+      "p99": 4.211,
+      "max": 4.367,
+      "mean": 1.1064352159468442
+    }
+  },
+  "vizCopies": {
+    "references": 301,
+    "verifications": 1203,
+    "mismatches": 0,
+    "readbackBytes": 13860864,
+    "gpuBlitsAndDriverTransfers": "unknown"
+  },
+  "correct": true,
+  "passed": true
+}

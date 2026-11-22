@@ -33,7 +33,7 @@ const { values } = parseArgs({ options: {
   browser: { type: 'string' }, out: { type: 'string' }, arm: { type: 'string' },
   trials: { type: 'string', default: '150' }, 'window-ms': { type: 'string', default: '150' },
   attacks: { type: 'string', default: 'none,pixels,target' },
-  'forced-trials': { type: 'string', default: '0' },
+  'forced-trials': { type: 'string', default: '0' }, 'forced-only': { type: 'string', default: '' },
 } });
 const attacks = values.attacks.split(',').filter(Boolean);
 assert(attacks.every(a => ['none', 'pixels', 'target', 'flicker'].includes(a)), 'attacks are none, pixels, target, flicker');
@@ -94,13 +94,16 @@ const lookalike = () => { const d = document.createElement('div'); d.id = 'looka
   document.body.append(d); return d; };
 window.change = async kind => {
   if (kind === 'pixels') draw('$9,280.00');
-  if (kind === 'transient-pixels') { draw('$9,280.00'); await afterFrames(1); draw('$1,280.00'); }
+  // Two frame callbacks: the change is painted by the first frame and reverted
+  // in the second, so it is on screen for one frame. Reverting in the first
+  // callback would undo it before anything was painted.
+  if (kind === 'transient-pixels') { draw('$9,280.00'); await afterFrames(2); draw('$1,280.00'); }
   if (kind === 'target') lookalike();
   if (kind === 'shadow-target') { const d = document.createElement('div'); d.id = 'lookalike';
     d.style = 'position:absolute;left:0;top:0;width:320px;height:64px';
     d.onclick = event => window.trial?.commits.push({ record: 'lookalike', amount: null, trusted: event.isTrusted, at: performance.now() });
     inside.append(d); }
-  if (kind === 'transient-target') { const d = lookalike(); await afterFrames(1); d.remove(); }
+  if (kind === 'transient-target') { const d = lookalike(); await afterFrames(2); d.remove(); }
   window.trial.changedAt = performance.now();
   return afterFrames(3);
 };
@@ -230,7 +233,8 @@ try {
   ];
   if (implementation.bound) report.extensionBinds = { canvasControl: await implementation.bound(point), closedShadowControl: await implementation.bound(shadowPoint) };
   report.forced = {};
-  for (const [name, kind, paused, where] of forcedTrials > 0 ? FORCED : []) {
+  const only = values['forced-only'].split(',').filter(Boolean);
+  for (const [name, kind, paused, where] of forcedTrials > 0 ? FORCED.filter(([n]) => !only.length || only.includes(n)) : []) {
     const at = where === 'shadow' ? [shadowRect, shadowPoint] : [rect, point];
     // observedAs: what the implementation itself reported for the trial, which
     // shows whether and at which step it noticed the change. Application commits
