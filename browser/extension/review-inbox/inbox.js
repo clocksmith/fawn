@@ -17,10 +17,16 @@ const notice = text => { const element = find('[data-notice]'); element.textCont
 const PILLS = { pending: 'Waiting for approval', approved: 'Approved', finishing: 'Clicking…', blocked: 'Click blocked', refused: 'App refused',
   confirmed: 'Done', unconfirmed: 'Not confirmed' };
 const time = iso => new Date(iso).toLocaleTimeString();
-const picture = (png, caption) => {
-  const figure = node('figure'), image = node('img');
+// The image is shown at the size it had on the page, whatever the screen's pixel density. One wider than
+// the card scrolls sideways inside its own frame, and says so, so it is never shrunk until it cannot be read.
+const picture = (png, caption, width) => {
+  const figure = node('figure'), frame = node('div', null, 'shot'), image = node('img'), note = node('figcaption', caption);
   image.src = 'data:image/png;base64,' + png; image.alt = caption;
-  figure.append(image, node('figcaption', caption));
+  if (width) image.width = Math.round(width);
+  frame.tabIndex = 0;
+  const mark = () => { note.textContent = frame.scrollWidth > frame.clientWidth + 1 ? caption + '. Scroll sideways to see all of it.' : caption; };
+  image.addEventListener('load', mark); new ResizeObserver(mark).observe(frame);
+  frame.append(image); figure.append(frame, note);
   return figure;
 };
 let busy = false;
@@ -60,8 +66,8 @@ function card(item) {
 
   element.append(node('h3', 'What you saw'));
   const seen = node('div', null, 'seen');
-  seen.append(picture(item.image, `Captured at ${time(item.createdAt)}`));
-  if (item.check?.image) seen.append(picture(item.check.image, `Now, at ${time(item.check.at)}`));
+  seen.append(picture(item.image, `Captured at ${time(item.createdAt)}`, item.rect?.width));
+  if (item.check?.image) seen.append(picture(item.check.image, `Now, at ${time(item.check.at)}`, item.rect?.width));
   element.append(seen);
 
   element.append(node('h3', 'What changed since'));
