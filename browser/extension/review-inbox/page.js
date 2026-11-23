@@ -25,9 +25,11 @@ for (const type of ['pointerdown', 'mousedown', 'pointerup', 'mouseup', 'click',
 // the application's own signs of the result; without one the inbox can still
 // bind and deliver the click but cannot say what the application did.
 function describeTarget(element) {
-  const label = (element.innerText || element.value || element.getAttribute('aria-label') || element.title || '').trim().replace(/\s+/g, ' ').slice(0, 80);
+  const label = (element.innerText || element.value || element.getAttribute('aria-label') || element.title || '').trim().replace(/\s+/g, ' ');
   const form = element.form ?? element.closest?.('form') ?? null;
-  const summary = { control: label || element.tagName.toLowerCase(), lines: [], recipe: null };
+  // A long label is cut at a word and marked as cut; the picture of the button shows all of it.
+  const short = label.length > 80 ? label.slice(0, 80).replace(/\s+\S*$/, '') + '…' : label;
+  const summary = { control: short || element.tagName.toLowerCase(), lines: [], recipe: null };
   let action = null;
   // The attribute, not the property: a form control named "action" shadows `form.action`.
   const declared = form?.getAttribute('action');
@@ -44,7 +46,7 @@ function describeTarget(element) {
     summary.lines = [title, head ? `At commit ${head.slice(0, 10)}` : 'Head commit not shown', `Button: ${summary.control}`];
   } else {
     summary.title = `Click "${summary.control}"`;
-    summary.lines = [document.title.trim().slice(0, 140), action ? `Submits to ${action.origin}${action.pathname}` : 'Not a form submission'];
+    summary.lines = [`Button: ${summary.control}`, action ? `Submits to ${action.origin}${action.pathname}` : 'Not a form submission'];
   }
   return summary;
 }
@@ -57,7 +59,7 @@ function pick() {
     box.style.cssText = 'position:fixed;z-index:2147483647;pointer-events:none;border:2px solid #1a7f5a;background:#1a7f5a22;border-radius:3px;display:none';
     const hint = document.createElement('div');
     hint.textContent = 'Click the button you want approved. Esc cancels.';
-    hint.style.cssText = 'position:fixed;z-index:2147483647;pointer-events:none;left:12px;bottom:12px;padding:8px 12px;border-radius:6px;background:#12291c;color:#fff;font:13px system-ui,sans-serif';
+    hint.style.cssText = 'position:fixed;z-index:2147483647;pointer-events:none;left:12px;bottom:12px;max-width:calc(100vw - 24px);box-sizing:border-box;padding:8px 12px;border-radius:6px;background:#12291c;color:#fff;font:13px system-ui,sans-serif';
     document.documentElement.append(box, hint);
     // Only something a person can press can be approved; the rest of the page is not a target.
     const control = node => node?.closest?.('button, input[type=submit], input[type=button], input[type=image], a[href], summary, [role=button]') ?? null;
