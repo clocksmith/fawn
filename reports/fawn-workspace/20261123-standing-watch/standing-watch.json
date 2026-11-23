@@ -1,0 +1,318 @@
+{
+  "schema": "fawn.standing-watch/v1",
+  "consumer": "clocksmith/deco#82 (does the fork earn its place beside the extension) and clocksmith/deco#83 (the processor arm of a matched watch, before any Dawn or Doe arm)",
+  "question": "On one visible page drawn on a canvas, with twelve watched regions, which watcher sees every change, raises no false alarm, and what does it cost?",
+  "source": {
+    "harness": "browser/chromium/tests/standing-watch.mjs",
+    "harnessSha256AtDetectionRun": "0d76b7cd71b7146cd466023cf053ef6425091c5d61f7b7c97f0b4f69226f7506",
+    "harnessSha256AtCostRunsAndAsCommitted": "c56c5186ce1912e8ab5f75e74997ddf25de1c65b409dfa89feeba58a0afb9f55",
+    "harnessNote": "The committed harness adds the cost phase and moves the watcher page to module scope. The detection phases are otherwise the ones that ran.",
+    "chromeSha256": "148d641a1545dcd90c68e7e71958a39d2c556d1ef1af2b9c74defbebeb9565ae",
+    "browserVersion": "158.0.8108.0",
+    "rendering": "Headless, software rendering (SwiftShader), no hardware GPU, 32-core build host shared with other work.",
+    "startedAt": "2026-11-23T12:28:49.815Z",
+    "finishedAt": "2026-11-23T12:40:18.260Z"
+  },
+  "watchers": {
+    "fork": "One Fawn visual review per region (Input.captureVisualEvidence), each on its own debugging session of the same page. The compositor copies each region out of every frame it draws and compares it with the reviewed copy; the first difference is latched. The test asks for the verdict with Input.getVisualEvidenceStatus.",
+    "poll": "Page.captureScreenshot of the tile area as fast as it returns, decoded and compared region by region by the caller. This is the call an extension reaches through chrome.debugger.",
+    "stream": "The tab captured as video with getDisplayMedia in a second page, every delivered frame compared region by region there. This is the capture chrome.tabCapture gives an extension. No extension was installed."
+  },
+  "predictions": {
+    "writtenAt": "2026-11-23T12:28:49Z",
+    "writtenBy": "claude-fawn-1, after two 24-trial shake-out runs and before any 1,000-trial run",
+    "fork": {
+      "unchangedFalseAlarms": 0,
+      "lastingCaught": "1000 of 1000",
+      "lastingP50Ms": "45 to 50",
+      "alarmsOnOtherRegions": 0,
+      "oneFrameCaught": "1000 of 1000"
+    },
+    "poll": {
+      "unchangedFalseAlarms": 0,
+      "lastingCaught": "1000 of 1000",
+      "lastingP50Ms": "32 to 35",
+      "oneFrameCaught": "350 to 600 of 1000"
+    },
+    "stream": {
+      "unchangedFalseAlarms": 0,
+      "lastingCaught": "1000 of 1000",
+      "lastingP50Ms": "33 to 40",
+      "oneFrameCaught": "990 to 1000 of 1000, with at least one miss from a dropped frame",
+      "framesDelivered": "at least 95% of frames drawn"
+    },
+    "whatWouldCountAgainstTheFork": "If the stream catches every one-frame change, watching alone does not separate the fork from an extension in this test; the fork is also slower than both on lasting changes."
+  },
+  "predictionsSha256": "ba4d803b3dcaf51ba973c6aa021dabbc1f72405775a231a78fccc0002f41a7d3",
+  "results": {
+    "regions": 12,
+    "pixelsPerRegion": 15476,
+    "trialsPerCase": 1000,
+    "lastingChange": {
+      "fork": {
+        "caught": 1000,
+        "missed": 0,
+        "msFromChangeToVerdict": {
+          "n": 1000,
+          "min": 27.88,
+          "p50": 31.85,
+          "p95": 32.89,
+          "p99": 33.28,
+          "max": 33.98
+        },
+        "alarmsOnTheOtherElevenRegions": 0
+      },
+      "poll": {
+        "caught": 1000,
+        "missed": 0,
+        "msFromChangeToVerdict": {
+          "n": 1000,
+          "min": 28.72,
+          "p50": 33.24,
+          "p95": 34.87,
+          "p99": 35.7,
+          "max": 37.06
+        },
+        "alarmsOnTheOtherElevenRegions": 0
+      },
+      "stream": {
+        "caught": 1000,
+        "missed": 0,
+        "msFromChangeToVerdict": {
+          "n": 1000,
+          "min": 41.65,
+          "p50": 49.46,
+          "p95": 57.94,
+          "p99": 59.13,
+          "max": 59.91
+        },
+        "alarmsOnTheOtherElevenRegions": 0
+      }
+    },
+    "oneFrameChange": {
+      "fork": {
+        "caught": 1000,
+        "missed": 0
+      },
+      "poll": {
+        "caught": 427,
+        "missed": 573
+      },
+      "stream": {
+        "caught": 999,
+        "missed": 1
+      }
+    },
+    "unchangedFrames": {
+      "fork": {
+        "framesDrawnByThePage": 1000,
+        "falseAlarms": 0,
+        "framesVerifiedPerRegion": {
+          "n": 12,
+          "min": 999,
+          "p50": 1000,
+          "p95": 1000,
+          "p99": 1000,
+          "max": 1000
+        }
+      },
+      "poll": {
+        "framesDrawnByThePage": 1000,
+        "falseAlarms": 0,
+        "looks": 499
+      },
+      "stream": {
+        "framesDrawnByThePage": 1000,
+        "falseAlarms": 0,
+        "framesDelivered": 997
+      }
+    },
+    "askingTheForkForItsVerdictMs": {
+      "n": 467798,
+      "min": 0.05,
+      "p50": 0.06,
+      "p95": 0.1,
+      "p99": 0.22,
+      "max": 3.07
+    },
+    "oneScreenshotLookMs": {
+      "n": 5491,
+      "min": 27.55,
+      "p50": 33.24,
+      "p95": 34.94,
+      "p99": 36.01,
+      "max": 42.18
+    },
+    "whenAnotherPageIsInFront": {
+      "fork": {
+        "visibilityStateWhileHidden": "visible",
+        "whileHidden": [
+          "false:browser:page-hidden"
+        ],
+        "tileZeroChangedWhileHidden": "false:browser:page-hidden",
+        "afterReturning": [
+          "false:viz:pixels-changed",
+          "true:holds",
+          "true:holds",
+          "true:holds",
+          "true:holds",
+          "true:holds",
+          "true:holds",
+          "true:holds",
+          "true:holds",
+          "true:holds",
+          "true:holds",
+          "true:holds"
+        ]
+      },
+      "poll": {
+        "visibilityStateWhileHidden": "visible",
+        "look": "answered in 39 ms, 1 regions differ (tile 0 was changed while hidden)"
+      },
+      "stream": "not measured: the capture keeps the watched page drawing"
+    },
+    "pageFrameRate": {
+      "fork": [
+        60,
+        60
+      ],
+      "poll": [
+        60,
+        60
+      ],
+      "stream": [
+        60,
+        60
+      ],
+      "note": "frames per second without and with the watch"
+    },
+    "processorSecondsPerSecond": {
+      "runs": 3,
+      "secondsEach": 10,
+      "median": {
+        "none": {
+          "gpuProcess": 2.203,
+          "restOfBrowser": 0.109,
+          "pageFramesPerSecond": 60
+        },
+        "fork": {
+          "gpuProcess": 2.609,
+          "restOfBrowser": 0.114,
+          "pageFramesPerSecond": 60,
+          "addedOverNoWatch": 0.411
+        },
+        "poll": {
+          "gpuProcess": 2.305,
+          "restOfBrowser": 0.257,
+          "pageFramesPerSecond": 60,
+          "callerOutsideBrowser": 0.098,
+          "addedOverNoWatch": 0.348
+        },
+        "stream": {
+          "gpuProcess": 6.289,
+          "restOfBrowser": 0.26,
+          "pageFramesPerSecond": 60,
+          "addedOverNoWatch": 4.237
+        }
+      },
+      "allRuns": [
+        {
+          "seconds": 10,
+          "note": "Processor seconds used per second of wall time, software rendering.",
+          "none": {
+            "gpuProcess": 2.248,
+            "restOfBrowser": 0.115,
+            "pageFramesPerSecond": 60
+          },
+          "fork": {
+            "gpuProcess": 2.693,
+            "restOfBrowser": 0.116,
+            "pageFramesPerSecond": 60
+          },
+          "poll": {
+            "gpuProcess": 2.305,
+            "restOfBrowser": 0.254,
+            "pageFramesPerSecond": 59.9,
+            "callerOutsideBrowser": 0.098
+          },
+          "stream": {
+            "gpuProcess": 6.262,
+            "restOfBrowser": 0.26,
+            "pageFramesPerSecond": 60
+          }
+        },
+        {
+          "seconds": 10,
+          "note": "Processor seconds used per second of wall time, software rendering.",
+          "none": {
+            "gpuProcess": 2.203,
+            "restOfBrowser": 0.102,
+            "pageFramesPerSecond": 60
+          },
+          "fork": {
+            "gpuProcess": 2.587,
+            "restOfBrowser": 0.111,
+            "pageFramesPerSecond": 60
+          },
+          "poll": {
+            "gpuProcess": 2.28,
+            "restOfBrowser": 0.257,
+            "pageFramesPerSecond": 60,
+            "callerOutsideBrowser": 0.098
+          },
+          "stream": {
+            "gpuProcess": 6.289,
+            "restOfBrowser": 0.264,
+            "pageFramesPerSecond": 60.1
+          }
+        },
+        {
+          "seconds": 10,
+          "note": "Processor seconds used per second of wall time, software rendering.",
+          "none": {
+            "gpuProcess": 2.146,
+            "restOfBrowser": 0.109,
+            "pageFramesPerSecond": 59.9
+          },
+          "fork": {
+            "gpuProcess": 2.609,
+            "restOfBrowser": 0.114,
+            "pageFramesPerSecond": 60
+          },
+          "poll": {
+            "gpuProcess": 2.341,
+            "restOfBrowser": 0.263,
+            "pageFramesPerSecond": 60,
+            "callerOutsideBrowser": 0.094
+          },
+          "stream": {
+            "gpuProcess": 6.357,
+            "restOfBrowser": 0.252,
+            "pageFramesPerSecond": 60
+          }
+        }
+      ]
+    }
+  },
+  "predictionsAgainstResults": [
+    "Fork, lasting change: predicted 45 to 50 ms at the median, measured 31.9 ms. The prediction was wrong; the shake-out run it came from was slower.",
+    "Poll, one-frame change: predicted 350 to 600 of 1,000 caught, measured 427.",
+    "Stream, one-frame change: predicted 990 to 1,000 with at least one miss, measured 999.",
+    "Stream, lasting change: predicted 33 to 40 ms at the median, measured 49.5 ms. The prediction was wrong.",
+    "No watcher raised a false alarm, as predicted."
+  ],
+  "reading": [
+    "All three watchers caught every lasting change and none raised a false alarm, on unchanged frames or on the eleven regions that had not changed.",
+    "A change that lasts one frame separates them: the fork caught 1,000 of 1,000, the video stream 999, screenshot polling 427.",
+    "The fork looked at every frame the page drew (999 to 1,000 of 1,000 per region). The stream was handed 997 of 1,000. Polling looked at half.",
+    "With software rendering the fork's watch added about 0.4 processor cores and the video stream about 4.2. This does not carry over to a hardware GPU, where the stream is accelerated and the fork reads each region back from the GPU on every frame.",
+    "With another page in front, the fork says the watch is paused (browser:page-hidden) and reports the change when the page returns. It does not watch a hidden page."
+  ],
+  "limits": [
+    "One page, one synthetic canvas fixture, 12 regions of 146 by 106 pixels, software rendering. No real application and no hardware GPU.",
+    "The fork holds one review per debugging session and at most 16 per page surface, and refuses pages with child frames, a scale other than 1, or any platform but Linux.",
+    "The stream watcher ran in an ordinary second page, not an installed extension; an extension also shows the browser's tab-capture indicator.",
+    "A one-frame change is detected by a pixel difference in the stream with a tolerance, and by exact bytes in the fork and the poll.",
+    "Nothing here measures Doe or Dawn. The fork's comparison runs on the processor after a copy out of the frame."
+  ]
+}
