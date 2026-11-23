@@ -1,0 +1,14 @@
+{
+  "manifest_version": 3,
+  "name": "Fawn review inbox",
+  "version": "0.1.0",
+  "description": "Approve the exact button you saw. Fawn clicks only that, and tells you what the application did.",
+  "permissions": ["debugger", "tabs", "scripting", "storage", "sidePanel"],
+  "host_permissions": ["<all_urls>"],
+  "background": { "service_worker": "background.js" },
+  "action": { "default_title": "Open the review inbox" },
+  "side_panel": { "default_path": "inbox.html" },
+  "content_scripts": [
+    { "matches": ["<all_urls>"], "js": ["page.js"], "run_at": "document_start", "all_frames": true, "match_about_blank": true }
+  ]
+}
