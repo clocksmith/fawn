@@ -146,17 +146,17 @@ export class WorkspaceController {
       pageId, regions: [selector], compositorRegion: selector,
       compositorSession, reviewedClick: true, ...(reviewSlot ? { reviewSlot } : {}) });
     const target = obs.elements.find(element => element.selector === selector && element.handle);
-    if (!target || target.formAction) throw Error('Select an interactive region that accepts a plain click');
+    if (!target) throw Error('Select an interactive region that accepts a click');
     const { reviewedClick } = obs.frameEvidence[selector];
     return { pageId, observationVersion: obs.observationVersion, handle: target.handle,
-      ...reviewedClick, rgba: obs.reviewedRgba };
+      ...(target.formAction ? { submitsForm: true } : {}), ...reviewedClick, rgba: obs.reviewedRgba };
   }
 
-  async clickReviewedTarget(id, { pageId = 'main', observationVersion, handle, actionId, effect, completion, observationScope }) {
+  async clickReviewedTarget(id, { pageId = 'main', observationVersion, handle, actionId, effect, completion, observationScope, submitsForm = false }) {
     const owner = this.owner(id);
     if (owner.ownerId !== 'human') throw Error('Take over before issuing a human action');
     const admitted = await this.service.submitAction({ ...owner, pageId, observationVersion, actionId,
-      authorizedIntent: 'human', kind: 'click', target: { handle }, requireReviewedClick: true, effect, completion,
+      authorizedIntent: 'human', kind: submitsForm ? 'submit' : 'click', target: { handle }, requireReviewedClick: true, effect, completion,
       ...(observationScope ? { observationScope } : {}) });
     return admitted.result;
   }

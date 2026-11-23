@@ -75,7 +75,7 @@ export class ReviewInbox {
     const capture = await this.controller.reviewClickTarget(item.projectId, { pageId: item.pageId, selector: item.selector,
       ...(item.visibleRectangle ? { visibleRectangle: item.visibleRectangle } : {}), reviewSlot: item.slot });
     if (Buffer.byteLength(capture.rgba ?? '', 'base64') > MAX_REVIEW_BYTES) throw Error('Select a smaller region to review');
-    const review = { reviewId: capture.id, observationVersion: capture.observationVersion, handle: capture.handle,
+    const review = { reviewId: capture.id, observationVersion: capture.observationVersion, handle: capture.handle, submitsForm: capture.submitsForm === true,
       digest: capture.baselineDigest, frameRevision: capture.frameRevision, width: capture.pixelWidth, height: capture.pixelHeight,
       rgba: capture.rgba, capturedBy: by, capturedAt: new Date().toISOString() };
     item.reviews.push(review);
@@ -192,7 +192,7 @@ export class ReviewInbox {
     if (!item.approvals.some(a => a.reviewId === current.reviewId)) throw Error('No one has approved the current image yet');
     const actionId = `inbox-${item.itemId}-${item.attempts.length + 1}`;
     const result = await this.controller.clickReviewedTarget(item.projectId, { pageId: item.pageId,
-      observationVersion: current.observationVersion, handle: current.handle, actionId,
+      observationVersion: current.observationVersion, handle: current.handle, actionId, submitsForm: current.submitsForm === true,
       // Bound to the reviewed region, not to the newest page observation: other
       // items and the rest of the page move on while this one waits.
       observationScope: { kind: 'regions', selectors: [item.selector] },
