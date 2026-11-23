@@ -148,8 +148,8 @@ class PlaywrightWorkspaceAdapter {
     return this._page(workspaceId, pageId).url();
   }
 
-  async probeElement(workspaceId, selector, pageId = 'main', readRoots = null) {
-    return buildProbe(await this._page(workspaceId, pageId).evaluate(queryPage, { ...elementArgs(selector), readRoots }));
+  async probeElement(workspaceId, selector, pageId = 'main', readRoots = null, absentReadRoots = 'refuse') {
+    return buildProbe(await this._page(workspaceId, pageId).evaluate(queryPage, { ...elementArgs(selector), readRoots, absentReadRoots }));
   }
 
   /**

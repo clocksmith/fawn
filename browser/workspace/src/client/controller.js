@@ -139,9 +139,16 @@ export class WorkspaceController {
       kind: 'navigate', target: { url: target.href }, observationVersion: observation.observationVersion });
     return admitted.result;
   }
-  async reviewClickTarget(id, { pageId = 'main', selector, compositorSession = 'start', visibleRectangle, reviewSlot }) {
+  // `completionRegions` names up to four more regions the workspace may read to
+  // learn what the application did after the click (a status label, the page's
+  // main content). Each must exist as one element when the review is taken.
+  async reviewClickTarget(id, { pageId = 'main', selector, compositorSession = 'start', visibleRectangle, reviewSlot, completionRegions = [] }) {
     if (typeof selector !== 'string' || !selector) throw Error('Select the region to review');
-    const owner = await this.humanPage(id, pageId, [], [selector]);
+    if (!Array.isArray(completionRegions) || completionRegions.length > 4
+      || completionRegions.some(region => typeof region !== 'string' || !region || region.length > 256)) {
+      throw Error('Name at most four completion regions');
+    }
+    const owner = await this.humanPage(id, pageId, [], [...new Set([selector, ...completionRegions])]);
     const obs = await this.service.observe({ ...owner, ...(visibleRectangle !== undefined ? { ...this.admin(id), visibleRectangle } : {}),
       pageId, regions: [selector], compositorRegion: selector,
       compositorSession, reviewedClick: true, ...(reviewSlot ? { reviewSlot } : {}) });

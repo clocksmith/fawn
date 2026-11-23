@@ -440,8 +440,8 @@ class CdpWorkspaceAdapter {
     return this._evaluate(pageId ? { workspaceId, pageId } : workspaceId, 'location.href');
   }
 
-  async probeElement(workspaceId, selector, pageId, readRoots = null) {
-    return buildProbe(await this._query(pageId ? { workspaceId, pageId } : workspaceId, { ...elementArgs(selector), readRoots }));
+  async probeElement(workspaceId, selector, pageId, readRoots = null, absentReadRoots = 'refuse') {
+    return buildProbe(await this._query(pageId ? { workspaceId, pageId } : workspaceId, { ...elementArgs(selector), readRoots, absentReadRoots }));
   }
 
   /** Centre of the single element matching selector, scrolled into view; fails on 0 or >1. */

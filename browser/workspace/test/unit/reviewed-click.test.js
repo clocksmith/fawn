@@ -66,9 +66,9 @@ try {
   const snapshot = adapter.snapshot.bind(adapter);
   adapter.snapshot = async (id, read) => {
     const data = await snapshot(id, read);
-    if (read.capture) Object.assign(data, { frameEvidence: { '#name': { ...frame,
+    if (read.capture) Object.assign(data, { frameEvidence: { [read.capture.selector]: { ...frame,
       grantId: read.capture.grantId, grantRevision: read.capture.grantRevision } },
-      regionBitmaps: snap.regionBitmaps, regionDigests: { '#name': 'same' } });
+      regionBitmaps: { [read.capture.selector]: bitmap }, regionDigests: { [read.capture.selector]: 'same' } });
     return data;
   };
   adapter.prepareReviewedClick = cdp.prepareReviewedClick.bind(cdp);
@@ -93,5 +93,27 @@ try {
   wireResult = Error('connection lost');
   assert.equal((await act(await observe(), 'uncertain')).outcome, 'unknown');
   assert.equal(adapter.executions.length, 0, 'ordinary input never substituted for a native review');
+
+  // A reviewed submit button is admitted as a submit, never as a plain click, so
+  // the form's destination is authorized. While the service waits for the
+  // result it skips a read region that is gone; every other read refuses one.
+  await service.grantAuthorization({ ...admin, grantId: 'pixels', ownerId: 'person', intents: ['review'], actionKinds: ['click', 'submit'],
+    targetOrigins: [ORIGIN], pageIds: ['main'], readRegions: ['#send'] });
+  const absentRoots = [];
+  const probeElement = adapter.probeElement.bind(adapter);
+  adapter.probeElement = (id, selector, pageId, readRoots, absent) => { absentRoots.push(absent); return probeElement(id, selector, pageId, readRoots); };
+  const observeSend = () => service.observe({ ...owner, pageId: 'main', regions: ['#send'], reviewedClick: true,
+    compositorRegion: '#send', compositorSession: 'start' });
+  const send = (obs, actionId, kind, extra = {}) => service.submitAction({ ...owner, pageId: 'main', actionId, authorizedIntent: 'review',
+    kind, target: { handle: 'hsend' }, observationVersion: obs.observationVersion, requireReviewedClick: true, ...extra }).then(x => x.result);
+  wireResult = { admitted: true, delivered: true, reason: 'delivered' };
+  await assert.rejects(send(await observeSend(), 'submit-as-click', 'click'), /only a click on that selected region/);
+  const completion = { completedWhen: [{ kind: 'element-present', selector: '#send' }] };
+  const submitted = await send(await observeSend(), 'submit-reviewed', 'submit',
+    { effect: { external: true, effectKey: 'submit-reviewed' }, completion });
+  assert.equal(submitted.outcome, 'completed', JSON.stringify(submitted).slice(0, 300));
+  assert.equal(submitted.outcomeBasis, 'completion-condition');
+  assert.equal(adapter.executions.length, 0, 'the reviewed submit went through the native click, not an ordinary submit');
+  assert.deepEqual(absentRoots, ['refuse', 'skip'], 'the check before dispatch refuses a vanished region; the read after the effect skips it');
 } finally { await service.close(); rmSync(root, { recursive: true, force: true }); }
-console.log('ok: reviewed pixels, session binding, native-only routing, stale refusal and lost acknowledgment');
+console.log('ok: reviewed pixels, session binding, native-only routing, stale refusal, lost acknowledgment and reviewed form submits');

@@ -323,7 +323,7 @@ class WorkspaceService {
     return this.#clock();
   }
 
-  #probe(workspaceId, pageId = MAIN_PAGE, command = null, knownUrl = null) {
+  #probe(workspaceId, pageId = MAIN_PAGE, command = null, knownUrl = null, afterEffect = false) {
     // The resource being probed owns the page identity, including reconciliation of an
     // earlier action. A caller's omitted/different pageId cannot select another tab's grant.
     const readCommand = command ? { ...command, pageId } : null;
@@ -339,7 +339,9 @@ class WorkspaceService {
       }
     }, element: async selector => {
       const grant = readCommand ? readGrant(this.#workspace(workspaceId), readCommand, await url(), this.#nowMs()) : null;
-      return this.#bounded(this.#adapter.probeElement(workspaceId, selector, pageId, grant?.readRegions ?? null));
+      // After the action took effect the page may have been replaced, so a read
+      // region that no longer exists is skipped instead of failing the read.
+      return this.#bounded(this.#adapter.probeElement(workspaceId, selector, pageId, grant?.readRegions ?? null, afterEffect ? 'skip' : 'refuse'));
     } };
   }
 
@@ -861,7 +863,7 @@ class WorkspaceService {
   }
 
   async #awaitCompletion(workspaceId, completion, effect, request, effectExecuteMs = 0) {
-    const probe = this.#probe(workspaceId, request.pageId, request);
+    const probe = this.#probe(workspaceId, request.pageId, request, null, true);
     const deadline = this.#nowMs() + this.#config.dispatch.completionTimeoutMs;
     let last = null;
     for (;;) {

@@ -121,10 +121,12 @@ try {
     const { head, ...box } = rect;
     try {
       const item = await command('proposeReview', { pageId: 'main', selector, title: `Merge pull request ${pull.number}`,
-        // Forgejo shows the result outside the button and reloads the page, so
-        // the workspace cannot establish this from the reviewed region and
-        // reports the outcome as unknown. The test reads the truth from Forgejo.
-        completion: { completedWhen: [{ kind: 'element-present', selector: '.issue-state-label.purple' }] },
+        // Forgejo shows the result outside the button and reloads the page: a
+        // purple state label when merged, an error banner when it refuses. The
+        // stand-in asks to read the page's main content, which holds both.
+        completion: { completedWhen: [{ kind: 'element-present', selector: '.issue-state-label.purple' }],
+          failedWhen: [{ kind: 'element-present', selector: '.flash-error' }] },
+        completionRegions: ['.page-content'],
         change: `Merge ${pull.id} at ${head.slice(0, 10)}`, assignee: ana.personId,
         visibleRectangle: { url: frame.url, loaderId: frame.loaderId, selector, ...box } });
       return { ...item, formHead: head, box };
@@ -163,7 +165,8 @@ try {
     const after = await pullState(pull.number);
     Object.assign(row, { delivered: true, merged: after.merged, itemState: done.item.state, outcome: done.attempt.outcome, outcomeBasis: done.attempt.outcomeBasis });
     assert.equal(after.merged, true, 'Forgejo merged the pull request');
-    assert.equal(done.attempt.outcome, 'unknown', 'update this test when the workspace can read the result after a reload');
+    assert.equal(done.attempt.outcome, 'completed', JSON.stringify(done.attempt));
+    assert.deepEqual((await only(ben, item.itemId))?.readsAfterClick ?? picked.readsAfterClick, ['.page-content']);
   });
 
   // 2. Ana pushes a correction to the branch after approving. The page Ben's
@@ -186,6 +189,8 @@ try {
     Object.assign(row, { delivered: done.attempt.delivered, admitted: done.attempt.admitted, outcome: done.attempt.outcome,
       outcomeBasis: done.attempt.outcomeBasis, merged: after.merged, pullState: after.state, forgejoSaid: message });
     assert.equal(after.merged, false, 'Forgejo must not merge a pull request whose head moved after the form was opened');
+    assert.equal(done.attempt.outcome, 'failed', JSON.stringify(done.attempt));
+    assert.equal(done.attempt.outcomeBasis, 'failure-condition');
   });
 
   report.deliveries = report.flows.filter(row => row.delivered).length;

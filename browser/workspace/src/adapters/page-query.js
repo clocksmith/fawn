@@ -10,7 +10,7 @@ const ELEMENT_MODE = 'element';
 const ELEMENT_TEXT_CHARS = 200;
 
 // Runs inside the page; must stay self-contained.
-async function queryPage({ mode, selector, maxElements, maxTextChars, elementTextChars, regions = [], regionGroups = [], outline = false, readRoots = null, canvasReader = null, captureSelector = null, captureFrame = null }) {
+async function queryPage({ mode, selector, maxElements, maxTextChars, elementTextChars, regions = [], regionGroups = [], outline = false, readRoots = null, absentReadRoots = 'refuse', canvasReader = null, captureSelector = null, captureFrame = null }) {
   // A typed password never leaves the page: observations, evidence and digests see only whether
   // the field is filled. A person enters credentials; agents and journals do not read them.
   const controlValue = (node) => node.tagName === 'INPUT' && node.type === 'password' ? (node.value ? '[hidden]' : '') : String(node.value);
@@ -45,10 +45,14 @@ async function queryPage({ mode, selector, maxElements, maxTextChars, elementTex
     node.getAttribute('aria-selected') === 'true' && 'selected',
     node.getAttribute('aria-expanded') === 'true' && 'expanded',
   ].filter(Boolean);
-  const permissionRoots = readRoots === null ? null : readRoots.map(selector => {
+  // A read region that is gone permits nothing. Reads made after an action took
+  // effect skip it, since the action may have replaced the page; every other
+  // read refuses, because the page is no longer the one that was shared.
+  const permissionRoots = readRoots === null ? null : readRoots.flatMap(selector => {
     const matches = document.querySelectorAll(selector);
+    if (matches.length === 0 && absentReadRoots === 'skip') return [];
     if (matches.length !== 1) throw Error('A shared region must still match exactly one element');
-    return matches[0];
+    return [matches[0]];
   });
   const permitted = node => permissionRoots === null || permissionRoots.some(root => root === node || root.contains(node));
   // FNV-1a over the full text, so identity covers text beyond the displayed prefix.

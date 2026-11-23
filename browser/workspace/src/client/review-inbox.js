@@ -73,7 +73,8 @@ export class ReviewInbox {
 
   async #capture(item, by) {
     const capture = await this.controller.reviewClickTarget(item.projectId, { pageId: item.pageId, selector: item.selector,
-      ...(item.visibleRectangle ? { visibleRectangle: item.visibleRectangle } : {}), reviewSlot: item.slot });
+      ...(item.visibleRectangle ? { visibleRectangle: item.visibleRectangle } : {}), reviewSlot: item.slot,
+      ...(item.completionRegions?.length ? { completionRegions: item.completionRegions } : {}) });
     if (Buffer.byteLength(capture.rgba ?? '', 'base64') > MAX_REVIEW_BYTES) throw Error('Select a smaller region to review');
     const review = { reviewId: capture.id, observationVersion: capture.observationVersion, handle: capture.handle, submitsForm: capture.submitsForm === true,
       digest: capture.baselineDigest, frameRevision: capture.frameRevision, width: capture.pixelWidth, height: capture.pixelHeight,
@@ -85,13 +86,13 @@ export class ReviewInbox {
 
   // An agent or person proposes one change for someone to look at. The browser
   // captures the exact region now; that capture is what reviewers approve.
-  async propose(projectId, { pageId = 'main', selector, visibleRectangle, title, change, assignee = null, proposedBy = 'agent', completion }) {
+  async propose(projectId, { pageId = 'main', selector, visibleRectangle, title, change, assignee = null, proposedBy = 'agent', completion, completionRegions = [] }) {
     if (typeof title !== 'string' || !title.trim()) throw Error('Say what needs a look');
     if (assignee && !this.state.people[assignee]) throw Error('Unknown assignee');
     const itemId = randomUUID();
     const item = { itemId, slot: `inbox-${itemId.slice(0, 18)}`, projectId, pageId, selector, visibleRectangle: visibleRectangle ?? null,
       title: title.trim(), change: typeof change === 'string' ? change.trim() : '', proposedBy, assignee,
-      completion: completion ?? null, state: 'open', reviews: [], approvals: [], handoffs: [], attempts: [], events: [] };
+      completion: completion ?? null, completionRegions, state: 'open', reviews: [], approvals: [], handoffs: [], attempts: [], events: [] };
     await this.#capture(item, proposedBy);
     this.state.items[itemId] = item;
     this.#event(item, { kind: 'proposed', by: proposedBy, assignee });
@@ -116,6 +117,8 @@ export class ReviewInbox {
     const earlier = item.reviews.length > 1 ? item.reviews.at(-2) : null;
     return {
       itemId: item.itemId, title: item.title, change: item.change, pageId: item.pageId, selector: item.selector,
+      // What the workspace will read after the click to learn the result.
+      readsAfterClick: item.completionRegions ?? [],
       proposedBy: item.proposedBy === 'agent' ? 'agent' : name(item.proposedBy),
       assignee: item.assignee ? { personId: item.assignee, name: name(item.assignee) } : null,
       state: item.state,
