@@ -1,0 +1,53 @@
+{
+ "binary": {
+  "chromeSha256": "148d641a1545dcd90c68e7e71958a39d2c556d1ef1af2b9c74defbebeb9565ae",
+  "wrapper": "exec \"/home/x/.local/share/fawn/visual-admission-native-81/frozen-release/chrome\" --auto-accept-this-tab-capture --ozone-platform=x11 --disable-gpu-compositing \"$@\"",
+  "workspaceLaunchArguments": [
+   "--remote-debugging-pipe",
+   "--no-first-run",
+   "--no-default-browser-check",
+   "--disable-background-networking",
+   "--use-webgpu-runtime=dawn",
+   "about:blank"
+  ]
+ },
+ "workspace": {
+  "runs": 25,
+  "passed": 25,
+  "captureRefusalsRecovered": 25,
+  "siteAttemptsFromEarlierApproval": 0,
+  "staleSiteAttempts": 0,
+  "freshWrites": 25
+ },
+ "inbox": {
+  "runs": 25,
+  "passed": 25,
+  "failedCaptures": 0,
+  "staleApprovals": 25,
+  "refusedFinishes": 50,
+  "unsafeDeliveries": 0,
+  "declinedNavigations": 0,
+  "browserDeliveries": 75,
+  "applicationCommits": 75,
+  "applicationAttempts": 75,
+  "reviewedAgain": 50,
+  "failures": {},
+  "msToAuthorizedOutcome": {
+   "unrelated-motion-holds-across-handoff": {
+    "min": 2843,
+    "median": 2900,
+    "max": 3002
+   },
+   "revised-amount-needs-fresh-look": {
+    "min": 1663,
+    "median": 1745,
+    "max": 1785
+   },
+   "lookalike-target-swap-cancelled": {
+    "min": 1462,
+    "median": 1481,
+    "max": 2816
+   }
+  }
+ }
+}
