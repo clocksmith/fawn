@@ -95,8 +95,10 @@ async function queryPage({ mode, selector, maxElements, maxTextChars, elementTex
   };
   if (mode === 'element') {
     const nodes = [...document.querySelectorAll(selector)].filter(permitted);
-    if (nodes.length !== 1) return { count: nodes.length, element: null, fullText: null, choice: null };
-    return { count: 1, element: describe(nodes[0]), fullText: fullText(nodes[0]), choice: choiceOf(nodes[0]) };
+    // One value per loaded document, so a caller can tell a reloaded page from the one it read before.
+    const documentId = String(performance.timeOrigin);
+    if (nodes.length !== 1) return { count: nodes.length, element: null, fullText: null, choice: null, documentId };
+    return { count: 1, element: describe(nodes[0]), fullText: fullText(nodes[0]), choice: choiceOf(nodes[0]), documentId };
   }
   const HTML_NS = 'http://www.w3.org/1999/xhtml';
   const standardsMode = document.compatMode === 'CSS1Compat';
@@ -439,8 +441,9 @@ function buildSnapshot(raw, pageCount) {
  */
 function buildProbe(result) {
   if (result.forbidden) throw new Error('Element probe exceeds the selected observation regions');
-  if (!result.element) return { count: result.count, digest: null, text: null, value: null, choice: null };
+  if (!result.element) return { count: result.count, digest: null, text: null, value: null, choice: null, documentId: result.documentId ?? null };
   return {
+    documentId: result.documentId ?? null,
     count: result.count,
     digest: elementDigest(result.element),
     text: result.fullText,

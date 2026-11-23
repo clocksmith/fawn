@@ -96,6 +96,13 @@ function validateObservationRead(command, config) {
       || !/^[A-Za-z0-9_-]{1,64}$/.test(command.reviewSlot))) {
     throw workspaceError(REJECTION_CODES.INVALID_COMMAND, 'reviewSlot names one reviewed click with 1-64 letters, digits, - or _');
   }
+  if (command.resultRegions !== undefined) {
+    if (!command.reviewedClick) throw workspaceError(REJECTION_CODES.INVALID_COMMAND, 'Result regions belong to a reviewed click');
+    validateRegionSelectors(command.resultRegions, config, 'resultRegions');
+    if (command.resultRegions.length > MAX_RESULT_REGIONS) {
+      throw workspaceError(REJECTION_CODES.INVALID_COMMAND, `resultRegions: expected at most ${MAX_RESULT_REGIONS} selectors`);
+    }
+  }
   return read;
 }
 
@@ -208,6 +215,9 @@ function stripCredentials(command) {
   const { ownerCredential, adminCredential, ...request } = command;
   return request;
 }
+
+// A review may name this many places to look for its click's result.
+const MAX_RESULT_REGIONS = 4;
 
 class WorkspaceService {
   #journal;
@@ -323,10 +333,12 @@ class WorkspaceService {
     return this.#clock();
   }
 
-  #probe(workspaceId, pageId = MAIN_PAGE, command = null, knownUrl = null, afterEffect = false) {
+  #probe(workspaceId, pageId = MAIN_PAGE, command = null, knownUrl = null, afterEffect = false, resultScope = null) {
     // The resource being probed owns the page identity, including reconciliation of an
     // earlier action. A caller's omitted/different pageId cannot select another tab's grant.
     const readCommand = command ? { ...command, pageId } : null;
+    // The document the last element read came from, when the browser reports one.
+    const seen = { documentId: null };
     const url = async () => {
       const value = knownUrl ?? await this.#bounded(this.#adapter.probeUrl(workspaceId, pageId));
       if (readCommand) readGrant(this.#workspace(workspaceId), readCommand, value, this.#nowMs());
@@ -340,9 +352,15 @@ class WorkspaceService {
     }, element: async selector => {
       const grant = readCommand ? readGrant(this.#workspace(workspaceId), readCommand, await url(), this.#nowMs()) : null;
       // After the action took effect the page may have been replaced, so a read
-      // region that no longer exists is skipped instead of failing the read.
-      return this.#bounded(this.#adapter.probeElement(workspaceId, selector, pageId, grant?.readRegions ?? null, afterEffect ? 'skip' : 'refuse'));
-    } };
+      // region that no longer exists is skipped instead of failing the read. A
+      // reviewed click reads its result only where its own review allows, whatever
+      // the page's grant has since become.
+      const regions = grant?.readRegions ?? null;
+      const element = await this.#bounded(this.#adapter.probeElement(workspaceId, selector, pageId,
+        resultScope && regions ? resultScope.regions : regions, afterEffect ? 'skip' : 'refuse'));
+      seen.documentId = element?.documentId ?? null;
+      return element;
+    }, documentId: () => seen.documentId };
   }
 
   /** Record a new observation version from a live snapshot. */
@@ -538,6 +556,13 @@ class WorkspaceService {
         throw workspaceError(REJECTION_CODES.UNAUTHORIZED_TARGET, 'A visible rectangle needs explicit approval from the current human owner');
       }
     }
+    // Where the workspace may look for this click's result is approved with the review, by the person who owns the page.
+    if (command.resultRegions !== undefined) {
+      authenticateAdmin(workspace, command.adminCredential);
+      if (command.ownerId !== 'human') {
+        throw workspaceError(REJECTION_CODES.UNAUTHORIZED_TARGET, 'Result regions need explicit approval from the current human owner');
+      }
+    }
     if (this.#config.protocolVersion < 4 && command.pageId && command.pageId !== MAIN_PAGE) throw workspaceError(REJECTION_CODES.INVALID_COMMAND, 'Additional pages require protocol 4');
     const requested = validateObservationRead(command, this.#config);
     const pageId = command.pageId ?? MAIN_PAGE;
@@ -575,6 +600,8 @@ class WorkspaceService {
           throw workspaceError(REJECTION_CODES.STALE_OBSERVATION, 'The review grant changed during capture');
         }
         snapshot.frameEvidence[selected].reviewedClick = capture.binding;
+        // Bound to this review, not to the page: another review of the same page cannot change them.
+        if (command.resultRegions?.length) snapshot.frameEvidence[selected].resultRegions = [...command.resultRegions];
         reviewedRgba = capture.rgba;
       }
       const recorded = this.#recordObservation(workspace, snapshot, 'observe', pageId);
@@ -740,11 +767,12 @@ class WorkspaceService {
       const { request } = action;
       const cited = pageView(workspace, request.pageId).observations.get(request.observationVersion);
       const reviewedBinding = cited.frameEvidence?.[request.target?.selector]?.reviewedClick;
+      const resultRegions = cited.frameEvidence?.[request.target?.selector]?.resultRegions ?? null;
       this.#hooks.afterDispatchStarted?.(request);
-      return { action, reviewedBinding };
+      return { action, reviewedBinding, resultRegions };
     });
     if (begun.settled) return begun.settled;
-    const outcome = await this.#performEffect(workspaceId, begun.action.request, begun.reviewedBinding);
+    const outcome = await this.#performEffect(workspaceId, begun.action.request, begun.reviewedBinding, begun.resultRegions);
     return runtime.mutex.run(async () => {
       let postObservationVersion = null;
       const postSnapT0 = performance.now();
@@ -784,8 +812,16 @@ class WorkspaceService {
     });
   }
 
-  async #performEffect(workspaceId, request, reviewedBinding) {
+  async #performEffect(workspaceId, request, reviewedBinding, resultRegions = null) {
     let effect;
+    // A reviewed click's result is read from the reviewed region and the regions approved with that review.
+    const resultScope = reviewedBinding && resultRegions?.length
+      ? { regions: [...new Set([request.target.selector, ...resultRegions])] } : null;
+    // What already held just before the click cannot be this click's result (an old error message still on
+    // screen, a label from an earlier action). Only whether each condition holds and how many elements match
+    // is read here; nothing else in those regions is.
+    const before = resultScope && request.completion?.completedWhen?.length
+      ? await this.#resultBaseline(workspaceId, request, resultScope) : null;
     const execT0 = performance.now();
     try {
       const uploadFiles = request.kind === 'upload'
@@ -816,7 +852,7 @@ class WorkspaceService {
       if (attached.outcome !== OUTCOMES.COMPLETED || !request.completion?.completedWhen?.length) return attached;
     }
     const completion = request.completion;
-    if (completion?.completedWhen?.length) return this.#awaitCompletion(workspaceId, completion, effect, request, effectExecuteMs);
+    if (completion?.completedWhen?.length) return this.#awaitCompletion(workspaceId, completion, effect, request, effectExecuteMs, resultScope, before);
     if (VALUE_CONDITIONS[request.kind]) return this.#awaitValue(workspaceId, request, effect, effectExecuteMs);
     const basis = reviewedBinding ? 'reviewed-input-admitted' : KIND_COMPLETION_BASIS[request.kind];
     return { outcome: OUTCOMES.COMPLETED, basis, evidence: { effect, effectExecuteMs, valueSettleElapsedMs: 0 } };
@@ -862,25 +898,44 @@ class WorkspaceService {
     };
   }
 
-  async #awaitCompletion(workspaceId, completion, effect, request, effectExecuteMs = 0) {
-    const probe = this.#probe(workspaceId, request.pageId, request, null, true);
+  /** Which result conditions already hold immediately before a reviewed click, and in which document. */
+  async #resultBaseline(workspaceId, request, resultScope) {
+    const probe = this.#probe(workspaceId, request.pageId, request, null, true, resultScope);
+    const completion = request.completion;
+    const failed = completion.failedWhen?.length ? await evaluateConditions(completion.failedWhen, probe) : null;
+    const completed = await evaluateConditions(completion.completedWhen, probe);
+    return { failed, completed, documentId: probe.documentId() };
+  }
+
+  async #awaitCompletion(workspaceId, completion, effect, request, effectExecuteMs = 0, resultScope = null, before = null) {
+    const probe = this.#probe(workspaceId, request.pageId, request, null, true, resultScope);
     const deadline = this.#nowMs() + this.#config.dispatch.completionTimeoutMs;
+    // Conditions that held before the click count only as something new: another document (the page
+    // reloaded), or more matching elements than before (a second message beside the old one).
+    const isNew = (earlier, now) => {
+      if (!earlier?.allEstablished) return true;
+      const document = probe.documentId();
+      if (before.documentId !== null && document !== null && document !== before.documentId) return true;
+      return now.results.some((result, index) => (result.observed?.count ?? 0) > (earlier.results[index]?.observed?.count ?? 0));
+    };
+    const heldBefore = before ? [before.failed?.allEstablished && 'failedWhen', before.completed.allEstablished && 'completedWhen'].filter(Boolean) : [];
+    const baseline = heldBefore.length ? { heldBeforeClick: heldBefore } : {};
     let last = null;
     for (;;) {
       if (completion.failedWhen?.length) {
         const failed = await evaluateConditions(completion.failedWhen, probe);
-        if (failed.allEstablished) {
-          return { outcome: OUTCOMES.FAILED, basis: 'failure-condition', evidence: { effect, conditions: failed } };
+        if (failed.allEstablished && isNew(before?.failed, failed)) {
+          return { outcome: OUTCOMES.FAILED, basis: 'failure-condition', evidence: { effect, conditions: failed, ...baseline } };
         }
       }
       last = await evaluateConditions(completion.completedWhen, probe);
-      if (last.allEstablished) {
-        return { outcome: OUTCOMES.COMPLETED, basis: 'completion-condition', evidence: { effect, conditions: last } };
+      if (last.allEstablished && isNew(before?.completed, last)) {
+        return { outcome: OUTCOMES.COMPLETED, basis: 'completion-condition', evidence: { effect, conditions: last, ...baseline } };
       }
       if (this.#nowMs() >= deadline) break;
       await new Promise((resolve) => setTimeout(resolve, this.#config.dispatch.completionPollMs));
     }
-    return { outcome: OUTCOMES.UNKNOWN, basis: 'completion-unestablished', evidence: { effect, conditions: last } };
+    return { outcome: OUTCOMES.UNKNOWN, basis: 'completion-unestablished', evidence: { effect, conditions: last, ...baseline } };
   }
 
   #describe(workspace, actionId) {

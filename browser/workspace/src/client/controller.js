@@ -141,15 +141,18 @@ export class WorkspaceController {
   }
   // `completionRegions` names up to four more regions the workspace may read to
   // learn what the application did after the click (a status label, the page's
-  // main content). Each must exist as one element when the review is taken.
+  // main content, a message the application adds). They belong to this review:
+  // they are read only for its click's result, and need not exist yet.
   async reviewClickTarget(id, { pageId = 'main', selector, compositorSession = 'start', visibleRectangle, reviewSlot, completionRegions = [] }) {
     if (typeof selector !== 'string' || !selector) throw Error('Select the region to review');
     if (!Array.isArray(completionRegions) || completionRegions.length > 4
       || completionRegions.some(region => typeof region !== 'string' || !region || region.length > 256)) {
       throw Error('Name at most four completion regions');
     }
-    const owner = await this.humanPage(id, pageId, [], [...new Set([selector, ...completionRegions])]);
+    const owner = await this.humanPage(id, pageId, [], [selector]);
+    const resultRegions = [...new Set(completionRegions)].filter(region => region !== selector);
     const obs = await this.service.observe({ ...owner, ...(visibleRectangle !== undefined ? { ...this.admin(id), visibleRectangle } : {}),
+      ...(resultRegions.length ? { ...this.admin(id), resultRegions } : {}),
       pageId, regions: [selector], compositorRegion: selector,
       compositorSession, reviewedClick: true, ...(reviewSlot ? { reviewSlot } : {}) });
     const target = obs.elements.find(element => element.selector === selector && element.handle);

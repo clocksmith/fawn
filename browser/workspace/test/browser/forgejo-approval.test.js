@@ -121,12 +121,16 @@ try {
     const { head, ...box } = rect;
     try {
       const item = await command('proposeReview', { pageId: 'main', selector, title: `Merge pull request ${pull.number}`,
-        // Forgejo shows the result outside the button and reloads the page: a
-        // purple state label when merged, an error banner when it refuses. The
-        // stand-in asks to read the page's main content, which holds both.
+        // Forgejo shows the result outside the button: a purple state label when
+        // merged, and one of two refusals. When the branch head moved it reloads
+        // the page with an error banner. When the pull request is not ready to
+        // merge (a required check, or Forgejo still examining a branch that just
+        // moved) it answers at once with a message it adds to the page and does
+        // not reload. The stand-in asks to read the page's main content and that
+        // message, which does not exist until then.
         completion: { completedWhen: [{ kind: 'element-present', selector: '.issue-state-label.purple' }],
-          failedWhen: [{ kind: 'element-present', selector: '.flash-error' }] },
-        completionRegions: ['.page-content'],
+          failedWhen: [{ kind: 'element-present', selector: '.flash-error, .toastify.on' }] },
+        completionRegions: ['.page-content', '.toastify.on'],
         change: `Merge ${pull.id} at ${head.slice(0, 10)}`, assignee: ana.personId,
         visibleRectangle: { url: frame.url, loaderId: frame.loaderId, selector, ...box } });
       return { ...item, formHead: head, box };
@@ -143,6 +147,28 @@ try {
     row.ms = Math.round(performance.now() - start);
     report.flows.push(row);
   };
+
+  // What a refused finish must show: the click was delivered, Forgejo did not
+  // merge, and the workspace read Forgejo's own refusal. Records which of the
+  // two refusals this run met and whether the page was reloaded.
+  const documentId = () => evaluate('String(performance.timeOrigin)');
+  const unprotect = () => fetch(`${origin}/api/v1/repos/${repo}/branch_protections/main`, { method: 'DELETE',
+    headers: { authorization: 'token ' + token } }).catch(() => null);
+  async function refusedRow(row, pull, done) {
+    await wait(1000);
+    const after = await pullState(pull.number);
+    const message = await evaluate(`[...document.querySelectorAll('.flash-error, .toastify.on')].filter(e => e.getClientRects().length).map(e => (e.classList.contains('toastify') ? 'message' : 'banner') + ': ' + e.textContent.trim().replace(/\\s+/g, ' ').slice(0, 120)).join(' | ')`);
+    Object.assign(row, { delivered: done.attempt.delivered, admitted: done.attempt.admitted, outcome: done.attempt.outcome,
+      outcomeBasis: done.attempt.outcomeBasis, merged: after.merged, pullState: after.state, forgejoSaid: message,
+      refusal: /^message: /.test(message) ? 'immediate-message' : /^banner: /.test(message) ? 'banner-after-reload' : 'none-seen',
+      reloaded: row.documentBefore !== await documentId() });
+    delete row.documentBefore;
+    assert.equal(after.merged, false, 'Forgejo must not merge this pull request');
+    assert.equal(done.attempt.delivered, true, JSON.stringify(done.attempt));
+    assert.equal(done.attempt.outcome, 'failed', JSON.stringify({ attempt: done.attempt, row }));
+    assert.equal(done.attempt.outcomeBasis, 'failure-condition');
+  }
+  await unprotect(); // a rule left by an interrupted run would refuse every merge
 
   // 1. Ana reviews the confirm button, approves and hands off. Ben sees the same
   // image and finishes; Forgejo merges the pull request.
@@ -166,7 +192,7 @@ try {
     Object.assign(row, { delivered: true, merged: after.merged, itemState: done.item.state, outcome: done.attempt.outcome, outcomeBasis: done.attempt.outcomeBasis });
     assert.equal(after.merged, true, 'Forgejo merged the pull request');
     assert.equal(done.attempt.outcome, 'completed', JSON.stringify(done.attempt));
-    assert.deepEqual((await only(ben, item.itemId))?.readsAfterClick ?? picked.readsAfterClick, ['.page-content']);
+    assert.deepEqual((await only(ben, item.itemId))?.readsAfterClick ?? picked.readsAfterClick, ['.page-content', '.toastify.on']);
   });
 
   // 2. Ana pushes a correction to the branch after approving. The page Ben's
@@ -182,15 +208,31 @@ try {
     await api('PUT', `/contents/${pull.path}`, { content: csv('9280.00'), message: 'Revise the amount', branch: pull.id, sha: file.sha });
     const moved = await pullState(pull.number);
     assert.notEqual(moved.head.slice(0, 10), item.formHead.slice(0, 10), 'the branch head moved');
+    row.documentBefore = await documentId();
     const done = await ben.act('finish', { itemId: item.itemId });
-    await wait(2000);
-    const after = await pullState(pull.number);
-    const message = await evaluate(`[...document.querySelectorAll('.flash-error, .ui.negative.message, .flash-message')].filter(e => e.getClientRects().length).map(e => e.className + ': ' + e.textContent).map(e => ({ textContent: e })).map(e => e.textContent.trim().replace(/\\s+/g, ' ').slice(0, 120)).join(' | ')`);
-    Object.assign(row, { delivered: done.attempt.delivered, admitted: done.attempt.admitted, outcome: done.attempt.outcome,
-      outcomeBasis: done.attempt.outcomeBasis, merged: after.merged, pullState: after.state, forgejoSaid: message });
-    assert.equal(after.merged, false, 'Forgejo must not merge a pull request whose head moved after the form was opened');
-    assert.equal(done.attempt.outcome, 'failed', JSON.stringify(done.attempt));
-    assert.equal(done.attempt.outcomeBasis, 'failure-condition');
+    await refusedRow(row, pull, done);
+    assert.ok(['banner-after-reload', 'immediate-message'].includes(row.refusal), JSON.stringify(row));
+  });
+
+  // 3. After Ana approves, the repository starts requiring a second sign-off
+  // check on the main branch. Ben's page still shows the merge button he was
+  // handed. Forgejo refuses at once with a message and does not reload the
+  // page, so nothing the workspace could read before the click changes.
+  await flow('required-check-added-after-approval-refused-without-reload', async row => {
+    const pull = await openPull('1280.00');
+    const item = await prepare(pull);
+    const seen = await only(ana, item.itemId);
+    await ana.act('approve', { itemId: item.itemId, reviewId: seen.review.reviewId });
+    await ana.act('handoff', { itemId: item.itemId, to: ben.personId });
+    await api('POST', '/branch_protections', { rule_name: 'main', branch_name: 'main', enable_status_check: true,
+      status_check_contexts: ['payables/second-sign-off'] });
+    try {
+      row.documentBefore = await documentId();
+      const done = await ben.act('finish', { itemId: item.itemId });
+      await refusedRow(row, pull, done);
+      assert.equal(row.refusal, 'immediate-message', JSON.stringify(row));
+      assert.equal(row.reloaded, false, 'Forgejo answered without loading a new page');
+    } finally { await unprotect(); }
   });
 
   report.deliveries = report.flows.filter(row => row.delivered).length;

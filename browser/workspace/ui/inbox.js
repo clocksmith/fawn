@@ -40,6 +40,15 @@ function image(review, label) {
   figure.append(canvas, node('figcaption', label));
   return figure;
 }
+// What the person who pressed Finish needs to know next. Delivery is the browser's fact; the result is the
+// application's, read from the page, and is stated only as far as it was read.
+function attemptText(attempt) {
+  if (!attempt.delivered) return `The browser refused the click (${attempt.outcomeBasis}); nothing reached the page`;
+  if (attempt.outcome === 'completed') return 'Click delivered. The application shows it done.';
+  if (attempt.outcome === 'failed') return 'Click delivered. The application refused it.';
+  if (attempt.outcome === 'unknown') return 'Click delivered. Result not confirmed.';
+  return 'Click delivered to the reviewed target.';
+}
 function card(item) {
   const element = node('article', null, `panel inbox-item ${item.status}`);
   element.dataset.item = item.itemId;
@@ -63,10 +72,11 @@ function card(item) {
       : `${approval.by} approved an earlier image, which no longer counts`));
   }
   for (const handoff of item.handoffs) facts.append(node('li', `${handoff.from} handed off to ${handoff.to}${handoff.note ? `: “${handoff.note}”` : ''}`));
-  for (const attempt of item.attempts) {
-    facts.append(node('li', attempt.delivered ? 'The click was delivered to the reviewed target'
-      : `The browser refused the click (${attempt.outcomeBasis}); nothing reached the page`));
+  // A reviewer approves the reads too: after the click the workspace looks at these regions to report the result.
+  if (item.readsAfterClick?.length && item.state === 'open') {
+    facts.append(node('li', `After the click, the workspace reads ${item.readsAfterClick.join(', ')} to report what happened`));
   }
+  for (const attempt of item.attempts) facts.append(node('li', attemptText(attempt), attempt.delivered && attempt.outcome !== 'completed' ? 'attention' : null));
   element.append(facts);
   if (item.state !== 'open') return element;
   const row = node('div', null, 'button-row');
