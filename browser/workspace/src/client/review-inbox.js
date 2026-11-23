@@ -13,12 +13,13 @@ const digest = value => createHash('sha256').update(value).digest('hex');
 const sameToken = (a, b) => a.length === b.length && timingSafeEqual(Buffer.from(a), Buffer.from(b));
 
 // Plain-language reasons for a review that no longer holds.
+const UNVERIFIABLE_NOW = 'The browser cannot verify this area right now.';
 const FRESH_LOOK = [
   [/pixels-changed|stale-compositor-revision/, 'The reviewed area changed after it was reviewed.'],
   [/target-changed|recipient/, 'Something else now sits under the reviewed click point.'],
   [/document-changed|stale-document|navigation/, 'The page was reloaded or navigated.'],
   [/review-expired|review-spent|unknown-review|superseded|ended|grant/, 'The browser no longer holds this review.'],
-  [/surface|frame|hidden|viewport|scaled|emulation|child-frames|unverifiable/, 'The browser cannot verify this area right now.'],
+  [/surface|frame|hidden|viewport|scaled|emulation|child-frames|unverifiable/, UNVERIFIABLE_NOW],
 ];
 export function freshLookReason(reason) {
   return FRESH_LOOK.find(([pattern]) => pattern.test(reason))?.[1] ?? `The browser reports: ${reason}.`;
@@ -109,6 +110,20 @@ export class ReviewInbox {
     } catch (error) { return { holds: false, reason: error.code ?? error.message }; }
   }
 
+  // The browser can check a review only while its tab is drawing. When a person acts on an item whose tab is
+  // behind another, the workspace brings that tab forward and checks again; merely listing the inbox never
+  // moves tabs.
+  async #statusInFront(item) {
+    let status = await this.#status(item);
+    if (status.holds || item.state !== 'open' || freshLookReason(status.reason) !== UNVERIFIABLE_NOW) return status;
+    await this.controller.service.focusPage({ ...this.controller.admin(item.projectId), pageId: item.pageId });
+    for (let waited = 0; waited < 1500 && !status.holds; waited += 100) {
+      await new Promise(resolve => setTimeout(resolve, 100));
+      status = await this.#status(item);
+    }
+    return status;
+  }
+
   view(item, status, viewer = null) {
     const current = item.reviews.at(-1);
     const name = id => this.state.people[id]?.name ?? id;
@@ -151,7 +166,7 @@ export class ReviewInbox {
     if (item.state !== 'open') throw Error('This item is closed');
     const current = item.reviews.at(-1);
     if (reviewId !== current.reviewId) throw Error('You approved an earlier image. Look at the current one.');
-    const status = await this.#status(item);
+    const status = await this.#statusInFront(item);
     if (!status.holds) throw Object.assign(Error(`${freshLookReason(status.reason)} Look again before approving.`), { code: 'needs-fresh-look' });
     if (!item.approvals.some(a => a.personId === person.personId && a.reviewId === reviewId)) {
       item.approvals.push({ personId: person.personId, reviewId, digest: current.digest, at: new Date().toISOString() });
@@ -193,6 +208,10 @@ export class ReviewInbox {
     if (item.state !== 'open') throw Error('This item is closed');
     const current = item.reviews.at(-1);
     if (!item.approvals.some(a => a.reviewId === current.reviewId)) throw Error('No one has approved the current image yet');
+    // The person finishing sees the page they are acting on: its window comes to the front first. A window
+    // that is not the active one may not be drawing new frames, and the click waits for a verified frame.
+    await this.controller.service.focusPage({ ...this.controller.admin(item.projectId), pageId: item.pageId });
+    await this.#statusInFront(item);
     const actionId = `inbox-${item.itemId}-${item.attempts.length + 1}`;
     const result = await this.controller.clickReviewedTarget(item.projectId, { pageId: item.pageId,
       observationVersion: current.observationVersion, handle: current.handle, actionId, submitsForm: current.submitsForm === true,
