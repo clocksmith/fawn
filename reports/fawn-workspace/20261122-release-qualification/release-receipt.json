@@ -1528,9 +1528,46 @@
   "an outside user or a model-driven agent"
  ],
  "domButtonOnBrowserOwnedPath": {
-  "status": "not working in the workspace yet",
-  "observed": "The inbox flow with an ordinary <button> in place of the canvas control (FAWN_INBOX_CONTROL=dom) stops at the first review with \"No live restricted compositor frame\".",
-  "cause": "browser/workspace/src/adapters/compositor-capture.js accepts only canvas elements for a restricted capture, and a review needs that capture even when a person selects a visible rectangle. The browser-level reviewed click already delivers to a DOM button (case dom-button-delivers).",
-  "consequence": "Either pilot path needs workspace code before an ordinary DOM approval can be reviewed and handed off."
+  "status": "working for reviews of a visible rectangle chosen by a person",
+  "change": "fawn pull request 19 on qualification/resident-block-resume, merge 4c1d204889. For a visible-rectangle review the page-side capture is the tab cropped to the element box; the pixels shown for review are the browser capture. An element-only grant still accepts a canvas alone.",
+  "before": "The inbox flow with an ordinary button stopped at the first review with \"No live restricted compositor frame\".",
+  "configuration": "frozen release binary 148d641a1545dcd9 with --disable-gpu-compositing, 25 runs per suite after the change",
+  "ordinaryButtonInbox": {
+   "runs": 25,
+   "passed": 25,
+   "applicationAttempts": 75,
+   "browserDeliveries": 75,
+   "applicationCommits": 75,
+   "unsafeDeliveries": 0,
+   "failedCaptures": 0,
+   "refusedFinishes": 50,
+   "declinedNavigations": 0
+  },
+  "canvasInboxRegression": {
+   "runs": 25,
+   "passed": 25,
+   "applicationAttempts": 75,
+   "browserDeliveries": 75,
+   "applicationCommits": 75,
+   "unsafeDeliveries": 0,
+   "failedCaptures": 0,
+   "refusedFinishes": 50,
+   "declinedNavigations": 3
+  },
+  "workspaceRegression": {
+   "runs": 25,
+   "passed": 25,
+   "captureRefusalsRecovered": 25,
+   "siteAttemptsFromEarlierApproval": 0,
+   "staleSiteAttempts": 0,
+   "freshWrites": 25
+  },
+  "elementOnlyGrantOnOrdinaryElement": "refused in 3 of 3 further runs of the button variant (check added after the 25-run batch)",
+  "correctionDuringWork": "A first version made every canvas review go stale at dispatch: 25 of 25 workspace and 25 of 25 canvas inbox runs failed. The scope is now carried in the frame evidence; the batch above is the rerun.",
+  "notTested": "A real application page. The Forgejo merge button has not been run through the workspace; a fractional element box could make the cropped frame size differ from the browser capture.",
+  "evidence": [
+   "inbox-dom-button-cpu.json",
+   "workspace-inbox-cpu-after-dom-change.json"
+  ]
  }
 }
