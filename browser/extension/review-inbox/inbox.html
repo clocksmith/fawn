@@ -1,0 +1,18 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Review inbox</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="inbox.css">
+<header>
+  <h1>Review inbox</h1>
+  <p class="muted">Approve the exact button you saw. It is clicked only if it still looks the same, and you are told what the application did.</p>
+</header>
+<section class="add" aria-label="Add an approval">
+  <label for="tab">Page</label>
+  <select id="tab" data-tabs></select>
+  <button type="button" class="primary" data-pick>Pick a button to approve</button>
+  <p class="notice" data-notice hidden role="status"></p>
+</section>
+<main data-items aria-live="polite"></main>
+<p class="empty muted" data-empty>Nothing is waiting. Open the page, then pick the button you want approved.</p>
+<script src="inbox.js"></script>

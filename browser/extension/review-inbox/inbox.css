@@ -1,0 +1,42 @@
+:root { color-scheme: light dark; --bg: #f5f5f0; --paper: #fff; --ink: #1b302a; --muted: #63736a; --line: #dbe2db; --accent: #215e49;
+  --good: #1a7f5a; --good-bg: #e6f4ec; --bad: #a3341f; --bad-bg: #fbe9e4; --warn: #785319; --warn-bg: #fff5df;
+  font: 14px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+@media (prefers-color-scheme: dark) {
+  :root { --bg: #121c18; --paper: #19251f; --ink: #dfe9dd; --muted: #9bac9c; --line: #334637; --accent: #83b69a;
+    --good: #8fd3b1; --good-bg: #1d3a2d; --bad: #f0a898; --bad-bg: #43231c; --warn: #efd79e; --warn-bg: #3b321f; }
+}
+* { box-sizing: border-box; }
+body { margin: 0; padding: 16px; background: var(--bg); color: var(--ink); }
+h1 { font-size: 18px; margin: 0 0 4px; }
+h2 { font-size: 15px; margin: 0; }
+h3 { font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin: 14px 0 4px; font-weight: 600; }
+p { margin: 0; }
+.muted { color: var(--muted); font-size: 12px; }
+.add { display: grid; grid-template-columns: auto 1fr; gap: 8px; align-items: center; margin: 14px 0; }
+.add button, .add .notice { grid-column: 1 / -1; }
+select, button { font: inherit; color: inherit; }
+select { width: 100%; padding: 7px 8px; border: 1px solid var(--line); border-radius: 7px; background: var(--paper); min-width: 0; }
+button { padding: 8px 12px; border: 1px solid var(--line); border-radius: 7px; background: var(--paper); cursor: pointer; font-weight: 600; font-size: 13px; }
+button:disabled { opacity: .5; cursor: default; }
+.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+@media (prefers-color-scheme: dark) { .primary { color: #12291c; } }
+.notice { padding: 8px 10px; border-radius: 7px; background: var(--warn-bg); color: var(--warn); font-size: 12px; }
+.card { background: var(--paper); border: 1px solid var(--line); border-radius: 12px; padding: 14px; margin-bottom: 12px; }
+.card header { display: flex; gap: 10px; align-items: flex-start; justify-content: space-between; }
+.pill { flex: none; border-radius: 20px; padding: 3px 10px; font-size: 11px; font-weight: 600; border: 1px solid var(--line); white-space: nowrap; }
+.where { font-size: 12px; color: var(--muted); overflow-wrap: anywhere; }
+.card ul { margin: 0; padding-left: 18px; font-size: 13px; }
+.seen { display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-start; }
+.seen figure { margin: 0; }
+.seen img { display: block; max-width: 100%; border: 1px solid var(--line); border-radius: 6px; background: #fff; }
+.seen figcaption { font-size: 11px; color: var(--muted); margin-top: 3px; }
+.status { font-size: 13px; }
+.status.changed { color: var(--bad); }
+.outcome { padding: 10px 12px; border-radius: 8px; font-size: 13px; }
+.outcome strong { display: block; font-size: 14px; }
+.outcome.confirmed { background: var(--good-bg); color: var(--good); }
+.outcome.refused, .outcome.blocked { background: var(--bad-bg); color: var(--bad); }
+.outcome.unconfirmed, .outcome.finishing { background: var(--warn-bg); color: var(--warn); }
+.outcome.none { color: var(--muted); padding: 0; }
+.actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; }
+[hidden] { display: none !important; }
