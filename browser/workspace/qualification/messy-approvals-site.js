@@ -52,7 +52,7 @@ body{margin:0;font:14px/1.3 sans-serif;background:#f4f1ea;color:#1d1d1b}
 </style>
 <div id="ticker"></div><div id="banner"></div><div id="pulse"></div>
 ${control === 'dom'
-  ? '<button id="approve" type="button" style="width:320px;height:64px;border:2px solid #1d1d1b;background:#fff;color:#1d1d1b;text-align:left;padding:0 12px;font:14px sans-serif"><b style="display:block;font-size:15px">Approve payment</b><span id="approve-summary"></span></button>'
+  ? '<button id="approve" type="button" style="width:320px;height:64px;border:2px solid #1d1d1b;background:#fff;color:#1d1d1b;text-align:left;padding:0 12px;font:14px sans-serif"><b style="display:block;font-size:15px">Approve payment</b><span data-summary></span></button>'
   : '<canvas id="approve" role="button" tabindex="0" aria-label="Approve payment" width="320" height="64"></canvas>'}
 <ol id="feed"></ol>
 <script>
@@ -65,7 +65,7 @@ const money = cents => '$' + (cents / 100).toLocaleString('en-US', {minimumFract
 const summary = () => state.payee + ' · ' + money(state.cents) + ' · ' + state.id;
 const show = () => {
   approve.dataset.summary = summary();
-  if (!ink) { document.getElementById('approve-summary').textContent = summary(); return; }
+  if (!ink) { approve.querySelector('[data-summary]').textContent = summary(); return; }
   ink.fillStyle = '#fff'; ink.fillRect(0, 0, 320, 64);
   ink.strokeStyle = '#1d1d1b'; ink.lineWidth = 2; ink.strokeRect(1, 1, 318, 62);
   ink.fillStyle = '#1d1d1b'; ink.font = 'bold 15px sans-serif'; ink.fillText('Approve payment', 12, 26);

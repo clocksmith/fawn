@@ -99,7 +99,7 @@ function validateObservationRead(command, config) {
   return read;
 }
 
-function compositorRequest(workspace, permission, selector, url, config, now, verify, session) {
+function compositorRequest(workspace, permission, selector, url, config, now, verify, session, pixelScope = 'restricted-element') {
   if (!selector) return null;
   if (!config.observation.compositorCapture || config.browser.headless) {
     throw workspaceError(REJECTION_CODES.INVALID_CONFIG, 'Compositor capture requires an enabled browser with a visible permission chooser');
@@ -113,7 +113,7 @@ function compositorRequest(workspace, permission, selector, url, config, now, ve
   }
   const expires = permission.expiresAt ? Date.parse(permission.expiresAt) - now : Infinity;
   return { selector, origin: new URL(url).origin, ownerGeneration: workspace.ownerGeneration,
-    grantId: permission.grantId, grantRevision: permission.grantRevision,
+    grantId: permission.grantId, grantRevision: permission.grantRevision, pixelScope,
     readRoots: permission.readRegions, verify, session, transport: config.observation.compositorTransport ?? 'rgba-upload',
     digest: config.observation.compositorDigest ?? 'cpu',
     ttlMs: Number.isFinite(expires) ? Math.max(0, expires) : null,
@@ -548,7 +548,8 @@ class WorkspaceService {
       const snapshot = await this.#snapshot(command.workspaceId, {
         ...read, outline: read.view === OUTLINE_VIEW,
         capture: command.compositorRegion ? compositorRequest(workspace, readGrant(workspace, command, url, this.#nowMs()),
-          command.compositorRegion, url, this.#config, this.#nowMs(), false, command.compositorSession) : null,
+          command.compositorRegion, url, this.#config, this.#nowMs(), false, command.compositorSession,
+            command.visibleRectangle ? 'visible-rectangle' : 'restricted-element') : null,
       }, pageId);
       readGrant(workspace, command, snapshot.url, this.#nowMs());
       let reviewedRgba;
@@ -655,7 +656,8 @@ class WorkspaceService {
     if (selected && (earlier.grantRevision !== permission?.grantRevision || earlier.grantId !== permission?.grantId)) {
       throw workspaceError(REJECTION_CODES.STALE_OBSERVATION, 'The selected surface grant changed before dispatch');
     }
-    const capture = compositorRequest(workspace, permission, selected, url, this.#config, this.#nowMs(), true, earlier?.sessionId);
+    const capture = compositorRequest(workspace, permission, selected, url, this.#config, this.#nowMs(), true, earlier?.sessionId,
+      earlier?.pixelScope ?? 'restricted-element');
     const snapshot = await this.#snapshot(workspaceId, { regions, verifyCanvas: true, capture,
       readRoots: permission?.readRegions ?? null }, request.pageId).catch(error => {
       if (capture) throw workspaceError(REJECTION_CODES.STALE_OBSERVATION, 'Could not revalidate the authorized compositor session: ' + error.message);
