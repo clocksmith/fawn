@@ -1564,10 +1564,47 @@
   },
   "elementOnlyGrantOnOrdinaryElement": "refused in 3 of 3 further runs of the button variant (check added after the 25-run batch)",
   "correctionDuringWork": "A first version made every canvas review go stale at dispatch: 25 of 25 workspace and 25 of 25 canvas inbox runs failed. The scope is now carried in the frame evidence; the batch above is the rerun.",
-  "notTested": "A real application page. The Forgejo merge button has not been run through the workspace; a fractional element box could make the cropped frame size differ from the browser capture.",
+  "notTested": "Superseded: see realApplicationOnBrowserOwnedPath.",
   "evidence": [
    "inbox-dom-button-cpu.json",
    "workspace-inbox-cpu-after-dom-change.json"
+  ]
+ },
+ "realApplicationOnBrowserOwnedPath": {
+  "workflow": "Two people approve a payment by merging its pull request in a local Forgejo 17.0.2 through the review inbox: Ana reviews the confirm button and hands off, Ben finishes. Scripted stand-ins act for the agent and for both people; no person and no model took part.",
+  "change": "fawn pull request 21 on qualification/resident-block-resume, merge 80eeb7946b",
+  "limitsFoundAndFixed": [
+   "A reviewed click on a form submit button was refused; it is now admitted as a submit.",
+   "An element box with fractional coordinates was rejected; the browser reviews the smallest whole-pixel rectangle containing it. The confirm button box is 187.5 wide at a fractional y."
+  ],
+  "configuration": "frozen release binary 148d641a1545dcd9 with --disable-gpu-compositing",
+  "forgejo": {
+   "runs": 10,
+   "passed": 10,
+   "reviewedClicksDelivered": 20,
+   "failedCaptures": 0,
+   "approvedHandoff": {
+    "runs": 10,
+    "mergedByForgejo": 10
+   },
+   "branchMovedAfterApproval": {
+    "runs": 10,
+    "clickDelivered": 10,
+    "mergedByForgejo": 0,
+    "forgejoSaid": "Merge failed: Whilst generating the merge, the head was updated. Hint: Try again.",
+    "reading": "The page Ben saw did not change when the branch moved, so the reviewed image still held and the click was delivered. The application version check is what stopped the merge."
+   }
+  },
+  "regressionAfterChange": {
+   "workspace": "25/25",
+   "canvasInbox": "25/25: 75 attempts, 75 deliveries, 75 commits, 0 unsafe, 0 failed captures",
+   "buttonInbox": "25/25: 75 attempts, 75 deliveries, 75 commits, 0 unsafe, 0 failed captures",
+   "unitSuite": "100 passing"
+  },
+  "openLimits": [
+   "After a click that reloads the page the workspace reports the outcome as unknown (completion-unestablished) in 20 of 20 Forgejo flows, merged or refused, and waits out its 10 second completion timeout. Completion conditions are read inside the reviewed region, which no longer exists.",
+   "The new admission rule for submit buttons has no unit test of its own.",
+   "Not run on the fenced extension path; no extension-path workspace code exists."
   ]
  }
 }
