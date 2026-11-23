@@ -36,6 +36,22 @@ const update = (id, change) => (writing = writing.then(async () => {
   await chrome.storage.session.set({ items });
   return items[id] ?? null;
 }));
+// One compare-and-set on the same chain as every other write: of any number of overlapping requests,
+// exactly one moves the item out of `from`, and only that one gets the item back.
+const claim = (id, from, change) => (writing = writing.then(async () => {
+  const items = await load();
+  if (items[id]?.state !== from) return null;
+  items[id] = { ...items[id], ...change };
+  await chrome.storage.session.set({ items });
+  return items[id];
+}));
+// A worker that stops in the middle of a finish takes the rest of that finish with it. The next worker
+// cannot know whether the click went out, so it says so and leaves the item spent.
+const WORKER = crypto.randomUUID();
+const recovered = load().then(items => Promise.all(Object.values(items)
+  .filter(item => item.state === 'finishing' && item.finishingBy !== WORKER)
+  .map(item => update(item.id, { state: 'unconfirmed', outcome: { at: now(), detail: 'The inbox stopped while this click was in progress. Check the page; nothing will be clicked again.',
+    text: `Click may have been sent; ${RECIPES[item.summary?.recipe]?.noun ?? 'result'} not confirmed` } }))));
 
 async function attach(tabId) {
   try { await chrome.debugger.attach(target(tabId), '1.3'); }
@@ -145,10 +161,10 @@ async function approve(id) {
 }
 
 async function finish(id) {
-  const item = (await load())[id];
-  if (!item || item.state !== 'approved') throw new Error('Approve this item before finishing it.');
-  // Closed from here on: whatever happens, this approval is spent.
-  await update(id, { state: 'finishing' });
+  await recovered;
+  // Closed from here on: whatever happens, this approval is spent, and only the request that spent it clicks.
+  const item = await claim(id, 'approved', { state: 'finishing', finishingBy: WORKER });
+  if (!item) throw new Error('This item is not approved, or it is already being finished.');
   const settle = (state, text, detail = '') => update(id, { state, outcome: { text, detail, at: now() } });
   const recipe = RECIPES[item.summary.recipe] ?? null;
   const noun = recipe?.noun ?? 'result';
@@ -202,7 +218,7 @@ async function finish(id) {
 const operations = {
   tabs: async () => (await chrome.tabs.query({})).filter(tab => /^https?:/.test(tab.url ?? ''))
     .map(tab => ({ id: tab.id, title: tab.title, url: tab.url, active: tab.active, windowId: tab.windowId })),
-  items: async () => Object.values(await load()).sort((a, b) => a.createdAt.localeCompare(b.createdAt)),
+  items: async () => Object.values((await recovered, await load())).sort((a, b) => a.createdAt.localeCompare(b.createdAt)),
   pick: message => pick(message.tabId),
   check: message => check(message.id),
   approve: message => approve(message.id),

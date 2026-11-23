@@ -53,7 +53,13 @@ on the page before the click is this click's result only if the page reloaded
 or another one appeared.
 
 A finished item is closed whatever happened. To try again, pick and approve
-again.
+again. Finishing claims the approval in one step, so if the inbox is open in
+two places and both ask at once, one of them clicks and the other is told the
+item is already being finished.
+
+If the extension is stopped while it is clicking, it cannot know afterwards
+whether the click went out. The card then says **Click may have been sent;
+merge not confirmed**, and the item stays closed.
 
 The inbox knows an application's signs of success and refusal through a small
 recipe table in `background.js`. Today it has one recipe, merging a pull request
@@ -85,4 +91,16 @@ refused** and **Click blocked**.
 ```
 FAWN_EXTENSION_BROWSER=/path/to/chrome FORGEJO_ORIGIN=http://127.0.0.1:3000 \
 FORGEJO_PASSWORD_FILE=... FORGEJO_TOKEN_FILE=... node test/forgejo-inbox.test.mjs
+```
+
+`test/overlapping-finish.test.mjs` checks that one approval is one click. A
+local page counts every press of each of its buttons. Each approved button gets
+three Finish requests at the same moment, from two inbox pages; one request
+wins and the page counts one press. One more button keeps its page busy while
+it is being pressed, and the extension's worker is stopped during that time:
+the card ends as **Click may have been sent; result not confirmed**, a later
+Finish is refused, and the press is counted at most once.
+
+```
+FAWN_EXTENSION_BROWSER=/path/to/chrome node test/overlapping-finish.test.mjs
 ```
