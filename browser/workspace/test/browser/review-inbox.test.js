@@ -118,6 +118,17 @@ try {
 
   // 1. The page keeps moving outside the reviewed button. Ana's approval still
   // holds when Ben picks it up, and Ben acts on exactly what Ana saw.
+  // An ordinary element may be reviewed only as a visible rectangle a person
+  // chose. Without one its capture would be the tab cropped to the element's
+  // box, which is more than an element-only grant covers, so it is refused.
+  if (control === 'dom') {
+    await open('INV-1039');
+    await command('focusPage', { pageId: 'main' });
+    await assert.rejects(command('proposeReview', { pageId: 'main', selector: '#approve', title: 'No rectangle',
+      change: 'Pay', assignee: ana.personId }), /surface unavailable/i);
+    report.elementOnlyGrantRefusedForOrdinaryElement = true;
+  }
+
   await flow('unrelated-motion-holds-across-handoff', async row => {
     const item = await prepare('INV-1042', 'Approve the Acme payment');
     assert.equal(item.status, 'still-holds');

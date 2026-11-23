@@ -151,15 +151,21 @@ function createElementCapture(id, resident, capture, leaseMs, scopeProbe, canoni
     };
     check();
   }
-  let permissionRequests = 0;
+  let permissionRequests = 0, cropped = false;
   async function start(selected) {
     element = selected;
     assertCurrent();
-    if (!(element instanceof HTMLCanvasElement) || !globalThis.RestrictionTarget?.fromElement
-      || !globalThis.MediaStreamTrackProcessor) throw Error('Selected compositor surface unavailable');
+    // A canvas is captured alone (restrictTo). Any other element is captured as
+    // the tab cropped to its box, which includes whatever is painted over it, so
+    // it is allowed only when a person chose to review a visible rectangle.
+    cropped = !(element instanceof HTMLCanvasElement);
+    if ((cropped && capture.pixelScope !== 'visible-rectangle') || !globalThis.MediaStreamTrackProcessor
+      || !(cropped ? globalThis.CropTarget?.fromElement : globalThis.RestrictionTarget?.fromElement)) {
+      throw Error('Selected compositor surface unavailable');
+    }
     observer = new MutationObserver(() => { if (!isCurrent()) stop(); });
     observer.observe(document, { subtree: true, childList: true, attributes: true });
-    const target = await RestrictionTarget.fromElement(element);
+    const target = await (cropped ? CropTarget : RestrictionTarget).fromElement(element);
     assertCurrent();
     permissionRequests++;
     stream = await navigator.mediaDevices.getDisplayMedia({
@@ -167,9 +173,9 @@ function createElementCapture(id, resident, capture, leaseMs, scopeProbe, canoni
     });
     if (ended) { stream.getTracks().forEach(t => t.stop()); throw Error('Sharing request expired'); }
     [track] = stream.getVideoTracks();
-    if (!track?.restrictTo || track.getSettings().displaySurface !== 'browser') throw Error('Capture requires the current browser tab');
+    if (!(cropped ? track?.cropTo : track?.restrictTo) || track.getSettings().displaySurface !== 'browser') throw Error('Capture requires the current browser tab');
     track.addEventListener('ended', stop, { once: true }); stream.addEventListener('inactive', stop, { once: true });
-    await track.restrictTo(target);
+    await (cropped ? track.cropTo(target) : track.restrictTo(target));
     assertCurrent();
     await track.applyConstraints({ frameRate: { min: 5, max: 15 } });
     assertCurrent();
@@ -201,7 +207,7 @@ function createElementCapture(id, resident, capture, leaseMs, scopeProbe, canoni
         const width = frame.displayWidth, height = frame.displayHeight;
         const bitmapMetrics = { permissionRequests: newStream ? permissionRequests : 0,
           consumedFrames: closedFrames + 1, discardedFrames: closedFrames };
-        const evidence = { bitmapMetrics, frame: { source: 'element-capture', surfaceId: id, sessionId: id,
+        const evidence = { bitmapMetrics, frame: { source: cropped ? 'region-capture' : 'element-capture', pixelScope: capture.pixelScope ?? 'restricted-element', surfaceId: id, sessionId: id,
           transport: capture.transport, pixelRepresentation: 'video-frame-copy-to-srgb-rgba8', sourcePixelFormat: frame.format ?? null, mediaTimestampUs: frame.timestamp, width, height } };
         if (capture.transport === 'stock-i420') {
           let tileSize = 64;
@@ -322,7 +328,7 @@ export class CompositorSessions {
     signal?.throwIfAborted();
     const { loaderId, id: frameId } = frameTree.frame;
     const scope = JSON.stringify([loaderId, capture.origin, capture.ownerGeneration, capture.grantId, capture.grantRevision,
-      capture.readRoots, capture.selector, capture.transport, capture.digest]);
+      capture.readRoots, capture.selector, capture.transport, capture.digest, capture.pixelScope ?? 'restricted-element']);
     let entry = this.entries.get(key);
     let start = capture.session === 'start';
     if (start && entry?.scope === scope) {

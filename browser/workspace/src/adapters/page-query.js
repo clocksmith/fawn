@@ -316,7 +316,11 @@ async function queryPage({ mode, selector, maxElements, maxTextChars, elementTex
       values: controls.map((control) => controlValue(control)),
       outline: outline ? renderOutline(region) : null,
     };
-    return region instanceof HTMLCanvasElement ? canvasRegion(region, description) : description;
+    if (region instanceof HTMLCanvasElement) return canvasRegion(region, description);
+    // An ordinary element selected for capture. The capture refuses it unless a
+    // person is reviewing a visible rectangle.
+    if (captureFrame && regionSelector === captureSelector) return captureFrame(region).then(frame => ({ ...description, ...frame }));
+    return description;
   };
   const readRegion = (regionSelector) => {
     let matches;
