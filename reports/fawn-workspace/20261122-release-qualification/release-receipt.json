@@ -12,7 +12,8 @@
    "status of a review without polling screenshots"
   ],
   "doe": "not measured: no arm had a hardware GPU or a WebGPU adapter",
-  "pilotChoice": "Owner decision, 2026-11-22: build the DOM-button pilot on the fenced extension in stock Chrome and keep the browser-owned CPU path behind the same workspace interface. This is a pilot choice, not a claim that the extension gives the same guarantee everywhere. Use the extension only where the actual recipient can be verified; if a workflow needs a target it cannot verify, or the debugger warning is unacceptable, use the browser-owned path or leave that action manual. The transient-change refusal is a real difference and is not a pilot requirement without a user need."
+  "pilotChoice": "Owner decision, 2026-11-22: build the DOM-button pilot on the fenced extension in stock Chrome and keep the browser-owned CPU path behind the same workspace interface. This is a pilot choice, not a claim that the extension gives the same guarantee everywhere. Use the extension only where the actual recipient can be verified; if a workflow needs a target it cannot verify, or the debugger warning is unacceptable, use the browser-owned path or leave that action manual. The transient-change refusal is a real difference and is not a pilot requirement without a user need.",
+  "twoApprovalsWorkflow": "2026-11-23: on a two-approval Forgejo workflow the fenced extension matched the browser-owned path 12 of 12 and held both approvals in one profile; the browser-owned path needed one profile per pending item. The extension inbox is the first product (fawn PR #24). The fork is kept only for what it alone can do and still has to show that on a real application."
  },
  "build": {
   "description": "Linux x86_64, is_component_build=false, is_debug=false, is_official_build=false, chrome_pgo_phase=0, symbol_level=0. Non-component, not official, no profile-guided optimization.",
@@ -1602,9 +1603,116 @@
    "unitSuite": "100 passing"
   },
   "openLimits": [
-   "After a click that reloads the page the workspace reports the outcome as unknown (completion-unestablished) in 20 of 20 Forgejo flows, merged or refused, and waits out its 10 second completion timeout. Completion conditions are read inside the reviewed region, which no longer exists.",
-   "The new admission rule for submit buttons has no unit test of its own.",
-   "Not run on the fenced extension path; no extension-path workspace code exists."
+   "Within one browser, two reviews on different pages do not both survive. A tab behind another stops drawing and the browser closes its review (page-hidden); with two windows, starting or finishing a review on one page re-lays-out the other and the browser closes that review too (surface-changed). Nothing is clicked and the item asks for a fresh look, but the approval is lost. Two pending approvals need one browser profile each.",
+   "Result regions and the rule that only new evidence counts are exercised on Forgejo only."
+  ],
+  "resolvedSinceFirstReceipt": [
+   "The outcome after a click that reloads the page: fixed in fawn PR #23 (9721a7eabc on qualification/resident-block-resume). See outcomeAfterTheClick.",
+   "The admission rule for submit buttons now has a unit test (test/unit/reviewed-click.test.js).",
+   "The fenced extension has been run on the same Forgejo workflow. See twoApprovalsSideBySide."
   ]
+ },
+ "outcomeAfterTheClick": {
+  "observedDateUTC": "2026-11-23",
+  "change": "fawn PR #23, 9721a7eabc on qualification/resident-block-resume",
+  "cause": "Forgejo refuses a merge in two ways. When the branch head moved it reloads the page with an error banner. When the pull request is not ready to merge it answers the scripted request with HTTP 400 and adds a message to the page without reloading; that message sits outside the page content the workspace read, so the outcome was reported unknown in about one refused merge in ten.",
+  "whatChanged": [
+   "A review names up to four result regions. They belong to that review, are read only for its click, and need not exist when the review is taken.",
+   "Only new evidence counts: a condition that already held just before the click counts only if the document changed or more elements match.",
+   "The inbox says done, refused, or 'Click delivered. Result not confirmed.', and never offers the click again."
+  ],
+  "configuration": "frozen release binary 148d641a1545dcd9 with --disable-gpu-compositing",
+  "regression": {
+   "workspace": "25/25",
+   "canvasInbox": "25/25",
+   "buttonInbox": "25/25",
+   "unitSuite": "100 passing"
+  },
+  "forgejo": {
+   "runs": 10,
+   "passed": 10,
+   "approvedHandoff": {
+    "runs": 10,
+    "reportedCompleted": 10
+   },
+   "branchMovedAfterApproval": {
+    "runs": 10,
+    "reportedFailed": 10,
+    "bannerAfterReload": 8,
+    "messageWithoutReload": 2
+   },
+   "requiredCheckAddedAfterApproval": {
+    "runs": 10,
+    "reportedFailed": 10,
+    "messageWithoutReload": 10,
+    "pageReloaded": 0,
+    "reading": "A required status check added to the base branch after approval makes Forgejo take the no-reload refusal on every run."
+   }
+  },
+  "unitCases": [
+   "refusal without a reload",
+   "refusal after a reload",
+   "completion after a reload",
+   "an old refusal message alone is not this click's result",
+   "an old message plus a new one is",
+   "an old message then a reload is",
+   "two reviews on one page each read only their own result regions"
+  ],
+  "evidence": "two-approvals-side-by-side.json (regressionAfterOutcomeChange, forgejoFlowsAfterOutcomeChange)"
+ },
+ "twoApprovalsSideBySide": {
+  "observedDateUTC": "2026-11-23",
+  "workflow": "Two pull requests in a local Forgejo are reviewed and approved. The first one's branch is then changed. The first is finished, then the second. Scripted stand-ins act for both people; no person and no model took part.",
+  "sameBinary": "frozen release binary 148d641a1545dcd9, Chromium 158.0.8108.0, for both paths",
+  "fawnPath": {
+   "runs": 12,
+   "passed": 12,
+   "changedPayment": "12 delivered, 12 refused by Forgejo and reported failed, 0 on main",
+   "unchangedPayment": "12 merged and reported completed, exactly one commit on main in 12",
+   "medianMsToResult": {
+    "changed": 250,
+    "unchanged": 457
+   },
+   "bothApprovalsInOneBrowser": false,
+   "note": "one browser profile per pending item; see openLimits"
+  },
+  "fencedExtension": {
+   "runs": 12,
+   "passed": 12,
+   "extensionSha256": "0b4762c900677a79",
+   "changedPayment": "12 delivered, 12 refused by Forgejo and reported failed, 0 on main",
+   "unchangedPayment": "12 merged and reported completed, exactly one commit on main in 12",
+   "medianMsToResult": {
+    "changed": 165,
+    "unchanged": 391
+   },
+   "bothApprovalsInOneBrowser": true
+  },
+  "reading": "On this workflow the fenced extension matches the browser-owned path and holds both approvals in one profile. On the changed payment both paths delivered the click and Forgejo refused the merge: the page the finisher had did not change, so nothing here demonstrates a browser-only guarantee. The differences in verdict.forkBuysOnly are not exercised by this workflow.",
+  "forgejoNote": "Forgejo refuses a merge while it is still examining a pull request, including an unchanged one. Both tests wait until Forgejo reports the pull request mergeable.",
+  "extensionProduct": {
+   "where": "fawn PR #24, browser/extension/review-inbox",
+   "runs": 12,
+   "passed": 12,
+   "drivenThroughItsOwnPage": "three pull requests in three tabs of one profile are picked, approved and finished out of order",
+   "results": {
+    "mergeConfirmed": 12,
+    "appRefused": 12,
+    "clickBlocked": 12
+   },
+   "unchangedPaymentOnMainExactlyOnce": 12,
+   "tabsBroughtForwardWhileFinishing": 0,
+   "medianMsToShownResult": {
+    "mergeConfirmed": 809,
+    "appRefused": 298,
+    "clickBlocked": 51
+   }
+  },
+  "notRun": [
+   "a person using either path by hand",
+   "Chrome's side panel itself; the extension test opens the same page in a tab",
+   "branded Chrome"
+  ],
+  "evidence": "two-approvals-side-by-side.json"
  }
 }
