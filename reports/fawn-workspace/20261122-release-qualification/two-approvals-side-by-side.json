@@ -1,0 +1,116 @@
+{
+ "schema": "fawn.two-approvals-side-by-side/v1",
+ "observedDateUTC": "2026-11-23",
+ "chromeSha256": "148d641a1545dcd90c68e7e71958a39d2c556d1ef1af2b9c74defbebeb9565ae",
+ "browserVersion": "158.0.8108.0",
+ "controlExtensionSha256": "0b4762c900677a79ae70b4dc3829561aba220a7a3e0bea9329fbd7a4f04115be",
+ "fawnPath": {
+  "runs": 12,
+  "changedPayment": {
+   "clickDelivered": 12,
+   "reportedRefused": 12,
+   "mergedByForgejo": 0,
+   "commitsOnMain": 0,
+   "medianMsToResult": 250.0
+  },
+  "unchangedPayment": {
+   "clickDelivered": 12,
+   "reportedCompleted": 12,
+   "mergedByForgejo": 12,
+   "runsWithExactlyOneCommitOnMain": 12,
+   "medianMsToResult": 457.0
+  },
+  "secondFinishRefused": 12,
+  "browserProfilesPerPendingItem": 1,
+  "bothApprovalsInOneBrowser": false
+ },
+ "fencedExtension": {
+  "runs": 12,
+  "changedPayment": {
+   "clickDelivered": 12,
+   "reportedRefused": 12,
+   "mergedByForgejo": 0,
+   "commitsOnMain": 0,
+   "medianMsToResult": 164.5
+  },
+  "unchangedPayment": {
+   "clickDelivered": 12,
+   "reportedCompleted": 12,
+   "mergedByForgejo": 12,
+   "runsWithExactlyOneCommitOnMain": 12,
+   "medianMsToResult": 391.0
+  },
+  "secondFinishRefused": 12,
+  "bothApprovalsInOneBrowser": true
+ },
+ "extensionInbox": {
+  "backgroundSha256": "3cc49fd89116b4325c3d85ec47033156ea092bedd97d9fa34cf086240d50d84a",
+  "runs": 12,
+  "results": {
+   "A": {
+    "App refused": 12
+   },
+   "B": {
+    "Merge confirmed": 12
+   },
+   "C": {
+    "Click blocked": 12
+   }
+  },
+  "onMainExactlyOnce": {
+   "A": 0,
+   "B": 12,
+   "C": 0
+  },
+  "medianMsToShownResult": {
+   "A": 298.0,
+   "B": 809.0,
+   "C": 50.5
+  },
+  "tabsBroughtForwardWhileFinishing": 0
+ },
+ "regressionAfterOutcomeChange": {
+  "workspace": {
+   "passed": 25,
+   "failed": 0
+  },
+  "inbox-canvas": {
+   "passed": 25,
+   "failed": 0
+  },
+  "inbox-dom": {
+   "passed": 25,
+   "failed": 0
+  },
+  "forgejo": {
+   "passed": 10,
+   "failed": 0
+  }
+ },
+ "forgejoFlowsAfterOutcomeChange": [
+  {
+   "flow": "approved-handoff-merges",
+   "outcome": "completed",
+   "refusal": null,
+   "runs": 10
+  },
+  {
+   "flow": "branch-moved-after-approval-refused-by-forgejo",
+   "outcome": "failed",
+   "refusal": "banner-after-reload",
+   "runs": 8
+  },
+  {
+   "flow": "branch-moved-after-approval-refused-by-forgejo",
+   "outcome": "failed",
+   "refusal": "immediate-message",
+   "runs": 2
+  },
+  {
+   "flow": "required-check-added-after-approval-refused-without-reload",
+   "outcome": "failed",
+   "refusal": "immediate-message",
+   "runs": 10
+  }
+ ]
+}
