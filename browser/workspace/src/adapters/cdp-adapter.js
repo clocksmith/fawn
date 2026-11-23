@@ -274,6 +274,13 @@ class CdpWorkspaceAdapter {
         || visibleRectangle.selector !== selector || ['x', 'y', 'width', 'height'].some(key => visibleRectangle[key] !== rect[key]))) {
       throw Error('The selected viewport rectangle or document changed. Select it again.');
     }
+    // The browser reviews whole CSS pixels. An element's box is often fractional
+    // on a real page, so review the smallest whole-pixel rectangle containing it.
+    const left = Math.floor(rect.x), top = Math.floor(rect.y);
+    const reviewRect = { x: left, y: top, width: Math.ceil(rect.x + rect.width) - left, height: Math.ceil(rect.y + rect.height) - top };
+    // A cropped tab capture rounds the same box its own way; the reviewed pixels
+    // come from the browser, so its frame may differ by the rounding only.
+    const slack = frame.source === 'region-capture' ? 2 : 0;
     const attempt = { grantId: frame.grantId, slot };
     page.pendingReviews ??= new Map();
     page.visualReviews ??= new Map();
@@ -296,8 +303,8 @@ class CdpWorkspaceAdapter {
     let review;
     try {
       for (let recaptures = 0; ; recaptures++) {
-        review = await client.capture(rect,
-          { x: rect.x + Math.floor(rect.width / 2), y: rect.y + Math.floor(rect.height / 2) });
+        review = await client.capture(reviewRect,
+          { x: reviewRect.x + Math.floor(reviewRect.width / 2), y: reviewRect.y + Math.floor(reviewRect.height / 2) });
         let moved = false;
         for (const deadline = Date.now() + settleMs; Date.now() < deadline && !moved;) {
           await new Promise(resolve => setTimeout(resolve, REVIEW_SETTLE_POLL_MS));
@@ -323,7 +330,8 @@ class CdpWorkspaceAdapter {
     const current = await session.send('Page.getFrameTree', {});
     if (current.frameTree.frame.loaderId !== frame.loaderId || (visibleRectangle && current.frameTree.frame.url !== visibleRectangle.url)
         || review.deviceScaleFactor !== frame.binding.deviceScaleFactor
-        || review.pixelWidth !== bitmap.width || review.pixelHeight !== bitmap.height) {
+        || Math.abs(review.pixelWidth - bitmap.width) > slack * review.deviceScaleFactor
+        || Math.abs(review.pixelHeight - bitmap.height) > slack * review.deviceScaleFactor) {
       throw Error('Browser review does not match the granted capture geometry and document');
     }
     // A root-surface read can include an occluding or neighboring element. Never

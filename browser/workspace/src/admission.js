@@ -280,7 +280,10 @@ function checkObservation(workspace, command, nowMs, live = null) {
   if (command.requireReviewedClick && !reviewed) {
     reject(REJECTION_CODES.STALE_OBSERVATION, 'A native review of the click target is required');
   }
-  if (reviewed && (command.kind !== 'click' || command.target.selector !== reviewed)) {
+  // The reviewed click on a form's submit button is admitted as a submit, so the
+  // form's destination is authorized like any other submit.
+  const reviewedKind = reviewed && cited.targetFormActions?.[reviewed] ? 'submit' : 'click';
+  if (reviewed && (command.kind !== reviewedKind || command.target.selector !== reviewed)) {
     reject(REJECTION_CODES.INVALID_COMMAND, 'A native visual review authorizes only a click on that selected region');
   }
   if (scope.kind === REGIONS_SCOPE && captured.some(selector => !scope.selectors.includes(selector))) {
