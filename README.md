@@ -5,8 +5,9 @@ compute that most browsers can already run. We aim to run it better.
 
 Fawn is the whole project and the brand of its Chromium fork. **Doe** is the WebGPU
 runtime and WGSL compiler that power Fawn; it is also usable on its own from Node,
-Bun, Deno and native code. Durable browser workspaces for agents are an optional
-Fawn feature. DoeLab tests improvements, and DoeProof records execution and
+Bun, Deno and native code. **Blitzen** is the durable browser workspace service:
+it runs above stock Chrome/Chromium by default and can use an explicitly selected
+Fawn build. DoeLab tests improvements, and DoeProof records execution and
 qualification evidence.
 
 The canonical repository for Fawn and Doe is
@@ -16,12 +17,12 @@ there is no `deco/doe` alias. The JavaScript package remains `doe-gpu`.
 
 | Surface | What it does | Start here |
 | --- | --- | --- |
-| Fawn | Browser observation, authorized actions, handoff and recovery | [Workspace service](browser/workspace/README.md) |
+| Fawn | Custom Chromium browser; browser-specific direction and acceptance are tracked separately | [Browser requirements proposal](docs/fawn-browser-product-requirements-proposal.md) · [Chromium integration](browser/chromium/README.md) |
+| Blitzen | Browser observation, authorized actions, handoff and recovery | [Workspace service](browser/workspace/README.md) · [Workspace contract](docs/fawn-workspace-contract.md) |
 | Doe | Native WebGPU execution and WGSL compilation | [Runtime](runtime/c/README.md) · [Compiler](runtime/c/compiler/README.md) · [Package API](packages/doe-gpu/README.md) |
 | GPU demos | Artwork rendered by the active browser backend | [Canvas demos](https://canvascontext.com/) · [Source](browser/chromium/resources/) |
 
-Fawn's shared
-workspace service is implemented and behaviorally qualified on a frozen case set,
+Blitzen is implemented and behaviorally qualified on a frozen case set,
 not release-qualified ([status](docs/status/fawn-workspace.md)).
 Native runtime tests and hosted GPU demos do not establish a release-qualified
 Fawn browser or prove that a webpage is running on Doe.
@@ -29,7 +30,9 @@ Fawn browser or prove that a webpage is running on Doe.
 
 **[Package API](packages/doe-gpu/README.md)** · [Evaluate ONNX on Vulkan](docs/onnx-vulkan-installation.md) · [Goals](GOALS.md) · [Documentation](docs/INDEX.md)
 
-## Fawn workspaces
+<a id="fawn-workspaces"></a>
+
+## Blitzen workspaces
 
 The [workspace service](browser/workspace/README.md) runs above stock Chromium
 through Playwright and CDP adapters. It preserves ownership, observations and
@@ -42,14 +45,14 @@ GPU ownership and release gates. It is not required to use the workspace service
 
 ## What end-to-end C means
 
-**Doe owns shader meaning and GPU execution. Fawn owns browser work, authority
-and recovery.** The C implementation replaces Doe's compiler and native runtime;
-Fawn's workspace service remains JavaScript and upstream Chromium remains C++.
+**Doe owns shader meaning and GPU execution. Blitzen owns workspace action
+authority and recovery.** The C implementation replaces Doe's compiler and native
+runtime; Blitzen remains JavaScript and upstream Chromium remains C++.
 Platform graphics drivers and DXC on Windows remain explicit dependencies.
 
-The complete integrated path is an authorized Fawn action, a Chromium webpage's
+The complete integrated path is an authorized Blitzen action, a Chromium webpage's
 ordinary WebGPU request, the explicitly selected Doe C runtime and C compiler,
-physical GPU execution, checked output or presentation, and Fawn's durable record
+physical GPU execution, checked output or presentation, and Blitzen's durable record
 of the outcome. It must also handle callbacks, cancellation, resource retirement
 and browser shutdown. A missing C library must fail rather than select Zig or
 Dawn; switching back to Dawn is a separate explicit choice.
@@ -149,7 +152,7 @@ adoption, and material replacement advantage remain unestablished.
 Compiler correctness, runtime performance, and application benefit require
 separate evidence. See the [claim index](reports/claim-index.json),
 [backend evidence](docs/backend-evidence-matrix.md), and [current status](docs/status.md).
-Native results do not qualify browser replacement. Fawn's
+Native results do not qualify browser replacement. Blitzen's
 [durable workspace contract](docs/fawn-workspace-contract.md) governs its
 service; workspace evidence and runtime evidence stay separate. Chromium hooks and the optional
 [browser runtime integration](browser/chromium/README.md) are added only when
@@ -159,7 +162,7 @@ browser evidence stays separate.
 ## Read next
 
 - [Architecture](docs/architecture.md) — subsystem boundaries and execution details.
-- [Goals](GOALS.md) — the environment where agents work: Fawn workspaces, DoeRuntime, DoeLab, and DoeProof.
+- [Goals](GOALS.md) — product goals, runtime proof gates, and the shared workspace.
 - [Contributing](AGENTS.md) — repository workflow and component ownership.
 
 ## License
