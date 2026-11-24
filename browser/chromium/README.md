@@ -6,8 +6,8 @@ checkout itself and it does not change the public `doe-gpu/browser` contract.
 It lives in [Fawn](https://github.com/clocksmith/fawn); Doe is the compiler/runtime
 component selected at the webpage's WebGPU boundary.
 
-Fawn provides durable browser workspaces through the
-[workspace service above stock Chromium](../../docs/fawn-workspace-contract.md).
+[Blitzen](../../docs/fawn-workspace-contract.md) is the separate durable workspace
+service above stock Chrome/Chromium by default and does not require a Fawn build.
 This directory owns the separate, optional Chromium runtime-integration lane.
 Chromium hooks and browser-runtime integration are added only when measured
 benefits justify their compatibility and maintenance costs. Lane success means a released
