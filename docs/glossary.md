@@ -7,13 +7,15 @@
 - `Fawn`
   - the whole project and canonical repository, and the brand of its Chromium
     fork, which Doe powers
-  - durable browser workspaces are an optional Fawn feature: one shared
-    observation, action, and recovery service, defined by the
-    [workspace contract](fawn-workspace-contract.md); call it the Fawn workspace
-    service
+- `Blitzen`
+  - durable, browser-agnostic observation, action, and recovery service defined by
+    the [workspace contract](fawn-workspace-contract.md); uses stock Chrome by
+    default and can use an explicitly selected Fawn build
+  - `Fawn Workspace` is its former name; retained file names and strategy keys
+    stay unchanged for evidence compatibility
 - `Fawn browser`
-  - the Fawn-branded Chromium fork with Doe-owned page WebGPU under
-    `browser/chromium/`
+  - the Fawn-branded Chromium build; the separate [Chromium integration
+    lane](browser-lane.md) tracks Doe page WebGPU ownership and qualification
 - `DoeRuntime`
   - independently useful GPU execution: the native WebGPU engine and its
     shared-library artifacts, with the selected C implementation and retained Zig
@@ -53,7 +55,7 @@
   - the retained four-lane benchmark under `bench/fawn_matrix/`
 - `hosted demonstrations`
   - the WebGPU artwork pages under `browser/chromium/resources/`; they do not
-    implement or qualify the Fawn workspace service
+    implement or qualify the Blitzen workspace service
 - `benchmark harness`
   - a contract-specific evidence runner under `bench/`
 - `pipeline surface`
