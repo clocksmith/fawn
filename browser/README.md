@@ -1,11 +1,13 @@
 # Browser
 
-`browser/` contains Fawn's workspace service and its separate Doe GPU integration.
-Both belong to [clocksmith/fawn](https://github.com/clocksmith/fawn):
+`browser/` contains the browser-agnostic **Blitzen** workspace service and
+separate Chromium integration for the **Doe** runtime, both in
+[clocksmith/fawn](https://github.com/clocksmith/fawn). **Fawn** names the custom
+Chromium browser.
 
 - `browser/workspace/`
-  - Fawn's durable browser workspaces: the shared observation, action, and
-    recovery service above stock Chromium, behavior-qualified on its frozen case
+  - Blitzen: the shared observation, action, and recovery service above stock
+    Chrome/Chromium by default, behavior-qualified on its frozen case
     set and advantaged only on its frozen differentiation suite (see its
     [README](workspace/README.md)). The
     [workspace contract](../docs/fawn-workspace-contract.md) owns its
