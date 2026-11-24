@@ -2,6 +2,10 @@
 
 **Status: Proposed, not validated.** This document defines proposed requirements, not established capabilities or release readiness. It authorizes no contact, purchase, pilot, production use, sales activity, or consumer exposure. Performance, adoption, and supervision benefits remain hypotheses. No price or valuation is proposed.
 
+The [Blitzen workspace contract](fawn-workspace-contract.md) governs the adopted
+browser-agnostic workspace service, and its [status page](status/fawn-workspace.md)
+records admitted evidence. This proposal remains separate from both.
+
 ## 1. Product thesis, differentiation, and users
 
 **Fawn is a browser built around DoeRuntime as its custom WebGPU implementation, with persistent shared workspaces for people and agents.** People browse, use web applications, inspect artifacts, and delegate bounded work within the same environment.
