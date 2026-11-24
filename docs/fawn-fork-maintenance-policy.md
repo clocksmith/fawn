@@ -1,3 +1,5 @@
+> Scope note, 2026-11-24: this is the conditional Doe Chromium-lane maintenance policy. It does not state Fawn's adopted direction. Fawn's adopted direction is branching the live page, see [GOALS.md](../GOALS.md) and [the Ouroboros project index](https://github.com/clocksmith/ouroboros/blob/main/docs/projects/INDEX.md). Do not read the "no maintained fork is currently selected" line as Fawn having no fork; it is conditional on a Doe-lane selection decision that has not been made.
+
 # Doe Chromium fork maintenance policy
 
 Status: **conditional; no maintained fork is currently selected**. Chromium hooks
