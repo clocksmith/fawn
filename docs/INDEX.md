@@ -94,20 +94,20 @@ of repeated prose does not delete them.
   structured local and public browser-control failures, upstream dispositions,
   and proposed reproductions; research, not qualification or a roadmap change
 - [`fawn-browser-product-requirements-proposal.md`](fawn-browser-product-requirements-proposal.md):
-  user-supplied Fawn browser PRD; proposal, not adopted or validated
+  Fawn browser product proposal; not the adopted workspace contract, acceptance
+  evidence, or release approval
 - [`python-browser-scripting-incubation.md`](python-browser-scripting-incubation.md):
   parked Python-native scripting stretch goal; documentation only
-- [`fawn-workspace-contract.md`](fawn-workspace-contract.md): Fawn's durable
-  browser workspaces — authority, action recovery, reusable workflows and
-  prospective acceptance
-- [`status/fawn-workspace.md`](status/fawn-workspace.md): missing implementation
-  and acceptance boundary, independent of artwork and runtime integration
+- [`fawn-workspace-contract.md`](fawn-workspace-contract.md): Blitzen's adopted
+  workspace requirements and acceptance rules; stock Chrome by default, with
+  optional explicitly selected Fawn builds
+- [`status/fawn-workspace.md`](status/fawn-workspace.md): implemented and qualified
+  Blitzen behavior and remaining gates, independent of artwork and runtime integration
 - [`browser-lane.md`](browser-lane.md): optional Chromium runtime integration,
   retained A/B/C/D attribution, and the separate Cloudflare Kitesurf K0
   external-product comparator
 - [`fawn-fork-maintenance-policy.md`](fawn-fork-maintenance-policy.md):
-  conditional Chromium fork maintenance cost, applicable only after a
-  measured-benefit selection
+  conditional Doe Chromium-lane maintenance policy; not Fawn product direction
 
 ## Cerebras and CSL
 
