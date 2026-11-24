@@ -2,8 +2,8 @@
 
 ## Purpose
 
-The Fawn repository contains the workspace service and independently usable Doe
-compiler/runtime. It is organized by product boundary first:
+The Fawn repository contains the Fawn browser integration, the browser-agnostic
+Blitzen workspace service, and the independently usable Doe compiler/runtime. It is organized by product boundary first:
 
 - engine/runtime
 - package families
@@ -41,8 +41,8 @@ discovered agent instructions. Supporting archives live with their owning famili
 ### Browser
 
 - `browser/workspace`
-  - Fawn's durable browser workspaces: the shared service above stock Chromium
-    (implemented; see [its status](status/fawn-workspace.md))
+  - Blitzen durable browser workspaces: the shared service above stock
+    Chrome/Chromium by default (implemented; see [its status](status/fawn-workspace.md))
 - `browser/chromium`
   - the repo-local, optional Chromium runtime-integration layer
 - `browser/chromium_webgpu_lane`
