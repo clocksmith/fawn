@@ -292,6 +292,20 @@ the typed ABI and text targets reject it) states that the consumer's device boun
 every buffer access by its bound range, as Vulkan robustBufferAccess2 does: runtime
 tails are then indexed unclamped and an out-of-range access loads zero or is
 dropped, which WGSL also permits. Fixed extents keep their constant clamps.
+`DOE_COMPILER_WRITE_MARKS` (SPIR-V module, prepared and specialized entry points;
+text targets reject it) is the opt-in write tracking of the native snapshot extension
+([spirv_marks.c](src/spirv_marks.c)). After every executed store or atomic on a
+read_write storage buffer it stores 1 into the hidden mark word of each 64 KiB page the
+access touches, computed from the access chain's clamped indices and the type layout,
+and after every in-bounds 2D `textureStore` into the word of its 256x256 tile. The mark
+buffer is a hidden storage binding (group 0, binding 1000); a hidden immediate block
+holds two words per writable resource (first mark index, then the binding byte offset
+or the tiles per row), in the source order of the module's writable storage resources.
+Indices clamp to the buffer's last word. The flag refuses `var<immediate>`, more than
+eight writable storage resources, a single store larger than one page, and
+`textureStore` on other dimensions or through a function parameter. Without the flag,
+or without a writable storage resource, the output is unchanged. `make test-write-marks`
+checks this and runs `spirv-val` on the marked modules.
 MSL writes min/max over the slot-30 size table ([its charter](targets/metal/AGENTS.md))
 and HLSL reads sizes from a runtime-supplied table ([its charter](targets/hlsl/AGENTS.md)).
 Workgroup, private, function and value roots guard each access step before pointer

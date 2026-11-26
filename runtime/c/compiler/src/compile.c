@@ -279,7 +279,8 @@ DoeCompilerStatus compiler_compile_module(const DoeCompilerModuleCapacities *cap
         ((flags & DOE_COMPILER_DISABLE_CLIP_DISTANCES) != 0u ? MODULE_DISABLE_CLIP_DISTANCES : 0u) |
         ((flags & DOE_COMPILER_DISABLE_PRIMITIVE_INDEX) != 0u ? MODULE_DISABLE_PRIMITIVE_INDEX : 0u) |
         ((flags & DOE_COMPILER_DISABLE_DUAL_SOURCE_BLENDING) != 0u ? MODULE_DISABLE_DUAL_SOURCE_BLENDING : 0u) |
-        ((flags & DOE_COMPILER_BOUNDED_BUFFER_ACCESS) != 0u ? MODULE_BOUNDED_BUFFER_ACCESS : 0u);
+        ((flags & DOE_COMPILER_BOUNDED_BUFFER_ACCESS) != 0u ? MODULE_BOUNDED_BUFFER_ACCESS : 0u) |
+        ((flags & DOE_COMPILER_WRITE_MARKS) != 0u ? MODULE_WRITE_MARKS : 0u);
     if (stage_capacities != NULL) stage_bind(&context, workspace, stage_capacities, base);
     if (specialization != NULL) specialization->stage_base = base;
     DoeCompilerTypedOutputCounts typed;

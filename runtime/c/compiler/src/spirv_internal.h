@@ -49,6 +49,11 @@ enum {
     FIRST_DYNAMIC_ID
 };
 enum { WALK_TYPE, WALK_CONSTANT, WALK_ACCESS };
+/* Hidden write-mark declarations (spirv_marks.c); count 0 emits nothing. */
+typedef struct {
+    uint32_t count, length, element_pointer, runtime_array, block, pointer, variable;
+    uint32_t bases_array, bases_block, bases_pointer, bases_variable, bases_element_pointer;
+} SpirvMarks;
 typedef struct {
     Source *source;
     CompilerWorkspace *program;
@@ -60,6 +65,7 @@ typedef struct {
     bool sample_rate_shading, demote_to_helper, derivative_control, clip_distance, primitive_id;
     size_t function_end;
     uint32_t constants_used;
+    SpirvMarks marks;
     bool failed;
 } Emitter;
 typedef struct EmitLoop EmitLoop;
@@ -125,6 +131,14 @@ bool spirv_image_plan(Emitter *, const IrInstruction *);
 bool spirv_image_operation(Emitter *, const IrInstruction *);
 uint32_t spirv_sampled_type(Emitter *, TypeId);
 bool spirv_subgroup_builtin(Emitter *, const IrInstruction *, const NumericBuiltin *, TypeId);
+bool spirv_marks_plan_module(Emitter *);
+bool spirv_marks_plan(Emitter *, const IrInstruction *);
+bool spirv_marks_annotations(Emitter *);
+bool spirv_marks_declarations(Emitter *);
+bool spirv_marks_variables(Emitter *);
+bool spirv_marks_buffer(Emitter *, const IrInstruction *);
+bool spirv_marks_texel(Emitter *, const IrInstruction *, uint32_t);
+uint64_t spirv_marks_id_budget(const CompilerWorkspace *);
 #define EMIT(opcode, ...) do { \
     const uint32_t arguments[] = { __VA_ARGS__ }; \
     if (!spirv_instruction(e, opcode, arguments, sizeof(arguments) / sizeof(arguments[0]))) return false; \

@@ -177,7 +177,10 @@ static bool texel(Emitter *e, const IrInstruction *ir, const TypeRecord *t, cons
     EMIT(OP_BRANCH_CONDITIONAL, valid, active, merge);
     EMIT(OP_LABEL, active);
     uint32_t loaded = 0u;
-    if (store) { EMIT(OP_IMAGE_WRITE, handle, coordinate, e->values[operands[extra]]); }
+    if (store) {
+        EMIT(OP_IMAGE_WRITE, handle, coordinate, e->values[operands[extra]]);
+        if (!spirv_marks_texel(e, ir, coordinate)) return false;
+    }
     else {
         loaded = spirv_reserve_ids(e, 1u);
         const uint32_t vector = spirv_target_type(e, vector_type(e, t->element, 4u));

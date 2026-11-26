@@ -26,6 +26,7 @@ src/sema_finalize.c
 src/image.c
 src/sema_image.c
 src/spirv_image.c
+src/spirv_marks.c
 src/module.c
 src/builtin.c
 src/numeric.c
