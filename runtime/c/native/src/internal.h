@@ -96,6 +96,13 @@ typedef struct native_device {
     native_command_handle metal_writes;
     uint32_t metal_write_count;
     uint64_t metal_write_bytes;
+    /* GPU-state snapshots (snapshot.c), all under the mutex. write_marks is set
+     * once, before the first shader module; mark_sink is the hidden mark
+     * binding of dispatches outside a branch; snapshot is the one live owner. */
+    bool shader_created;
+    bool write_marks;
+    doe_resource_buffer *mark_sink;
+    struct native_snapshot *snapshot;
 } native_device;
 
 /* Native payloads have no independent reference count. Their resource owner
@@ -190,6 +197,12 @@ typedef struct native_pipeline {
     native_binding bindings[NATIVE_MAX_PIPELINE_BINDINGS];
     WGPUShaderStage imported_binding_visibility[NATIVE_MAX_PIPELINE_BINDINGS];
     uint64_t minimum_sizes[NATIVE_MAX_PIPELINE_BINDINGS];
+    /* Write marks (snapshot_marks.c): the module's writable storage resources
+     * in compiler slot order. marked: the SPIR-V carries the hidden mark
+     * binding and immediates; unmarked_writes: it writes storage without them. */
+    uint32_t mark_slot_count;
+    bool marked, unmarked_writes;
+    native_binding mark_slots[DOE_COMPILER_WRITE_MARK_MAX_SLOTS];
 } native_pipeline;
 
 void *native_allocate(void *state, const void *vtable, size_t size, size_t alignment);

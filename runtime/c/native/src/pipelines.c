@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: MIT */
 #include "internal.h"
+#include "snapshot.h"
 #include "d3d12_frontend.h"
 #include "doe_vk_cache.h"
 #include <stdlib.h>
@@ -209,14 +210,21 @@ static WGPUComputePipeline create_compute_pipeline(native_device *device,
     if (resource_status == DOE_RESOURCE_OK && (!layout || doe_resource_pipeline_layout_device(layout) != device ||
         !native_device_alive(device) || !native_pipeline_bindings(payload, &stage, 1, layout)))
         resource_status = DOE_RESOURCE_LAYOUT;
+    if (resource_status == DOE_RESOURCE_OK && !native_marks_pipeline(payload, view))
+        resource_status = DOE_RESOURCE_UNSUPPORTED;
     if (resource_status == DOE_RESOURCE_OK && backend_failure.status == NATIVE_OK) {
         if (device->backend.kind == WGPUBackendType_Vulkan) {
             doe_vk_binding_layout native_bindings[NATIVE_MAX_PIPELINE_BINDINGS];
             if (!native_vulkan_binding_layout(payload,native_bindings)) backend_failure = native_failure_status(NATIVE_UNSUPPORTED);
             else {
+                /* The hidden mark binding and immediates (compiler/src/spirv_marks.c). */
+                size_t native_count = payload->binding_count;
+                if (payload->marked) native_bindings[native_count++] = (doe_vk_binding_layout){
+                    DOE_COMPILER_WRITE_MARK_GROUP,DOE_COMPILER_WRITE_MARK_BINDING,DOE_VK_BINDING_STORAGE};
                 doe_vk_error detail = {0};
                 doe_vk_status status = doe_vk_pipeline_create_blob(device->backend.value.vulkan.context,
-                    view->words, view->counts.words, stage.name, native_bindings, payload->binding_count, subgroup, payload->immediate_bytes,
+                    view->words, view->counts.words, stage.name, native_bindings, native_count, subgroup,
+                    payload->marked ? 8u * payload->mark_slot_count : payload->immediate_bytes,
                     use_blobs ? &blob : NULL, &payload->handle.vulkan, &detail);
                 backend_failure = native_failure_vulkan(status, &detail);
             }

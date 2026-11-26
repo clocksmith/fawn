@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: MIT */
 #include "surface.h"
+#include "snapshot.h"
 #include "metal_frontend.h"
 #include "d3d12_frontend.h"
 #include "doe_native_queue.h"
@@ -16,18 +17,30 @@ static doe_vk_status record_dispatch(doe_vk_commands *commands, const doe_resour
         doe_resource_pipeline_get_layout(record->value.dispatch.pipeline), record->value.dispatch.groups,
         record->value.dispatch.dynamic_offsets, bindings);
     if (status != DOE_VK_OK) return status;
-    status = doe_vk_commands_set_immediates(commands, pipeline->handle.vulkan,
-        record->value.dispatch.immediates.words, pipeline->immediate_bytes);
+    /* A marked pipeline takes the hidden mark binding after its own and the
+     * mark immediates in place of the (refused) user immediates. */
+    size_t binding_count = pipeline->binding_count;
+    const uint32_t *immediates = record->value.dispatch.immediates.words;
+    uint32_t immediate_bytes = pipeline->immediate_bytes;
+    uint32_t mark_words[2 * DOE_COMPILER_WRITE_MARK_MAX_SLOTS];
+    if (pipeline->marked) {
+        status = native_marks_dispatch(pipeline->device, pipeline, bindings, &bindings[binding_count], mark_words);
+        if (status != DOE_VK_OK) return status;
+        ++binding_count;
+        immediates = mark_words;
+        immediate_bytes = 8u * pipeline->mark_slot_count;
+    }
+    status = doe_vk_commands_set_immediates(commands, pipeline->handle.vulkan, immediates, immediate_bytes);
     if (status != DOE_VK_OK) return status;
     if (record->kind == DOE_COMMAND_DISPATCH_INDIRECT) {
         status = native_dispatch_guard_initialize(pipeline->device);
         if (status != DOE_VK_OK) return status;
         native_buffer *arguments = doe_resource_buffer_native(record->value.dispatch.indirect);
         return doe_vk_commands_dispatch_indirect(commands,pipeline->device->dispatch_validator,
-            pipeline->handle.vulkan,bindings,pipeline->binding_count,arguments->handle.vulkan,
+            pipeline->handle.vulkan,bindings,binding_count,arguments->handle.vulkan,
             record->value.dispatch.indirect_offset);
     }
-    return doe_vk_commands_dispatch_resources(commands, pipeline->handle.vulkan, bindings, pipeline->binding_count,
+    return doe_vk_commands_dispatch_resources(commands, pipeline->handle.vulkan, bindings, binding_count,
         record->value.dispatch.x, record->value.dispatch.y, record->value.dispatch.z);
 }
 
@@ -667,8 +680,13 @@ void wgpuQueueSubmit(WGPUQueue handle, size_t count, const WGPUCommandBuffer *ha
             (native_command_handle){0};
         if (batch.kind) pending->native = batch;
         else if (failure.status == NATIVE_OK) failure = native_command_create(&device->backend, &pending->native);
+        /* An open snapshot branch lowers tracked resources against its slot
+         * for exactly this recording (snapshot_marks.c). */
+        if (failure.status == NATIVE_OK)
+            failure = native_snapshot_lower_begin(device, pending->resources, pending->count);
         for (size_t i = 0; failure.status == NATIVE_OK && i < count; ++i)
             failure = native_record_resource_commands(&pending->native, pending->resources[i]);
+        native_snapshot_lower_end(device);
         /* Each imported image this work uses is released at its end. An access
          * that ends next then needs no submission; more work reacquires it. */
         if (failure.status == NATIVE_OK)

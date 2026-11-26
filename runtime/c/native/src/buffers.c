@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: MIT */
 #include "internal.h"
+#include "snapshot.h"
 #include "d3d12_frontend.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -334,6 +335,8 @@ void wgpuQueueWriteBuffer(WGPUQueue handle, WGPUBuffer buffer_handle,
     doe_resource_buffer_retain(buffer);
     native_lock(device);
     doe_resource_status status = doe_resource_buffer_write_validate(buffer, device, offset, size);
+    /* Stage 1 snapshots do not substitute queue writes: refuse, never leak. */
+    if (status == DOE_RESOURCE_OK && native_snapshot_tracks_buffer(device, buffer)) status = DOE_RESOURCE_UNSUPPORTED;
     native_failure failure = native_failure_status(NATIVE_INVALID_ARGUMENT);
     if (status == DOE_RESOURCE_OK && (bytes || !size)) {
         native_buffer *payload = doe_resource_buffer_native(buffer);

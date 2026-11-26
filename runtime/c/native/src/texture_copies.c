@@ -1,4 +1,5 @@
 /* SPDX-License-Identifier: MIT */
+#include "snapshot.h"
 #include "metal_frontend.h"
 #include "d3d12_texture.h"
 
@@ -84,6 +85,7 @@ void wgpuQueueWriteTexture(WGPUQueue handle, const WGPUTexelCopyTextureInfo *des
     doe_resource_copy_region region;
     native_lock(device);
     doe_resource_status status = doe_resource_texture_write_validate(device, texture, data_size, &copy, &region);
+    if (status == DOE_RESOURCE_OK && native_snapshot_tracks_texture(device, texture)) status = DOE_RESOURCE_UNSUPPORTED;
     if (status == DOE_RESOURCE_OK) doe_resource_texture_retain(texture);
     native_unlock(device);
     if (status != DOE_RESOURCE_OK) {

@@ -184,6 +184,9 @@ static WGPUShaderModule create_shader_module(native_device *device, const WGPUSh
         device->backend.value.vulkan.caps.robust_buffer_access2)
         options.semantic_flags |= DOE_COMPILER_BOUNDED_BUFFER_ACCESS;
     native_lock(device);
+    /* Write marks are fixed before the first module (snapshot.c). */
+    device->shader_created = true;
+    if (device->write_marks && target == DOE_SHADER_SPIRV) options.semantic_flags |= DOE_COMPILER_WRITE_MARKS;
     payload->module = native_shader_cache_module(&device->shaders,&options,source->code.data,size);
     native_unlock(device);
     doe_shader_status status = payload->module ? DOE_SHADER_OK :
