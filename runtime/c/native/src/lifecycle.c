@@ -528,6 +528,8 @@ void wgpuDeviceDestroy(WGPUDevice handle)
     native_device_retain(device);
     native_lock(device);
     bool first = !device->destroyed;
+    doe_resource_buffer *mark_sink = first ? device->mark_sink : NULL;
+    if (first) device->mark_sink = NULL;
     if (first) {
         /* Destruction does not observe a queue error. Poll without consuming
          * its receipt; a later work-done callback must retain the first detail. */
@@ -540,6 +542,8 @@ void wgpuDeviceDestroy(WGPUDevice handle)
         if (doe_error_scope_set_handler(device->errors, NULL, NULL, NULL).status != DOE_ERROR_SCOPE_OK) abort();
     }
     native_unlock(device);
+    /* The sink buffer leases the device; drop it with no owner lock held. */
+    doe_resource_buffer_release(mark_sink);
     if (first) native_loss_complete(device->loss, WGPUDeviceLostReason_Destroyed, "device destroyed");
     /* Every deferred pipeline blob is stored before destruction returns. */
     if (first) native_blob_publisher_finish(device);

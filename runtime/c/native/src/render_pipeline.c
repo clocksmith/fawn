@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: MIT */
 #include "render_internal.h"
+#include "snapshot.h"
 #include "doe_vk_cache.h"
 #include "metal_frontend.h"
 #include "d3d12_graphics_internal.h"
@@ -120,6 +121,11 @@ static WGPURenderPipeline create_vulkan_render_pipeline(native_device *device,
     doe_resource_status status = automatic ? native_automatic_layout(device, stages, stage_count, &layout) : DOE_RESOURCE_OK;
     if (status == DOE_RESOURCE_OK && (!layout || doe_resource_pipeline_layout_device(layout) != device ||
         !native_pipeline_bindings(payload, stages, stage_count, layout))) status = DOE_RESOURCE_LAYOUT;
+    /* Stage 1 write marks cover compute only: a fragment stage carrying the
+     * hidden mark binding is refused; one writing storage unmarked is refused
+     * inside a snapshot branch (snapshot_marks.c). */
+    if (status == DOE_RESOURCE_OK && stage_count > 1 &&
+        (!native_marks_pipeline(payload, &stages[1].view) || payload->marked)) status = DOE_RESOURCE_UNSUPPORTED;
     resource.immediate_required_bytes = payload->immediate_required_bytes;
     doe_resource_binding_minimum minimums[NATIVE_MAX_PIPELINE_BINDINGS];
     resource.minimums = minimums;
