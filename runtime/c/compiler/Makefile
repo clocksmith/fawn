@@ -95,7 +95,7 @@ build/cpp_consumer: tests/cpp_consumer.cpp include/doe_compiler.h build/libdoe_c
 	$(CXX) $(CXXFLAGS) tests/cpp_consumer.cpp -Lbuild -ldoe_compiler -Wl,-rpath,'$$ORIGIN' -lm -o $@
 build/interposition_consumer: tests/interposition_consumer.c include/doe_compiler.h build/libdoe_compiler.so | build/.ready
 	$(CC) $(CFLAGS) tests/interposition_consumer.c -Lbuild -ldoe_compiler -Wl,-rpath,'$$ORIGIN' -Wl,--export-dynamic -lm -o $@
-test: compiler-core build/test_index_guards test-job test-compute test-uniform test-cli-modes build/interposition_consumer build/test_api build/test_const_assert build/test_boundaries build/test_constants build/test_control_api build/test_expression_api build/native_consumer build/test_layout build/cpp_consumer
+test: compiler-core build/test_index_guards test-write-marks test-job test-compute test-uniform test-cli-modes build/interposition_consumer build/test_api build/test_const_assert build/test_boundaries build/test_constants build/test_control_api build/test_expression_api build/native_consumer build/test_layout build/cpp_consumer
 	build/test_index_guards
 	build/test_api
 	build/test_const_assert
@@ -443,6 +443,15 @@ test-uniform-standard-host: tests/test_uniform_standard_host.cpp
 
 .PHONY: test-metal-entry-text test-metal-entry-host
 .PHONY: test-reflect test-reflect-vulkan
+# Opt-in write marks (src/spirv_marks.c): hidden binding, refusals and
+# spirv-val of the marked modules; execution is native check-snapshot.
+$(CONSUMER_BUILD)/test_write_marks: tests/test_write_marks.c tests/hlsl_fixture.h $(HEADERS) $(SHARED_LIBRARY)
+	mkdir -p $(dir $@)
+	$(CC) $(CFLAGS) $(EXTRA_CFLAGS) $< $(CONSUMER_COMPILER_LINK) -o $@
+test-write-marks: $(CONSUMER_BUILD)/test_write_marks
+	rm -rf $(CONSUMER_BUILD)/write-marks && mkdir -p $(CONSUMER_BUILD)/write-marks
+	$(CONSUMER_BUILD)/test_write_marks $(CONSUMER_BUILD)/write-marks
+	for module in $(CONSUMER_BUILD)/write-marks/*.spv; do $(SPIRV_VAL) --target-env vulkan1.1 $$module || exit 1; done
 $(CONSUMER_BUILD)/test_reflect: tests/test_reflect.c tests/reflect_fixture.h tests/hlsl_fixture.h $(HEADERS) $(SHARED_LIBRARY)
 	mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) $(EXTRA_CFLAGS) $< $(CONSUMER_COMPILER_LINK) -lm -o $@

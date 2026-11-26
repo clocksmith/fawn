@@ -40,6 +40,19 @@ extern "C" {
  * load or a discarded store for an out-of-bounds index. Fixed-extent clamps
  * and every non-resource guard remain. */
 #define DOE_COMPILER_BOUNDED_BUFFER_ACCESS 1024u
+/* SPIR-V consumers only, opt-in: every read_write storage-buffer store or
+ * atomic also marks each 64 KiB page it touches, and every 2D textureStore
+ * marks its 256x256 texel tile, in a hidden mark buffer (group/binding below)
+ * indexed through a hidden immediate block of two words per writable resource
+ * (src/spirv_marks.c). Refuses modules that declare var<immediate>, more than
+ * DOE_COMPILER_WRITE_MARK_MAX_SLOTS writable storage resources, a store larger
+ * than one page, and textureStore on other dimensions or through a parameter. */
+#define DOE_COMPILER_WRITE_MARKS 2048u
+#define DOE_COMPILER_WRITE_MARK_PAGE_SHIFT 16u
+#define DOE_COMPILER_WRITE_MARK_TILE_SHIFT 8u
+#define DOE_COMPILER_WRITE_MARK_GROUP 0u
+#define DOE_COMPILER_WRITE_MARK_BINDING 1000u
+#define DOE_COMPILER_WRITE_MARK_MAX_SLOTS 8u
 
 #define DOE_COMPILER_TYPE_SCALAR 1u
 #define DOE_COMPILER_TYPE_VECTOR 2u

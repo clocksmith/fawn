@@ -461,6 +461,7 @@ static bool emit_pointer_access(Emitter *e, const IrInstruction *ir) {
         } else if (store) { EMIT(OP_STORE, pointer, e->values[ir->operands.access.value]); }
         else { EMIT(OP_LOAD, spirv_target_type(e, ir->type), loaded, pointer); }
     }
+    if (!spirv_marks_buffer(e, ir)) return false;
     if (condition != 0u) {
         EMIT(OP_BRANCH, merge);
         EMIT(OP_LABEL, merge);
@@ -944,7 +945,8 @@ bool emit_spirv(Source *source, CompilerWorkspace *program) {
     const uint64_t ceiling = 256u + (uint64_t)program->limits.targets + 64u * (uint64_t)program->limits.instructions +
         3u * (uint64_t)(program->limits.tokens / 6u) + program->limits.tokens / 4u +
         (uint64_t)program->limits.statements + 1u + 11u * (uint64_t)program->limits.accesses + program->limits.resources +
-        program->limits.tokens / 8u + (uint64_t)program->limits.entry_inputs + 5u*(uint64_t)program->limits.entries + 8u + spirv_stage_id_budget(source) + program->limits.words;
+        program->limits.tokens / 8u + (uint64_t)program->limits.entry_inputs + 5u*(uint64_t)program->limits.entries + 8u + spirv_stage_id_budget(source) + program->limits.words +
+        spirv_marks_id_budget(program);
     const uint32_t bound = ceiling < UINT32_MAX ? (uint32_t)ceiling : UINT32_MAX - 1u;
     const size_t values = (size_t)program->limits.instructions + program->limits.tokens / 4u + 1u;
     memset(program->values, 0, values * sizeof(*program->values));

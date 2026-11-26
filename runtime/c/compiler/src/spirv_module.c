@@ -421,6 +421,7 @@ bool spirv_plan_module(Emitter *e) {
         } else r->reserved = spirv_pointer_type(e, r->type, spirv_resource_storage(r));
         r->target = spirv_reserve_ids(e, 1u);
     }
+    if (!spirv_marks_plan_module(e)) return false;
     for (uint32_t i = 0u; i < c->workgroup_count; ++i) {
         WorkgroupRoot *root = &c->workgroups[i];
         if (root->state.resolved.address_space == MODULE_IMMEDIATE) {
@@ -456,7 +457,7 @@ bool spirv_plan_module(Emitter *e) {
     for (uint32_t i = 0u; i < c->instruction_count; ++i) {
         const IrInstruction *ir = &c->instructions[i];
         plan_scalar_guards(e, ir);
-        if (!spirv_plan_clamps(e, ir)) return false;
+        if (!spirv_plan_clamps(e, ir) || !spirv_marks_plan(e, ir)) return false;
         if (ir->opcode == IR_CONSTANT) {
             if (ir->operands.scalar.left != 0u) {
                 if (!plan_constant(e, ir->operands.scalar.binding)) return false;
@@ -579,7 +580,7 @@ static bool annotations(Emitter *e) {
         if (spirv_hidden_initialization_input(c,&c->entries[i])) {
             EMIT(OP_DECORATE,c->entries[i].state.resolved.local_index_target,11u,builtin_decoration(INPUT_LOCAL_INDEX));
         }
-    return true;
+    return spirv_marks_annotations(e);
 }
 static bool primitive_declarations(Emitter *e) {
     EMIT(OP_TYPE_VOID, ID_VOID);
@@ -765,7 +766,8 @@ bool spirv_module_declarations(Emitter *e) {
         if (!debug_name(e, c->resources[i].target, c->resources[i].name)) return false;
     for (uint32_t i = 0u; i < c->workgroup_count; ++i)
         if (!debug_name(e, c->workgroups[i].target, c->workgroups[i].name)) return false;
-    if (!annotations(e) || !spirv_stage_annotations(e) || !primitive_declarations(e) || !dynamic_declarations(e)) return false;
+    if (!annotations(e) || !spirv_stage_annotations(e) || !primitive_declarations(e) || !dynamic_declarations(e) ||
+        !spirv_marks_declarations(e)) return false;
     for (uint32_t f = 0u; f < c->function_count; ++f) {
         const FunctionRecord *fn = &c->functions[f];
         if ((fn->flags & FUNCTION_REACHABLE) == 0u) continue;
@@ -790,6 +792,7 @@ bool spirv_module_declarations(Emitter *e) {
         const ResourceRecord *r = &c->resources[i];
         EMIT(OP_VARIABLE, r->reserved, r->target, spirv_resource_storage(r));
     }
+    if (!spirv_marks_variables(e)) return false;
     for (uint32_t i = 0u; i < c->workgroup_count; ++i) {
         const WorkgroupRoot *root = &c->workgroups[i];
         EMIT(OP_VARIABLE, root->state.resolved.address_space == MODULE_IMMEDIATE ? root->state.resolved.initializer : spirv_pointer_type(e, root->type, root->state.resolved.address_space),
