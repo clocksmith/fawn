@@ -14,6 +14,10 @@
 // against the compositor or make the final hit test part of the dispatch; the
 // fence in page.js stops a trusted click that lands on anything but the bound
 // element, which is the strongest this kind of browser extension can offer.
+//
+// An item's states, the moves between them and the words for each reason are
+// defined once, in lifecycle.js. Here every change of state goes through `move`.
+import { STATE, REMOVED, REASON, OUTCOME, isOpen, isTerminal, refusal, whenTabCloses, whenDocumentIs } from './lifecycle.js';
 
 const RESULT_WINDOW_MS = 10000, RESULT_POLL_MS = 200, CAPTURE_TIMEOUT_MS = 2500;
 // How an application shows the result of a control, per kind of control found by page.js.
@@ -29,29 +33,66 @@ const now = () => new Date().toISOString();
 // Items live in session storage: they outlive this worker's restarts and end with the browser session,
 // as the pages and elements they are bound to do.
 const load = async () => (await chrome.storage.session.get('items')).items ?? {};
+// Everything that reads the items in order to change something runs on one chain, one step at a time.
 let writing = Promise.resolve();
-const update = (id, change) => (writing = writing.then(async () => {
-  const items = await load();
-  if (change === null) delete items[id]; else items[id] = { ...(items[id] ?? {}), ...change };
+const inTurn = work => { const done = writing.then(work); writing = done.catch(() => {}); return done; };
+// `decide` sees the stored item and answers with what it becomes: an item, null to discard it, or undefined
+// to leave it as it is.
+const write = (id, decide) => inTurn(async () => {
+  const items = await load(), before = items[id], after = decide(before);
+  if (after === undefined) return before ?? null;
+  if (after === null) delete items[id]; else items[id] = after;
   await chrome.storage.session.set({ items });
-  return items[id] ?? null;
-}));
-// One compare-and-set on the same chain as every other write: of any number of overlapping requests,
-// exactly one moves the item out of `from`, and only that one gets the item back.
-const claim = (id, from, change) => (writing = writing.then(async () => {
-  const items = await load();
-  if (items[id]?.state !== from) return null;
-  items[id] = { ...items[id], ...change };
-  await chrome.storage.session.set({ items });
-  return items[id];
-}));
+  return after;
+});
+// The one way an item changes state, discarding it included. `next` is the change, state and all, or a
+// function from the stored item to the change (null: leave it). The table in lifecycle.js decides: a move
+// it does not allow throws its reason and writes nothing. Because the decision is made on the stored item,
+// of any number of overlapping requests for the same move exactly one gets it. An item that is not there
+// stays not there; only `pick` makes one.
+async function move(id, next) {
+  let left = null;
+  const item = await write(id, before => {
+    const change = before && (typeof next === 'function' ? next(before) : next);
+    if (!change) return undefined;
+    const reason = refusal(before.state, change.state);
+    if (reason) throw new Error(reason);
+    if (change.state === REMOVED || isTerminal(change.state)) left = before;
+    return change.state === REMOVED ? null : { ...before, ...change };
+  });
+  if (left) release(left);
+  return item;
+}
+// A fresh look at an open item. It changes no state, and is dropped if the item has closed or gone meanwhile.
+const note = (id, check) => write(id, before => before && isOpen(before.state) ? { ...before, check } : undefined);
+const checked = status => ({ at: now(), holds: status.holds, reason: status.reason, ...(status.image ? { image: status.image } : {}) });
+
+// The debugger lets go of a tab once none of its items is unfinished and no pick is under way there (a pick
+// holds the debugger before its item exists). Asked in turn with the writes, so it sees every item written
+// before it and none half-written.
+const picking = new Set();
+const letGo = tabId => inTurn(async () => {
+  const unfinished = Object.values(await load()).some(item => item.tabId === tabId && !isTerminal(item.state));
+  if (!unfinished && !picking.has(tabId)) chrome.debugger.detach(target(tabId)).catch(() => {});
+});
+// One teardown for every item that closes or is discarded. The page lets go of the element it held for the
+// item, and the debugger lets go of the tab if nothing there still needs it. Nothing waits on the page: it
+// may be gone, or busy navigating.
+function release(item) {
+  inPage(item.tabId, key => { globalThis.__fawnReviewed?.delete(key); }, [item.bound]).catch(() => {});
+  letGo(item.tabId).catch(() => {});
+}
+async function whilePicking(tabId, work) {
+  picking.add(tabId);
+  try { return await work(); }
+  finally { picking.delete(tabId); letGo(tabId).catch(() => {}); }
+}
 // A worker that stops in the middle of a finish takes the rest of that finish with it. The next worker
 // cannot know whether the click went out, so it says so and leaves the item spent.
 const WORKER = crypto.randomUUID();
-const recovered = load().then(items => Promise.all(Object.values(items)
-  .filter(item => item.state === 'finishing' && item.finishingBy !== WORKER)
-  .map(item => update(item.id, { state: 'unconfirmed', outcome: { at: now(), detail: 'The inbox stopped while this click was in progress. Check the page; nothing will be clicked again.',
-    text: `Click may have been sent; ${RECIPES[item.summary?.recipe]?.noun ?? 'result'} not confirmed` } }))));
+const recovered = load().then(items => Promise.all(Object.values(items).map(item => move(item.id, stored =>
+  stored.state === STATE.FINISHING && stored.finishingBy !== WORKER ? { state: STATE.UNCONFIRMED, outcome: { at: now(),
+    detail: REASON.workerStopped, text: OUTCOME.maybeSent(RECIPES[stored.summary?.recipe]?.noun ?? 'result') } } : null))));
 
 async function attach(tabId) {
   try { await chrome.debugger.attach(target(tabId), '1.3'); }
@@ -101,7 +142,7 @@ async function currentImage(item) {
 // Does the item's tab still show the document, element and pixels that were reviewed?
 async function stillHolds(item) {
   const tab = await chrome.tabs.get(item.tabId).catch(() => null);
-  if (!tab) return { holds: false, reason: 'The tab was closed.' };
+  if (!tab) return { holds: false, reason: REASON.tabClosed };
   const probe = await inPage(item.tabId, (key, x, y, left, top) => {
     const element = globalThis.__fawnReviewed?.get(key) ?? null;
     // Scrolling the page since the review is not a change: put the control back where it was reviewed.
@@ -111,13 +152,13 @@ async function stillHolds(item) {
     }
     return { bound: !!element, connected: !!element?.isConnected, sameUnderPoint: !!element && document.elementFromPoint(x, y) === element };
   }, [item.bound, item.point.x, item.point.y, item.rect.x, item.rect.y]).catch(() => null);
-  if (!probe || probe.documentId !== item.documentId || !probe.result.bound) return { holds: false, reason: 'The page was reloaded or navigated.' };
-  if (!probe.result.connected) return { holds: false, reason: 'The reviewed control is no longer on the page.' };
-  if (!probe.result.sameUnderPoint) return { holds: false, reason: 'Something else now sits under the reviewed click point.' };
+  if (!probe || probe.documentId !== item.documentId || !probe.result.bound) return { holds: false, reason: REASON.documentReplaced };
+  if (!probe.result.connected) return { holds: false, reason: REASON.controlGone };
+  if (!probe.result.sameUnderPoint) return { holds: false, reason: REASON.covered };
   const image = await currentImage(item);
-  if (image === null) return { holds: false, reason: 'The browser could not capture the reviewed area.' };
-  if (image !== item.image) return { holds: false, reason: 'The reviewed area changed after it was reviewed.', image };
-  return { holds: true, reason: 'Matches what was reviewed.' };
+  if (image === null) return { holds: false, reason: REASON.noCapture };
+  if (image !== item.image) return { holds: false, reason: REASON.pixelsChanged, image };
+  return { holds: true, reason: REASON.matches };
 }
 
 // What the application currently shows of this control's result, and in which document.
@@ -140,43 +181,39 @@ async function pick(tabId) {
   const { documentId } = await inPage(tabId, () => true);
   const image = await capture(tabId, picked.rect);
   const id = crypto.randomUUID();
-  return update(id, { id, tabId, windowId: tab.windowId, documentId, url: picked.url, pageTitle: picked.pageTitle, rect: picked.rect, point: picked.point,
-    bound: picked.key, image, summary: picked.summary, state: 'pending', createdAt: now(), check: { at: now(), holds: true, reason: 'Matches what was reviewed.' } });
+  return write(id, () => ({ id, tabId, windowId: tab.windowId, documentId, url: picked.url, pageTitle: picked.pageTitle, rect: picked.rect, point: picked.point,
+    bound: picked.key, image, summary: picked.summary, state: STATE.PENDING, createdAt: now(), check: { at: now(), holds: true, reason: REASON.matches } }));
 }
 
 async function check(id) {
   const item = (await load())[id];
-  if (!item || !['pending', 'approved'].includes(item.state)) return item ?? null;
-  const status = await stillHolds(item);
-  return update(id, { check: { at: now(), holds: status.holds, reason: status.reason, ...(status.image ? { image: status.image } : {}) } });
+  if (!item || !isOpen(item.state)) return item ?? null;
+  return note(id, checked(await stillHolds(item)));
 }
 
 async function approve(id) {
   const item = (await load())[id];
-  if (!item || item.state !== 'pending') throw new Error('This item is not waiting for approval.');
-  const status = await stillHolds(item);
-  const seen = { at: now(), holds: status.holds, reason: status.reason, ...(status.image ? { image: status.image } : {}) };
-  if (!status.holds) { await update(id, { check: seen }); throw new Error(`${status.reason} Review it again before approving.`); }
-  return update(id, { state: 'approved', approvedAt: now(), check: seen });
+  if (!item || item.state !== STATE.PENDING) throw new Error(REASON.notPending);
+  const status = await stillHolds(item), check = checked(status);
+  if (!status.holds) { await note(id, check); throw new Error(REASON.reviewAgain(status.reason)); }
+  return move(id, { state: STATE.APPROVED, approvedAt: now(), check });
 }
 
 async function finish(id) {
   await recovered;
   // Closed from here on: whatever happens, this approval is spent, and only the request that spent it clicks.
-  const item = await claim(id, 'approved', { state: 'finishing', finishingBy: WORKER });
-  if (!item) throw new Error('This item is not approved, or it is already being finished.');
-  const settle = (state, text, detail = '') => update(id, { state, outcome: { text, detail, at: now() } });
+  const item = await move(id, { state: STATE.FINISHING, finishingBy: WORKER });
+  if (!item) throw new Error(REASON.notApproved);
+  // If the item has gone by the time its result is known, the result is dropped: `move` does not bring it back.
+  const settle = (state, text, detail = '', more = {}) => move(id, { ...more, state, outcome: { text, detail, at: now() } });
   const recipe = RECIPES[item.summary.recipe] ?? null;
   const noun = recipe?.noun ?? 'result';
   try {
     const tab = await chrome.tabs.get(item.tabId).catch(() => null);
-    if (!tab) return settle('blocked', 'Click blocked', 'The tab was closed.');
+    if (!tab) return settle(STATE.BLOCKED, OUTCOME.blocked, REASON.tabClosed);
     {
       const status = await stillHolds(item);
-      if (!status.holds) {
-        await update(id, { check: { at: now(), holds: false, reason: status.reason, ...(status.image ? { image: status.image } : {}) } });
-        return settle('blocked', 'Click blocked', status.reason);
-      }
+      if (!status.holds) return settle(STATE.BLOCKED, OUTCOME.blocked, status.reason, { check: checked(status) });
       const before = recipe ? await resultState(item.tabId, recipe) : null;
       // Arm the fence in every frame, click through the debugger, then read what the fence saw.
       await everyFrame(item.tabId, key => { globalThis.__fawnFence = { element: globalThis.__fawnReviewed?.get(key) ?? null, clicked: false, blocked: false }; }, [item.bound]);
@@ -195,23 +232,23 @@ async function finish(id) {
       const clicked = seen.some(frame => frame.result?.clicked), blocked = seen.some(frame => frame.result?.blocked);
       // A page that navigated at once leaves no fence to read; the click was sent to the bound element's document.
       const navigated = seen.length === 0 || seen.every(frame => !frame.result);
-      if (blocked || (!clicked && !navigated)) return settle('blocked', 'Click blocked', 'The click did not land on the reviewed control, so it was stopped.');
-      if (!recipe || !before) return settle('unconfirmed', `Click sent; ${noun} not confirmed`, 'This kind of control has no known sign of its result.');
+      if (blocked || (!clicked && !navigated)) return settle(STATE.BLOCKED, OUTCOME.blocked, REASON.fenced);
+      if (!recipe || !before) return settle(STATE.UNCONFIRMED, OUTCOME.notConfirmed(noun), REASON.noKnownSign);
       // Only what is new counts: a sign that was already there is this click's result only if the page
       // reloaded or more of them appeared.
       for (const deadline = Date.now() + RESULT_WINDOW_MS; ;) {
         const state = await resultSoon(item.tabId, recipe); // null while the page is navigating
         if (state) {
           const fresh = key => state[key] > 0 && (before[key] === 0 || state.document !== before.document || state[key] > before[key]);
-          if (fresh('refused')) return settle('refused', 'App refused', state.said);
-          if (fresh('done')) return settle('confirmed', recipe.doneLabel);
+          if (fresh('refused')) return settle(STATE.REFUSED, OUTCOME.refused, state.said);
+          if (fresh('done')) return settle(STATE.CONFIRMED, recipe.doneLabel);
         }
-        if (Date.now() >= deadline) return settle('unconfirmed', `Click sent; ${noun} not confirmed`, 'The application showed neither success nor refusal. Check the page; nothing will be clicked again.');
+        if (Date.now() >= deadline) return settle(STATE.UNCONFIRMED, OUTCOME.notConfirmed(noun), REASON.neitherSign);
         await new Promise(resolve => setTimeout(resolve, RESULT_POLL_MS));
       }
     }
   } catch (error) {
-    return settle('unconfirmed', `Click may have been sent; ${noun} not confirmed`, `The inbox lost track of this click: ${error.message}`);
+    return settle(STATE.UNCONFIRMED, OUTCOME.maybeSent(noun), REASON.lostTrack(error.message));
   }
 }
 
@@ -219,11 +256,11 @@ const operations = {
   tabs: async () => (await chrome.tabs.query({})).filter(tab => /^https?:/.test(tab.url ?? ''))
     .map(tab => ({ id: tab.id, title: tab.title, url: tab.url, active: tab.active, windowId: tab.windowId })),
   items: async () => Object.values((await recovered, await load())).sort((a, b) => a.createdAt.localeCompare(b.createdAt)),
-  pick: message => pick(message.tabId),
+  pick: message => whilePicking(message.tabId, () => pick(message.tabId)),
   check: message => check(message.id),
   approve: message => approve(message.id),
   finish: message => finish(message.id),
-  remove: message => update(message.id, null),
+  remove: message => move(message.id, { state: REMOVED }),
 };
 chrome.runtime.onMessage.addListener((message, sender, respond) => {
   const operation = operations[message?.inbox];
@@ -231,10 +268,21 @@ chrome.runtime.onMessage.addListener((message, sender, respond) => {
   Promise.resolve().then(() => operation(message)).then(value => respond({ ok: true, value }), error => respond({ ok: false, error: error.message }));
   return true;
 });
-// A tab that closes takes its pending items with it: nothing can be clicked there any more.
-chrome.tabs.onRemoved.addListener(async tabId => {
-  for (const item of Object.values(await load())) {
-    if (item.tabId === tabId && ['pending', 'approved'].includes(item.state)) await update(item.id, { check: { at: now(), holds: false, reason: 'The tab was closed.' } });
-  }
+// A tab that closes, or whose top document is replaced, takes its open items with it: nothing reviewed is
+// left there to click, so they close as blocked and say why. An item that is being finished is left to its finish.
+async function closeOpen(tabId, decide) {
+  for (const item of Object.values(await load())) if (item.tabId === tabId && decide(item)) await move(item.id, decide).catch(() => null);
+}
+chrome.tabs.onRemoved.addListener(tabId => closeOpen(tabId, item => whenTabCloses(item, now())));
+// No tab event says "this is a new document", so on any change to a tab that has open items the tab is
+// asked which document it shows. A tab that does not answer is left for the checks before a click.
+chrome.tabs.onUpdated.addListener(async tabId => {
+  if (!Object.values(await load()).some(item => item.tabId === tabId && isOpen(item.state))) return;
+  const shown = await within(chrome.scripting.executeScript({ target: { tabId, frameIds: [0] }, func: () => true, injectImmediately: true })
+    .then(([frame]) => frame?.documentId ?? null, () => null), 1000, null);
+  if (shown) await closeOpen(tabId, item => whenDocumentIs(item, shown, now()));
 });
 chrome.sidePanel?.setPanelBehavior?.({ openPanelOnActionClick: true }).catch(() => {});
+
+// For the tests, which load this worker against a stand-in for `chrome`.
+export { move };

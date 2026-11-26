@@ -52,6 +52,31 @@ Only what is new counts: a refusal message or a "merged" label that was already
 on the page before the click is this click's result only if the page reloaded
 or another one appeared.
 
+## The life of an item
+
+| State | Meaning | What moves it on |
+| --- | --- | --- |
+| `pending` | Picked; waiting for approval | **Approve**, to `approved`. Its tab closes or its page is reloaded or navigated: `blocked` |
+| `approved` | Approved; waiting for Finish | **Finish**, to `finishing`. Its tab closes or its page is reloaded or navigated: `blocked` |
+| `finishing` | One Finish request owns it and is clicking | Only that request, with the result: `blocked`, `refused`, `confirmed` or `unconfirmed` |
+| `blocked` | Final. Nothing was sent | |
+| `refused` | Final. The click was sent and the application said no | |
+| `confirmed` | Final. The click was sent and the application shows it done | |
+| `unconfirmed` | Final. The click was or may have been sent, with no sign either way | |
+
+The states, the moves between them and the reason texts are defined once, in
+`lifecycle.js`, and every change of state goes through one function in
+`background.js` that refuses a move the table does not list.
+
+Three things a person can do are not moves in that table and stay separate.
+**Esc** while picking cancels the pick: no item is made. **Remove** (on an open
+item) and **Clear** (on a final one) discard an item; while an item is
+`finishing` that is refused and the inbox says so, because only the click in
+progress may end it. **Finish** applies an approval.
+
+When an item reaches a final state or is discarded, the page lets go of the
+element it was holding for it.
+
 A finished item is closed whatever happened. To try again, pick and approve
 again. Finishing claims the approval in one step, so if the inbox is open in
 two places and both ask at once, one of them clicks and the other is told the
@@ -68,9 +93,12 @@ the same binding, and reports "Click sent; result not confirmed".
 
 ## Limits
 
-- Chrome shows a "started debugging this browser" bar while the inbox holds any
-  approval. That is the price of the debugger API, which is the only way an
-  extension can capture exact pixels and send a trusted click.
+- Chrome shows a "started debugging this browser" bar while a button is being
+  picked and while any tab has an item that is not final. The inbox detaches
+  from a tab when the last such item there becomes final or is discarded, and
+  when a pick there is cancelled. That is the price of the debugger API, which
+  is the only way an extension can capture exact pixels and send a trusted
+  click.
 - The checks before the click are separate asynchronous steps. An extension
   cannot make the final hit test part of the dispatch or order it against the
   compositor: a change that lands between the last capture and the click is
@@ -78,15 +106,31 @@ the same binding, and reports "Click sent; result not confirmed".
 - A control inside a closed shadow root cannot be bound: the extension sees
   only the host element.
 - Approvals live for the browser session and are bound to loaded documents, so
-  they do not survive closing the browser or reloading the page. Both end as
-  "Click blocked", never as a click on something unreviewed.
+  they do not survive closing the browser, closing the tab or reloading the
+  page. An open item whose tab closes or whose page is replaced becomes
+  "Click blocked" at once, with the reason; it is never a click on something
+  unreviewed.
 
 ## Test
+
+`test/lifecycle.test.mjs` needs no browser. It checks the state table, and
+loads the worker against a stand-in for `chrome` to check that illegal moves
+are refused, that tab closure and page replacement close open items, and that
+teardown releases the page's element and the debugger. It needs Node 22.7 or
+later, which loads the extension's `.js` files as modules.
+
+```
+node --test test/lifecycle.test.mjs
+```
+
+The two tests below drive a real Chrome through `playwright-core`. Each prints
+`skip:` and exits cleanly when its browser variable is unset or
+`playwright-core` cannot be found.
 
 `test/forgejo-inbox.test.mjs` drives the inbox page as a person would against a
 local Forgejo: three pull requests in three tabs are picked and approved, then
 finished out of order, one ending in each of **Merge confirmed**, **App
-refused** and **Click blocked**.
+refused** and **Click blocked** (the last on reload, before Finish is pressed).
 
 ```
 FAWN_EXTENSION_BROWSER=/path/to/chrome FORGEJO_ORIGIN=http://127.0.0.1:3000 \
