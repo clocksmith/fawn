@@ -21,10 +21,12 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { setTimeout as wait } from 'node:timers/promises';
 import { fileURLToPath } from 'node:url';
-import { chromium } from 'playwright-core';
 
 const binary = process.env.FAWN_EXTENSION_BROWSER;
 if (!binary) { console.log('skip: requires a Chrome binary'); process.exit(0); }
+// Loaded after the checks above, so a machine without the browser or without playwright-core skips instead of failing.
+const { chromium } = await import('playwright-core').catch(error => { if (error.code !== 'ERR_MODULE_NOT_FOUND') throw error; return {}; });
+if (!chromium) { console.log('skip: requires playwright-core'); process.exit(0); }
 const extension = process.env.FAWN_EXTENSION_DIR ?? fileURLToPath(new URL('..', import.meta.url));
 const count = Number(process.env.FAWN_OVERLAP_ITEMS ?? 100);
 const sha256 = path => createHash('sha256').update(readFileSync(path)).digest('hex');
