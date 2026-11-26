@@ -1206,6 +1206,45 @@ that a resolve-only recording is rejected.
 native call ledger, failed constructor/encoding cleanup, and program release while
 completion is unknown. It does not simulate shader results.
 
+## Doe snapshot extension (tracked restore, stage 1)
+
+`include/doe_native_snapshot.h` declares GPU-state snapshots: a set of writable buffers
+and 2D textures is frozen as a base, and the submissions between
+`doeNativeSnapshotBranchBegin` and `doeNativeSnapshotBranchEnd` run against one private
+slot copy of it. The extension is listed in `EXTENSION_SYMBOLS.txt`; it has no retained
+Zig counterpart. `doeNativeSnapshotEnableWriteMarks` must precede the device's first
+shader module: every later module compiles with `DOE_COMPILER_WRITE_MARKS` (compiler
+README), and a marked compute pipeline takes the hidden mark binding and immediates at
+creation and dispatch (`pipelines.c`, `queue.c`). Default devices are unchanged.
+
+- While a branch is open, `wgpuQueueSubmit` lowers tracked buffers, textures and the
+  views it meets against the slot for that recording only and restores the base
+  payloads before the device mutex is released (`snapshot_marks.c`). Copies, clears,
+  query resolves and render attachments mark their destination pages or tiles on the
+  host; an attachment marks its whole texture.
+- `BranchBegin` fills a new slot with a full copy and refills a recycled slot by copying
+  back only the units the previous branch marked, GPU and host marks together, then
+  clears the marks. `BranchEnd` needs the caller to have observed completion; it reads
+  the marks on the host. `doeNativeSnapshotGetLedger` reports the bytes and copy
+  commands recorded; `doeNativeSnapshotGetMarks` exposes one branch's marks.
+- Refused, never run unmarked: non-Vulkan devices; a second snapshot or slot; tracked
+  buffers without CopySrc or with map usage, or above 4 GiB; textures other than
+  single-sample, single-mip, single-layer 2D; a branch submission that dispatches or
+  draws a pipeline writing storage without marks; queue writes to a tracked resource
+  during a branch; compute programs submitted during a branch; render pipelines whose
+  fragment stage carries the mark binding.
+
+`tests/snapshot_canary.c` runs one branch per write path (storage store and atomic,
+textureStore, buffer copy, buffer-to-texture and texture-to-texture copy, clear, render
+attachment) and requires every unit a CPU diff shows changed to be marked, the base to
+stay byte-identical and the next slot to start equal to the base; negative controls show
+the base check failing on a deliberate base write and the refusals.
+`tests/snapshot_ledger.c` runs a 256 MiB W0/W1 workload against an independent CPU
+computation and a large-scratch workload, and prints the bytes each branch's slot
+preparation copied next to the declared-writable copy. Both are `make check-snapshot`.
+They ran on a software (CPU) Vulkan adapter; the restore reads marks on the host, so
+these are byte counts, not timings, and say nothing about physical GPUs.
+
 ## Physical developer runs and holds
 
 Physical runs require owner authorization and current cooling readiness. Miles is

@@ -311,6 +311,18 @@ $(BUILD)/stage-buffer-budget: tests/stage_buffer_budget.c tests/consumer.h tests
 	$(CC) $(CPPFLAGS) $(CFLAGS) $< -L$(BUILD) -lwebgpu_doe_c -Wl,-rpath,$(abspath $(BUILD)) -o $@
 $(BUILD)/limits: tests/limits.c tests/consumer.h tests/adapter_class.h $(NATIVE_LIBRARY)
 	$(CC) $(CPPFLAGS) $(CFLAGS) $< -L$(BUILD) -lwebgpu_doe_c -Wl,-rpath,$(abspath $(BUILD)) -o $@
+# GPU-state snapshot consumers (software Vulkan by default): one leak canary
+# per write path, and the tracked-restore byte ledgers against the D3 copy.
+SNAPSHOT_TEST_HEADERS = tests/snapshot_fixture.h tests/snapshot_scratch.h tests/consumer.h tests/adapter_class.h include/doe_native_snapshot.h
+$(BUILD)/snapshot-canary: tests/snapshot_canary.c $(SNAPSHOT_TEST_HEADERS) $(NATIVE_LIBRARY)
+	$(CC) $(CPPFLAGS) $(CFLAGS) $< -L$(BUILD) -lwebgpu_doe_c -Wl,-rpath,$(abspath $(BUILD)) -o $@
+$(BUILD)/snapshot-ledger: tests/snapshot_ledger.c $(SNAPSHOT_TEST_HEADERS) $(NATIVE_LIBRARY)
+	$(CC) $(CPPFLAGS) $(CFLAGS) $< -L$(BUILD) -lwebgpu_doe_c -Wl,-rpath,$(abspath $(BUILD)) -o $@
+.PHONY: check-snapshot
+check-snapshot: $(BUILD)/snapshot-canary $(BUILD)/snapshot-ledger
+	$(BUILD)/snapshot-canary
+	$(BUILD)/snapshot-ledger
+check: check-snapshot
 $(BUILD)/storage-textures: tests/storage_textures.c tests/consumer.h tests/adapter_class.h $(NATIVE_LIBRARY)
 	$(CC) $(CPPFLAGS) $(CFLAGS) $< -L$(BUILD) -lwebgpu_doe_c -Wl,-rpath,$(abspath $(BUILD)) -lm -o $@
 $(BUILD)/anisotropy: tests/anisotropy.c tests/consumer.h tests/adapter_class.h $(NATIVE_LIBRARY)
