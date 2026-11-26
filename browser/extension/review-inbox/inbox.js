@@ -1,6 +1,8 @@
 // The inbox page. It runs in the side panel, and the same page works in a tab.
 // Each card answers four questions about one approval: what will change, what
 // you saw, what changed since, and what actually happened.
+import { STATE, OUTCOME, isOpen } from './lifecycle.js';
+
 const call = async message => {
   const reply = await chrome.runtime.sendMessage(message);
   if (!reply?.ok) throw new Error(reply?.error ?? 'The inbox did not answer.');
@@ -14,8 +16,8 @@ const node = (tag, text, className) => {
   return element;
 };
 const notice = text => { const element = find('[data-notice]'); element.textContent = text ?? ''; element.hidden = !text; };
-const PILLS = { pending: 'Waiting for approval', approved: 'Approved', finishing: 'Clicking…', blocked: 'Click blocked', refused: 'App refused',
-  confirmed: 'Done', unconfirmed: 'Not confirmed' };
+const PILLS = { [STATE.PENDING]: 'Waiting for approval', [STATE.APPROVED]: 'Approved', [STATE.FINISHING]: 'Clicking…', [STATE.BLOCKED]: OUTCOME.blocked,
+  [STATE.REFUSED]: OUTCOME.refused, [STATE.CONFIRMED]: 'Done', [STATE.UNCONFIRMED]: 'Not confirmed' };
 const time = iso => new Date(iso).toLocaleTimeString();
 // The image is shown at the size it had on the page, whatever the screen's pixel density. One wider than
 // the card scrolls sideways inside its own frame, and says so, so it is never shrunk until it cannot be read.
@@ -35,7 +37,7 @@ let busy = false;
 const settled = id => new Promise(resolve => {
   const look = async () => {
     const item = ((await chrome.storage.session.get('items')).items ?? {})[id];
-    if (item && ['approved', 'finishing'].includes(item.state)) return;
+    if (item && [STATE.APPROVED, STATE.FINISHING].includes(item.state)) return;
     chrome.storage.session.onChanged.removeListener(look);
     resolve();
   };
@@ -71,19 +73,19 @@ function card(item) {
   element.append(seen);
 
   element.append(node('h3', 'What changed since'));
-  const open = ['pending', 'approved'].includes(item.state);
+  const open = isOpen(item.state), finishing = item.state === STATE.FINISHING;
   const status = node('p', item.check?.holds ? `Nothing. Checked at ${time(item.check.at)}.` : item.check?.reason ?? 'Not checked yet.',
     'status' + (item.check?.holds === false ? ' changed' : ''));
   status.dataset.check = item.check?.holds === false ? 'changed' : 'holds';
   element.append(status);
 
   element.append(node('h3', 'What actually happened'));
-  const outcome = node('div', null, 'outcome ' + (item.outcome ? item.state : item.state === 'finishing' ? 'finishing' : 'none'));
+  const outcome = node('div', null, 'outcome ' + (item.outcome || finishing ? item.state : 'none'));
   outcome.dataset.outcome = item.outcome ? item.state : '';
   if (item.outcome) {
     outcome.append(node('strong', item.outcome.text));
     if (item.outcome.detail) outcome.append(node('span', item.outcome.detail));
-  } else outcome.textContent = item.state === 'finishing' ? 'Clicking the reviewed control…' : 'Nothing yet. Nothing is clicked until you finish.';
+  } else outcome.textContent = finishing ? 'Clicking the reviewed control…' : 'Nothing yet. Nothing is clicked until you finish.';
   element.append(outcome);
 
   const actions = node('div', null, 'actions');
@@ -93,8 +95,8 @@ function card(item) {
     control.addEventListener('click', () => act(control, { inbox: action, id: item.id }));
     actions.append(control);
   };
-  if (item.state === 'pending' && item.check?.holds !== false) button('Approve exactly this', 'approve', true);
-  if (item.state === 'approved' && item.check?.holds !== false) button('Finish: click it', 'finish', true);
+  if (item.state === STATE.PENDING && item.check?.holds !== false) button('Approve exactly this', 'approve', true);
+  if (item.state === STATE.APPROVED && item.check?.holds !== false) button('Finish: click it', 'finish', true);
   if (open) button('Check again', 'check');
   button(open ? 'Remove' : 'Clear', 'remove');
   element.append(actions);

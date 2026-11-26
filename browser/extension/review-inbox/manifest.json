@@ -5,7 +5,7 @@
   "description": "Approve the exact button you saw. Fawn clicks only that, and tells you what the application did.",
   "permissions": ["debugger", "tabs", "scripting", "storage", "sidePanel"],
   "host_permissions": ["<all_urls>"],
-  "background": { "service_worker": "background.js" },
+  "background": { "service_worker": "background.js", "type": "module" },
   "action": { "default_title": "Open the review inbox" },
   "side_panel": { "default_path": "inbox.html" },
   "content_scripts": [

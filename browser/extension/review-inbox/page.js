@@ -3,7 +3,9 @@
 //
 // It keeps three things for the inbox:
 //   - the elements people picked for review, held by reference, so "the same
-//     element" later means the same node and not something that looks like it;
+//     element" later means the same node and not something that looks like it.
+//     The inbox deletes an entry when its item is closed or discarded. This
+//     file knows the entries by key only; item states live in lifecycle.js;
 //   - a fence: while one is armed, a trusted pointer event that does not land
 //     on the bound element is stopped before the page or the element under it
 //     sees it;

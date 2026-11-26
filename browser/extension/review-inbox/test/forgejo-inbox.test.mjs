@@ -7,7 +7,8 @@
 //   B is finished first and merges                     -> "Merge confirmed"
 //   A's branch was changed after approval; Forgejo
 //     refuses the merge of the page Ben still has      -> "App refused"
-//   C's tab was reloaded after approval                -> "Click blocked"
+//   C's tab was reloaded after approval; the inbox
+//     closes it at once, with no Finish left to press  -> "Click blocked"
 // Each card must show its own result, B must be on main exactly once, and
 // neither A nor C may reach main.
 //   FAWN_EXTENSION_BROWSER (chrome binary), FORGEJO_ORIGIN, FORGEJO_PASSWORD_FILE (Ben's),
@@ -145,9 +146,10 @@ try {
   await tabs.C.reload();
 
   // Finish out of order, from the inbox, without going back to any of the three tabs.
-  const finish = async key => {
+  // C was closed when its tab reloaded: its card already has its result and offers no Finish to press.
+  const finish = async (key, press = true) => {
     const start = Date.now();
-    await cardFor(pulls[key]).locator('[data-action=finish]').click();
+    if (press) await cardFor(pulls[key]).locator('[data-action=finish]').click();
     const clickReturnedMs = Date.now() - start;
     await cardFor(pulls[key]).locator('[data-outcome] strong').waitFor({ timeout: 30000 });
     // When the inbox recorded the result, by its own clock.
@@ -161,7 +163,7 @@ try {
   await readyToMerge(pulls.B.number);
   const doneB = await finish('B');
   const doneA = await finish('A');
-  const doneC = await finish('C');
+  const doneC = await finish('C', false);
   await wait(1000);
   const visible = await inbox.evaluate(() => document.visibilityState);
   report.tabSwitchesDuringFinish = await inbox.evaluate(() => globalThis.__hiddenCount ?? 0);
