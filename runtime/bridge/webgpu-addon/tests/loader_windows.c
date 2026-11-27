@@ -86,7 +86,11 @@ int wmain(int argc,WCHAR **argv)
     HMODULE loaded = doe_library_open(path,strlen(path),&untouched);
     assert(loaded && !memcmp(&untouched,&saved,sizeof(saved)));
     free(path);
-    int (*probe)(void) = (int (*)(void))GetProcAddress(loaded,"doe_addon_loader_probe");
+    const FARPROC address = GetProcAddress(loaded,"doe_addon_loader_probe");
+    assert(address);
+    int (*probe)(void);
+    _Static_assert(sizeof(probe) == sizeof(address),"Windows procedure pointer size mismatch");
+    memcpy(&probe,&address,sizeof(probe));
     assert(probe && probe() == 1256);
     path = utf8(L"staged-\u03bb-\u65e5\\doe_addon_probe_provider.dll");
     HMODULE relative = doe_library_open(path,strlen(path),NULL);
