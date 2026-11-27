@@ -45,7 +45,22 @@ used the same tarball SHA-256 values.
 | `doe-gpu@0.5.2` | `4277f338e4568066e21f695d76ae5020068bace81a5b3ca50efcc29e7de3ed03` |
 | `doe-gpu-darwin-arm64@0.5.2` | `74d8a52fada94a2be4a2a86f4d77b169b75c3e9855387ec808581ca8c6b2b3e2` |
 
+The public Node and Bun package entry points also ran two nondefault
+specializations of one WGSL shader on that same C library. Both matched
+the 18-word oracle and reported provider `doe-c`.
+
 ## Windows native correctness boundary
+
+The C D3D12 initialization audit was pinned to `cfd8a4e0b1`. The Windows SDK
+frontend fixtures exercised initialization staging, recording and queue rejection
+with controlled outcomes after the repair in `f250c414e3`. The public CPU WARP
+workflow failed the same atomic-result assertion at word 110 on both revisions.
+At `8268234408`, the Windows Node addon, first kernel, and override checks
+passed on CPU WARP. The public C atomic assertion still failed, and physical
+D3D12 release qualification is open.
+[Pinned baseline run](https://github.com/clocksmith/fawn/actions/runs/46056656323)
+[Repair revision run](https://github.com/clocksmith/fawn/actions/runs/46056082216)
+[Latest CPU WARP run](https://github.com/clocksmith/fawn/actions/runs/46058677324)
 
 The native Windows lane exercises the bounded D3D12 copy and scalar-storage
 compute subset, including ordered buffer clears, described in the [runtime contract](../../runtime/zig/README.md#windows-d3d12-recorded-compute-subset).
