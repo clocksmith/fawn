@@ -124,14 +124,22 @@ test('Shift and a click, then a drag, add a person-chosen area around the contro
   // A box that misses part of the control still covers all of it; one past the edge of the window stops there.
   assert.deepEqual((await drag({ x: 150, y: 210 }, { x: 500, y: 400 })).area, { x: 100, y: 200, width: 400, height: 200 });
   assert.deepEqual((await drag({ x: 900, y: 600 }, { x: 1300, y: 900 })).area, { x: 100, y: 200, width: 900, height: 500 });
-  // A click that does follow the drag, once the pick has ended, is swallowed: the page never sees it.
-  const picked = drag({ x: 60, y: 150 }, { x: 400, y: 260 });
-  let reachedPage = false;
-  const trailing = event('click', { clientX: 400, clientY: 260, stopImmediatePropagation: () => { reachedPage = false; }, preventDefault: () => {} });
+  // The click the browser makes from that same mouseup comes in the same task, right after it: it is
+  // swallowed, so the page never sees it. A click the person makes a moment later is theirs and reaches the page.
+  const clickReaches = () => { let reached = true;
+    const click = event('click', { clientX: 400, clientY: 260, stopImmediatePropagation: () => { reached = false; } });
+    for (const listener of [...(listeners.click ?? [])]) listener(click);
+    return reached; };
+  const picked = picking();
+  send('click', { clientX: 140, clientY: 215, shiftKey: true });
+  send('mousedown', { clientX: 60, clientY: 150 });
+  send('mouseup', { clientX: 400, clientY: 260 });
+  assert.equal(clickReaches(), false, 'the click made from the mouseup is stopped');
   await picked;
-  reachedPage = true;
-  for (const listener of [...(listeners.click ?? [])]) listener(trailing);
-  assert.equal(reachedPage, false, 'the trailing click is stopped');
+  const quietDrag = drag({ x: 60, y: 150 }, { x: 400, y: 260 });
+  await quietDrag;
+  await new Promise(resolve => setTimeout(resolve, 200));
+  assert.equal(clickReaches(), true, 'a deliberate click 200 ms after a drag that made no click is not swallowed');
   // Esc after Shift and a click keeps the control alone.
   const plain = picking();
   send('click', { clientX: 140, clientY: 215, shiftKey: true });
