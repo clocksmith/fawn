@@ -20,6 +20,11 @@ jobs:
     runs-on:
       - self-hosted
       - macOS
+    env:
+      DOE_WEBGPU_LIB: ""
+      DOE_LIB: ""
+      DOE_NAPI_ADDON: ""
+      DOE_SKIP_NATIVE_REBUILD: ""
     steps:
       - uses: actions/checkout@v7
         with:
@@ -49,6 +54,7 @@ jobs:
           evidence_root="${RUNNER_TEMP}/doe-gpu-native-candidate-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
           mkdir -p "${candidate_root}" "${evidence_root}/logs"
           echo "CANDIDATE_ROOT=${candidate_root}" >> "${GITHUB_ENV}"
+          echo "DOE_C_STAGE=$RUNNER_TEMP/doe-c-stage-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT" >> "$GITHUB_ENV"
           echo "EVIDENCE_ROOT=${evidence_root}" >> "${GITHUB_ENV}"
           git rev-parse HEAD | tee "${evidence_root}/commit.txt"
           printf 'runnerName=%s\nrunnerOs=%s\nrunnerArch=%s\n' \
@@ -58,7 +64,8 @@ jobs:
             uname -a
             node --version
             bun --version
-            zig version
+            cc --version
+            c++ --version
           } 2>&1 | tee "${evidence_root}/logs/environment.log"
 
       - name: Install pinned Electron main-process runtime
@@ -84,8 +91,10 @@ jobs:
         run: |
           set -euo pipefail
           unset DOE_PROOF_SIGNING_KEY
-          (cd runtime/zig && zig build dropin -Doptimize=ReleaseFast) \
-            2>&1 | tee "${EVIDENCE_ROOT}/logs/zig-dropin-release.log"
+          npm --prefix packages/doe-gpu run build:addon \
+            2>&1 | tee "${EVIDENCE_ROOT}/logs/build-addon.log"
+          npm --prefix packages/doe-gpu-darwin-arm64 run rebuild-native \
+            2>&1 | tee "${EVIDENCE_ROOT}/logs/build-c-runtime.log"
           (cd packages/doe-gpu-darwin-arm64 && npm run stage) \
             2>&1 | tee "${EVIDENCE_ROOT}/logs/stage-darwin-arm64.log"
 

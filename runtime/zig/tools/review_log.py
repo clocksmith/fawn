@@ -27,11 +27,7 @@ SCHEMA = "config/zig-review-log.schema.json"
 QUEUE = RUNTIME + "/reviews/queue.tsv"
 PLAN = "config/zig-review-plan.json"
 PLAN_SCHEMA = "config/zig-review-plan.schema.json"
-GUIDANCE = (
-    "AGENTS.md", "GOALS.md", "docs/architecture.md", "docs/process.md",
-    RUNTIME + "/STYLE.md", RUNTIME + "/reviews/README.md", SCHEMA,
-    RUNTIME + "/tools/review_log.py",
-)
+GUIDANCE = (RUNTIME + "/STYLE.md",)
 LEVELS = ("file", "directory", "within_directory", "cross_directory", "system")
 
 
@@ -148,6 +144,8 @@ def input_hash(
     guidance = set(GUIDANCE)
     for name in members:
         for parent in PurePosixPath(RUNTIME + "/" + name).parents:
+            if not parent.is_relative_to(RUNTIME):
+                break
             for filename in ("AGENTS.md", "CATSCAN.md"):
                 candidate = (parent / filename).as_posix()
                 if checked_path(repo, candidate).is_file():

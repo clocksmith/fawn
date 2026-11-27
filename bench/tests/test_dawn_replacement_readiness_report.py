@@ -772,11 +772,17 @@ def test_browser_readiness_uses_frontier_bundle_blockers() -> None:
     failure_codes = [item["code"] for item in consistency["failures"]]
     assert consistency["failureCount"] == len(consistency["failures"])
     assert consistency["failureCodes"] == sorted(set(failure_codes))
-    assert failure_codes == [
+    bundle_manifest = _load(REPO_ROOT / release_bundle["path"])
+    expected_mismatches = [
+        f"releaseCandidateEvidence.releaseSupportArtifacts.{section}[{index}].sha256"
+        for section in ("contracts", "policies")
+        for index, artifact in enumerate(bundle_manifest[section])
+        if hashlib.sha256((REPO_ROOT / artifact["path"]).read_bytes()).hexdigest() != artifact["sha256"]
+    ]
+    mismatch = "release_support_artifact_hash_mismatch"
+    assert [item["path"] for item in consistency["failures"] if item["code"] == mismatch] == expected_mismatches
+    assert [code for code in failure_codes if code != mismatch] == [
         "release_artifact_bundle_not_release_candidate",
-        "release_support_artifact_hash_mismatch",
-        "release_support_artifact_hash_mismatch",
-        "release_support_artifact_hash_mismatch",
         "provenance_report_not_pass",
         "finalizer_report_not_pass",
         "finalizer_check_not_pass",

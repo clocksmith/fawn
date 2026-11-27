@@ -18,6 +18,10 @@
     "module": { "type": "string" },
     "opCode": { "type": "string" },
     "seq": { "type": "integer", "minimum": 0 },
+    "timestampSource": {
+      "description": "Identifies the origin of a row coordinate. Command completion timestamps do not define a complete workload interval.",
+      "enum": ["execution-monotonic", "sequence", "unmeasured"]
+    },
     "timestampMonoNs": { "type": "integer", "minimum": 0 },
     "hash": { "type": "string" },
     "previousHash": { "type": "string" },

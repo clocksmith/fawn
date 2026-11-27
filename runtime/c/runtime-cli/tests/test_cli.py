@@ -570,6 +570,7 @@ def check_plan(binary: Path, work: Path) -> None:
     readbacks = ["--readback-buffer", f"7001={work / 'plan_7001.bin'}", "--readback-buffer", f"5001={work / 'plan_5001.bin'}"]
     result, meta, rows = run_plan(binary, work, plan_document(), *readbacks)
     check(result.returncode == 0 and [row["hash"] for row in rows] == ZIG_PLAN_HASHES, f"plan rows: {result.stderr}")
+    check(replay_passes(work, "plan"), "C plan trace rows fail pipeline/trace/replay.py")
     check([row["opCode"] for row in rows] == ["buffer_write", "buffer_load", "kernel_dispatch", "kernel_dispatch"]
           and rows[1]["semanticOpId"] == "step-000001" and rows[3]["semanticOpId"] == "step-000003"
           and all(row["semanticStage"] == "runtime_plan" and row["semanticExecutionPlanHash"] == "ab" * 32 for row in rows)
@@ -820,6 +821,9 @@ def main() -> int:
         check(replay_passes(args.work, name), f"{name} artifacts fail pipeline/trace/replay.py")
         check(meta["hash"] == final_hash, f"{name} final hash {meta['hash']} != doe-zig-runtime {final_hash}")
         check(all(row["executionStatus"] == "ok" for row in rows), f"{name} has a failed row")
+        ticks = [row["timestampMonoNs"] for row in rows]
+        check(all(row["timestampSource"] == "execution-monotonic" for row in rows) and
+              ticks == sorted(ticks) and min(ticks) > 0, f"{name} execution clock")
         check(meta["executionSuccessCount"] == len(rows) == meta["commandCount"], f"{name} counts")
         # Bench comparability reads these; a fixed backend has no lane policy hash.
         check(meta["module"] == args.module and all(row["module"] == args.module for row in rows),

@@ -8,6 +8,7 @@ import unittest
 from contextlib import redirect_stdout
 from pathlib import Path
 from typing import Any
+from unittest.mock import patch
 
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -42,23 +43,26 @@ class RunBlockingGatesWiringTests(unittest.TestCase):
         self.assertTrue(args.with_native_backend_coverage_matrix_gate)
         self.assertTrue(args.with_tool_surface_gate)
 
-    def test_ecosystem_registry_gate_is_unconditionally_wired(self) -> None:
-        source = MODULE_PATH.read_text(encoding="utf-8")
+    def test_report_scope_keeps_report_and_backend_controls(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            report = Path(directory) / "report.json"
+            report.write_text('{"artifactKind":"compare-report","comparabilityPolicy":{"mode":"strict"}}', encoding="utf-8")
+            options = ["run_blocking_gates.py", "--report", str(report), "--scope", "report",
+                       "--with-backend-selection-gate", "--backend-selection-lane", "metal_doe_comparable"]
+            with patch.object(sys, "argv", options), patch.object(self.module, "run_gate") as gate:
+                self.assertEqual(self.module.main(), 0)
+            commands = {call.args[0]: call.args[1] for call in gate.call_args_list}
+            self.assertEqual(set(commands), {"correctness", "trace", "compare-output-partition",
+                                            "comparability-coherence", "structural-equivalence", "backend-selection"})
+            self.assertIn("--require-pass", commands["comparability-coherence"])
+            self.assertIn("--require-all-pass", commands["structural-equivalence"])
+            self.assertIn("metal_doe_comparable", commands["backend-selection"])
 
-        self.assertIn('ecosystem_registry_gate.py"', source)
-        self.assertIn('"ecosystem-registry",', source)
-
-    def test_catscan_gate_is_unconditionally_wired(self) -> None:
-        source = MODULE_PATH.read_text(encoding="utf-8")
-
-        self.assertIn('catscan_gate.py"', source)
-        self.assertIn('"catscan",', source)
-
-    def test_external_project_release_gate_is_unconditionally_wired(self) -> None:
-        source = MODULE_PATH.read_text(encoding="utf-8")
-
-        self.assertIn('external_project_release_gate.py"', source)
-        self.assertIn('"external-project-release-surface",', source)
+    def test_report_scope_rejects_release_claim_flags(self) -> None:
+        with patch.object(sys, "argv", ["run_blocking_gates.py", "--scope", "report", "--with-claim-gate"]):
+            with self.assertRaises(SystemExit) as result:
+                self.module.parse_args()
+            self.assertNotEqual(result.exception.code, 0)
 
     def test_compare_output_partition_gate_can_be_disabled_for_diagnostics(self) -> None:
         old_argv = sys.argv
@@ -362,6 +366,8 @@ class RunBlockingGatesWiringTests(unittest.TestCase):
             self.module.artifacts_mod.ensure_release_strict_comparability = old_ensure_release
 
         commands_by_label = {label: command for label, command in captured}
+        for required in ("catscan", "ecosystem-registry", "external-project-release-surface"):
+            self.assertIn(required, commands_by_label)
         self.assertIn("claim-index", commands_by_label)
         self.assertIn("dawn-replacement-frontier", commands_by_label)
         self.assertIn("tool-surface", commands_by_label)

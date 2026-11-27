@@ -76,11 +76,12 @@ def test_claim_allowed_rows_require_claimable_claim_index_entries() -> None:
 
 def test_nonclaim_rows_require_blockers() -> None:
     frontier = _frontier()
-    frontier["rows"][1]["blockers"] = []
+    i = next(i for i, row in enumerate(frontier["rows"]) if not row["claimAllowed"])
+    frontier["rows"][i]["blockers"] = []
 
     assert {
         "code": "nonclaim_row_missing_blocker",
-        "path": "rows[1].blockers",
+        "path": f"rows[{i}].blockers",
         "message": "non-claimable frontier rows require at least one blocker",
     } in _evaluate(frontier)["failures"]
 

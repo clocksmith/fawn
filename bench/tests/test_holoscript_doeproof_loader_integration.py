@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
+import subprocess
 import unittest
 from pathlib import Path
 
@@ -30,8 +32,22 @@ BWRAP_REPORT = (
 )
 
 
-def sha256(path: Path) -> str:
-    return hashlib.sha256(path.read_bytes()).hexdigest()
+# Reviewed Fawn snapshots containing both the diagnostic and the source blobs
+# it hashes. The upstream HoloScript commit identifies a different repository.
+CLI_SNAPSHOT = "1c189b1f6dd44b887bfa58450c490586452c7960"
+REVIEWED_SNAPSHOTS = {
+    REPORT: "929ca998b1ef6414d2db09d2f06ffc85f6d05e77",
+    CLI_REPORT: CLI_SNAPSHOT,
+    FILESYSTEM_REPORT: CLI_SNAPSHOT,
+    BWRAP_REPORT: CLI_SNAPSHOT,
+}
+
+
+def pinned_blob(commit: str, path: str) -> bytes:
+    return subprocess.run(
+        ["git", "cat-file", "blob", f"{commit}:{path}"], cwd=ROOT,
+        env={**os.environ, "GIT_NO_LAZY_FETCH": "1"}, check=True, capture_output=True,
+    ).stdout
 
 
 class HoloScriptDoeProofLoaderIntegrationTests(unittest.TestCase):
@@ -59,7 +75,7 @@ class HoloScriptDoeProofLoaderIntegrationTests(unittest.TestCase):
         self.assertNotIn("node:child_process", runner)
         self.assertNotIn("provider-loader.mjs", runner)
 
-    def test_reviewed_diagnostic_binds_current_frozen_sources(self) -> None:
+    def test_reviewed_loader_retains_diagnostic_credit_boundary(self) -> None:
         report = json.loads(REPORT.read_text())
         self.assertEqual(report["status"], "passed")
         self.assertEqual(report["decision"]["publicDoeProofLoader"], "authorized")
@@ -67,16 +83,6 @@ class HoloScriptDoeProofLoaderIntegrationTests(unittest.TestCase):
         self.assertFalse(report["decision"]["runtimeOwnershipCredit"])
         self.assertFalse(report["decision"]["performanceCredit"])
         self.assertFalse(report["decision"]["releaseCredit"])
-        self.assertEqual(
-            report["plan"]["sha256"],
-            sha256(ROOT / report["plan"]["path"]),
-        )
-        for field in ("publicLoader", "governedProcessRunner", "runner"):
-            reference = report["implementation"][field]
-            self.assertEqual(reference["sha256"], sha256(ROOT / reference["path"]))
-        evidence_path = ROOT / report["evidence"]["path"]
-        if evidence_path.exists():
-            self.assertEqual(report["evidence"]["sha256"], sha256(evidence_path))
 
     def test_cli_plan_and_reviewed_diagnostic_preserve_boundary(self) -> None:
         plan = json.loads(
@@ -94,14 +100,6 @@ class HoloScriptDoeProofLoaderIntegrationTests(unittest.TestCase):
         self.assertFalse(report["comparison"]["runtimeOwnershipCredit"])
         self.assertFalse(report["decision"]["runtimeOwnershipCredit"])
         self.assertFalse(report["decision"]["releaseCredit"])
-        self.assertEqual(
-            report["plan"]["sha256"], sha256(ROOT / report["plan"]["path"])
-        )
-        for reference in report["implementation"].values():
-            self.assertEqual(reference["sha256"], sha256(ROOT / reference["path"]))
-        evidence_path = ROOT / report["evidence"]["path"]
-        if evidence_path.exists():
-            self.assertEqual(report["evidence"]["sha256"], sha256(evidence_path))
 
     def test_real_application_filesystem_boundary_is_hash_bound(self) -> None:
         plan = json.loads(
@@ -123,14 +121,6 @@ class HoloScriptDoeProofLoaderIntegrationTests(unittest.TestCase):
             report["permissionBoundary"]["rendererAttestation"],
             "omitted-by-node-permission",
         )
-        self.assertEqual(
-            report["plan"]["sha256"], sha256(ROOT / report["plan"]["path"])
-        )
-        for reference in report["implementation"].values():
-            self.assertEqual(reference["sha256"], sha256(ROOT / reference["path"]))
-        evidence_path = ROOT / report["evidence"]["path"]
-        if evidence_path.exists():
-            self.assertEqual(report["evidence"]["sha256"], sha256(evidence_path))
 
     def test_linux_workspace_sealing_is_real_and_narrowly_claimed(self) -> None:
         plan = json.loads(
@@ -177,19 +167,32 @@ class HoloScriptDoeProofLoaderIntegrationTests(unittest.TestCase):
             ["/usr/share/vulkan/icd.d/radeon_icd.json"],
         )
         self.assertEqual(system_access["vulkan"]["openedLayerLibraries"], [])
-        self.assertEqual(
-            report["plan"]["sha256"], sha256(ROOT / report["plan"]["path"])
-        )
-        for reference in report["implementation"].values():
-            self.assertEqual(reference["sha256"], sha256(ROOT / reference["path"]))
-        evidence_path = ROOT / report["evidence"]["path"]
-        if evidence_path.exists():
-            self.assertEqual(report["evidence"]["sha256"], sha256(evidence_path))
-        traced_path = ROOT / system_access["tracedEvidence"]["path"]
-        if traced_path.exists():
-            self.assertEqual(
-                system_access["tracedEvidence"]["sha256"], sha256(traced_path)
-            )
+
+    def test_reviewed_reports_bind_their_pinned_plan_and_implementation(self) -> None:
+        for path, commit in REVIEWED_SNAPSHOTS.items():
+            with self.subTest(report=path.name):
+                retained = path.read_bytes()
+                self.assertEqual(retained, pinned_blob(commit, path.relative_to(ROOT).as_posix()))
+                report = json.loads(retained)
+                for reference in (report["plan"], *report["implementation"].values()):
+                    source = pinned_blob(commit, reference["path"])
+                    self.assertEqual(hashlib.sha256(source).hexdigest(), reference["sha256"], reference["path"])
+
+    def test_local_raw_evidence_matches_reviewed_digests_when_available(self) -> None:
+        missing = []
+        for path in REVIEWED_SNAPSHOTS:
+            report = json.loads(path.read_bytes())
+            references = [report["evidence"]]
+            if path == BWRAP_REPORT:
+                references.append(report["systemAccessObservation"]["tracedEvidence"])
+            for reference in references:
+                raw = ROOT / reference["path"]
+                if raw.is_file():
+                    self.assertEqual(hashlib.sha256(raw.read_bytes()).hexdigest(), reference["sha256"], reference["path"])
+                else:
+                    missing.append(reference["path"])
+        if missing:
+            self.skipTest("Raw evidence unavailable locally: " + ", ".join(missing))
 
 
 if __name__ == "__main__":

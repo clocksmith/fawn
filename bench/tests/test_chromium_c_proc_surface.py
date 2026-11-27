@@ -189,6 +189,9 @@ class CProcSurfaceTests(unittest.TestCase):
             ("flush skips replay", "sharedQueue",
              "doe_mtl_commands_replay_shared_waits(commands.value.metal,",
              "foreign_no_wait(commands.value.metal,"),
+            ("replay bypasses Metal acceptance", "sharedQueue",
+             "submit_backend_commands(device, commands, false, true, NULL);",
+             "submit_backend_commands(device, commands, false, false, NULL);"),
             ("failed replay drops original", "sharedQueue",
              "if (native_command_release(&commands) != NATIVE_OK) abort();\n        return failure;",
              "if (native_command_release(&commands) != NATIVE_OK) abort();\n"

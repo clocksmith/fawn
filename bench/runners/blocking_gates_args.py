@@ -6,13 +6,20 @@ from __future__ import annotations
 import argparse
 
 
+from bench.runners.blocking_gates_report import add_report_arguments
+
+
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "--report",
-        default="bench/out/dawn-vs-doe.json",
-        help="Comparison report produced by the compare lane.",
+    scope = argparse.ArgumentParser(add_help=False, allow_abbrev=False)
+    scope.add_argument(
+        "--scope", choices=("full", "report"), default="full",
+        help="Run the full gate sequence or only diagnostics for the supplied report and backend.",
     )
+    selected, _ = scope.parse_known_args()
+    parser = argparse.ArgumentParser(parents=[scope], allow_abbrev=False)
+    add_report_arguments(parser)
+    if selected.scope == "report":
+        return parser.parse_args()
     parser.add_argument(
         "--timestamp",
         default="",
@@ -26,16 +33,6 @@ def parse_args() -> argparse.Namespace:
         action=argparse.BooleanOptionalAction,
         default=True,
         help="Stamp drop-in gate report paths with a UTC timestamp suffix.",
-    )
-    parser.add_argument(
-        "--gates",
-        default="config/gates.json",
-        help="Gate policy config path passed to check_correctness.py",
-    )
-    parser.add_argument(
-        "--quirk",
-        default="examples/quirks/intel_gen12_temp_buffer.json",
-        help="Reference quirk path passed to check_correctness.py",
     )
     parser.add_argument(
         "--with-comparability-parity-gate",
@@ -83,34 +80,9 @@ def parse_args() -> argparse.Namespace:
         help="Run tool_surface_gate.py over config/tool-surfaces.json. Default: enabled.",
     )
     parser.add_argument(
-        "--with-backend-selection-gate",
-        action="store_true",
-        help="Run backend_selection_gate.py after trace gate.",
-    )
-    parser.add_argument(
-        "--backend-runtime-policy",
-        default="config/backend-runtime-policy.json",
-        help="Backend runtime policy path passed to backend_selection_gate.py.",
-    )
-    parser.add_argument(
-        "--backend-selection-lane",
-        default="",
-        help="Optional lane override passed to backend_selection_gate.py.",
-    )
-    parser.add_argument(
-        "--with-shader-artifact-gate",
-        action="store_true",
-        help="Run shader_artifact_gate.py after trace gate.",
-    )
-    parser.add_argument(
         "--with-tint-compiler-evidence-gate",
         action="store_true",
         help="Run tint_compiler_evidence_gate.py for Doe-vs-Tint compiler receipts.",
-    )
-    parser.add_argument(
-        "--shader-artifact-schema",
-        default="config/shader-artifact.schema.json",
-        help="Shader artifact schema path passed to shader_artifact_gate.py.",
     )
     parser.add_argument(
         "--tint-compiler-evidence-report",
@@ -243,51 +215,6 @@ def parse_args() -> argparse.Namespace:
         help="Require the composed compiler frontier bundle to have claimable compiler evidence.",
     )
     parser.add_argument(
-        "--shader-artifact-require-manifest",
-        action="store_true",
-        help="Pass --require-manifest to shader_artifact_gate.py.",
-    )
-    parser.add_argument(
-        "--shader-artifact-spirv-val",
-        default="",
-        help="Optional spirv-val executable passed to shader_artifact_gate.py.",
-    )
-    parser.add_argument(
-        "--shader-artifact-require-spirv-validation",
-        action="store_true",
-        help="Fail shader artifact gate when SPIR-V artifacts are present but not validated.",
-    )
-    parser.add_argument(
-        "--with-metal-sync-conformance-gate",
-        action="store_true",
-        help="Run metal_sync_conformance.py after trace gate.",
-    )
-    parser.add_argument(
-        "--backend-timing-policy",
-        default="config/backend-timing-policy.json",
-        help="Backend timing policy path passed to sync/timing gates.",
-    )
-    parser.add_argument(
-        "--with-metal-timing-policy-gate",
-        action="store_true",
-        help="Run metal_timing_policy_gate.py after trace gate.",
-    )
-    parser.add_argument(
-        "--with-vulkan-sync-conformance-gate",
-        action="store_true",
-        help="Run vulkan_sync_conformance.py after trace gate.",
-    )
-    parser.add_argument(
-        "--with-vulkan-timing-policy-gate",
-        action="store_true",
-        help="Run vulkan_timing_policy_gate.py after trace gate.",
-    )
-    parser.add_argument(
-        "--with-comparable-runtime-invariants-gate",
-        action="store_true",
-        help="Run comparable_runtime_invariants_gate.py after trace gate.",
-    )
-    parser.add_argument(
         "--with-modules",
         action="store_true",
         help="Run promoted module blocking gates after trace gate.",
@@ -321,42 +248,6 @@ def parse_args() -> argparse.Namespace:
         "--browser-ownership",
         default="config/browser-ownership.json",
         help="Browser ownership manifest passed to the standalone checker.",
-    )
-    parser.add_argument(
-        "--with-comparability-coherence-gate",
-        action=argparse.BooleanOptionalAction,
-        default=True,
-        help=(
-            "Run comparability_coherence_gate.py after trace gate. Default: enabled. "
-            "Pass --no-with-comparability-coherence-gate only for diagnostic report "
-            "audits that are not claim evidence."
-        ),
-    )
-    parser.add_argument(
-        "--comparability-coherence-benchmark-policy",
-        default="config/benchmark-methodology-thresholds.json",
-        help="Benchmark policy path passed to comparability_coherence_gate.py.",
-    )
-    parser.add_argument(
-        "--with-compare-output-partition-gate",
-        action=argparse.BooleanOptionalAction,
-        default=True,
-        help=(
-            "Run compare_output_partition_gate.py after trace gate. Default: enabled. "
-            "Pass --no-with-compare-output-partition-gate only for non-claim "
-            "diagnostic audits that intentionally violate claim/diagnostic partitioning."
-        ),
-    )
-    parser.add_argument(
-        "--with-structural-equivalence-gate",
-        action=argparse.BooleanOptionalAction,
-        default=True,
-        help=(
-            "Run structural_equivalence_gate.py after trace gate. Default: enabled. "
-            "Pass --no-with-structural-equivalence-gate to opt out for diagnostic-only "
-            "runs that legitimately fail structural parity (e.g. workloads exercising "
-            "Doe-only coverage where Dawn reports unsupported)."
-        ),
     )
     parser.add_argument(
         "--with-file-size-gate",
@@ -1462,12 +1353,6 @@ def parse_args() -> argparse.Namespace:
         "--cts-baseline-policy",
         default="config/cts-baseline-policy.json",
         help="CTS baseline policy config path.",
-    )
-    parser.add_argument(
-        "--trace-semantic-parity-mode",
-        choices=["off", "auto", "required"],
-        default="auto",
-        help="Semantic parity mode passed to trace_gate.py.",
     )
     parser.add_argument(
         "--with-dropin-gate",

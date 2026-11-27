@@ -62,14 +62,6 @@ native_buffer_creation native_device_create_buffer_result(native_device *device,
         return result;
     }
     payload->device = device;
-    uint32_t usage = 0;
-    if (descriptor->usage & (WGPUBufferUsage_CopySrc | WGPUBufferUsage_MapWrite)) usage |= DOE_VK_BUFFER_COPY_SRC;
-    if (descriptor->usage & (WGPUBufferUsage_CopyDst | WGPUBufferUsage_MapRead | WGPUBufferUsage_QueryResolve)) usage |= DOE_VK_BUFFER_COPY_DST;
-    if (descriptor->usage & WGPUBufferUsage_Uniform) usage |= DOE_VK_BUFFER_UNIFORM;
-    if (descriptor->usage & WGPUBufferUsage_Storage) usage |= DOE_VK_BUFFER_STORAGE;
-    if (descriptor->usage & WGPUBufferUsage_Vertex) usage |= DOE_VK_BUFFER_VERTEX;
-    if (descriptor->usage & WGPUBufferUsage_Index) usage |= DOE_VK_BUFFER_INDEX;
-    if (descriptor->usage & WGPUBufferUsage_Indirect) usage |= DOE_VK_BUFFER_INDIRECT | DOE_VK_BUFFER_COPY_SRC;
     const WGPUBufferUsage supported = WGPUBufferUsage_MapRead | WGPUBufferUsage_MapWrite |
         WGPUBufferUsage_CopySrc | WGPUBufferUsage_CopyDst | WGPUBufferUsage_Uniform |
         WGPUBufferUsage_Storage | WGPUBufferUsage_Indirect | WGPUBufferUsage_QueryResolve |
@@ -79,7 +71,7 @@ native_buffer_creation native_device_create_buffer_result(native_device *device,
     native_failure failure = native_failure_status(descriptor->usage & ~supported ?
         NATIVE_UNSUPPORTED : native_device_result(device));
     if (failure.status == NATIVE_OK)
-        failure = native_buffer_create(payload, descriptor->size ? descriptor->size : 4, usage,
+        failure = native_buffer_create(payload, descriptor->size ? descriptor->size : 4, descriptor->usage,
             descriptor->usage & WGPUBufferUsage_MapWrite ? NATIVE_BUFFER_MAP_WRITE :
             (descriptor->usage & WGPUBufferUsage_MapRead) && !descriptor->mappedAtCreation ?
                 NATIVE_BUFFER_MAP_READ : NATIVE_BUFFER_GENERAL,

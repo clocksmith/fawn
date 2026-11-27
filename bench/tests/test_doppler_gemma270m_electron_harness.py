@@ -204,11 +204,14 @@ class DopplerGemma270mElectronHarnessTests(unittest.TestCase):
                 target.write_bytes(content)
                 return {"path": name, "sha256": hashlib.sha256(content).hexdigest()}
 
+            host = subprocess.check_output(
+                ["node", "-p", "process.platform + '-' + process.arch"], text=True,
+            ).strip()
             provider = {
                 "id": "dawn-node-webgpu", "targetRoot": "repo",
                 "target": artifact("index.js", b"provider"),
                 "sourceBuild": {
-                    "library": artifact("dist/linux-x64.dawn.node", b"native"),
+                    "library": artifact(f"dist/{host}.dawn.node", b"native"),
                     "patch": artifact("source.patch", b"patch"),
                     "provenance": artifact("provenance.txt", b"source"),
                 },
@@ -220,7 +223,8 @@ class DopplerGemma270mElectronHarnessTests(unittest.TestCase):
                     capture_output=True, text=True, check=False,
                 )
 
-            self.assertEqual(check().returncode, 0)
+            result = check()
+            self.assertEqual(result.returncode, 0, result.stderr)
             (root / "source.patch").write_bytes(b"changed")
             self.assertIn("source-built patch hash mismatch", check().stderr)
             (root / "source.patch").write_bytes(b"patch")

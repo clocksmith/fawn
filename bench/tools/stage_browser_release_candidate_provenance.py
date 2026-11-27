@@ -38,6 +38,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--release-archive", required=True)
     parser.add_argument("--release-archive-url", required=True)
     parser.add_argument("--release-archive-manifest", required=True)
+    parser.add_argument("--clean-install-check", required=True, help="Observed clean-install receipt for the release archive.")
     parser.add_argument("--public-download-receipt", required=True)
     parser.add_argument("--proof-page-artifact", required=True)
     parser.add_argument("--proof-page-url", default="about:doe")
@@ -383,6 +384,7 @@ def build_stage(args: argparse.Namespace) -> dict[str, Any]:
         release_archive_url=args.release_archive_url,
         release_archive_manifest=Path(args.release_archive_manifest),
         proof_surface=proof_surface_out,
+        clean_install_check=Path(args.clean_install_check),
         browser_product=browser_product,
         platform=platform,
         browser_executable_archive_path=members["browserExecutable"],

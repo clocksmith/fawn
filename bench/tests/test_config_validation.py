@@ -130,7 +130,7 @@ class TestSchemaInference(unittest.TestCase):
             sch_path = Path(td) / "workload.schema.json"
             cfg_path.touch()
             sch_path.touch()
-            inferred = cv._infer_schema_path(cfg_path)
+            inferred = cv.infer_schema_path(cfg_path)
             self.assertEqual(inferred, sch_path)
 
     def test_variant_inference_with_existing_base(self):
@@ -140,7 +140,7 @@ class TestSchemaInference(unittest.TestCase):
             base_sch = Path(td) / "claim-cycle.schema.json"
             cfg_path.touch()
             base_sch.touch()
-            inferred = cv._infer_schema_path(cfg_path)
+            inferred = cv.infer_schema_path(cfg_path)
             self.assertEqual(inferred, base_sch)
 
     def test_variant_falls_back_to_full_stem(self):
@@ -149,18 +149,18 @@ class TestSchemaInference(unittest.TestCase):
             cfg_path = Path(td) / "claim-cycle.active.json"
             cfg_path.touch()
             # No base schema, so it should fall back to full stem
-            inferred = cv._infer_schema_path(cfg_path)
+            inferred = cv.infer_schema_path(cfg_path)
             self.assertEqual(inferred.name, "claim-cycle.active.schema.json")
 
     def test_no_json_suffix_raises(self):
         with self.assertRaises(ValueError):
-            cv._infer_schema_path(Path("/some/config.yaml"))
+            cv.infer_schema_path(Path("/some/config.yaml"))
 
     def test_simple_name_no_dots(self):
         with tempfile.TemporaryDirectory() as td:
             cfg_path = Path(td) / "simple.json"
             cfg_path.touch()
-            inferred = cv._infer_schema_path(cfg_path)
+            inferred = cv.infer_schema_path(cfg_path)
             self.assertEqual(inferred.name, "simple.schema.json")
 
     def test_deeply_dotted_name(self):
@@ -169,7 +169,7 @@ class TestSchemaInference(unittest.TestCase):
             cfg_path = Path(td) / "a.b.c.json"
             cfg_path.touch()
             # No a.b.schema.json exists, so falls back
-            inferred = cv._infer_schema_path(cfg_path)
+            inferred = cv.infer_schema_path(cfg_path)
             self.assertEqual(inferred.name, "a.b.c.schema.json")
 
     def test_deeply_dotted_with_base_schema(self):
@@ -178,7 +178,7 @@ class TestSchemaInference(unittest.TestCase):
             base_sch = Path(td) / "a.b.schema.json"
             cfg_path.touch()
             base_sch.touch()
-            inferred = cv._infer_schema_path(cfg_path)
+            inferred = cv.infer_schema_path(cfg_path)
             self.assertEqual(inferred, base_sch)
 
 

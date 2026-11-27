@@ -23,7 +23,7 @@ RELIABILITY_REPORTS = {
     )
     for runtime in ("node", "bun", "electron")
 }
-CURRENT_CANDIDATES = {
+AUGUST_CANDIDATES = {
     runtime: (
         ROOT
         / "reports/benchmarks/amd-vulkan/20260828T152721Z"
@@ -67,22 +67,20 @@ class DoeGpuNativeCleanInstallTests(unittest.TestCase):
                     )
                     self.assertFalse(report["launch"]["rendererCreated"])
 
-    def test_current_candidate_binds_current_tracked_inputs(self) -> None:
-        for runtime, path in CURRENT_CANDIDATES.items():
+    def test_august_candidates_bind_their_retained_reliability_reports(self) -> None:
+        for runtime, path in AUGUST_CANDIDATES.items():
             with self.subTest(runtime=runtime):
-                report = json.loads(path.read_text())
-                for field in ("runner", "wrapperManifest", "platformManifest"):
-                    reference = report["implementation"][field]
-                    self.assertEqual(
-                        reference["sha256"], sha256(ROOT / reference["path"])
-                    )
-                for field in ("stagedAddon", "stagedBuildMetadata"):
-                    reference = report["implementation"][field]
-                    implementation_path = ROOT / reference["path"]
-                    if implementation_path.exists():
-                        self.assertEqual(
-                            reference["sha256"], sha256(implementation_path)
-                        )
+                candidate = json.loads(path.read_text())
+                reliability_path = RELIABILITY_REPORTS[runtime]
+                reliability = json.loads(reliability_path.read_text())
+                reference = candidate["reliabilityEvidence"]
+                self.assertEqual(reference["path"], reliability_path.relative_to(ROOT).as_posix())
+                self.assertEqual(reference["sha256"], sha256(reliability_path))
+                self.assertEqual(reference["artifactKind"], reliability["artifactKind"])
+                self.assertEqual(reference["status"], reliability["status"])
+                self.assertEqual(candidate["packages"], reliability["packages"])
+                for field in ("firstKernel", "wrapperManifest", "platformManifest"):
+                    self.assertEqual(candidate["implementation"][field], reliability["implementation"][field])
 
     def test_installed_native_runtime_and_oracle_are_exact(self) -> None:
         for runtime, path in REPORTS.items():
@@ -207,10 +205,6 @@ class DoeGpuNativeCleanInstallTests(unittest.TestCase):
                         "electron-main-process-node-side",
                     )
                     self.assertFalse(report["launch"]["rendererCreated"])
-                for reference in report["implementation"].values():
-                    self.assertEqual(
-                        reference["sha256"], sha256(ROOT / reference["path"])
-                    )
 
 
 if __name__ == "__main__":

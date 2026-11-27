@@ -13,6 +13,13 @@ from pathlib import Path
 
 import jsonschema
 
+from bench.tests.browser_release_package_fixtures import (
+    macos_plist as _macos_plist,
+    macho_payload as _macho_payload,
+    write_canonical_args_gn as _write_canonical_args_gn,
+    write_file as _write_file,
+    write_macos_candidate_inputs as _write_macos_candidate_inputs,
+)
 from bench.tools import check_browser_release_package_inputs as package_inputs
 
 
@@ -24,35 +31,8 @@ def _sha256(payload: bytes) -> str:
     return hashlib.sha256(payload).hexdigest()
 
 
-def _write_file(path: Path, payload: bytes, mode: int = 0o644) -> Path:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_bytes(payload)
-    path.chmod(mode)
-    return path
-
-
 def _validate(payload: dict) -> None:
     jsonschema.validate(payload, json.loads(SCHEMA.read_text(encoding="utf-8")))
-
-
-def _macos_plist(*, display_name: str = "Fawn Doe", version: str = "0.0.0-sample") -> dict:
-    return {
-        "CFBundleName": display_name,
-        "CFBundleDisplayName": display_name,
-        "CFBundleIdentifier": "dev.doe.fawn-doe",
-        "CFBundleShortVersionString": version,
-        "CFBundleVersion": version,
-        "CFBundleExecutable": "Chromium",
-        "CFBundlePackageType": "APPL",
-    }
-
-
-def _macho_payload(arch: str = "arm64") -> bytes:
-    cpu_type = {
-        "arm64": 0x0100000C,
-        "x64": 0x01000007,
-    }[arch]
-    return struct.pack("<IiiIIIII", 0xFEEDFACF, cpu_type, 0, 2, 0, 0, 0, 0)
 
 
 def _elf_x64_payload() -> bytes:
@@ -60,29 +40,6 @@ def _elf_x64_payload() -> bytes:
     payload[:6] = b"\x7fELF\x02\x01"
     payload[18:20] = struct.pack("<H", 0x3E)
     return bytes(payload)
-
-
-def _write_canonical_args_gn(path: Path) -> Path:
-    return _write_file(
-        path,
-        b"\n".join(
-            [
-                b"is_debug = false",
-                b"is_official_build = true",
-                b"dcheck_always_on = false",
-                b"chrome_pgo_phase = 0",
-                b"symbol_level = 0",
-                b"blink_symbol_level = 0",
-                b"v8_symbol_level = 0",
-                b"is_chrome_for_testing = false",
-                b"is_chrome_for_testing_branded = false",
-                b"is_chrome_branded = false",
-                b"use_clang_modules = false",
-                b"dawn_enable_webgpu_on_webgpu = true",
-                b"",
-            ]
-        ),
-    )
 
 
 def _write_linux_inputs(root: Path) -> dict[str, Path]:
@@ -126,25 +83,6 @@ def _write_linux_candidate_inputs(root: Path) -> dict[str, Path]:
             _elf_x64_payload(),
             0o755,
         ),
-    }
-
-
-def _write_macos_candidate_inputs(root: Path) -> dict[str, Path]:
-    app_dir = root / "Fawn.app"
-    _write_canonical_args_gn(root / "args.gn")
-    browser = app_dir / "Contents" / "MacOS" / "Chromium"
-    _write_file(browser, _macho_payload(), 0o755)
-    plist_path = app_dir / "Contents" / "Info.plist"
-    plist_path.parent.mkdir(parents=True, exist_ok=True)
-    with plist_path.open("wb") as handle:
-        plistlib.dump(_macos_plist(), handle)
-    return {
-        "package_dir": app_dir,
-        "browser": browser,
-        "plist": plist_path,
-        "doe_runtime": _write_file(root / "libwebgpu_doe.so", _macho_payload(), 0o755),
-        "dawn_runtime": _write_file(root / "libdawn_native.so", _macho_payload(), 0o755),
-        "compiler": _write_file(root / "doe-zig-runtime", _macho_payload(), 0o755),
     }
 
 

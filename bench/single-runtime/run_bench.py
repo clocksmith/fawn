@@ -23,13 +23,7 @@ import subprocess
 import time
 from dataclasses import dataclass
 from datetime import datetime, timezone
-from pathlib import Path
 from typing import Any
-import sys
-
-BENCH_ROOT = Path(__file__).resolve().parents[1]
-if str(BENCH_ROOT) not in sys.path:
-    sys.path.insert(0, str(BENCH_ROOT))
 
 from bench.lib import output_paths
 from bench.lib.bench_utils import (
@@ -39,6 +33,7 @@ from bench.lib.bench_utils import (
     backend_from_token,
     extract_backends_from_command,
     infer_backend_from_lane_name,
+    parse_trace_rows,
 )
 from bench.native_compare_modules import executor_registry as executor_registry_mod
 
@@ -172,29 +167,6 @@ def format_stats(values: list[float]) -> dict[str, float]:
     }
 
 
-def parse_trace_rows(path: Path) -> list[dict[str, Any]]:
-    if not path.exists():
-        return []
-
-    rows: list[dict[str, Any]] = []
-    for raw in path.read_text(encoding="utf-8").splitlines():
-        line = raw.strip()
-        if not line:
-            continue
-        try:
-            payload = json.loads(line)
-        except json.JSONDecodeError as exc:
-            print(f"WARN: invalid trace jsonl row in {path}: {exc}")
-            return []
-
-        if not isinstance(payload, dict):
-            print(f"WARN: non-object trace row in {path}: {line[:120]}")
-            return []
-
-        rows.append(payload)
-    return rows
-
-
 def parse_trace_meta(path: Path) -> dict[str, Any]:
     if not path.exists():
         return {}
@@ -226,10 +198,10 @@ def pick_measured_timing_ms(wall_ms: float, trace_rows: list[dict[str, Any]], tr
     row_execution_ns: list[int] = []
     for row in trace_rows:
         row_ns = row.get("executionDurationNs")
-        if isinstance(row_ns, int) and row_ns >= 0:
+        if type(row_ns) is int and row_ns >= 0:
             row_execution_ns.append(row_ns)
 
-    if row_execution_ns and len(row_execution_ns) == len(trace_rows):
+    if len(row_execution_ns) == len(trace_rows) and sum(row_execution_ns) > 0:
         timing_meta.update(
             {
                 "source": "execution-duration",
@@ -240,36 +212,9 @@ def pick_measured_timing_ms(wall_ms: float, trace_rows: list[dict[str, Any]], tr
         )
         return float(sum(row_execution_ns)) / NS_PER_MS, "execution-duration", timing_meta
 
-    if not trace_rows:
-        if isinstance(trace_meta.get("seqMax"), int):
-            timing_meta["seqMax"] = trace_meta.get("seqMax")
-        return wall_ms, "wall-time", timing_meta
-
-    timestamps: list[int] = []
-    for row in trace_rows:
-        ts = row.get("timestampMonoNs")
-        if isinstance(ts, int):
-            timestamps.append(ts)
-
-    if len(timestamps) < 2:
-        return wall_ms, "wall-time", timing_meta
-
-    first = min(timestamps)
-    last = max(timestamps)
-    measured_ms = float(last - first) / NS_PER_MS
-    if measured_ms < 0:
-        return wall_ms, "wall-time", timing_meta
-
-    timing_meta.update(
-        {
-            "source": "trace-window",
-            "traceWindowStartMonoNs": first,
-            "traceWindowEndMonoNs": last,
-            "traceRows": len(timestamps),
-            "rowCount": safe_int(trace_meta.get("rowCount")),
-        },
-    )
-    return measured_ms, "trace-window", timing_meta
+    if not trace_rows and isinstance(trace_meta.get("seqMax"), int):
+        timing_meta["seqMax"] = trace_meta["seqMax"]
+    return wall_ms, "wall-time", timing_meta
 
 
 def extract_metric_proxy(

@@ -3,7 +3,7 @@ import { createD1RecipeStore } from './store-d1.js';
 import { createManagedRecipeEngine } from './engine.js';
 import { createManagedRecipeHttpHandler } from './http-handler.js';
 
-let cachedKey = null;
+let cachedConfig = null;
 let cachedHandler = null;
 
 function getHandler(env) {
@@ -16,13 +16,13 @@ function getHandler(env) {
   if (typeof clientsRaw !== 'string' || !clientsRaw.trim()) {
     throw Error('FAWN_RECIPE_CLIENTS_JSON secret must be configured');
   }
-  const cacheIdentity = `${secret.length}:${quorum}:${clientsRaw}`;
-  if (cachedHandler && cachedKey === cacheIdentity) return cachedHandler;
+  if (cachedConfig?.secret === secret && cachedConfig.quorum === quorum &&
+      cachedConfig.clientsRaw === clientsRaw && cachedConfig.db === env.DB) return cachedHandler;
   const clients = JSON.parse(clientsRaw);
   const store = createD1RecipeStore(env.DB);
   const engine = createManagedRecipeEngine({ store, secret, catalogQuorum: quorum });
   cachedHandler = createManagedRecipeHttpHandler({ engine, clients });
-  cachedKey = cacheIdentity;
+  cachedConfig = { secret, quorum, clientsRaw, db: env.DB };
   return cachedHandler;
 }
 

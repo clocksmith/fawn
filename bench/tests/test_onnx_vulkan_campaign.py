@@ -13,6 +13,9 @@ import shutil
 import tempfile
 import unittest
 
+from bench.tests.historical_sources import stage_historical_files
+
+
 REPO = Path(__file__).resolve().parents[2]
 REPORT = REPO / "reports/benchmarks/amd-vulkan/20261005-onnx-vulkan-campaign"
 SPEC = importlib.util.spec_from_file_location(
@@ -24,8 +27,20 @@ SPEC.loader.exec_module(VERIFY)
 
 
 class TestCampaignEvidence(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls) -> None:
+        workspace = tempfile.TemporaryDirectory()
+        cls.addClassCleanup(workspace.cleanup)
+        cls.source = Path(workspace.name)
+        manifest = json.loads((REPORT / "manifest.json").read_bytes())
+        paths = [
+            *manifest["sources"],
+            manifest["historicalReport"]["path"],
+        ]
+        stage_historical_files(cls.source, REPO, "474190acb077a0d1f58dd59a114e26148277ee58", paths)
+
     def test_completed_negative_decision_verifies(self) -> None:
-        result = VERIFY.verify(REPORT, REPO)
+        result = VERIFY.verify(REPORT, self.source)
         self.assertEqual(result["application"], "qualified-bounded-host")
         self.assertEqual(result["advantage"], "rejected")
 
@@ -83,7 +98,7 @@ class TestCampaignEvidence(unittest.TestCase):
                 Path(directory), "raw/measurement-qualified/measurement.json", promote
             )
             with self.assertRaisesRegex(ValueError, "Derived statistic changed"):
-                VERIFY.verify(target, REPO)
+                VERIFY.verify(target, self.source)
 
     def test_application_cpu_fallback_rejected(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -95,7 +110,7 @@ class TestCampaignEvidence(unittest.TestCase):
                 Path(directory), "raw/doe-matched.json", fallback
             )
             with self.assertRaisesRegex(ValueError, "Application CPU fallback"):
-                VERIFY.verify(target, REPO)
+                VERIFY.verify(target, self.source)
 
     def test_unscoped_native_cache_home_rejected(self) -> None:
         measurement = json.loads(

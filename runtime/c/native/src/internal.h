@@ -295,7 +295,7 @@ void native_buffer_host_return(native_buffer *buffer);
 native_failure native_buffer_host_range(native_buffer *buffer, uint64_t offset, size_t size,
     const unsigned char **out);
 native_failure native_buffer_write(native_buffer *buffer, uint64_t offset, const void *bytes, size_t size);
-native_failure native_buffer_create(native_buffer *buffer, uint64_t size, uint32_t usage,
+native_failure native_buffer_create(native_buffer *buffer, uint64_t size, WGPUBufferUsage usage,
     native_buffer_memory_intent intent, bool host_mapped);
 void native_buffer_close(native_buffer *buffer);
 native_result native_device_result(native_device *device);

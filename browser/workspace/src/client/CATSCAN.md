@@ -4,7 +4,7 @@ Parent: [Blitzen workspace](../../CATSCAN.md)
 
 ## Target
 
-Controlled investigations and reusable workflows.
+Investigations and reusable workflows.
 
 ## Authority
 
@@ -27,33 +27,18 @@ Outputs:
 
 ## Invariants
 
-- Service dispatches browser effects exclusively.
-- Default: stock Google Chrome. Explicit Fawn selection requires a hash-pinned profile with no fallback.
-- Delegation inherits no grants or record disclosure.
-- Restart restores human ownership without replay.
-- Takeover stops future work. Dispatched effects persist. Uncertainty forbids retries.
-- Models grant no permission; repository reads/symlinks stay under selected roots.
-- Corrections invalidate dependents; earlier revisions persist.
-- Hosts may declare required current saved-record counts per delegation. Only task-visible records count; missing deliverables stop completion even on the last request. Presence does not establish factual correctness, confer permissions or replace independent qualification.
-- HTTP exposes no handles/credentials.
-- Replay checks accounts/disclosure, preserves service admission and stops before submission.
-- Recipe DAGs key state on screen outline and satisfied slots so repairs, reordered fills and composed sub-recipes reconverge, compress dominated detours and select optimal routes via backward dynamic programming while preserving semantic-tie stops.
-- Scoped reuse requires reviewed meanings, unique targets and ordered dependency boundaries.
-- Verified repairs retain the executed prefix; exact-page suffixes require independent review.
-- Client-encrypted graphs; remote storage grants no browser authority.
-- Publication preserves independent attempt records.
+- The service owns dispatch. Stock Chrome is the default. Fawn requires a hash-pinned profile.
+- Delegation grants no permissions or disclosure. Restart restores human control. Takeover stops future work. Uncertain effects forbid retries.
+- Repository reads stay within selected roots, through symlinks. Corrections invalidate dependent revisions and preserve history.
+- Required records must be current and task-visible before completion. Counts establish presence only.
+- HTTP keeps handles and credentials private. Replay checks accounts, disclosure and admission, stopping before submission.
+- DAGs merge matching outlines and slots, compress detours and stop on semantic ties. Scoped reuse requires reviewed meanings, unique targets and ordered dependencies.
+- Repairs retain executed prefixes. Exact-page suffixes require independent review. Graphs use client encryption. Publication preserves each attempt.
 
 ## Acceptance
 
-- Evidence: [Client tests](../../test/unit/product-client.test.js): authority/restart; [shopping](../../test/unit/shopping.test.js): approval/recovery.
-- [DAG reduction and DP checks](../../test/unit/trace-graph-dp.test.js): loop contraction, detour compression, diamond reconvergence, Bellman DP routing, recipe composition and mid-entry.
-- [Persistence checks](../../workflow-store.md#focused-checks): isolation, attempt accounting and crash preservation.
-- [Sync checks](../../workflow-registry.md#focused-evidence): encrypted cross-client reuse.
-- [Scoped replay](../../test/unit/scoped-trace.test.js): aliases, dependencies and safe stops.
-- [Repair replay](../../test/browser/workflow-repair.test.js): separate-process persistence.
-- [Holdout decision](../../../../reports/fawn-workspace/20261109-field-group-reuse/decision.json): bounded reuse.
-- [Completion-contract checks](../../test/unit/completion-contract.test.js): bounded required records, disclosure isolation, premature finish and equivalent stock-loop enforcement.
-- Parent comparison remains mandatory.
+- Evidence: [client authority](../../test/unit/product-client.test.js), [shopping recovery](../../test/unit/shopping.test.js), [DAG routing](../../test/unit/trace-graph-dp.test.js), [completion](../../test/unit/completion-contract.test.js).
+- [Persistence](../../workflow-store.md#focused-checks), [encrypted sync](../../workflow-registry.md#focused-evidence), [scoped replay](../../test/unit/scoped-trace.test.js), [repair](../../test/browser/workflow-repair.test.js) and the [bounded holdout](../../../../reports/fawn-workspace/20261109-field-group-reuse/decision.json) cover reuse. Parent comparison required.
 
 ## Non-goals
 
@@ -61,4 +46,4 @@ Outputs:
 
 ## Freedom
 
-Preserve boundaries and independent evidence.
+Preserve independent evidence.

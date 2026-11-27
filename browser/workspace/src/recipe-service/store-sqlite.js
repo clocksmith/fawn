@@ -27,12 +27,11 @@ export function createSqliteRecipeStore(filename = ':memory:') {
       return { changes: Number(res.changes ?? 0) };
     },
     async batch(statements) {
-      db.exec('BEGIN IMMEDIATE');
+      db.exec('BEGIN');
       try {
-        for (const { sql, params = [] } of statements) {
-          db.prepare(sql).run(...params);
-        }
+        const rows = statements.map(({ sql, params = [] }) => db.prepare(sql).all(...params));
         db.exec('COMMIT');
+        return rows;
       } catch (error) {
         try { db.exec('ROLLBACK'); } catch {}
         throw error;

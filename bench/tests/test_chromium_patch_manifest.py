@@ -32,8 +32,16 @@ def _check(payload: dict) -> list[dict[str, str]]:
     )
 
 
-def test_chromium_patch_manifest_passes_check() -> None:
-    assert _check(_load_manifest()) == []
+def test_chromium_patch_manifest_matches_available_checkout() -> None:
+    manifest = _load_manifest()
+    expected = []
+    if not (REPO_ROOT / "browser/chromium/src").exists():
+        expected = [
+            ("missing_chromium_source_checkout", f"patches[{index}].chromiumSourceRequired")
+            for index, patch in enumerate(manifest["patches"])
+            if patch["status"] == "active" and patch["chromiumSourceRequired"]
+        ]
+    assert [(item["code"], item["path"]) for item in _check(manifest)] == expected
 
 
 def test_chromium_patch_manifest_rejects_duplicate_patch_ids() -> None:

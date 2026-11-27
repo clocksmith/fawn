@@ -1,2 +1,3 @@
-# Schema validation for the benchmark CLI and its focused CPU-only controls.
+# Requirements for schema validation and the CPU benchmark test suite.
 jsonschema[format-nongpl]==4.25.1
+pytest==8.4.2

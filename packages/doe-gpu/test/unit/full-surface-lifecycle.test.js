@@ -181,4 +181,33 @@ async function assertRejectsOperationError(promise) {
   }
 }
 
+// A small buffer bind can use the flat ABI. A sized range must retain its size.
+{
+  const flat = [];
+  const general = [];
+  const device = createTestDevice({
+    deviceCreateBufferBindGroupFlat4(_device, layout, count, binding, buffer, offset) {
+      flat.push({ layout, count, binding, buffer, offset });
+      return 'flat-group';
+    },
+    deviceCreateBindGroup(_device, layout, entries) {
+      general.push({ layout, entry: entries[0] });
+      return 'sized-group';
+    },
+  });
+  const layout = { _native: 'layout' };
+  const buffer = { _native: 'buffer' };
+  function bind(range) {
+    return device.createBindGroup({ layout, entries: [{ binding: 2, resource: { buffer, ...range } }] });
+  }
+  bind({ offset: 256 });
+  bind({ offset: 256, size: 16 });
+  assert.deepEqual(flat, [{ layout: 'layout', count: 1, binding: 2, buffer: 'buffer', offset: 256 }]);
+  assert.equal(general.length, 1);
+  assert.equal(general[0].layout, 'layout');
+  const { binding, buffer: nativeBuffer, offset, size } = general[0].entry;
+  assert.deepEqual([binding, nativeBuffer, offset, size], [2, 'buffer', 256, 16]);
+  device.destroy();
+}
+
 console.log('full-surface-lifecycle.test: ok');

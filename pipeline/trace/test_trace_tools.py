@@ -401,6 +401,20 @@ class TestEmptyTrace(unittest.TestCase):
             result = _run_replay(mp, jsonl)
             self.assertNotEqual(result.returncode, 0)
 
+    def test_native_plan_opcodes_require_plan_context(self):
+        rows, meta = _make_valid_trace(3)
+        with tempfile.TemporaryDirectory() as td:
+            for producer in ("doe-c-runtime", "dawn-c-runtime", "doe-zig-runtime"):
+                for row, op in zip(rows, ("buffer_write", "buffer_load", "kernel_dispatch")):
+                    row.update(module=producer, semanticStage="runtime_plan", opCode=op, command=op)
+                jsonl, mp = _write_trace_files(Path(td), rows, meta)
+                self.assertEqual(_run_replay(mp, jsonl).returncode, 0)
+            for field, invalid in (("command", "copy"), ("module", "unknown"), ("semanticStage", "other")):
+                with self.subTest(field=field):
+                    invalid_rows = [{**rows[0], field: invalid}, *rows[1:]]
+                    jsonl, mp = _write_trace_files(Path(td), invalid_rows, meta)
+                    self.assertNotEqual(_run_replay(mp, jsonl).returncode, 0)
+
     def test_package_step_opcodes_pass(self):
         rows, meta = _make_valid_trace(4)
         for row, op_code in zip(rows, ["upload", "dispatch", "copy", "readback"]):

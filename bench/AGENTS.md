@@ -56,7 +56,9 @@ gates. Preserve each phase's input, completion and failure boundary, cancellatio
 unknown completion, worker ownership and retained failures. Resume only when
 contracts and artifact identities match. Preflight and report-generation clocks
 cannot manufacture measurement facts. Test affected orchestration separately from
-running a measurement campaign.
+running a measurement campaign. `run_blocking_gates.py --scope report --report <path>`
+runs the report checks. Add `--with-backend-selection-gate --backend-selection-lane <lane>`
+to check the selected backend. Release qualification uses the default full sequence.
 
 [tools/](tools/) owns argument conversion, explicit campaign orchestration and
 artifact output. Import parsers, classifiers and inventory rules from their owners;
@@ -71,6 +73,7 @@ and declared exactness/tolerance. Do not obtain expected outputs through the GPU
 path under test or weaken a frozen oracle after a loss. Unsupported references
 stay explicit; exercise incorrect-output rejection as well as positive cases.
 
+Use `python3 -m pytest bench/tests/test_<module>.py` for affected modules.
 [tests/](tests/) uses synthetic receipts and independent expected outcomes.
 Preserve negative controls for wrong units, missing evidence, stale artifacts,
 unknown machines, callback failures and accidental qualification. Test public

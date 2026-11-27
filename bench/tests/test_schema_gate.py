@@ -75,6 +75,29 @@ def test_missing_non_generated_target_still_fails() -> None:
     assert failures == ["missing data: examples/missing.json"]
 
 
+def test_json_validates_the_document_and_jsonl_validates_each_record(tmp_path: Path) -> None:
+    module = _load_module()
+    _write_schema(tmp_path)
+
+    def validate(name: str, contents: str) -> list[str]:
+        (tmp_path / name).write_text(contents, encoding="utf-8")
+        return module.validate_target(tmp_path, module.ValidationTarget("config/sample.schema.json", name))
+
+    assert validate("single.json", '{"ok": true}') == []
+    assert validate("single.json", '[]')
+    assert validate("single.json", '[{"ok": true}]')
+    assert validate("rows.jsonl", '{"ok": true}\n{"ok": false}') == []
+    assert "[1]" in validate("rows.jsonl", '{"ok": true}\n[]')[0]
+    (tmp_path / "config/rows.schema.json").write_text(
+        '{"type": "array", "minItems": 1, "items": {"$ref": "sample.schema.json"}}',
+        encoding="utf-8",
+    )
+    target = module.ValidationTarget("config/rows.schema.json", "single.json")
+    assert module.validate_target(tmp_path, target) == []
+    (tmp_path / "single.json").write_text("[]", encoding="utf-8")
+    assert module.validate_target(tmp_path, target)
+
+
 class SchemaKindRoutingTests(unittest.TestCase):
     def setUp(self) -> None:
         self.module = _load_module()
@@ -113,6 +136,14 @@ class SchemaKindRoutingTests(unittest.TestCase):
         path = self.root / relative
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(json.dumps(payload), encoding="utf-8")
+
+    def test_unregistered_top_level_config_is_validated(self) -> None:
+        self.write_json("config/package.json", [])
+        self.write_json("config/unpaired.json", {})
+        targets = self.module.collect_targets(self.root)
+        errors = [error for target in targets for error in self.module.validate_target(self.root, target)]
+        self.assertTrue(any("config/package.json" in error for error in errors))
+        self.assertIn("missing schema: config/unpaired.schema.json", errors)
 
     def test_identical_filename_suffix_routes_each_body(self) -> None:
         for kind in self.mapping:

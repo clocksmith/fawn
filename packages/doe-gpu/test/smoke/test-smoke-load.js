@@ -66,7 +66,7 @@ function shouldSkipOptionalRuntimeExercise(err) {
     message.includes('FileNotFound') ||
     message.includes('ENOENT') ||
     message.includes('EPERM') ||
-    message.includes('module-core-runner') ||
+    /^Could not locate (?:doe-c-module-runner|module-core-runner)\./u.test(message) ||
     message.includes('doe-zig-runtime binary not found')
   );
 }

@@ -36,9 +36,9 @@ The [retained Zig source map](../runtime/zig/src/README.md) governs its explicit
 legacy and reference implementation. Repository health glue belongs in `scripts/`.
 
 `python3 scripts/check-health.py` delegates Zig size policy to
-`runtime/zig/tools/check_line_limits.py` and registered schema validation to
-`bench/gates/schema_gate.py`. It separately checks Python sizes, schema coverage,
-and retired root directories. Generated output and dependency trees are outside
+`runtime/zig/tools/check_line_limits.py` and config schema coverage and validation to
+`bench/gates/schema_gate.py`. It separately checks Python sizes and retired
+root directories. Generated output and dependency trees are outside
 the owned Python source scan. There is no second Zig line-limit policy.
 
 Vulkan is the current engineering focus. The [browser integration](../browser/chromium/README.md),

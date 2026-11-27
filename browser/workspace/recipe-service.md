@@ -97,3 +97,13 @@ gcloud run services replace browser/workspace/deploy/cloud-run/cloud-run-service
 ```sh
 node browser/workspace/test/unit/recipe-service.test.js
 ```
+
+
+### Trace receipts
+
+A submission ID belongs to one workspace, client, and recipe namespace. Retrying
+the same validated trace returns its committed receipt. A changed payload with
+the same ID returns HTTP 409. A client can retrieve its receipt by sending the
+same verification ID with empty steps. Graph edits, revision and receipt commit
+together. Pre-upgrade workspace receipts support this empty-step lookup.
+Pre-upgrade catalog receipts lack workspace attribution and return HTTP 409.

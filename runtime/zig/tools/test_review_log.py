@@ -26,6 +26,8 @@ class ReviewLogTests(unittest.TestCase):
             destination = self.repo / path
             destination.parent.mkdir(parents=True, exist_ok=True)
             destination.write_text("fixture guidance\n", encoding="utf-8")
+        (self.repo / SCHEMA).parent.mkdir(parents=True, exist_ok=True)
+        (self.repo / LOG).parent.mkdir(parents=True, exist_ok=True)
         (self.repo / SCHEMA).write_bytes((REPO / SCHEMA).read_bytes())
         (self.repo / PLAN_SCHEMA).write_bytes((REPO / PLAN_SCHEMA).read_bytes())
         self.evidence = self.repo / "evidence.txt"
@@ -153,7 +155,13 @@ class ReviewLogTests(unittest.TestCase):
         record = self.record(scope, "file_review")
         record["context"] = [{"path": "AGENTS.md", "sha256": digest(b"fixture guidance\n")}]
         (self.repo / "AGENTS.md").write_text("new guidance\n", encoding="utf-8")
+        self.assertEqual(self.hashes(self.files)[scope], self.fingerprints[scope])
+        owner = self.repo / "runtime/zig/src/a/CATSCAN.md"
+        owner.parent.mkdir(parents=True)
+        owner.write_text("changed owner contract", encoding="utf-8")
         self.assertNotEqual(self.hashes(self.files)[scope], self.fingerprints[scope])
+        sibling = Scope("file", ("src/b/b.zig",))
+        self.assertEqual(self.hashes(self.files)[sibling], self.fingerprints[sibling])
         statuses, _ = current_statuses(self.repo, self.scopes, self.fingerprints, [record])
         self.assertEqual(statuses[scope], "stale")
 

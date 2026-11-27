@@ -163,12 +163,11 @@ behavior or its test fixture.
 - Remove a focused behavioral test as a workload duplicate only after the
   duplicate-removal gate proves equivalent sensitivity. Tests that only pin
   config literals or restate another file need no gate; remove the duplication.
-- Use `unittest.TestCase` class-based tests named
-  `test_<what_is_being_tested>` (descriptive, snake_case).
-- Dynamic test generation with `setattr` for schema fuzz tests.
-- Run the touched module (`python3 -m unittest bench.tests.test_<module>`).
-  `python3 -m unittest discover bench.tests` is the full suite, not a default
-  gate.
+- Name tests `test_<behavior>`. Pytest collects both module functions and
+  existing `unittest.TestCase` classes.
+- Install `bench/requirements.txt` and run the touched module with
+  `python3 -m pytest bench/tests/test_<module>.py`. Use
+  `python3 -m pytest bench/tests` when the full suite is required.
 
 ```python
 class TestSchemaCompliance(unittest.TestCase):

@@ -1,10 +1,11 @@
 import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { existsSync } from 'node:fs';
+import { existsSync, realpathSync } from 'node:fs';
 import { copyFile, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { createRequire } from 'node:module';
 import { release, tmpdir } from 'node:os';
 import { dirname, join, relative, resolve, sep } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { assertStagedPlatformFresh } from '../../scripts/platform-staging.js';
 import { assertInstalledNativeProvider } from '../lib/installed-native-provider.js';
 import { nativeInstallPlatform } from '../lib/native-install-platform.js';
@@ -360,7 +361,16 @@ try {
   )) {
     throw new Error(`Electron mapped-range probe failed: ${executed.stdout}`);
   }
-  assertInstalledNativeProvider(receipt.provider, resolve(scratch, `node_modules/${platformPackageName}`));
+  const installedRoot = resolve(scratch, `node_modules/${platformPackageName}`);
+  const verified = assertInstalledNativeProvider(receipt.provider, installedRoot);
+  if (verified.source === 'c-package') {
+    const entry = createRequire(resolve(scratch, 'package.json')).resolve(platformPackageName);
+    const { libraryPath, addonPath } = await import(pathToFileURL(entry));
+    if (realpathSync.native(libraryPath) !== verified.libraryPath
+        || realpathSync.native(addonPath) !== realpathSync.native(resolve(installedRoot, 'bin/doe_napi.node'))) {
+      throw new Error('platform package exports differ from its installed native payload');
+    }
+  }
   const metadataFilename = receipt.provider.buildMetadataSource === 'c-package'
     ? 'doe-c-manifest.json' : 'doe-build-metadata.json';
   const expected = [2, 4, 6, 8, 10, 12, 14, 16];

@@ -233,3 +233,26 @@ def detect_repo_root(explicit_root: str) -> Path:
         "unable to auto-detect repository root; pass --root with a path "
         "containing config/ and bench/"
     )
+
+
+def parse_trace_rows(path: Path) -> list[dict[str, Any]]:
+    if not path.exists():
+        return []
+
+    rows: list[dict[str, Any]] = []
+    for raw in path.read_text(encoding="utf-8").splitlines():
+        line = raw.strip()
+        if not line:
+            continue
+        try:
+            payload = json.loads(line)
+        except json.JSONDecodeError as exc:
+            print(f"WARN: invalid trace jsonl row in {path}: {exc}")
+            return []
+
+        if not isinstance(payload, dict):
+            print(f"WARN: non-object trace row in {path}: {line[:120]}")
+            return []
+
+        rows.append(payload)
+    return rows

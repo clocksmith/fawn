@@ -4,13 +4,12 @@
 from __future__ import annotations
 
 import json
-import plistlib
 import sys
 from pathlib import Path
 
 import jsonschema
 
-from bench.tools import check_browser_release_package_inputs as package_inputs_check
+from bench.tests.browser_release_package_fixtures import write_clean_install_fixture, write_macos_candidate_report
 from bench.tools import check_browser_release_candidate_provenance as checker
 
 
@@ -38,21 +37,6 @@ def _write_json(path: Path, payload: dict) -> Path:
     return path
 
 
-def _write_file(path: Path, payload: bytes, mode: int = 0o644) -> Path:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_bytes(payload)
-    path.chmod(mode)
-    return path
-
-
-def _macho_arm64_payload() -> bytes:
-    return (
-        b"\xcf\xfa\xed\xfe"
-        + (0x0100000C).to_bytes(4, "little")
-        + (0).to_bytes(4, "little") * 6
-    )
-
-
 def _artifact(path: Path, kind: str, *, download_url: str = "") -> dict[str, str]:
     payload = {
         "path": str(path),
@@ -64,56 +48,12 @@ def _artifact(path: Path, kind: str, *, download_url: str = "") -> dict[str, str
     return payload
 
 
-def _package_inputs_fixture(tmp_path: Path) -> tuple[Path, dict]:
-    app_dir = tmp_path / "Fawn.app"
-    _write_file(
-        app_dir / "args.gn",
-        "\n".join(
-            f"{key}={value}"
-            for key, value in package_inputs_check.RELEASE_BUILD_PROFILE_ARGS.items()
-        ).encode()
-        + b"\n",
-    )
-    _write_file(app_dir / "Contents" / "MacOS" / "Chromium", _macho_arm64_payload(), 0o755)
-    plist_path = app_dir / "Contents" / "Info.plist"
-    plist_path.parent.mkdir(parents=True, exist_ok=True)
-    with plist_path.open("wb") as handle:
-        plistlib.dump(
-            {
-                "CFBundleName": PRODUCT["displayName"],
-                "CFBundleDisplayName": PRODUCT["displayName"],
-                "CFBundleIdentifier": "dev.doe.fawn-doe",
-                "CFBundleShortVersionString": PRODUCT["version"],
-                "CFBundleVersion": PRODUCT["version"],
-                "CFBundleExecutable": "Chromium",
-                "CFBundlePackageType": "APPL",
-            },
-            handle,
-        )
-    doe_runtime = _write_file(tmp_path / "libwebgpu_doe.dylib", _macho_arm64_payload(), 0o755)
-    dawn_runtime = _write_file(tmp_path / "libdawn_native.so", _macho_arm64_payload(), 0o755)
-    shader_compiler = _write_file(tmp_path / "doe-zig-runtime", _macho_arm64_payload(), 0o755)
-    report = package_inputs_check.build_report(
-        package_dir=str(app_dir),
-        package_root_name="Fawn.app",
-        doe_runtime=str(doe_runtime),
-        dawn_fallback_runtime=str(dawn_runtime),
-        shader_compiler=str(shader_compiler),
-        product_version=PRODUCT["version"],
-        product_channel=PRODUCT["channel"],
-        platform_os=PLATFORM["os"],
-        platform_arch=PLATFORM["arch"],
-        root=tmp_path,
-    )
-    report_path = _write_json(tmp_path / "browser-release-package-inputs.json", report)
-    return report_path, report
-
-
 def _candidate_fixture(
     tmp_path: Path,
     *,
     source_package_inputs: Path | None = None,
 ) -> dict[str, Path | dict[str, str]]:
+    tmp_path = tmp_path.resolve()
     release_archive = tmp_path / "Fawn-Doe-macos-arm64.zip"
     release_archive.write_bytes(b"candidate browser archive\n")
     release_archive_artifact = _artifact(
@@ -215,38 +155,7 @@ def _candidate_fixture(
         tmp_path / "browser-published-proof-surface-check.json",
         proof_surface_check,
     )
-    clean_install = {
-        "schemaVersion": 1,
-        "artifactKind": "browser_release_clean_install_check",
-        "verificationLevel": "webgpu_smoke",
-        "sourceMode": "release_archive",
-        "status": "pass",
-        "releaseCandidateEligible": True,
-        "browserProduct": PRODUCT,
-        "platform": PLATFORM,
-        "releaseArchive": {**release_archive_artifact, "byteLength": release_archive.stat().st_size},
-        "releaseArchiveManifest": {**manifest_artifact, "byteLength": manifest_path.stat().st_size},
-        "extraction": {
-            "isolation": "fresh_temporary_directory",
-            "archiveMemberCount": 4,
-            "extractedMemberCount": 4,
-            "borrowedMemberCount": 0,
-        },
-        "launchProbe": {"attempted": True, "exitCode": 0, "timedOut": False},
-        "webgpuSmoke": {
-            "required": True,
-            "modes": ["dawn", "doe"],
-            "process": {"attempted": True, "exitCode": 0, "timedOut": False},
-        },
-        "failures": [],
-    }
-    verifier_path = _write_file(tmp_path / "clean-install-verifier.py", b"# fixture verifier\n")
-    smoke_script = _write_file(tmp_path / "webgpu-smoke.mjs", b"// fixture smoke\n")
-    smoke_report = _write_json(tmp_path / "clean-install-webgpu-smoke.json", {"reportKind": "chromium-webgpu-playwright-smoke"})
-    clean_install["verifier"] = _artifact(verifier_path, "browser_release_clean_install_verifier")
-    clean_install["webgpuSmoke"]["script"] = _artifact(smoke_script, "browser_webgpu_smoke_runner")
-    clean_install["webgpuSmoke"]["report"] = _artifact(smoke_report, "chromium-webgpu-playwright-smoke")
-    clean_install_path = _write_json(tmp_path / "browser-release-clean-install-check.json", clean_install)
+    clean_install_path = write_clean_install_fixture(tmp_path, release_archive, manifest_path, PRODUCT, PLATFORM)
     launch_receipt = {
         "schemaVersion": 1,
         "artifactKind": "browser_release_launch_receipt",
@@ -420,7 +329,7 @@ def test_browser_release_candidate_provenance_cli_writes_report(tmp_path: Path) 
 
 
 def test_browser_release_candidate_provenance_cli_derives_from_package_inputs(tmp_path: Path) -> None:
-    package_inputs_path, package_report = _package_inputs_fixture(tmp_path)
+    package_inputs_path, package_report = write_macos_candidate_report(tmp_path, PRODUCT, PLATFORM)
     paths = _candidate_fixture(tmp_path, source_package_inputs=package_inputs_path)
     assert package_report["status"] == "pass"
     assert package_report["releaseCandidateEligible"] is True
@@ -471,7 +380,7 @@ def test_browser_release_candidate_provenance_cli_derives_from_package_inputs(tm
 
 
 def test_browser_release_candidate_provenance_rejects_package_input_manifest_drift(tmp_path: Path) -> None:
-    package_inputs_path, package_report = _package_inputs_fixture(tmp_path)
+    package_inputs_path, package_report = write_macos_candidate_report(tmp_path, PRODUCT, PLATFORM)
     paths = _candidate_fixture(tmp_path)
     assert package_report["status"] == "pass"
     report = checker.build_report(
@@ -500,7 +409,7 @@ def test_browser_release_candidate_provenance_rejects_package_input_manifest_dri
 
 
 def test_browser_release_candidate_provenance_rejects_dirty_package_inputs(tmp_path: Path) -> None:
-    package_inputs_path, package_report = _package_inputs_fixture(tmp_path)
+    package_inputs_path, package_report = write_macos_candidate_report(tmp_path, PRODUCT, PLATFORM)
     package_report["failures"] = [
         {"code": "stale_failure", "path": "status", "message": "stale failure"}
     ]
@@ -545,7 +454,7 @@ def test_browser_release_candidate_provenance_rejects_dirty_package_inputs(tmp_p
 
 
 def test_browser_release_candidate_provenance_cli_keeps_dirty_package_input_identity(tmp_path: Path) -> None:
-    package_inputs_path, package_report = _package_inputs_fixture(tmp_path)
+    package_inputs_path, package_report = write_macos_candidate_report(tmp_path, PRODUCT, PLATFORM)
     paths = _candidate_fixture(tmp_path, source_package_inputs=package_inputs_path)
     package_report["browserProduct"] = {
         **package_report["browserProduct"],
@@ -613,7 +522,7 @@ def test_browser_release_candidate_provenance_cli_keeps_dirty_package_input_iden
 
 
 def test_browser_release_candidate_provenance_rejects_stale_package_input_binary_identity(tmp_path: Path) -> None:
-    package_inputs_path, package_report = _package_inputs_fixture(tmp_path)
+    package_inputs_path, package_report = write_macos_candidate_report(tmp_path, PRODUCT, PLATFORM)
     for role in ("browserExecutable", "doeRuntime", "dawnFallbackRuntime", "shaderCompiler"):
         package_report["inputs"][role].pop("detectedFormat", None)
         package_report["inputs"][role].pop("detectedArchitectures", None)

@@ -7,7 +7,7 @@ from collections import Counter
 import gzip
 import hashlib
 import json
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 import tarfile
 
 ROOT = Path(__file__).resolve().parents[3]
@@ -20,6 +20,22 @@ def digest(data: bytes) -> str:
 def require(condition: bool, message: str) -> None:
     if not condition:
         raise ValueError(message)
+
+
+def capture_root(receipt: dict, policy_name: str) -> PurePosixPath:
+    """Read the original Linux checkout location from the recorded policy path."""
+    path = PurePosixPath(receipt["policy"]["path"])
+    require(path.is_absolute() and ".." not in path.parts and
+            path.parts[-2:] == ("config", policy_name), "Invalid recorded policy path")
+    return path.parent.parent
+
+
+def source_matches(reference: dict, root: PurePosixPath, snapshots: dict) -> bool:
+    recorded = PurePosixPath(reference["path"])
+    if not recorded.is_relative_to(root) or ".." in recorded.parts:
+        return False
+    key = recorded.relative_to(root).as_posix()
+    return key in snapshots and reference["sha256"] == snapshots[key]["sha256"]
 
 
 def payload(report: Path, name: str) -> bytes:
@@ -213,12 +229,10 @@ def verify(
         receipt["policy"]["sha256"] == digest(payload(report, "policy.json")),
         "Policy identity changed",
     )
+    source_root = capture_root(receipt, "native-callback-contract.json")
     for name in ("fixture", "producer"):
-        entry = manifest["sourceSnapshots"][
-            str(Path(receipt[name]["path"]).relative_to(ROOT))
-        ]
         require(
-            receipt[name]["sha256"] == entry["sha256"],
+            source_matches(receipt[name], source_root, manifest["sourceSnapshots"]),
             "Executed harness identity changed",
         )
     require(

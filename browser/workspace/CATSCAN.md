@@ -4,7 +4,7 @@ Parent: [Browser](../CATSCAN.md)
 
 ## Target
 
-Browser-agnostic durable workspace observation, actions, workflow memory and recovery.
+Durable browser observation, action, workflow memory and recovery.
 
 ## Authority
 
@@ -46,8 +46,8 @@ Outputs:
 ## Acceptance
 
 - Pass contract behavioral gates and competent-baseline comparison.
-- Evidence: full [qualification](README.md#qualification) admitted by
-  `qualification/validate.js` for committed source, plus frozen-criteria comparison.
+- Evidence: [qualification](README.md#qualification) admitted by
+  `qualification/validate.js` for committed source and frozen comparison.
   [Development](test/run-tests.js) and [policy tests](../../bench/tests/test_fawn_workspace_strategy.py)
   replace neither.
 
@@ -57,4 +57,4 @@ Outputs:
 
 ## Freedom
 
-Preserve boundaries and independent evidence.
+Preserve independent evidence.

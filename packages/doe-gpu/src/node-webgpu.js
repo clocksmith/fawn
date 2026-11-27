@@ -447,17 +447,15 @@ function attemptFailure(provider, error) {
   };
 }
 
-function snapshotProperty(target, key) {
-  return {
-    target,
-    key,
-    descriptor: Object.getOwnPropertyDescriptor(target, key),
-  };
-}
+// Keep each installed descriptor alive until the last session using it closes.
+const GLOBAL_LEASES = new WeakMap();
 
 function defineRestorable(target, key, value, mode, snapshots, installedNames, receiptName = key) {
   const current = target[key];
-  if (mode === 'install-missing' && current !== undefined) {
+  const reuse = mode === 'install-missing' && current !== undefined;
+  let properties = GLOBAL_LEASES.get(target);
+  let leases = properties?.get(key);
+  if (reuse) {
     if (current !== value) {
       throw new NodeWebGPUProviderError(
         'DOE_PROVIDER_GLOBAL_CONFLICT',
@@ -465,24 +463,35 @@ function defineRestorable(target, key, value, mode, snapshots, installedNames, r
         { stage: 'globals.install' },
       );
     }
-    return;
+    if (!leases) return; // The host already owns this value.
   }
-  snapshots.push(snapshotProperty(target, key));
-  try {
-    Object.defineProperty(target, key, {
-      value,
-      writable: true,
-      configurable: true,
-      enumerable: false,
-    });
+
+  const before = Object.getOwnPropertyDescriptor(target, key);
+  if (!reuse) {
+    try {
+      Object.defineProperty(target, key, {
+        value, writable: true, configurable: true, enumerable: false,
+      });
+    } catch (cause) {
+      throw new NodeWebGPUProviderError(
+        'DOE_PROVIDER_GLOBAL_CONFLICT',
+        `global "${key}" cannot be installed.`,
+        { stage: 'globals.install', cause },
+      );
+    }
     installedNames.push(receiptName);
-  } catch (cause) {
-    throw new NodeWebGPUProviderError(
-      'DOE_PROVIDER_GLOBAL_CONFLICT',
-      `global "${key}" cannot be installed.`,
-      { stage: 'globals.install', cause },
-    );
   }
+  if (!properties) {
+    properties = new Map();
+    GLOBAL_LEASES.set(target, properties);
+  }
+  if (!leases) {
+    leases = [];
+    properties.set(key, leases);
+  }
+  const lease = { target, key, before };
+  leases.push(lease);
+  snapshots.push(lease);
 }
 
 function installProviderGlobals(gpu, enumValues, mode) {
@@ -493,18 +502,8 @@ function installProviderGlobals(gpu, enumValues, mode) {
   }
 
   try {
-    let navigatorObject = globalThis.navigator;
-    if (navigatorObject === undefined) {
-      snapshots.push(snapshotProperty(globalThis, 'navigator'));
-      navigatorObject = {};
-      Object.defineProperty(globalThis, 'navigator', {
-        value: navigatorObject,
-        writable: true,
-        configurable: true,
-        enumerable: false,
-      });
-      installedNames.push('navigator');
-    }
+    const navigatorObject = globalThis.navigator ?? {};
+    defineRestorable(globalThis, 'navigator', navigatorObject, 'install-missing', snapshots, installedNames);
     defineRestorable(navigatorObject, 'gpu', gpu, mode, snapshots, installedNames, 'navigator.gpu');
     for (const name of REQUIRED_WEBGPU_GLOBALS) {
       defineRestorable(globalThis, name, enumValues[name], mode, snapshots, installedNames);
@@ -520,12 +519,21 @@ function restoreSnapshots(snapshots) {
   const failures = [];
   for (let index = snapshots.length - 1; index >= 0; index -= 1) {
     const snapshot = snapshots[index];
+    const properties = GLOBAL_LEASES.get(snapshot.target);
+    const leases = properties?.get(snapshot.key);
+    const position = leases?.indexOf(snapshot) ?? -1;
+    if (position < 0) continue;
     try {
-      if (snapshot.descriptor) {
-        Object.defineProperty(snapshot.target, snapshot.key, snapshot.descriptor);
+      if (position < leases.length - 1) {
+        // A later owner stays installed and inherits our restoration obligation.
+        leases[position + 1].before = snapshot.before;
+      } else if (snapshot.before) {
+        Object.defineProperty(snapshot.target, snapshot.key, snapshot.before);
       } else {
         delete snapshot.target[snapshot.key];
       }
+      leases.splice(position, 1);
+      if (!leases.length) properties.delete(snapshot.key);
     } catch (error) {
       failures.push(`${snapshot.key}: ${errorDetail(error)}`);
     }

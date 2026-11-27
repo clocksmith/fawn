@@ -22,6 +22,7 @@ from typing import Any
 import jsonschema
 
 from bench.lib.bench_utils import detect_repo_root, load_json
+from bench.lib.config_validation import infer_schema_path, schema_validator
 from bench.lib.python_import_boundaries import validate_python_import_boundaries
 from bench.lib.implementation_peers import validate_peer_document
 
@@ -82,13 +83,13 @@ def validate_target(root: Path, target: ValidationTarget) -> list[str]:
         return failures
 
     try:
-        validator = jsonschema.Draft202012Validator(schema_payload)
+        validator = schema_validator(schema_path, schema_payload)
     except jsonschema.SchemaError as exc:
         failures.append(f"{target.schema_rel}: invalid schema: {exc.message}")
         return failures
 
     payloads: list[tuple[int | None, Any]]
-    if isinstance(data_payload, list):
+    if data_path.suffix == ".jsonl":
         payloads = list(enumerate(data_payload))
     else:
         payloads = [(None, data_payload)]
@@ -119,7 +120,7 @@ def load_schema_target_registry(root: Path) -> list[ValidationTarget]:
     if not schema_path.exists():
         raise ValueError(f"missing schema target registry schema: {schema_path}")
     schema_payload = load_json(schema_path)
-    registry_validator = jsonschema.Draft202012Validator(schema_payload)
+    registry_validator = schema_validator(schema_path, schema_payload)
 
     registry_errors = sorted(
         registry_validator.iter_errors(registry_payload),
@@ -176,7 +177,16 @@ def load_schema_target_registry(root: Path) -> list[ValidationTarget]:
 
 
 def collect_targets(root: Path) -> list[ValidationTarget]:
-    return load_schema_target_registry(root)
+    targets = load_schema_target_registry(root)
+    # The registry itself was validated before expanding the explicit targets.
+    covered = {target.data_rel for target in targets} | {"config/schema-targets.json"}
+    for path in sorted((root / "config").glob("*.json")):
+        relative = path.relative_to(root).as_posix()
+        if path.name.endswith(".schema.json") or relative in covered:
+            continue
+        schema = infer_schema_path(path)
+        targets.append(ValidationTarget(schema.relative_to(root).as_posix(), relative))
+    return targets
 
 
 def validate_backend_lane_map_invariants(root: Path) -> list[str]:

@@ -4,17 +4,17 @@ Parent: [Fawn workspace](../../CATSCAN.md)
 
 ## Target
 
-Server-side authoring, cross-template composition, graph reduction and empirical Bellman DP serving of PII-free browser control recipes on Cloudflare Workers + D1 and Google Cloud Run.
+Compose structural browser recipes and serve reduced graphs on Cloudflare D1 and Cloud Run.
 
 ## Authority
 
 - Owns structural recipe ingestion, quorum promotion, sub-recipe indexing, DAG detour compression and empirical edge-weight computation.
-- Never executes browsers, holds website credentials, stores user input values or grants client dispatch permission.
-- Treated by clients strictly as an untrusted routing advisor; local `WorkspaceService` admission, account checks, slot-disclosure rules and independent review oracles remain authoritative.
+- Clients retain browser authority, credentials and raw values.
+- Local workspace admission, account, disclosure and independent review govern execution.
 
 ## Scope
 
-- Portable graph engine (`engine.js`), Web-standard HTTP router (`http-handler.js`), `node:sqlite` store (`store-sqlite.js` for Cloud Run / Node 22), Cloudflare D1 store (`store-d1.js`, `worker.js`), and zero-trust client (`../client/recipe-client.js`).
+- Portable graph engine (`engine.js`), atomic graph revisions and receipts (`graph-store.js`), Web-standard HTTP router (`http-handler.js`), `node:sqlite` store (`store-sqlite.js` for Cloud Run / Node 22), Cloudflare D1 store (`store-d1.js`, `worker.js`), and zero-trust client (`../client/recipe-client.js`).
 
 ## Contracts
 
@@ -28,14 +28,14 @@ Outputs:
 ## Invariants
 
 - Rejects raw input values, non-origin URLs (query strings, paths, fragments), browser `Origin` headers and forbidden control types (`submit`, `password`, `file`, `hidden`, `image`).
-- Workspace-scoped recipes stay isolated by authenticated `workspaceId`.
-- Shared catalog edges become visible to `resolve` only after reaching the configured independent contributor `catalogQuorum` or an explicit `publisher` credential.
+- Authenticated `workspaceId` isolates workspace recipes.
+- Catalog visibility requires independent contributors reaching `catalogQuorum` or a `publisher` credential.
 - Ingested traces run loop contraction (`compressTraceRecords`) and whole-graph reduction (`reduceTraceGraph`) before storage.
 - Clients validate every served graph with `TraceDag.restore` and enforce local `verifyAccount`, `disclosurePolicy` and `verifyReview`.
 
 ## Acceptance
 
-- Evidence: [Managed recipe service tests](../../test/unit/recipe-service.test.js): sub-recipe composition, detour compression, quorum gating, empirical DP routing, PII rejection and zero-trust client disclosure refusal.
+- Evidence: [routing, quorum and disclosure](../../test/unit/recipe-service.test.js) and [atomic retries and receipt isolation](../../test/unit/recipe-transactions.test.js).
 
 ## Non-goals
 
@@ -43,4 +43,4 @@ Outputs:
 
 ## Freedom
 
-Optimize storage indexing, compaction schedules and DP scoring without widening client trust.
+Optimize storage and routing within client trust boundaries.

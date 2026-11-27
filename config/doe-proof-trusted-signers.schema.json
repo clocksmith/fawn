@@ -6,6 +6,7 @@
   "additionalProperties": false,
   "required": ["schemaVersion", "policyId", "policyState", "signers", "history"],
   "properties": {
+    "$schema": { "const": "./doe-proof-trusted-signers.schema.json" },
     "schemaVersion": { "type": "integer", "const": 1 },
     "policyId": { "type": "string", "const": "doe-proof-release-signers-v1" },
     "policyState": { "type": "string", "enum": ["anchor_required", "active"] },

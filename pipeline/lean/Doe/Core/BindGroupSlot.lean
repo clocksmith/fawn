@@ -1,18 +1,17 @@
 -- Bind group → MSL buffer index mapping safety.
--- Mirrors: runtime/zig/src/compiler/wgsl/emit/msl/emit_msl_ir.zig:msl_binding_slot
---          runtime/zig/src/native/compute/doe_compute_ext_native.zig:flattenBindGroups
--- Constants match Zig: BINDINGS_PER_GROUP=16, MAX_BIND_GROUPS=4, MAX_FLAT_BIND=64.
+-- Models the stride-16 MSL binding formula. Native compute bind groups use
+-- a separate stride and are outside this model.
 
 /-- Bindings per group. Matches BINDINGS_PER_GROUP in emit_msl_ir.zig. -/
 def BINDINGS_PER_GROUP : Nat := 16
 
-/-- Maximum bind groups. Matches MAX_BIND_GROUPS in doe_compute_ext_native.zig. -/
+/-- Maximum bind groups. Maximum considered by this model. -/
 def MAX_BIND_GROUPS : Nat := 4
 
 /-- Maximum flat binding slots. Equals MAX_BIND_GROUPS * BINDINGS_PER_GROUP. -/
 def MAX_FLAT_BIND : Nat := 64
 
-/-- MSL buffer index from (group, binding). Mirrors emit_msl_ir.zig:msl_binding_slot. -/
+/-- MSL buffer index from (group, binding). Models emit_msl_ir.zig:bindingSlot on representable inputs. -/
 def mslBindingSlot (group : Nat) (binding : Nat) : Nat :=
   group * BINDINGS_PER_GROUP + binding
 

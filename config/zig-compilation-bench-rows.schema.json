@@ -1,0 +1,6 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Zig compilation benchmark contract records",
+  "type": "array",
+  "items": { "$ref": "zig-compilation-bench.schema.json" }
+}

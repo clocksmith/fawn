@@ -118,7 +118,7 @@ native_queue_settlement native_d3d12_drain_pending(native_device *device)
 }
 
 native_failure native_d3d12_record_batch(native_device *device, native_command_handle *native,
-    doe_resource_commands **resources, size_t count)
+    doe_resource_commands **resources, size_t count, bool *adopted_writes)
 {
 #if defined(_WIN32)
     struct timespec deadline;
@@ -138,7 +138,7 @@ native_failure native_d3d12_record_batch(native_device *device, native_command_h
         else if (failure.status != NATIVE_OK) return failure;
         for (size_t i = 0; failure.status == NATIVE_OK && i < count; ++i)
             failure = native_record_resource_commands(native, resources[i]);
-        if (adopted && failure.status == NATIVE_OK) native_d3d12_writes_recorded(device);
+        *adopted_writes = adopted && failure.status == NATIVE_OK;
         if (failure.status != NATIVE_BUSY && !(adopted && failure.status != NATIVE_OK)) return failure;
         doe_dx_commands *conflict = failure.status == NATIVE_BUSY ?
             doe_dx_commands_conflict(native->value.d3d12.commands) : NULL;
@@ -164,7 +164,7 @@ native_failure native_d3d12_record_batch(native_device *device, native_command_h
         if (failure.status != NATIVE_OK) return failure;
     }
 #else
-    (void)device; (void)native; (void)resources; (void)count;
+    (void)device; (void)native; (void)resources; (void)count; (void)adopted_writes;
     return native_failure_status(NATIVE_UNAVAILABLE);
 #endif
 }

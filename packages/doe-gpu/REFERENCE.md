@@ -177,8 +177,9 @@ try {
 }
 ```
 
-Every provider attempt is represented in the session receipt. `close()`
-restores changed globals.
+Every provider attempt appears in the session receipt. Sessions sharing globals
+can close in either order. Each property retains the newest active session’s
+value until the last owner closes and restores the original descriptor.
 
 For a provider-neutral DoeProof execution, bind the workload implementation,
 input, and expected exact output before running either an incumbent or Doe:

@@ -18,10 +18,6 @@ NATIVE_EXECUTION_OPERATION_TIMING_SOURCES = {
     "doe-execution-encode-ns",
     "doe-execution-gpu-timestamp-ns",
 }
-DOE_OPERATION_TIMING_SOURCES = {
-    *NATIVE_EXECUTION_OPERATION_TIMING_SOURCES,
-    "doe-trace-window",
-}
 DAWN_OPERATION_TIMING_SOURCES = {
     "dawn-perf-wall-time",
     "dawn-perf-cpu-time",
@@ -192,13 +188,13 @@ def _sources_match_with_runtime_compatibility(
         return False
     if is_right_dawn_perf and not right_set.issubset(DAWN_OPERATION_TIMING_SOURCES):
         return False
-    if is_left_dawn_delegate and not left_set.issubset(DOE_OPERATION_TIMING_SOURCES):
+    if is_left_dawn_delegate and not left_set.issubset(NATIVE_EXECUTION_OPERATION_TIMING_SOURCES):
         return False
-    if is_right_dawn_delegate and not right_set.issubset(DOE_OPERATION_TIMING_SOURCES):
+    if is_right_dawn_delegate and not right_set.issubset(NATIVE_EXECUTION_OPERATION_TIMING_SOURCES):
         return False
-    if is_left_doe and not left_set.issubset(DOE_OPERATION_TIMING_SOURCES):
+    if is_left_doe and not left_set.issubset(NATIVE_EXECUTION_OPERATION_TIMING_SOURCES):
         return False
-    if is_right_doe and not right_set.issubset(DOE_OPERATION_TIMING_SOURCES):
+    if is_right_doe and not right_set.issubset(NATIVE_EXECUTION_OPERATION_TIMING_SOURCES):
         return False
     return True
 

@@ -14,6 +14,7 @@ from pathlib import Path
 
 REPLAY_SEED = "0x9e3779b97f4a7c15"
 SUPPORTED_OP_CODES = {"dispatch", "upload", "copy", "readback"}
+PLAN_OP_CODES = {"buffer_write", "buffer_load", "kernel_dispatch"}
 
 
 def safe_int(value: Any, default: int = 0) -> int:
@@ -125,7 +126,15 @@ def main() -> int:
             print(f"FAIL: trace row={idx} invalid module")
             return 1
 
-        if row.get("opCode") not in SUPPORTED_OP_CODES:
+        op_code = row["opCode"]
+        is_plan_op = (
+            row["module"] in {"doe-c-runtime", "dawn-c-runtime", "doe-zig-runtime"}
+            and row.get("semanticStage") == "runtime_plan"
+            and op_code == row["command"]
+            and isinstance(op_code, str)
+            and op_code in PLAN_OP_CODES
+        )
+        if not isinstance(op_code, str) or (op_code not in SUPPORTED_OP_CODES and not is_plan_op):
             print(f"FAIL: trace row={idx} unsupported opCode={row.get('opCode')}")
             return 1
 

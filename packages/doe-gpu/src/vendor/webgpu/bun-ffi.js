@@ -1390,7 +1390,8 @@ function buildShaderModuleDescriptor(code) {
 // { nextInChain:ptr@0, label:sv@8, layout:ptr@24, compute:WGPUProgrammableStageDescriptor@32 }
 // WGPUProgrammableStageDescriptor: { nextInChain:ptr@0, module:ptr@8, entryPoint:sv@16, constantCount:size_t@32, constants:ptr@40 } = 48
 // Total descriptor: 24 + 8 (layout) + 48 (compute) = 80
-function buildComputePipelineDescriptor(shaderModulePtr, entryPoint, layoutPtr) {
+function buildComputePipelineDescriptor(shaderModulePtr, entryPoint, layoutPtr, constants) {
+    const overrides = buildConstantEntries(constants);
     const epBytes = encoder.encode(entryPoint);
     const buf = new ArrayBuffer(WGPU_COMPUTE_PIPELINE_DESCRIPTOR_SIZE);
     const v = new DataView(buf);
@@ -1407,10 +1408,10 @@ function buildComputePipelineDescriptor(shaderModulePtr, entryPoint, layoutPtr) 
     // compute.entryPoint
     writeStringView(v, 48, epBytes);
     // compute.constantCount
-    v.setBigUint64(64, 0n, true);
+    v.setBigUint64(64, BigInt(overrides.count), true);
     // compute.constants
-    writePtr(v, 72, null);
-    return { desc: new Uint8Array(buf), _refs: [epBytes] };
+    writePtr(v, 72, overrides.entries ? bunPtr(overrides.entries) : null);
+    return { desc: new Uint8Array(buf), _refs: [epBytes, ...overrides.refs] };
 }
 
 function buildRenderPipelineDescriptor(descriptor) {
@@ -4379,10 +4380,10 @@ const fullSurfaceBackend = {
         }
         return mod;
     },
-    deviceCreateComputePipeline(device, shaderNative, entryPoint, layoutNative, _constants, _label) {
+    deviceCreateComputePipeline(device, shaderNative, entryPoint, layoutNative, constants, _label) {
         if (
             entryPoint === "main"
-            && !_constants
+            && !constants
             && typeof wgpu.symbols.doeNativeDeviceCreateComputePipelineMain === "function"
         ) {
             let native;
@@ -4400,7 +4401,7 @@ const fullSurfaceBackend = {
             }
             return native;
         }
-        const { desc, _refs } = buildComputePipelineDescriptor(shaderNative, entryPoint, layoutNative);
+        const { desc, _refs } = buildComputePipelineDescriptor(shaderNative, entryPoint, layoutNative, constants);
         let native;
         try {
             native = wgpu.symbols.wgpuDeviceCreateComputePipeline(assertLiveResource(device, "GPUDevice.createComputePipeline", "GPUDevice"), desc);

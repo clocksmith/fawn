@@ -23,7 +23,7 @@ VALID_COMPARABILITY = {"component", "none"}
 VALID_REQUIRED_STATUS = {"ok", "optional"}
 VALID_CLAIM_SCOPES = {"l2_component_only", "l2_diagnostic_only"}
 VISUAL_RESOURCE_TEMPLATE = "fawn_visual_resource"
-VISUAL_RESOURCE_PREFIX = "browser/chromium/resources/"
+VISUAL_RESOURCE_PREFIX = "bench/browser/fixtures/fawn/"
 VISUAL_RESOURCE_REQUIRED_METRICS = {"avgFrameMs", "p95FrameMs", "avgFps", "frameCount"}
 
 
@@ -264,7 +264,7 @@ def check_workflow_manifest(payload: dict[str, Any]) -> list[dict[str, str]]:
                     failure(
                         "invalid_visual_resource_path",
                         f"{row_path}.resourcePath",
-                        "resourcePath must be a browser/chromium/resources/*.html path",
+                        f"resourcePath must be a {VISUAL_RESOURCE_PREFIX}*.html path",
                     )
                 )
             elif not (REPO_ROOT / resource_path).is_file():

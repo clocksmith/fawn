@@ -404,6 +404,7 @@ function stampPackageReplayFields(meta, rows) {
       opCode,
       seq: index,
       timestampMonoNs: index,
+      timestampSource: 'sequence',
       previousHash,
       command,
     });

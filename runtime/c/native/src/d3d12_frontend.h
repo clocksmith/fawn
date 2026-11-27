@@ -23,15 +23,19 @@ native_failure native_d3d12_materialize_zero(native_device *device);
  * recording, CPU read, map or work-done wait first flushes it on its own. */
 typedef struct native_d3d12_writes native_d3d12_writes;
 native_failure native_d3d12_write_record(native_device *device, doe_dx_buffer *staging, uint64_t source_offset,
-    doe_dx_buffer *destination, uint64_t offset, uint64_t size);
+    doe_dx_buffer *destination, uint64_t offset, uint64_t size, bool *recorded);
+/* The command is consumed on every return. submitted means execution was accepted
+ * or became uncertain; a later settlement failure must never cause copy replay. */
+native_failure native_submit_d3d12_copies(native_device *, native_command_handle, bool *submitted);
 native_failure native_d3d12_flush_writes(native_device *device);
 /* Zero fills, then open writes: precedes every D3D12 recording except submission. */
 native_failure native_d3d12_prepare_recording(native_device *device);
 /* adopted: out is the open command with its writes ordered before later records.
- * Then exactly one of recorded (success) or rejected (discard; the log rebuilds). */
+ * A rejected recording discards the command. A rejected submission leaves the
+ * log available for replay. Only execution acceptance drops the log. */
 native_failure native_d3d12_adopt_writes(native_device *device, native_command_handle *out,
     bool *adopted);
-void native_d3d12_writes_recorded(native_device *device);
+void native_d3d12_writes_submitted(native_device *device);
 void native_d3d12_writes_rejected(native_device *device, native_command_handle *adopted);
 /* Final device release discards a never-observed open command. */
 void native_d3d12_writes_close(native_backend *backend);
@@ -56,9 +60,10 @@ native_failure native_d3d12_command_progress(native_command_handle *commands, ui
 native_failure native_d3d12_command_submit(native_command_handle *commands);
 bool native_d3d12_command_in_flight(const native_command_handle *commands);
 native_failure native_d3d12_wait_owner(native_device *, doe_dx_commands *, const struct timespec *);
-native_failure native_d3d12_record_batch(native_device *, native_command_handle *, doe_resource_commands **, size_t);
+native_failure native_d3d12_record_batch(native_device *, native_command_handle *, doe_resource_commands **,
+    size_t, bool *adopted_writes);
 native_result native_d3d12_command_release(native_command_handle *commands);
-native_failure native_d3d12_buffer_create(native_buffer *buffer, uint64_t size, uint32_t usage,
+native_failure native_d3d12_buffer_create(native_buffer *buffer, uint64_t size, WGPUBufferUsage usage,
     native_buffer_memory_intent intent);
 void native_d3d12_buffer_close(native_buffer *buffer);
 native_failure native_d3d12_buffer_evict(native_buffer *buffer);

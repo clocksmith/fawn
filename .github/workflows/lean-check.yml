@@ -20,10 +20,12 @@ jobs:
         run: |
           curl -sSf https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh | sh -s -- -y --default-toolchain none
           echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
+      - name: Verify retained artifact against the checked-out sources
+        run: python3 pipeline/lean/test_proof_pipeline.py
       - name: Typecheck and extract proof artifacts
         run: bash pipeline/lean/extract.sh
-      - name: Validate proof artifact
-        run: python3 pipeline/lean/test_proof_pipeline.py
+      - name: Compare generated outputs with the retained artifacts
+        run: git diff --exit-code -- pipeline/lean/artifacts/proven-conditions.json pipeline/lean/Doe/Generated/ComparabilityContract.lean
       - name: Upload proof artifact
         uses: actions/upload-artifact@v7
         with:

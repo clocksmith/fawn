@@ -46,12 +46,9 @@ auto-completes work. Performance-neutral improvements can qualify through cleare
 ownership or dependencies, preserved behavior, and scoped cost checks. File
 coverage, line reduction, and passing tests alone do not establish that outcome.
 
-The plan is mutable scheduling data, not another review history. Changing its
-order or rationale does not invalidate source reviews. Changes to review rules
-or the checker still invalidate coverage through the existing guidance hash;
-never bulk-mark those stale reviews verified. Reconfirm relevant findings as
-their batches are opened. The full inventory continues to retain unplanned,
-stale, blocked, and retired scopes.
+The plan schedules work. Changes to its order, the queue checker, or general
+workspace prose leave a source review current unless the review explicitly
+binds that file as context. The queue retains unplanned and stale scopes.
 
 ## Review order
 
@@ -100,11 +97,12 @@ The queue computes current status independently of the recorded verdict:
   are current. This establishes review coverage, not correctness proof.
 - `retired`: the reviewed scope no longer exists; its history remains readable.
 
-Changes to style, this protocol, or applicable charters reopen affected reviews.
-Architecture policy changes also reopen reviews; updates to the existing
-`moduleDecisionReviews` metadata alone do not. Bind relevant contracts, consumer
-files, generators, and test inputs outside the reviewed scope with `--context`.
-No tool can infer every semantic dependency or prove that a person read a file.
+The fingerprint covers the Zig style guide and applicable owner instructions
+and charters within `runtime/zig`. The Zig architecture policy also participates
+in the fingerprint, excluding `moduleDecisionReviews` scheduling metadata. Use `--context`
+to bind external contracts, consumers, generators, and test inputs a specific
+review relied on. Reviews recorded under an older fingerprint need individual
+reconfirmation when their scope is revisited.
 
 ## Commands
 

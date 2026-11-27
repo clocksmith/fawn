@@ -77,11 +77,6 @@ static bool load_cli_quirks(const options *options, doe_quirk_set *quirks, char 
     return ok;
 }
 
-static uint64_t realtime_ns(void)
-{
-    return doe_host_realtime_ns();
-}
-
 static bool write_optional(FILE *out, const char *key, const char *value, bool comma)
 {
     if (fprintf(out, "%s\"%s\":", comma ? "," : "", key) < 0) return false;
@@ -605,7 +600,7 @@ int main(int argc, char **argv)
             uint64_t hash = doe_trace_payload_hash(t.hash, seq, command->label, doe_command_tag(command->kind),
                 command->kind == DOE_COMMAND_KERNEL_DISPATCH ? command->as.dispatch.kernel : NULL, &decision,
                 &command->semantic);
-            uint64_t now = realtime_ns();
+            uint64_t now = o.execute ? doe_host_monotonic_ns() : 0;
             pending = (pending_trace){.active = true, .command = command, .decision = decision, .execution = execution,
                 .seq = seq, .timestamp = now, .hash = hash, .previous = t.hash};
             if (operator_anchor && doe_semantic_present(&command->semantic)) {

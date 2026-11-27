@@ -15,7 +15,7 @@ compute through the same runtime, with attributable results.
 
 ## Scope
 
-- Includes this tree; child charters narrow authority.
+- Child charters define local scope.
 
 ## Contracts
 
@@ -29,7 +29,7 @@ Outputs:
 ## Invariants
 
 - Provider attempts, effective identity, and failure causes remain visible.
-- `close()` restores every global descriptor changed by the session.
+- The last session restores the original global descriptor.
 - Unsupported tuples fail explicitly and never select an undeclared provider.
 - DoeProof receipts never assign DoeRuntime ownership credit.
 - Programs own immutable declarations and private device resources, separating invocations.

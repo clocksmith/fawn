@@ -218,12 +218,11 @@ def verify(
         receipt["policy"]["sha256"] == digest(payload(report, "policy.json")),
         "Policy identity changed",
     )
+    callback_replay = callback_verifier()
+    source_root = callback_replay.capture_root(receipt, "native-device-lifecycle-contract.json")
     for name in ("fixture", "producer"):
-        entry = manifest["sourceSnapshots"][
-            str(Path(receipt[name]["path"]).relative_to(ROOT))
-        ]
         require(
-            receipt[name]["sha256"] == entry["sha256"],
+            callback_replay.source_matches(receipt[name], source_root, manifest["sourceSnapshots"]),
             "Executed harness identity changed",
         )
     require(
@@ -259,12 +258,10 @@ def verify(
         require(failed == run["failedObservations"], "Failure count drift")
     regression = load(report, "callback-controls/receipt.json")
     callback_policy = load(report, "callback-policy.json")
-    callback_replay = callback_verifier()
+    regression_root = callback_replay.capture_root(regression, "native-callback-contract.json")
     for name in ("fixture", "producer"):
-        source_path = str(Path(regression[name]["path"]).relative_to(ROOT))
         require(
-            regression[name]["sha256"]
-            == manifest["sourceSnapshots"][source_path]["sha256"],
+            callback_replay.source_matches(regression[name], regression_root, manifest["sourceSnapshots"]),
             "Callback harness identity changed",
         )
     require(
@@ -304,10 +301,8 @@ def verify(
         require(failures == run["failedObservations"], "Callback failure drift")
     consumer = load(report, "consumer-qualification.json")
     require(not consumer["performanceClaim"], "Consumer qualification became timing")
-    producer_path = str(Path(consumer["producer"]["path"]).relative_to(ROOT))
     require(
-        consumer["producer"]["sha256"]
-        == manifest["sourceSnapshots"][producer_path]["sha256"],
+        callback_replay.source_matches(consumer["producer"], source_root, manifest["sourceSnapshots"]),
         "Consumer producer identity changed",
     )
     jobs = {job["name"]: job for job in consumer["jobs"]}

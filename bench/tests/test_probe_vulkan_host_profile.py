@@ -65,6 +65,7 @@ class VulkanHostProfileProbeTests(unittest.TestCase):
                 "driverVersion": "26.0.3",
             }
             with (
+                mock.patch("bench.runners.probe_vulkan_host_profile.os.sys.platform", "linux"),
                 mock.patch(
                     "bench.runners.probe_vulkan_host_profile.platform.machine",
                     return_value="x86_64",

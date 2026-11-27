@@ -6,6 +6,7 @@ import json
 from pathlib import Path
 from typing import Any
 
+from lib.bench_utils import parse_trace_rows
 from native_compare_modules.reporting import NS_PER_MS, safe_float, safe_int
 
 
@@ -27,23 +28,6 @@ def _is_render_encode_plausible(
 ) -> bool:
     _ = execution_total_ns
     return execution_encode_total_ns > 0
-
-
-def parse_trace_rows(path: Path) -> list[dict[str, Any]]:
-    if not path.exists():
-        return []
-
-    rows: list[dict[str, Any]] = []
-    for raw in path.read_text(encoding="utf-8").splitlines():
-        raw = raw.strip()
-        if not raw:
-            continue
-        try:
-            rows.append(json.loads(raw))
-        except json.JSONDecodeError as exc:
-            print(f"WARN: invalid trace jsonl row in {path}: {exc}")
-            return []
-    return rows
 
 
 def parse_execution_row_total_ns_rows(path: Path) -> list[int]:
@@ -135,6 +119,12 @@ def maybe_adjust_timing_for_ignored_first_ops(
     base_row_count = len(durations_ns)
     base_row_avg_ms = (float(base_row_total_ns) / float(base_row_count)) / NS_PER_MS
     adjusted_ns = sum(durations_ns[ignore_first_ops:])
+    if adjusted_ns == 0:
+        return measured_ms, measured_source, {
+            "uploadIgnoreFirstOps": ignore_first_ops,
+            "uploadIgnoreFirstApplied": False,
+            "uploadIgnoreFirstReason": "remaining rows have no positive execution timing",
+        }
     adjusted_count = len(durations_ns) - ignore_first_ops
     adjusted_ms = (float(adjusted_ns) / float(adjusted_count)) / NS_PER_MS
     adjusted_source = "doe-execution-workload-total-ns+ignore-first-ops"
@@ -231,7 +221,6 @@ def classify_timing_source(source: str) -> str:
         "dawn-perf-cpu-time",
         "dawn-perf-gpu-time",
         "dawn-perf-wall-ns",
-        "doe-trace-window",
         "browser-ort-timed-mean-ms",
         "tjs-ort-generation-ms",
     ) or canonical in RELEASE_SCOREBOARD_TIMING_SOURCES:
@@ -325,7 +314,12 @@ def pick_measured_timing_ms(
 
     meta_timing_ms = safe_float(trace_meta.get("timingMs"))
     meta_source = trace_meta.get("timingSource")
-    if meta_timing_ms is not None and meta_timing_ms >= 0.0:
+    # Command completion timestamps do not enclose the workload; a cached
+    # first-to-last row delta is not a measured operation interval either.
+    reports_window = isinstance(meta_source, str) and canonical_timing_source(meta_source) in {
+        "doe-trace-window", "trace-window",
+    }
+    if meta_timing_ms is not None and meta_timing_ms > 0.0 and not reports_window:
         source = meta_source if isinstance(meta_source, str) and meta_source else "trace-meta"
         canonical_source = canonical_timing_source(source)
         if source == "wall-time":
@@ -502,38 +496,8 @@ def pick_measured_timing_ms(
             )
             return measured_ms, "doe-execution-dispatch-window-ns", timing_meta
 
-    trace_rows = parse_trace_rows(trace_jsonl)
-    timing_meta: dict[str, Any] = {
+    return wall_ms, "wall-time", {
         "source": "wall-time",
         "wallTimeMs": wall_ms,
-        "traceRows": len(trace_rows),
+        "traceRows": len(parse_trace_rows(trace_jsonl)),
     }
-    if not trace_rows:
-        return wall_ms, "wall-time", timing_meta
-
-    timestamps: list[int] = []
-    for row in trace_rows:
-        ts = row.get("timestampMonoNs")
-        if isinstance(ts, int):
-            timestamps.append(ts)
-    if len(timestamps) < 2:
-        timing_meta["traceRows"] = len(timestamps)
-        return wall_ms, "wall-time", timing_meta
-
-    first = min(timestamps)
-    last = max(timestamps)
-    measured_ms = float(last - first) / NS_PER_MS
-    if measured_ms < 0:
-        timing_meta["traceRows"] = len(timestamps)
-        return wall_ms, "wall-time", timing_meta
-
-    timing_meta.update(
-        {
-            "source": "doe-trace-window",
-            "traceWindowStartMonoNs": first,
-            "traceWindowEndMonoNs": last,
-            "traceRows": len(timestamps),
-            "rowCount": safe_int(trace_meta.get("rowCount"), default=0),
-        }
-    )
-    return measured_ms, "doe-trace-window", timing_meta

@@ -11,12 +11,15 @@ from __future__ import annotations
 import json
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlsplit
 
 import jsonschema
 from referencing import Registry, Resource
+from referencing.exceptions import NoSuchResource
+from referencing.jsonschema import DRAFT202012
 
 
-def _infer_schema_path(config_path: Path) -> Path:
+def infer_schema_path(config_path: Path) -> Path:
     """Derive the schema path from a config path (foo.json -> foo.schema.json).
 
     Handles multi-segment basenames like ``claim-cycle.active.json`` by
@@ -41,6 +44,34 @@ def _infer_schema_path(config_path: Path) -> Path:
             return candidate
     # Direct mapping: foo.json -> foo.schema.json
     return config_path.parent / f"{stem}.schema.json"
+
+
+def schema_validator(
+    schema_path: Path, schema: dict[str, Any] | bool, *, check_formats: bool = False
+) -> jsonschema.Draft202012Validator:
+    """Resolve sibling schema references from the same checkout, including the cube row's URN."""
+    directory = schema_path.resolve().parent
+
+    def retrieve(uri: str) -> Resource:
+        if uri == "urn:doe:benchmark-cube-row":
+            sibling = directory / "benchmark-cube-row.schema.json"
+        else:
+            name = Path(urlsplit(uri).path).name
+            sibling = directory / name
+            if not name.endswith(".schema.json") or uri not in {
+                sibling.as_uri(), f"https://doe.local/schemas/{name}"
+            }:
+                raise NoSuchResource(ref=uri)
+        if not sibling.is_file():
+            raise NoSuchResource(ref=uri)
+        payload = json.loads(sibling.read_text(encoding="utf-8"))
+        return Resource.from_contents(payload, default_specification=DRAFT202012)
+
+    return jsonschema.Draft202012Validator(
+        schema if isinstance(schema, bool) else {"$id": schema_path.resolve().as_uri(), **schema},
+        registry=Registry(retrieve=retrieve),
+        format_checker=jsonschema.FormatChecker() if check_formats else None,
+    )
 
 
 def load_validated_config(
@@ -83,7 +114,7 @@ def load_validated_config(
     resolved_schema_path = (
         Path(schema_path)
         if schema_path is not None
-        else _infer_schema_path(config_path)
+        else infer_schema_path(config_path)
     )
     if not resolved_schema_path.exists():
         raise FileNotFoundError(
@@ -91,7 +122,7 @@ def load_validated_config(
         )
 
     schema = json.loads(resolved_schema_path.read_text(encoding="utf-8"))
-    validator = jsonschema.Draft202012Validator(schema)
+    validator = schema_validator(resolved_schema_path, schema)
     errors = sorted(
         validator.iter_errors(payload),
         key=lambda e: tuple(str(p) for p in e.absolute_path),
@@ -114,19 +145,7 @@ def _format_path(error: jsonschema.ValidationError) -> str:
 
 def validate_schema(schema_path: Path, payload: Any) -> None:
     schema_payload = json.loads(schema_path.read_text(encoding="utf-8"))
-    registry = Registry()
-    if schema_path.name == "benchmark-cube.schema.json":
-        row_schema = json.loads(
-            schema_path.with_name("benchmark-cube-row.schema.json").read_text(
-                encoding="utf-8"
-            )
-        )
-        registry = registry.with_resource(
-            row_schema["$id"], Resource.from_contents(row_schema)
-        )
-    validator = jsonschema.Draft202012Validator(
-        schema_payload, registry=registry, format_checker=jsonschema.FormatChecker()
-    )
+    validator = schema_validator(schema_path, schema_payload, check_formats=True)
     errors = sorted(
         validator.iter_errors(payload),
         key=lambda item: tuple(str(part) for part in item.absolute_path),

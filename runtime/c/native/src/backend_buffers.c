@@ -2,7 +2,20 @@
 #include "internal.h"
 #include "d3d12_frontend.h"
 
-native_failure native_buffer_create(native_buffer *buffer, uint64_t size, uint32_t usage,
+static uint32_t vulkan_buffer_usage(WGPUBufferUsage usage)
+{
+    uint32_t flags = 0;
+    if (usage & (WGPUBufferUsage_CopySrc | WGPUBufferUsage_MapWrite)) flags |= DOE_VK_BUFFER_COPY_SRC;
+    if (usage & (WGPUBufferUsage_CopyDst | WGPUBufferUsage_MapRead | WGPUBufferUsage_QueryResolve)) flags |= DOE_VK_BUFFER_COPY_DST;
+    if (usage & WGPUBufferUsage_Uniform) flags |= DOE_VK_BUFFER_UNIFORM;
+    if (usage & WGPUBufferUsage_Storage) flags |= DOE_VK_BUFFER_STORAGE;
+    if (usage & WGPUBufferUsage_Vertex) flags |= DOE_VK_BUFFER_VERTEX;
+    if (usage & WGPUBufferUsage_Index) flags |= DOE_VK_BUFFER_INDEX;
+    if (usage & WGPUBufferUsage_Indirect) flags |= DOE_VK_BUFFER_INDIRECT | DOE_VK_BUFFER_COPY_SRC;
+    return flags;
+}
+
+native_failure native_buffer_create(native_buffer *buffer, uint64_t size, WGPUBufferUsage usage,
     native_buffer_memory_intent intent, bool host_mapped)
 {
     native_backend *backend = &buffer->device->backend;
@@ -11,7 +24,7 @@ native_failure native_buffer_create(native_buffer *buffer, uint64_t size, uint32
          * writes the others (queue writes, mapped-at-creation); the Vulkan owner
          * places them by the adapter's resource profile (doe_vk.h). */
         doe_vk_error error = {0};
-        doe_vk_status status = doe_vk_buffer_create(backend->value.vulkan.context, size, usage,
+        doe_vk_status status = doe_vk_buffer_create(backend->value.vulkan.context, size, vulkan_buffer_usage(usage),
             host_mapped ? DOE_VK_MEMORY_HOST : DOE_VK_MEMORY_HOST_DEVICE_LOCAL, &buffer->handle.vulkan, &error);
         return native_failure_vulkan(status, &error);
     }
@@ -20,7 +33,7 @@ native_failure native_buffer_create(native_buffer *buffer, uint64_t size, uint32
          * uint16. Only the private allocation is padded; resource bindings,
          * public size and mapped ranges retain their original logical extent.
          * Shared Metal creation initializes this padding before publication. */
-        if (usage & DOE_VK_BUFFER_INDEX) {
+        if (usage & WGPUBufferUsage_Index) {
             if (size > UINT64_MAX - 3 || ((size + 3) & ~UINT64_C(3)) > backend->value.metal.caps.max_buffer_length)
                 return native_failure_status(NATIVE_OUT_OF_MEMORY);
             size = (size + 3) & ~UINT64_C(3);

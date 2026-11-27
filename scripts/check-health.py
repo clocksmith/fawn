@@ -2,14 +2,12 @@
 """Run canonical Doe line/schema gates and repository health checks.
 
 Zig policy belongs to runtime/zig/source-layout.json and its checker.
-Schema validation belongs to bench/gates/schema_gate.py. This entry point
-owns Python size checks, schema coverage and retired root-directory checks.
+Schema coverage and validation belong to bench/gates/schema_gate.py. This entry
+point owns Python size and retired root-directory checks.
 """
 
 from __future__ import annotations
 
-import glob
-import json
 import subprocess
 import sys
 from collections.abc import Callable
@@ -19,9 +17,6 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 
 PYTHON_DIRS = [REPO_ROOT / "bench", REPO_ROOT / "pipeline"]
 PYTHON_MAX_LINES = 1200
-
-CONFIG_DIR = REPO_ROOT / "config"
-SCHEMA_TARGETS_PATH = CONFIG_DIR / "schema-targets.json"
 
 ORPHAN_DIRS = ["fawn", "lean", "zig"]
 
@@ -109,56 +104,13 @@ def check_python_sizes() -> list[str]:
     return failures
 
 
-# ---------- check 3: Config schema coverage ----------
-
-def check_schema_coverage() -> list[str]:
-    """Report config/*.json files that have no corresponding schema."""
-    failures: list[str] = []
-    if not CONFIG_DIR.is_dir():
-        return [f"directory not found: {CONFIG_DIR}"]
-
-    # Build set of data files that are covered by schema-targets.json
-    covered: set[str] = set()
-    if SCHEMA_TARGETS_PATH.is_file():
-        with open(SCHEMA_TARGETS_PATH, "r") as f:
-            st = json.load(f)
-        for entry in st.get("targets", []):
-            data_path = (REPO_ROOT / entry["data"]).resolve()
-            covered.add(str(data_path))
-        for entry in st.get("globTargets", []):
-            for match in glob.glob(str(REPO_ROOT / entry["glob"])):
-                covered.add(str(Path(match).resolve()))
-
-    for p in sorted(CONFIG_DIR.glob("*.json")):
-        if p.name.endswith(".schema.json"):
-            continue
-        resolved = str(p.resolve())
-        if resolved in covered:
-            continue
-        # Fallback: check naming convention (foo.json -> foo.schema.json)
-        stem = p.stem
-        # Handle multi-dot names: foo.policy.json -> foo.policy.schema.json
-        candidate = p.with_name(stem + ".schema.json")
-        if candidate.is_file():
-            continue
-        # Also try stripping last dot-segment: foo.policy.json -> foo.schema.json
-        if "." in stem:
-            base = stem.rsplit(".", 1)[0]
-            candidate2 = CONFIG_DIR / (base + ".schema.json")
-            if candidate2.is_file():
-                continue
-        rel = p.relative_to(REPO_ROOT)
-        failures.append(f"  {rel}: no schema found")
-    return failures
-
-
-# ---------- check 4: Schema validation ----------
+# ---------- check 3: Config schema coverage and validation ----------
 
 def check_schema_validation() -> list[str]:
     return run_gate("bench/gates/schema_gate.py")
 
 
-# ---------- check 5: Orphaned directories ----------
+# ---------- check 4: Orphaned directories ----------
 
 def check_orphaned_dirs() -> list[str]:
     failures: list[str] = []
@@ -177,7 +129,6 @@ def main() -> int:
     checks: list[tuple[str, Callable[[], list[str]]]] = [
         ("Zig source-layout line policy", check_zig_sizes),
         ("Python file sizes (bench/ + pipeline/, max 1200 lines)", check_python_sizes),
-        ("Config schema coverage", check_schema_coverage),
         ("Schema validation", check_schema_validation),
         ("Orphaned top-level directories", check_orphaned_dirs),
     ]

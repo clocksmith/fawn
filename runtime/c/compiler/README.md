@@ -654,6 +654,16 @@ exercise the new owner. Both retained stable-fluids advection shaders compile
 unchanged. At that numeric checkpoint, the retained 4096-iteration compile-stress
 shader hit the separate phony-assignment (`_ = x`) boundary; it was not shortened.
 
+### Eager value selection
+
+`select(false_value, true_value, mask)` evaluates each argument once in source
+order. For a vector result, the typed IR broadcasts a scalar mask to a Boolean
+vector, preserving SPIR-V 1.3 compatibility. The HLSL 2021 and MSL emitters
+select each component from saved operands. This preserves eager evaluation on
+HLSL 2021, which only supports scalar short-circuit conditionals. Vector splats
+reuse one saved value. Constant selection projects the chosen values, including
+Booleans, from the existing constant DAG.
+
 ### Transparent type aliases and Workgroup target identity
 
 Module `alias` declarations now resolve through the same hoisted, iterative
@@ -783,7 +793,8 @@ execution or close the separate refraction, face-forward and full language gates
 `faceForward(normal, incident, reference)` and `refract(incident, normal, eta)`
 use the same signature/materialization and ordered argument owners as the other
 numeric builtins. Refraction's third operand is a scalar of the vectors' common
-floating leaf type; neither geometry path normalizes its inputs. Const evaluation
+floating leaf type. Each target consumes the third operand saved in the typed IR.
+Both operations use their inputs at their supplied lengths. Const evaluation
 uses declared-width dot/arithmetic/sqrt primitives, testing the refraction
 discriminant before square root so total internal reflection returns zero.
 Face-forward negates the first operand when the dot product is zero or positive.

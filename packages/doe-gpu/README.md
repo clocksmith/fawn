@@ -28,27 +28,17 @@ not need the Fawn browser.
 - **Receipts.** A run can emit the exact runtime, backend and output identity,
   so results are reproducible and comparable.
 
-## Performance highlights
+## Performance evidence
 
-Measured on the C runtime this package ships, against the `webgpu` npm package
-(Dawn) on the same machine: Gemma 3 inference (64 prompt + 64 generated tokens)
-in Node, 270M unless noted. "Less time" is the median (p50) reduction over
-interleaved runs. For 270M both runtimes produced the same output token in
-every run; the 1B runs did not record an output check.
+The Node package comparison measures cold and warm Gemma 3 inference against
+Dawn on Windows/D3D12, Linux/Vulkan and macOS/Metal. The retained report gives
+the host, paired timings and available output checks for each run.
+[Read the measurements](https://github.com/clocksmith/fawn/blob/main/reports/benchmarks/c-runtime-20261111/summary.json).
 
-| Host | Cold start | Warm |
-| --- | --- | --- |
-| Windows, AMD, D3D12 | **50% less** (336 ms vs 666 ms) | **3% less** (177 ms vs 183 ms) |
-| Windows, AMD, D3D12, Gemma 3 1B | **30% less** (802 ms vs 1145 ms) | 2% less (622 ms vs 634 ms) |
-| Linux, AMD Radeon 8060S, Vulkan | 2% less (128 ms vs 131 ms) | **5% less** (99 ms vs 104 ms) |
-| macOS, Apple M3, Metal | 3% less (125 ms vs 129 ms) | **6% less** (105 ms vs 111 ms) |
-
-On Windows, creating the 270M model's compute pipelines takes **73% less** time
-(122 ms vs 445 ms). Doe is not faster everywhere yet: single-token decode on
-Apple Metal is still about 4% slower, and native (no-JavaScript) runs are
-not yet measured. Earlier results from the
-Zig-based runtime are not quoted here. Method and numbers:
-[`reports/benchmarks/c-runtime-20261111/summary.json`](https://github.com/clocksmith/fawn/blob/main/reports/benchmarks/c-runtime-20261111/summary.json).
+The claim index identifies results qualified for a particular workload and
+backend. Diagnostic results can help explain a measurement.
+[Claim index](https://github.com/clocksmith/fawn/blob/main/reports/claim-index.json) ·
+[Evidence definitions](https://github.com/clocksmith/fawn/blob/main/docs/public-claim-boundary.md).
 
 ## Install
 

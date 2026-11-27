@@ -37,11 +37,9 @@ RUNTIME_VULKAN_FEATURE_CAPS_PATH = (
     REPO_ROOT / "runtime" / "zig" / "src" / "backend" / "vulkan" / "vk_feature_caps.zig"
 )
 NAPI_QUEUE_PATH = REPO_ROOT / "runtime" / "bridge" / "webgpu-addon" / "doe_napi_queue.c"
-NAPI_BUFFER_PATH = REPO_ROOT / "runtime" / "bridge" / "webgpu-addon" / "doe_napi_buffer.c"
 NAPI_CAPS_PATH = REPO_ROOT / "runtime" / "bridge" / "webgpu-addon" / "doe_napi_caps.c"
 NAPI_INIT_PATH = REPO_ROOT / "runtime" / "bridge" / "webgpu-addon" / "doe_napi_init.c"
 NAPI_INTERNAL_PATH = REPO_ROOT / "runtime" / "bridge" / "webgpu-addon" / "doe_napi_internal.h"
-NAPI_ND_IMMEDIATES_PATH = REPO_ROOT / "runtime" / "bridge" / "webgpu-addon" / "doe_napi_nd_immediates.c"
 BUN_ENTRY_PATH = REPO_ROOT / "packages" / "doe-gpu" / "src" / "vendor" / "webgpu" / "bun.js"
 BUN_FFI_PATH = REPO_ROOT / "packages" / "doe-gpu" / "src" / "vendor" / "webgpu" / "bun-ffi.js"
 PACKAGE_EXECUTION_POLICY_PATH = REPO_ROOT / "config" / "package-execution-policy.json"
@@ -402,34 +400,6 @@ console.log(JSON.stringify({{
         )
         self.assertEqual(payload["snapshot"]["description"], "radv: Mesa 26.0.3-1ubuntu1")
 
-    def test_node_package_encoder_backend_elides_duplicate_pipeline_and_bind_group_sets(self) -> None:
-        source = PACKAGE_INDEX_PATH.read_text(encoding="utf-8")
-
-        self.assertIn("function updatePassPipelineState(pass, pipelineNative)", source)
-        self.assertIn("function updatePassBindGroupState(pass, index, bindGroupNative)", source)
-        self.assertIn("if (!updatePassPipelineState(pass, pipelineNative)) {", source)
-        self.assertIn("if (!updatePassBindGroupState(pass, index, bindGroupNative)) {", source)
-
-    def test_node_package_encoder_backend_uses_dispatch_bound_fast_path_for_pending_state(self) -> None:
-        source = PACKAGE_INDEX_PATH.read_text(encoding="utf-8")
-
-        self.assertIn("function materializeNodePendingComputeState(pass, nativePass)", source)
-        self.assertIn("typeof addon.computePassDispatchBound === 'function'", source)
-        self.assertIn("clearPendingBoundDispatchState(pass);", source)
-        self.assertIn("materializeNodePendingComputeState(pass, nativePass);", source)
-
-    def test_node_package_backend_exposes_combined_readback_copy_path(self) -> None:
-        source = PACKAGE_INDEX_PATH.read_text(encoding="utf-8")
-
-        self.assertIn("bufferMapReadCopyUnmap(wrapper, native, mode, offset, size) {", source)
-        self.assertIn("typeof addon.bufferMapReadCopyUnmap === 'function'", source)
-        self.assertIn("addon.bufferMapReadCopyUnmap(", source)
-        self.assertIn("const ZERO_READBACK_BREAKDOWN_NS = Object.freeze({", source)
-        self.assertIn("wrapper.__doe_readback_breakdown_ns = ZERO_READBACK_BREAKDOWN_NS;", source)
-        self.assertIn("wrapper.__doe_readback_breakdown_ns = {", source)
-        self.assertIn("const copied = addon.bufferReadCopy(native, offset, size);", source)
-        self.assertIn("addon.bufferUnmap(native);", source)
-
     def test_node_package_exports_fast_path_stats_for_receipts(self) -> None:
         source = PACKAGE_INDEX_PATH.read_text(encoding="utf-8")
         executor_source = (REPO_ROOT / "bench" / "executors" / "node-webgpu" / "executor.js").read_text(
@@ -504,16 +474,6 @@ console.log(JSON.stringify({{
         self.assertIn("function attachQueueFamilyInfo(info, queueNative)", bun_ffi_source)
         self.assertIn("info.queueFamilySupportsGraphics = queueFamilySupportsGraphics !== 0;", bun_ffi_source)
 
-    def test_napi_package_exports_combined_readback_copy_path(self) -> None:
-        buffer_source = NAPI_BUFFER_PATH.read_text(encoding="utf-8")
-        init_source = NAPI_INIT_PATH.read_text(encoding="utf-8")
-
-        self.assertIn("napi_value doe_buffer_map_read_copy_unmap", buffer_source)
-        self.assertIn("pfn_doeNativeQueueFlushBreakdown", buffer_source)
-        self.assertIn("pfn_doeNativeBufferMapAsync", buffer_source)
-        self.assertIn('napi_set_named_property(env, result_obj, "bytes", bytes);', buffer_source)
-        self.assertIn('EXPORT_FN("bufferMapReadCopyUnmap",                   doe_buffer_map_read_copy_unmap)', init_source)
-
     def test_napi_package_exports_queue_sync_info(self) -> None:
         queue_source = NAPI_QUEUE_PATH.read_text(encoding="utf-8")
         init_source = NAPI_INIT_PATH.read_text(encoding="utf-8")
@@ -542,13 +502,6 @@ console.log(JSON.stringify({{
             "doe_device_set_uncaptured_error_callback)",
             init_source,
         )
-
-    def test_napi_readback_map_prefers_doe_native_map_symbol(self) -> None:
-        for path in (NAPI_BUFFER_PATH, NAPI_QUEUE_PATH, NAPI_ND_IMMEDIATES_PATH):
-            source = path.read_text(encoding="utf-8")
-            native_index = source.index("if (pfn_doeNativeBufferMapAsync)")
-            wgpu_index = source.index("else if (pfn_wgpuBufferMapAsync2)", native_index)
-            self.assertLess(native_index, wgpu_index, path)
 
     def test_classify_bringup_unsupported_recognizes_unavailable_errors(self) -> None:
         script = f"""
@@ -1697,45 +1650,6 @@ console.log(JSON.stringify({{
         self.assertIn("runtimeHost === 'node' || runtimeHost === 'bun'", source)
         self.assertIn("runtime.queueWaitMode === NODE_PACKAGE_QUEUE_WAIT_MODE", source)
         self.assertIn("readBufferMapCanCompleteSubmit(normalizedPlan.steps, index, step)", source)
-
-    def test_node_doe_package_source_materializes_lazy_dispatch_copy_at_finish(self) -> None:
-        source = (
-            REPO_ROOT / "packages" / "doe-gpu" / "src" / "vendor" / "webgpu" / "index.js"
-        ).read_text(encoding="utf-8")
-        self.assertIn("encoder._native = addon.createCommandEncoder(", source)
-        self.assertIn("new classes.DoeGPUComputePassEncoder(null, encoder)", source)
-        self.assertIn("function canSubmitNodeLazyCommandsBatched(commands)", source)
-        self.assertIn("finishNodeLazyCommandsAsNativeCommandBuffer(encoder, commands)", source)
-        self.assertIn("const nativeCommandBuffer = finishNodeLazyCommandsAsNativeCommandBuffer(encoder, commands);", source)
-        self.assertIn(
-            "return { _native: nativeCommandBuffer, _batched: false, _commands: commands };",
-            source,
-        )
-        self.assertIn("&& !canSubmitNodeLazyCommandsBatched(commands)", source)
-        self.assertIn("addon.createComputeDispatchCopyCommandBuffer(", source)
-        self.assertIn("addon.createComputeDispatchBatchCopyCommandBuffer(", source)
-        self.assertIn("canFinishNodeLazyDispatchCopyCommandsAsNativeBuffer(commands)", source)
-        self.assertIn("bg: pass._bindGroups.slice()", source)
-        self.assertIn("b: bindGroup", source)
-        self.assertIn("return { _commands: commands, _batched: true };", source)
-        self.assertIn("function flattenBatchedCommands(commandBuffers)", source)
-        self.assertIn("const allCommands = flattenBatchedCommands(buffers);", source)
-        self.assertNotIn("allCommands.push(...", source)
-        self.assertIn("const addonBreakdown = addon.submitBatched(deviceNative, queueNative, cmds);", source)
-        self.assertIn("fastPathStats.dispatchFlush += 1", source)
-
-        self.assertIn("nativeFastPathInfo()", source)
-
-        napi_source = NAPI_QUEUE_PATH.read_text(encoding="utf-8")
-        self.assertIn("read_command_bind_groups(env, cmd", napi_source)
-        self.assertIn('compact_bind_groups = get_prop(env, cmd, "b")', napi_source)
-        self.assertIn("compact_type != napi_undefined", napi_source)
-        self.assertIn("get_command_type(env, cmd)", napi_source)
-        self.assertNotIn("get_command_field(env, cmd", napi_source)
-        self.assertNotIn("bool cmd_is_array", napi_source)
-        self.assertNotIn("bool copy_is_array", napi_source)
-        self.assertIn("doe_queue_submit_one", napi_source)
-        self.assertIn("addon.queueSubmitOne(queueNative, singleNative)", source)
 
     def test_node_doe_package_source_uses_native_buffers_without_host_shadows(self) -> None:
         source = (

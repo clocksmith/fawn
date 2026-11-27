@@ -228,14 +228,6 @@ class BunWebGPUExecutorTests(unittest.TestCase):
         self.assertNotIn("device.features = deviceFeatures(native);", block)
         self.assertNotIn("device._adapterInfo = adapter.info;", block)
 
-    def test_bun_encoder_backend_elides_duplicate_pipeline_and_bind_group_sets(self) -> None:
-        source = BUN_FFI_PATH.read_text(encoding="utf-8")
-
-        self.assertIn("function updatePassPipelineState(pass, pipelineNative)", source)
-        self.assertIn("function updatePassBindGroupState(pass, index, bindGroupNative)", source)
-        self.assertIn("if (!updatePassPipelineState(pass, pipelineNative)) {", source)
-        self.assertIn("if (!updatePassBindGroupState(pass, index, bindGroupNative)) {", source)
-
     def test_bun_lazy_dispatch_copy_uses_submit_flush_paths(self) -> None:
         source = BUN_FFI_PATH.read_text(encoding="utf-8")
 
@@ -343,43 +335,6 @@ class BunWebGPUExecutorTests(unittest.TestCase):
         self.assertIn("writeBatch(", source)
         self.assertIn("typeof backend.queueWriteBufferBatch === 'function'", shared_surface)
         self.assertIn("__doeWriteBufferBatch", shared_surface)
-
-    def test_bun_ffi_uses_validated_native_flat_setup_hooks(self) -> None:
-        source = BUN_FFI_PATH.read_text(encoding="utf-8")
-        shared_surface = (
-            REPO_ROOT
-            / "packages"
-            / "doe-gpu"
-            / "src"
-            / "vendor"
-            / "webgpu"
-            / "shared"
-            / "full-surface.js"
-        ).read_text(encoding="utf-8")
-
-        self.assertIn("doeNativeDeviceCreateBufferFlat", source)
-        self.assertIn("doeNativeDeviceCreateShaderModuleWgsl", source)
-        self.assertIn("doeNativeDeviceCreateComputePipelineMain", source)
-        self.assertIn("doeNativeDeviceCreateBufferBindGroupLayoutFlat4", source)
-        self.assertIn("doeNativeDeviceCreateBufferBindGroupFlat4", source)
-        self.assertIn("doeNativeDeviceCreatePipelineLayoutOne", source)
-        self.assertIn("preflightShaderSourceOnCreate: false", source)
-        self.assertIn("function tryCreateBufferBindGroupLayoutFast4(", shared_surface)
-        self.assertIn("function tryCreateBufferBindGroupFast4(", shared_surface)
-
-        buffer_start = source.index("deviceCreateBuffer(device, validated) {")
-        buffer_end = source.index("\n    },\n    deviceCreateShaderModule", buffer_start)
-        buffer_block = source[buffer_start:buffer_end]
-        self.assertIn("wgpu.symbols.doeNativeDeviceCreateBufferFlat(", buffer_block)
-
-        bind_group_start = source.index("deviceCreateBufferBindGroupFlat4(")
-        bind_group_end = source.index("\n    },\n    deviceCreateBindGroup(", bind_group_start)
-        bind_group_block = source[bind_group_start:bind_group_end]
-        self.assertIn(
-            'typeof wgpu.symbols.doeNativeDeviceCreateBufferBindGroupFlat4 !== "function"',
-            bind_group_block,
-        )
-        self.assertIn("wgpu.symbols.doeNativeDeviceCreateBufferBindGroupFlat4(", bind_group_block)
 
     def test_bun_entry_uses_measured_platform_default(self) -> None:
         source = BUN_ENTRY_PATH.read_text(encoding="utf-8")

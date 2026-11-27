@@ -6,7 +6,7 @@ include platform.mk
 NATIVE_LIBRARY ?= $(BUILD)/$(NATIVE_LIBRARY_BASENAME)
 COMPILER_LIBRARY ?= $(BUILD)/libdoe_compiler.$(SHARED_SUFFIX)
 SANITIZE ?=
-# One owner list drives source, public include and private header dependencies.
+# One owner list drives source and include discovery.
 include sources.mk
 OWNER_DIRS = $(NATIVE_OWNER_DIRS)
 # The compute-program contract is the package schema's value, never a copied number.
@@ -29,13 +29,20 @@ CFLAGS += -ffile-prefix-map=$(CURDIR)=.
 SOURCES = $(wildcard src/*.c) $(foreach owner,$(OWNER_DIRS),$(wildcard $(owner)/src/*.c))
 OBJECTS = $(patsubst src/%.c,$(BUILD)/native/%.o,$(filter src/%,$(SOURCES))) \
  $(patsubst ../%.c,$(BUILD)/owners/%.o,$(filter ../%,$(SOURCES)))
-HEADERS = sources.mk $(wildcard src/*.h include/*.h ../compiler/include/*.h ../common/include/*.h ../backends/d3d12/include/*.h) $(PROGRAM_SCHEMA) \
+# Standalone test executables compile several source files in one compiler call.
+HEADERS = ../backends/d3d12/include/doe_d3d12_formats.inc sources.mk $(wildcard src/*.h include/*.h ../compiler/include/*.h ../common/include/*.h ../backends/d3d12/include/*.h) $(PROGRAM_SCHEMA) \
  $(foreach owner,$(OWNER_DIRS),$(wildcard $(owner)/include/*.h $(owner)/src/*.h)) \
  ../../vendor/webgpu-headers/webgpu.h
 COMPILER_RUNPATH ?= $(abspath $(dir $(COMPILER_LIBRARY)))
 COMPILER_LINK = -L$(abspath $(dir $(COMPILER_LIBRARY))) $(COMPILER_NAME_LINK) '-Wl,-rpath,$(COMPILER_RUNPATH)'
 .PHONY: all check check-build-dependencies check-empty-module clean
 all: $(NATIVE_LIBRARY)
+-include $(OBJECTS:.o=.d)
+NATIVE_FLAGS = '$(CC)' '$(CPPFLAGS)' '$(CFLAGS)'
+FLAGS_CHANGED := $(shell printf '%s\n' $(NATIVE_FLAGS) | cmp -s - "$(BUILD)/native.flags" || printf flags-changed)
+.PHONY: flags-changed
+$(BUILD)/native.flags: $(FLAGS_CHANGED) | $(BUILD)
+	@printf '%s\n' $(NATIVE_FLAGS) > "$@.$$$$.tmp" && mv "$@.$$$$.tmp" "$@"
 SHADER_IDENTITY_HEADERS = src/shader_cache_identity.h ../common/include/doe_sha256.h
 $(BUILD)/shader-cache: tests/shader_cache.c src/shader_cache.c src/shader_disk_cache.c src/shader_cache_identity.c $(SHADER_IDENTITY_HEADERS) src/shader_cache.h src/shader_disk_cache.h ../backends/vulkan/src/cache_file.c $(wildcard ../shader/src/*.c ../shader/src/*.h) ../shader/include/doe_shader.h $(COMPILER_LIBRARY) | $(BUILD)
 	$(CC) $(CPPFLAGS) $(CFLAGS) tests/shader_cache.c src/shader_cache.c src/shader_disk_cache.c src/shader_cache_identity.c ../backends/vulkan/src/cache_file.c $(wildcard ../shader/src/*.c) $(COMPILER_LINK) $(PLATFORM_LIBS) -o $@
@@ -96,12 +103,12 @@ compiler-shared:
 $(BUILD)/libdoe_compiler.$(SHARED_SUFFIX): compiler-shared | $(BUILD)
 	$(MAKE) -C ../compiler shared SHARED_LIBRARY="$(abspath $@)" \
 	  SHARED_PLATFORM="$(SHARED_PLATFORM)" TMPDIR="$(abspath $(BUILD))/tmp" EXTRA_CFLAGS="$(SANITIZE)"
-$(BUILD)/native/%.o: src/%.c $(HEADERS) Makefile platform.mk
+$(BUILD)/native/%.o: src/%.c sources.mk Makefile platform.mk $(BUILD)/native.flags $(FLAGS_CHANGED)
 	mkdir -p $(@D)
-	$(CC) $(CPPFLAGS) $(CFLAGS) -fvisibility=hidden -c $< -o $@
-$(BUILD)/owners/%.o: ../%.c $(HEADERS) Makefile platform.mk
+	$(CC) $(CPPFLAGS) $(CFLAGS) -MMD -MP -fvisibility=hidden -c $< -o $@
+$(BUILD)/owners/%.o: ../%.c sources.mk Makefile platform.mk $(BUILD)/native.flags $(FLAGS_CHANGED)
 	mkdir -p $(@D)
-	$(CC) $(CPPFLAGS) $(CFLAGS) -fvisibility=hidden -c $< -o $@
+	$(CC) $(CPPFLAGS) $(CFLAGS) -MMD -MP -fvisibility=hidden -c $< -o $@
 $(NATIVE_LIBRARY): $(OBJECTS) $(COMPILER_LIBRARY) $(NATIVE_EXPORTS) | $(BUILD)
 	$(CC) $(CFLAGS) $(NATIVE_SHARED_FLAGS) $(OBJECTS) $(COMPILER_LINK) $(PLATFORM_LIBS) -o $@
 $(BUILD)/native.exports: EXPORTED_SYMBOLS.txt EXTENSION_SYMBOLS.txt LEGACY_SYMBOLS.txt SHARED_MEMORY_SYMBOLS.txt | $(BUILD)

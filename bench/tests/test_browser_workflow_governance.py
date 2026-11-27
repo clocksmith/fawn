@@ -196,7 +196,7 @@ def test_browser_workflow_manifest_rejects_visual_resource_escape() -> None:
     assert {
         "code": "invalid_visual_resource_path",
         "path": f"rows[{visual_index}].resourcePath",
-        "message": "resourcePath must be a browser/chromium/resources/*.html path",
+        "message": "resourcePath must be a bench/browser/fixtures/fawn/*.html path",
     } in failures
 
 

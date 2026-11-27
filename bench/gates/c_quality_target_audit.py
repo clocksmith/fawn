@@ -629,6 +629,9 @@ def run_audit(
                     f"baseline_implementation_only_lines mismatch: {base_impl_total} != {base_decl}"
                 )
 
+            for rel_path in sorted(cand_map.keys() - charged_records.keys()):
+                span_errors.append(f"candidate span record outside charged closure: {rel_path}")
+
             cand_impl_total = 0
             cand_excl_total = 0
             for rel_path, (_, _, expected_digest) in sorted(charged_records.items()):

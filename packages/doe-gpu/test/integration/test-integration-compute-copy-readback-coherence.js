@@ -1,5 +1,7 @@
 #!/usr/bin/env node
 
+import assert from 'node:assert/strict';
+import { checkComputeStageBindings } from './compute-bindings-helper.js';
 import { requestNativeDeviceOrSkip } from './native-device-test-helper.js';
 
 const device = await requestNativeDeviceOrSkip('compute-copy-readback coherence');
@@ -18,7 +20,7 @@ const pipeline = device.createComputePipeline({
   compute: { module: shader, entryPoint: 'main' },
 });
 
-async function readBuffer(source) {
+async function readBuffer(source, combined) {
   const staging = device.createBuffer({
     size: 8,
     usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ,
@@ -26,11 +28,19 @@ async function readBuffer(source) {
   const encoder = device.createCommandEncoder();
   encoder.copyBufferToBuffer(source, 0, staging, 0, 8);
   device.queue.submit([encoder.finish()]);
-  await staging.mapAsync(GPUMapMode.READ);
-  const actual = Array.from(new Uint32Array(staging.getMappedRange().slice(0)));
-  staging.unmap();
-  staging.destroy();
-  return actual;
+  try {
+    if (combined) {
+      const copied = staging._mapReadCopyUnmap(GPUMapMode.READ, 0, 8);
+      assert.equal(staging.mapState, 'unmapped');
+      return Array.from(new Uint32Array(copied));
+    }
+    await staging.mapAsync(GPUMapMode.READ);
+    const actual = Array.from(new Uint32Array(staging.getMappedRange().slice(0)));
+    staging.unmap();
+    return actual;
+  } finally {
+    staging.destroy();
+  }
 }
 
 async function runCase(label, separateSubmits) {
@@ -64,7 +74,7 @@ async function runCase(label, separateSubmits) {
     device.queue.submit([computeEncoder.finish()]);
   }
 
-  const actual = await readBuffer(copiedOutput);
+  const actual = await readBuffer(copiedOutput, separateSubmits);
   computeOutput.destroy();
   copiedOutput.destroy();
   const expected = [0x13579bdf, 0x2468ace0];
@@ -73,7 +83,13 @@ async function runCase(label, separateSubmits) {
   }
 }
 
-await runCase('same-submit', false);
-await runCase('cross-submit', true);
-device.destroy();
+try {
+  for (const unbindFirst of [false, true]) {
+    await checkComputeStageBindings(device, { GPUBufferUsage, GPUMapMode }, { unbindFirst });
+  }
+  await runCase('same-submit', false);
+  await runCase('cross-submit', true);
+} finally {
+  device.destroy();
+}
 process.stdout.write('compute-copy-readback coherence: same-submit and cross-submit passed\n');

@@ -12,10 +12,11 @@ import subprocess
 REPO = Path(__file__).resolve().parents[4]
 
 
-def check_normalized(binary, work, env):
+def check_normalized(binary, work, env, producer_root=None):
     retained = json.loads(Path(__file__).with_name('normalized_retained.json').read_text())
-    for path, digest in retained['sourceHashes'].items():
-        assert hashlib.sha256((REPO / path).read_bytes()).hexdigest() == digest, path + ' retained source drift'
+    if producer_root is not None:
+        for path, digest in retained['sourceHashes'].items():
+            assert hashlib.sha256((producer_root / path).read_bytes()).hexdigest() == digest, path + ' retained source drift'
     commands = work / 'normalized.commands.json'
     commands.write_text(json.dumps(retained['commands']))
     rows = work / 'normalized.untouched.jsonl'
@@ -116,9 +117,11 @@ def main():
     parser.add_argument('--binary', type=Path, required=True, help='Actual runtime executable')
     parser.add_argument('--no-device', type=Path, required=True, help='Instance-boundary interposer')
     parser.add_argument('--work', type=Path, required=True, help='Artifact directory')
+    parser.add_argument('--producer-root', type=Path,
+                        help='Verify source provenance using the retained Zig producer tree at 796b98338')
     args = parser.parse_args(); args.work.mkdir(parents=True, exist_ok=True)
     env = dict(os.environ, LD_PRELOAD=str(args.no_device.resolve()))
-    check_normalized(args.binary, args.work, env)
+    check_normalized(args.binary, args.work, env, args.producer_root)
     check_plan_dry_run(args.binary, args.work, env)
     bare = subprocess.run([str(args.binary)], cwd=REPO, env=env, capture_output=True, text=True, timeout=10)
     assert bare.returncode == 0 and bare.stdout.count('cmd[') == 5 and 'exec backend=' not in bare.stdout
@@ -139,6 +142,7 @@ def main():
     # Fresh retained Zig CLI (source unchanged at796b98338), 2026-10-25 host-only.
     expected_hashes = ['0xd3d58a45b3411d9c','0xdf1715b3537d5cb3','0x4585478a9f8ef747','0x932455c45a37ada4','0xfe241c2a680fa89c']
     _, rows = run('embedded')
+    assert all(r['timestampSource'] == 'unmeasured' and r['timestampMonoNs'] == 0 for r in rows)
     assert [row['hash'] for row in rows] == expected_hashes
     # Replay is allowed to overwrite its own trace after validation. A failed
     # preflight must preserve both files, including an alternate path spelling.

@@ -40,13 +40,6 @@ every executable target rejects them. API-provided doubles use numeric.c's
 checked override conversion, never constructor saturation/truncation. Replaced
 and unselected initializers are not evaluated during specialization. Keep the
 original module identity separate from each independently owned specialization.
-`select(false_value, true_value, mask)` evaluates all three arguments eagerly,
-once and in source order. Scalar masks broadcast through a typed boolean-vector
-IR splat for vector results, retaining baseline SPIR-V1.3 compatibility. Text
-targets select vector components from saved values; HLSL2021 cannot use a vector
-short-circuit conditional. Vector splats repeat one saved operand rather than
-re-evaluating the source expression. Const selection borrows/projects the existing
-constant DAG, including boolean values; it is not a second arithmetic evaluator.
 Keep argument evaluation in the existing recursive call owner; a builtin's
 typed finishing helper consumes snapshots without re-entering source. Measure
 the complete semantic recursion group when adding a call path: individually
@@ -57,18 +50,11 @@ checked conversions; numeric_math.c owns declared-width component math.
 Check literal overflow after rounding and significand carry: a decimal slightly
 above the largest finite value may round to it. Concrete hexadecimal literals
 retain their separate exact-representation requirement.
-Multi-argument math uses the same typed signature and ordered operand snapshots;
-preserve argument order (notably `atan2(y,x)`) in constant and target lowering.
-Geometric builtins retain their operand roles: `reflect(incident, normal)` uses
-the supplied normal unchanged, including non-unit or zero normals. Const-stage
-geometry uses the existing typed numeric owner; target mappings stay explicit.
-Ternary geometry keeps its signature-owned argument widths: refraction takes two
-vectors and one scalar of their common leaf type. Preserve the third ordered IR
-operand on every target. Const refraction tests its discriminant before sqrt;
-total internal reflection produces zero without evaluating an invalid branch.
-Face-forward uses a strict negative dot test; zero selects the negated first vector.
-Validate WGSL domains rather than accepting a wider libm domain: a negative
-`pow` base is invalid even when a host integer exponent would produce a finite value.
+Typed signatures own operand roles and widths across const evaluation and target
+lowering. Evaluate operands once in source order and preserve them in the IR.
+The compiler guide maintains the [component math](README.md#component-numeric-family-developer-increment),
+[reflection](README.md#reflection-direction-builtin) and
+[ternary geometry](README.md#ternary-geometry-builtins) contracts.
 Lexer/parser preserve raw literal spans, not floating host values. Const evaluation checks every evaluated intermediate. Skipped short-circuit
 numeric evaluation is distinct from required name/type/dependency validation and
 mandatory divisor/count checks. Runtime operators never call the const evaluator.
@@ -224,28 +210,10 @@ and honor the same capacities. Preserve each frozen version's symbol and record
 contract; new exports require an explicit additive versioned facade. No private
 cross-file helper or test hook becomes a public export.
 
-## Explicit image sampling
+## Typed builtins and images
 
-The common image semantic owner selects depth/color result width, sampler kind,
-integer depth LOD and constant offset overloads. Targets consume typed operands,
-not source spellings. Keep optional offsets as checked constant IR identities,
-including const evaluation in skipped branches; never pass a runtime temporary
-where the native instruction requires an immediate offset. Comparison operands
-keep source order: the sampler compares the supplied reference to sampled depth.
-Sampling layers clamp; normalized coordinates and LOD retain sampler semantics,
-separate from guarded integer texel accesses. Preserve DEPTH/COMPARISON metadata
-for runtime admission instead of inferring sampler choices from emitted text.
-
-Implicit image sampling remains fragment-only through the bounded source call
-closure, including dead syntax and helper calls. Derivative call sites require
-uniform control, not uniform coordinates. Their results are potentially
-nonuniform even for constant coordinates; use the existing uniformity summaries
-and scratch, without treating a sample as a uniformity proof for later calls.
-Explicit-level image operations retain their separate stage/control contract.
-
-Boolean reductions belong to the same typed builtin signature/constant/IR owner.
-Admit only bool scalars or bool vectors and return scalar bool. Evaluate the
-complete operand once, including all vector-constructor effects, before reducing
-saved values. Constant reductions project the existing DAG; preserve override
-stage and required dependencies. Scalar targets copy the operand; vector targets
-use explicitly mapped logical reductions and never infer numeric truthiness.
+Resolve builtin argument types and source evaluation order before target lowering.
+Carry the resource and sampler relationships into reflection. The operation owners
+specify the constant, runtime, and target behavior for
+[value selection](README.md#eager-value-selection), [Boolean reductions](LOGICAL_BUILTINS.md),
+and [texture sampling](TEXTURES.md#explicit-depth-sampling).

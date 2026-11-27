@@ -35,8 +35,9 @@ export function createD1RecipeStore(d1) {
     },
     async batch(statements) {
       await ensureSchema();
-      if (!statements.length) return;
-      await d1.batch(statements.map(({ sql, params = [] }) => d1.prepare(sql).bind(...params)));
+      if (!statements.length) return [];
+      const results = await d1.batch(statements.map(({ sql, params = [] }) => d1.prepare(sql).bind(...params)));
+      return results.map(result => result.results ?? []);
     },
     close() {},
   };

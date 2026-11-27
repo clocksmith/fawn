@@ -60,7 +60,8 @@ console.log('backend and strict vendored rejection controls passed');
         instance=(ROOT/'runtime/bridge/webgpu-addon/doe_napi_instance.c').read_text()
         caps=(ROOT/'runtime/bridge/webgpu-addon/doe_napi_caps.c').read_text()
         functions='\n'.join([owner_function(instance,'adapter_backend_type_from_name'),
-            owner_function(instance,'parse_adapter_backend'),owner_function(caps,'set_observed_adapter_backend')])
+            owner_function(instance,'parse_adapter_backend'),owner_function(caps,'set_obj_u32'),
+            owner_function(caps,'set_observed_adapter_backend')])
         # Real helper functions, actual pinned WGPUAdapterInfo; only Node transport/provider are CPU mocks.
         code=r'''
 #include <assert.h>

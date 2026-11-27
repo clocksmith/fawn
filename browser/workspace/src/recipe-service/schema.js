@@ -85,4 +85,13 @@ CREATE TABLE IF NOT EXISTS recipe_submissions (
   response_json TEXT NOT NULL,
   created_at TEXT NOT NULL
 );
+CREATE TABLE IF NOT EXISTS recipe_submission_receipts (
+  namespace_id TEXT NOT NULL,
+  author_hash TEXT NOT NULL,
+  submission_id TEXT NOT NULL,
+  verification_id TEXT NOT NULL,
+  request_hash TEXT NOT NULL,
+  response_json TEXT NOT NULL,
+  PRIMARY KEY (namespace_id, author_hash, submission_id)
+);
 `;

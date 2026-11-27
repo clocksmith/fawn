@@ -2,9 +2,11 @@ from __future__ import annotations
 
 import hashlib
 import json
+import subprocess
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 import jsonschema
 
@@ -98,12 +100,16 @@ class NativeProgramIdentityTraceValidatorTests(unittest.TestCase):
         )
 
     def _validate(self) -> dict:
-        return validator.build_validation(
-            self.trace,
-            artifact_root=self.root,
-            spirv_val_path=Path("/bin/true"),
-            require_render_completion=True,
-        )
+        # These fixture bytes exercise identity and ordering; the external SPIR-V
+        # validator is a separate process boundary exercised by the retained run.
+        completed = subprocess.CompletedProcess(["fixture-spirv-val"], 0, "", "")
+        with patch.object(validator.subprocess, "run", return_value=completed):
+            return validator.build_validation(
+                self.trace,
+                artifact_root=self.root,
+                spirv_val_path=Path("fixture-spirv-val"),
+                require_render_completion=True,
+            )
 
     def test_valid_trace_binds_sequences_completion_and_artifacts(self) -> None:
         result = self._validate()

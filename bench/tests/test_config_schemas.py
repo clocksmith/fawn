@@ -14,24 +14,24 @@ Run: python3 -m unittest bench.tests.test_config_schemas
 from __future__ import annotations
 
 import copy
-import json
-import sys
 import unittest
+from collections import Counter
+from functools import cache
 from pathlib import Path
 
 import jsonschema
 
+from bench.lib.bench_utils import load_json
+from bench.lib.config_validation import schema_validator
+
 REPO_ROOT = Path(__file__).resolve().parents[2]
 
 
-def load_json(path: Path) -> object:
-    return json.loads(path.read_text(encoding="utf-8"))
-
-
-def load_jsonl(path: Path) -> list[dict]:
-    """Load a JSONL file: validate each line against the schema individually."""
-    lines = path.read_text(encoding="utf-8").strip().splitlines()
-    return [json.loads(line) for line in lines if line.strip()]
+@cache
+def validator_for(path: Path) -> jsonschema.Draft202012Validator:
+    schema = load_json(path)
+    jsonschema.Draft202012Validator.check_schema(schema)
+    return schema_validator(path, schema)
 
 
 def collect_string_field_paths(schema: dict, prefix: str = "") -> list[tuple[str, list[str]]]:
@@ -45,7 +45,7 @@ def collect_string_field_paths(schema: dict, prefix: str = "") -> list[tuple[str
     for key, prop_schema in props.items():
         full_path = f"{prefix}.{key}" if prefix else key
         resolved = prop_schema
-        if resolved.get("type") == "string":
+        if resolved.get("type") == "string" or isinstance(resolved.get("const"), str):
             results.append((full_path, full_path.split(".")))
         elif resolved.get("type") == "object" and "properties" in resolved:
             results.extend(collect_string_field_paths(resolved, full_path))
@@ -74,11 +74,9 @@ class SchemaTargetEntry:
 
 
 def load_target_records(entry: SchemaTargetEntry) -> list[object]:
-    """Match the canonical gate's per-record JSON and JSONL validation."""
-    if entry.is_jsonl:
-        return load_jsonl(entry.data_path)
+    """JSON is one document; JSONL has one document per line."""
     data = load_json(entry.data_path)
-    return data if isinstance(data, list) else [data]
+    return data if entry.is_jsonl else [data]
 
 
 def load_targets() -> list[SchemaTargetEntry]:
@@ -107,12 +105,11 @@ def _make_positive_test(entry: SchemaTargetEntry):
     """Factory: config validates against its schema."""
 
     def test(self: unittest.TestCase) -> None:
-        schema = load_json(entry.schema_path)
         records = load_target_records(entry)
         self.assertGreater(len(records), 0, f"{entry.label}: file is empty")
         for i, record in enumerate(records):
             try:
-                jsonschema.validate(record, schema)
+                validator_for(entry.schema_path).validate(record)
             except jsonschema.ValidationError as exc:
                 self.fail(
                     f"{entry.label} record {i}: positive validation failed: "
@@ -151,7 +148,7 @@ def _make_missing_required_test(entry: SchemaTargetEntry):
                 jsonschema.ValidationError,
                 msg=f"{entry.label}: removing required field '{field}' should fail validation",
             ):
-                jsonschema.validate(mutated, schema)
+                validator_for(entry.schema_path).validate(mutated)
 
     return test
 
@@ -181,7 +178,7 @@ def _make_additional_properties_test(entry: SchemaTargetEntry):
             jsonschema.ValidationError,
             msg=f"{entry.label}: adding unknown field should fail with additionalProperties=false",
         ):
-            jsonschema.validate(mutated, schema)
+            validator_for(entry.schema_path).validate(mutated)
 
     return test
 
@@ -228,7 +225,7 @@ def _make_type_mismatch_test(entry: SchemaTargetEntry):
             target[final_key] = 99999
             tested_any = True
             try:
-                jsonschema.validate(mutated, schema)
+                validator_for(entry.schema_path).validate(mutated)
                 self.fail(
                     f"{entry.label}: setting string field '{dotted_path}' to a number "
                     "should have caused validation failure"
@@ -245,8 +242,12 @@ def _make_type_mismatch_test(entry: SchemaTargetEntry):
 def _register_tests() -> None:
     """Dynamically add test methods for each schema-target entry."""
     targets = load_targets()
+    stems = Counter(entry.data_path.stem for entry in targets)
     for entry in targets:
-        safe_name = entry.data_path.stem.replace("-", "_").replace(".", "_")
+        name = entry.data_path.stem
+        if stems[name] > 1:
+            name = f"{entry.data_path.relative_to(REPO_ROOT)}__{entry.schema_path.stem}"
+        safe_name = name.replace("-", "_").replace(".", "_").replace("/", "__")
 
         setattr(
             ConfigSchemaFuzzTests,

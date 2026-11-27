@@ -23,7 +23,8 @@ typedef struct control {
     unsigned ids, live, commands, live_commands, submitted_count;
     doe_dx_commands *submitted[SUBMITS];
     doe_dx_status copy_status;
-    native_result create_status;
+    native_result create_status, submit_status;
+    bool reject_before_submit;
 } control;
 static control seen;
 
@@ -170,7 +171,14 @@ native_failure native_submit_backend_commands_async(native_device *device, nativ
     (void)device;
     assert(seen.submitted_count < SUBMITS);
     seen.submitted[seen.submitted_count++] = commands.value.d3d12.commands;
-    return native_failure_status(NATIVE_OK);
+    return native_failure_status(seen.submit_status);
+}
+native_failure native_submit_d3d12_copies(native_device *device, native_command_handle commands, bool *submitted)
+{
+    *submitted = !seen.reject_before_submit;
+    if (*submitted) return native_submit_backend_commands_async(device, commands);
+    assert(native_command_release(&commands) == NATIVE_OK);
+    return native_failure_status(NATIVE_OUT_OF_MEMORY);
 }
 native_failure native_submit_backend_commands(native_device *device, native_command_handle commands)
 {
@@ -191,7 +199,8 @@ static unsigned id(const native_buffer *buffer) { return buffer->handle.d3d12->a
 static native_buffer make(native_device *device, uint64_t size, bool readback)
 {
     native_buffer buffer = {.device=device};
-    assert(native_d3d12_buffer_create(&buffer, size, DOE_VK_BUFFER_COPY_DST, readback ? NATIVE_BUFFER_MAP_READ : NATIVE_BUFFER_GENERAL).status == NATIVE_OK);
+    WGPUBufferUsage usage = WGPUBufferUsage_CopyDst | (readback ? WGPUBufferUsage_MapRead : 0);
+    assert(native_d3d12_buffer_create(&buffer, size, usage, readback ? NATIVE_BUFFER_MAP_READ : NATIVE_BUFFER_GENERAL).status == NATIVE_OK);
     return buffer;
 }
 
@@ -219,8 +228,8 @@ int main(void)
     assert(work->id == created + 1 && work->count == 3 && work->ops[2].kind == 'o');
     assert(copy_is(&work->ops[0], id(&a), 0, 4096) && copy_is(&work->ops[1], id(&b), 0, 4096));
     assert(doe_dx_commands_copy(work, a.handle.d3d12->allocation, 0, b.handle.d3d12->allocation, 0, 64, NULL) == DOE_DX_OK);
-    native_d3d12_writes_recorded(&device);
     assert(native_submit_backend_commands_async(&device, adopted).status == NATIVE_OK);
+    native_d3d12_writes_submitted(&device);
     assert(seen.submitted_count == 1 && seen.submitted[0] == work && work->count == 4);
     /* Nothing remains open: flushing is a no-op. */
     assert(native_d3d12_flush_writes(&device).status == NATIVE_OK && seen.submitted_count == 1);
@@ -279,10 +288,25 @@ int main(void)
     }
     assert(seen.submitted[0]->count == 64 && copy_is(&seen.submitted[0]->ops[63], id(&many[63]), 0, 256));
     retire();
-    native_buffer large = make(&device, UINT64_C(16) << 20, false);
     static unsigned char block[16u << 20];
-    assert(native_d3d12_buffer_write(&large, 0, block, sizeof(block)).status == NATIVE_OK);
-    assert(seen.submitted_count == 1);
+    /* Reject the threshold flush before execution. The earlier small write stays
+     * logged, and the rejected whole overwrite still owes its initialization. */
+    assert(native_d3d12_buffer_write(&a, 0, bytes, 64).status == NATIVE_OK);
+    native_buffer large = make(&device, UINT64_C(16) << 20, false);
+    seen.reject_before_submit = true;
+    assert(native_d3d12_buffer_write(&large, 0, block, sizeof(block)).status == NATIVE_OUT_OF_MEMORY);
+    assert(!seen.submitted_count && large.handle.d3d12->zero_deferred);
+    seen.reject_before_submit = false;
+    /* The retry reached execution but completion is uncertain. A later flush
+     * must neither reinitialize the allocation nor replay the accepted batch. */
+    seen.submit_status = NATIVE_UNKNOWN;
+    assert(native_d3d12_buffer_write(&large, 0, block, sizeof(block)).status == NATIVE_UNKNOWN);
+    seen.submit_status = NATIVE_OK;
+    assert(native_d3d12_prepare_recording(&device).status == NATIVE_OK);
+    assert(seen.submitted_count == 1 && seen.submitted[0]->count == 2);
+    assert(copy_is(&seen.submitted[0]->ops[0], id(&a), 0, 64));
+    assert(copy_is(&seen.submitted[0]->ops[1], id(&large), 0, sizeof(block)));
+    assert(!large.handle.d3d12->zero_deferred);
     retire();
 
     /* Final release discards a never-observed open command and every lease. */

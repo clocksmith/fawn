@@ -3,8 +3,8 @@
   "status": "verified",
   "provenance": {
     "leanToolchainRef": "leanprover/lean4:v4.16.0",
-    "extractProgramSha256": "be23888c64ea12e4c483817025ad9bf68344e59e14e9067b25ce8d83fb6ea791",
-    "leanSourceTreeSha256": "6d8894ff2b6c9a27e93e40644d11ed6348171b418c25cafbbd0a63aea261e853",
+    "extractProgramSha256": "795bfd80b1bffba581a94f98404a27a6e1f24963884c23854cb2a4e736b7a0be",
+    "leanSourceTreeSha256": "3d9b5ed77560983cc2627062607f9d340f01566ead61f7c9a7da72b56d44bb24",
     "generatedComparabilityContractSha256": "f6c1a02662c29896f4b9edc6b884ca059bc344da909cfe8122292188c8b37650",
     "proofPatternSpecSha256": "0e839bfbcd0f4c5f8087c880434c9741804fb32797fc8650fe8951c00d57529d",
     "theoremMetadataGeneratorSha256": "6c2182cfdc876f63ff6b91c39e3b47275f467c91e718adec0a560e3380256335"
@@ -995,29 +995,9 @@
       "runtimePath": "bench/native_compare_modules/comparability.py:evaluate_comparability_from_facts"
     },
     {
-      "theorem": "mslBindingSlot_injective_across_groups",
-      "condition": "group*16+binding is injective for binding<16; flat buffer array has no collisions",
-      "runtimePath": "runtime/zig/src/compiler/wgsl/emit/msl/emit_msl_ir.zig:msl_binding_slot,runtime/zig/src/native/compute/doe_compute_bind_groups.zig:flatBindSlot,populateFlatBindings"
-    },
-    {
-      "theorem": "mslBindingSlot_in_bounds",
-      "condition": "valid group and binding produce slot < 64; bounds check can be elided at comptime",
-      "runtimePath": "runtime/zig/src/native/compute/doe_compute_bind_groups.zig:flatBindSlot,populateFlatBindings"
-    },
-    {
-      "theorem": "doe_getMappedRange_superset",
-      "condition": "Doe permits all spec-valid getMappedRange calls; no false rejections",
-      "runtimePath": "runtime/zig/src/native/resource/doe_buffer_ops_native.zig:doeNativeBufferGetMappedRange"
-    },
-    {
-      "theorem": "doe_dispatch_superset",
-      "condition": "Doe permits all spec-valid dispatch calls; no false rejections",
-      "runtimePath": "runtime/zig/src/native/resource/doe_buffer_ops_native.zig:doeNativeBufferRelease"
-    },
-    {
       "theorem": "ValidatorRedundant",
       "condition": "sema-Ok + build-Ok IR satisfies all ir_validate.validate() checks; validate() call is eliminable",
-      "runtimePath": "runtime/zig/src/compiler/wgsl/mod.zig:analyzeToIr"
+      "runtimePath": "runtime/zig/src/compiler/wgsl/pipeline/analysis.zig:analyze,validator_elimination_available"
     }
   ],
   "theoremMetadata": [
@@ -1443,43 +1423,18 @@
       "name": "mslBindingSlot_injective_across_groups",
       "module": "Doe.Core.BindGroupSlot",
       "classification": "lean_required",
-      "obligationCategory": "runtime_elimination",
-      "extractionStatus": "runtime_branch_eliminated",
-      "mirrorSources": [
-        {
-          "path": "runtime/zig/src/compiler/wgsl/emit/msl/emit_msl_ir.zig",
-          "symbols": [
-            "msl_binding_slot"
-          ],
-          "sourceSha256": "e3a2b1ca8fef336cb29ac0804f456fb3747aaae247e84b5dee9823d530d9de19"
-        },
-        {
-          "path": "runtime/zig/src/native/compute/doe_compute_bind_groups.zig",
-          "symbols": [
-            "flatBindSlot",
-            "populateFlatBindings"
-          ],
-          "sourceSha256": "f2c00ad26a88dbbf8ab6e96aa36ac0fc8bdc2c3ef84da3c1483d346e6b83b4a0"
-        }
-      ]
+      "obligationCategory": "proof_contract",
+      "extractionStatus": "verified",
+      "mirrorSources": []
     },
     {
       "theoremId": "Doe.Core.BindGroupSlot.mslBindingSlot_in_bounds",
       "name": "mslBindingSlot_in_bounds",
       "module": "Doe.Core.BindGroupSlot",
       "classification": "lean_verified",
-      "obligationCategory": "runtime_elimination",
-      "extractionStatus": "runtime_branch_eliminated",
-      "mirrorSources": [
-        {
-          "path": "runtime/zig/src/native/compute/doe_compute_bind_groups.zig",
-          "symbols": [
-            "flatBindSlot",
-            "populateFlatBindings"
-          ],
-          "sourceSha256": "f2c00ad26a88dbbf8ab6e96aa36ac0fc8bdc2c3ef84da3c1483d346e6b83b4a0"
-        }
-      ]
+      "obligationCategory": "proof_contract",
+      "extractionStatus": "verified",
+      "mirrorSources": []
     },
     {
       "theoremId": "Doe.Core.BindGroupSlot.mslBindingSlot_distinct_groups",
@@ -1558,34 +1513,18 @@
       "name": "doe_getMappedRange_superset",
       "module": "Doe.Core.BufferLifecycle",
       "classification": "lean_verified",
-      "obligationCategory": "runtime_elimination",
-      "extractionStatus": "runtime_branch_eliminated",
-      "mirrorSources": [
-        {
-          "path": "runtime/zig/src/native/resource/doe_buffer_ops_native.zig",
-          "symbols": [
-            "doeNativeBufferGetMappedRange"
-          ],
-          "sourceSha256": "da8d02e7945eeba896c698eb41e407186e73d011433c04ca0bf697920fea9a87"
-        }
-      ]
+      "obligationCategory": "proof_contract",
+      "extractionStatus": "verified",
+      "mirrorSources": []
     },
     {
       "theoremId": "Doe.Core.BufferLifecycle.doe_dispatch_superset",
       "name": "doe_dispatch_superset",
       "module": "Doe.Core.BufferLifecycle",
       "classification": "lean_verified",
-      "obligationCategory": "runtime_elimination",
-      "extractionStatus": "runtime_branch_eliminated",
-      "mirrorSources": [
-        {
-          "path": "runtime/zig/src/native/resource/doe_buffer_ops_native.zig",
-          "symbols": [
-            "doeNativeBufferRelease"
-          ],
-          "sourceSha256": "da8d02e7945eeba896c698eb41e407186e73d011433c04ca0bf697920fea9a87"
-        }
-      ]
+      "obligationCategory": "proof_contract",
+      "extractionStatus": "verified",
+      "mirrorSources": []
     },
     {
       "theoremId": "Doe.Core.IrBuilderSoundness.ExprIdValid_mono",
@@ -1704,11 +1643,12 @@
       "extractionStatus": "runtime_branch_eliminated",
       "mirrorSources": [
         {
-          "path": "runtime/zig/src/compiler/wgsl/mod.zig",
+          "path": "runtime/zig/src/compiler/wgsl/pipeline/analysis.zig",
           "symbols": [
-            "analyzeToIr"
+            "analyze",
+            "validator_elimination_available"
           ],
-          "sourceSha256": "144dd739b734b3feb58587e9b3d01b09c35994e7a03662b73f4733defe03ca8f"
+          "sourceSha256": "836eb8f759138ab4d0f4cfe011da8597c8d376761d48216c82ae34400ca842fe"
         }
       ]
     },

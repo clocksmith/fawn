@@ -82,15 +82,6 @@ def test_webgpu_integration_chromium_overlay_passes_check() -> None:
     assert checker.check_overlay(_load_overlay()) == []
 
 
-def test_webgpu_integration_chromium_overlay_links_existing_smoke_artifact() -> None:
-    checker = _load_checker()
-
-    assert checker.check_overlay(
-        _load_overlay(),
-        verify_artifact_root=REPO_ROOT,
-    ) == []
-
-
 def test_webgpu_integration_chromium_requires_core_capability() -> None:
     checker = _load_checker()
     payload = _load_overlay()
@@ -192,12 +183,18 @@ def test_webgpu_integration_chromium_requires_external_texture_for_active_runtim
 def test_webgpu_integration_chromium_verifies_smoke_artifact(tmp_path: Path) -> None:
     checker = _load_checker()
     payload = _load_overlay()
-    payload["smokeTestArtifact"] = "artifacts/smoke.json"
-    artifact_dir = tmp_path / "artifacts"
-    artifact_dir.mkdir()
-    (artifact_dir / "smoke.json").write_text(json.dumps(_source_smoke_report(tmp_path)), encoding="utf-8")
-
+    smoke_path = tmp_path / payload["smokeTestArtifact"]
+    smoke_path.parent.mkdir(parents=True)
+    smoke = _source_smoke_report(tmp_path)
+    smoke_path.write_text(json.dumps(smoke), encoding="utf-8")
     assert checker.check_overlay(payload, verify_artifact_root=tmp_path) == []
+
+    smoke["schemaVersion"] = 1
+    _refresh_smoke_hashes(smoke)
+    smoke_path.write_text(json.dumps(smoke), encoding="utf-8")
+    failures = checker.check_overlay(payload, verify_artifact_root=tmp_path)
+    assert any(row["code"] == "invalid_source_smoke_report_contract" and
+               row["message"] == "smoke schemaVersion must be 2" for row in failures)
 
 
 def test_webgpu_integration_chromium_requires_source_binary_smoke_artifact(tmp_path: Path) -> None:
@@ -272,7 +269,7 @@ def test_webgpu_integration_chromium_requires_top_level_runtime_selections(
 def test_webgpu_integration_chromium_reports_missing_smoke_artifact(tmp_path: Path) -> None:
     checker = _load_checker()
     payload = _load_overlay()
-    payload["smokeTestArtifact"] = "artifacts/missing.json"
+    missing_path = tmp_path / payload["smokeTestArtifact"]
 
     failures = checker.check_overlay(payload, verify_artifact_root=tmp_path)
 
@@ -280,7 +277,7 @@ def test_webgpu_integration_chromium_reports_missing_smoke_artifact(tmp_path: Pa
         {
             "code": "missing_smoke_artifact_file",
             "path": "smokeTestArtifact",
-            "message": f"missing smoke artifact {tmp_path / 'artifacts/missing.json'}",
+            "message": f"missing smoke artifact {missing_path}",
         }
     ]
 

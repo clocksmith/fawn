@@ -4,13 +4,14 @@
 from __future__ import annotations
 
 import json
-import plistlib
 from argparse import Namespace
 from pathlib import Path, PurePosixPath
 
+import pytest
+
 from bench.tools import build_browser_proof_page_receipt as proof_page_builder
 from bench.tools import build_browser_published_proof_surface as proof_surface_builder
-from bench.tools import check_browser_release_package_inputs as package_inputs_check
+from bench.tests.browser_release_package_fixtures import write_clean_install_fixture, write_macos_candidate_report
 from bench.tools import check_browser_release_candidate_provenance as provenance_check
 from bench.tools import stage_browser_release_candidate_provenance as stage
 
@@ -34,28 +35,13 @@ DOWNLOAD_URL = "https://downloads.doe.dev/Fawn-Doe-macos-arm64.zip"
 
 
 def _rooted_path(root: Path, path_text: str) -> Path:
-    return root.joinpath(*PurePosixPath(path_text).parts)
+    return root.resolve().joinpath(*PurePosixPath(path_text).parts)
 
 
 def _write_json(path: Path, payload: dict) -> Path:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
     return path
-
-
-def _write_file(path: Path, payload: bytes, mode: int = 0o644) -> Path:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_bytes(payload)
-    path.chmod(mode)
-    return path
-
-
-def _macho_arm64_payload() -> bytes:
-    return (
-        b"\xcf\xfa\xed\xfe"
-        + (0x0100000C).to_bytes(4, "little")
-        + (0).to_bytes(4, "little") * 6
-    )
 
 
 def _copy_repo_file(root: Path, relative_path: str) -> Path:
@@ -123,6 +109,7 @@ def _candidate_inputs(
     *,
     source_package_inputs: Path | None = None,
 ) -> tuple[Path, Path, Path, dict]:
+    tmp_path = tmp_path.resolve()
     release_archive = tmp_path / "Fawn-Doe-macos-arm64.zip"
     release_archive.write_bytes(b"candidate release archive\n")
     archive_hash = provenance_check.sha256_file(release_archive)
@@ -193,43 +180,6 @@ def _candidate_inputs(
     return release_archive, manifest_path, public_receipt_path, release_provenance
 
 
-def _package_inputs_fixture(tmp_path: Path) -> tuple[Path, dict]:
-    app_dir = tmp_path / "Fawn.app"
-    _write_file(app_dir / "Contents" / "MacOS" / "Chromium", _macho_arm64_payload(), 0o755)
-    plist_path = app_dir / "Contents" / "Info.plist"
-    plist_path.parent.mkdir(parents=True, exist_ok=True)
-    with plist_path.open("wb") as handle:
-        plistlib.dump(
-            {
-                "CFBundleName": PRODUCT["displayName"],
-                "CFBundleDisplayName": PRODUCT["displayName"],
-                "CFBundleIdentifier": "dev.doe.fawn-doe",
-                "CFBundleShortVersionString": PRODUCT["version"],
-                "CFBundleVersion": PRODUCT["version"],
-                "CFBundleExecutable": "Chromium",
-                "CFBundlePackageType": "APPL",
-            },
-            handle,
-        )
-    doe_runtime = _write_file(tmp_path / "libwebgpu_doe.dylib", _macho_arm64_payload(), 0o755)
-    dawn_runtime = _write_file(tmp_path / "libdawn_native.so", _macho_arm64_payload(), 0o755)
-    shader_compiler = _write_file(tmp_path / "doe-zig-runtime", _macho_arm64_payload(), 0o755)
-    report = package_inputs_check.build_report(
-        package_dir=str(app_dir),
-        package_root_name="Fawn.app",
-        doe_runtime=str(doe_runtime),
-        dawn_fallback_runtime=str(dawn_runtime),
-        shader_compiler=str(shader_compiler),
-        product_version=PRODUCT["version"],
-        product_channel=PRODUCT["channel"],
-        platform_os=PLATFORM["os"],
-        platform_arch=PLATFORM["arch"],
-        root=tmp_path,
-    )
-    report_path = _write_json(tmp_path / "browser-release-package-inputs.json", report)
-    return report_path, report
-
-
 def _proof_page(
     tmp_path: Path,
     release_provenance: dict,
@@ -283,6 +233,7 @@ def _args(tmp_path: Path, release_archive: Path, manifest: Path, public_receipt:
         release_archive=str(release_archive),
         release_archive_url=DOWNLOAD_URL,
         release_archive_manifest=str(manifest),
+        clean_install_check=str(write_clean_install_fixture(tmp_path, release_archive, manifest, PRODUCT, PLATFORM)),
         public_download_receipt=str(public_receipt),
         proof_page_artifact=str(proof_page),
         proof_page_url="about:doe",
@@ -321,7 +272,7 @@ def _args(tmp_path: Path, release_archive: Path, manifest: Path, public_receipt:
 
 
 def test_stage_browser_release_candidate_provenance_outputs_pass(tmp_path: Path) -> None:
-    package_inputs_path, package_report = _package_inputs_fixture(tmp_path)
+    package_inputs_path, package_report = write_macos_candidate_report(tmp_path, PRODUCT, PLATFORM)
     release_archive, manifest, public_receipt, provenance = _candidate_inputs(
         tmp_path,
         source_package_inputs=package_inputs_path,
@@ -353,6 +304,14 @@ def test_stage_browser_release_candidate_provenance_outputs_pass(tmp_path: Path)
     assert proof_surface["proofPage"]["releaseProvenance"]["browserProduct"]["channel"] == "release_candidate"
     launch = json.loads((tmp_path / "browser-release-launch-receipt.json").read_text(encoding="utf-8"))
     assert launch["browserProduct"]["channel"] == "release_candidate"
+    clean_path = Path(args.clean_install_check)
+    assert launch["cleanInstallCheck"]["sha256"] == provenance_check.sha256_file(clean_path)
+    clean_receipt = json.loads(clean_path.read_text(encoding="utf-8"))
+    clean_receipt["releaseArchive"]["sha256"] = "0" * 64
+    _write_json(clean_path, clean_receipt)
+    with pytest.raises(ValueError, match="releaseArchive must bind launch receipt bytes"):
+        stage.build_stage(args)
+
 
 
 def test_comparison_entries_use_proof_surface_paths_under_repo_root() -> None:
@@ -382,7 +341,7 @@ def test_stage_browser_release_candidate_provenance_requires_package_inputs(tmp_
 
 
 def test_stage_browser_release_candidate_provenance_rejects_compiler_path_drift(tmp_path: Path) -> None:
-    package_inputs_path, package_report = _package_inputs_fixture(tmp_path)
+    package_inputs_path, package_report = write_macos_candidate_report(tmp_path, PRODUCT, PLATFORM)
     release_archive, manifest, public_receipt, provenance = _candidate_inputs(
         tmp_path,
         source_package_inputs=package_inputs_path,
@@ -406,7 +365,7 @@ def test_stage_browser_release_candidate_provenance_rejects_compiler_path_drift(
 
 
 def test_stage_browser_release_candidate_provenance_derives_package_inputs(tmp_path: Path) -> None:
-    package_inputs_path, package_report = _package_inputs_fixture(tmp_path)
+    package_inputs_path, package_report = write_macos_candidate_report(tmp_path, PRODUCT, PLATFORM)
     release_archive, manifest, public_receipt, provenance = _candidate_inputs(
         tmp_path,
         source_package_inputs=package_inputs_path,
@@ -447,7 +406,7 @@ def test_stage_browser_release_candidate_provenance_derives_package_inputs(tmp_p
 
 
 def test_stage_browser_release_candidate_provenance_rejects_dirty_package_inputs(tmp_path: Path) -> None:
-    package_inputs_path, package_report = _package_inputs_fixture(tmp_path)
+    package_inputs_path, package_report = write_macos_candidate_report(tmp_path, PRODUCT, PLATFORM)
     package_report["failures"] = [
         {"code": "stale_failure", "path": "status", "message": "stale failure"}
     ]

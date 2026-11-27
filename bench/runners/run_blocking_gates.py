@@ -13,11 +13,15 @@ for _path_entry in (str(REPO_ROOT), str(BENCH_ROOT)):
         sys.path.insert(0, _path_entry)
 
 
-import shutil
 import subprocess
 from bench.lib import compare_claim_artifacts as artifacts_mod
 from bench.lib import output_paths
 from bench.runners.blocking_gates_args import parse_args
+from bench.runners.blocking_gates_report import (
+    run_report_backend_timing,
+    run_report_comparison,
+    run_report_integrity,
+)
 from bench.runners.blocking_gates_optional import run_optional_artifact_gates
 
 
@@ -40,9 +44,20 @@ def main() -> int:
             report_path,
             surface="run_blocking_gates",
         )
-    except RuntimeError as exc:
+    except (ValueError, RuntimeError) as exc:
         print(f"FAIL: {exc}")
         return 1
+
+    if args.scope == "report":
+        try:
+            run_report_integrity(args, report_path, run_gate)
+            run_report_comparison(args, report_path, run_gate)
+            run_report_backend_timing(args, report_path, run_gate)
+        except (ValueError, subprocess.CalledProcessError) as exc:
+            print(f"Report checks failed: {exc}")
+            return 1
+        print("PASS: report diagnostics completed")
+        return 0
 
     if args.claim_require_min_timed_samples < 0:
         print(
@@ -104,10 +119,6 @@ def main() -> int:
     backend_workload_catalog_gate = tools_dir / "generate_backend_workloads.py"
     workload_overlap_map = tools_dir / "generate_workload_overlap_map.py"
     comparability_parity_gate = gates_dir / "comparability_obligation_parity_gate.py"
-    correctness_gate = gates_dir / "check_correctness.py"
-    trace_gate = gates_dir / "trace_gate.py"
-    backend_selection_gate = gates_dir / "backend_selection_gate.py"
-    shader_artifact_gate = gates_dir / "shader_artifact_gate.py"
     tint_compiler_evidence_gate = gates_dir / "tint_compiler_evidence_gate.py"
     tint_compiler_target_validation_check = (
         tools_dir / "check_tint_compiler_target_validation.py"
@@ -120,14 +131,6 @@ def main() -> int:
     )
     spirv_val_gate = gates_dir / "spirv_val_gate.py"
     dxil_validate_gate = gates_dir / "dxil_validate_gate.py"
-    sync_conformance_gate = gates_dir / "sync_conformance_gate.py"
-    timing_policy_gate = gates_dir / "timing_policy_gate.py"
-    comparable_runtime_invariants_gate = (
-        gates_dir / "comparable_runtime_invariants_gate.py"
-    )
-    comparability_coherence_gate = gates_dir / "comparability_coherence_gate.py"
-    compare_output_partition_gate = gates_dir / "compare_output_partition_gate.py"
-    structural_equivalence_gate = gates_dir / "structural_equivalence_gate.py"
     dropin_gate = dropin_dir / "dropin_gate.py"
     dropin_proc_resolution_tests = dropin_dir / "dropin_proc_resolution_tests.py"
     cts_baseline_compare = tools_dir / "cts_baseline_compare.py"
@@ -276,50 +279,8 @@ def main() -> int:
         )
         if args.with_comparability_parity_gate:
             run_gate("comparability-parity", [sys.executable, str(comparability_parity_gate)])
-        run_gate(
-            "correctness",
-            [
-                sys.executable,
-                str(correctness_gate),
-                "--gates",
-                args.gates,
-                "--quirk",
-                args.quirk,
-                "--report",
-                str(report_path),
-            ],
-        )
-        run_gate(
-            "trace",
-            [
-                sys.executable,
-                str(trace_gate),
-                "--report",
-                str(report_path),
-                "--semantic-parity-mode",
-                args.trace_semantic_parity_mode,
-            ],
-        )
-        if args.with_comparable_runtime_invariants_gate:
-            run_gate(
-                "comparable-runtime-invariants",
-                [
-                    sys.executable,
-                    str(comparable_runtime_invariants_gate),
-                    "--report",
-                    str(report_path),
-                ],
-            )
-        if args.with_compare_output_partition_gate:
-            run_gate(
-                "compare-output-partition",
-                [
-                    sys.executable,
-                    str(compare_output_partition_gate),
-                    "--report",
-                    str(report_path),
-                ],
-            )
+        run_report_integrity(args, report_path, run_gate)
+
         if args.with_csl_governed_lane_gate:
             gate_cmd = [
                 sys.executable,
@@ -382,83 +343,7 @@ def main() -> int:
         if optional_status != 0:
             return optional_status
 
-        if args.with_comparability_coherence_gate:
-            run_gate(
-                "comparability-coherence",
-                [
-                    sys.executable,
-                    str(comparability_coherence_gate),
-                    "--report",
-                    str(report_path),
-                    "--benchmark-policy",
-                    args.comparability_coherence_benchmark_policy,
-                    "--require-pass",
-                ],
-            )
-
-        if args.with_structural_equivalence_gate:
-            run_gate(
-                "structural-equivalence",
-                [
-                    sys.executable,
-                    str(structural_equivalence_gate),
-                    "--report",
-                    str(report_path),
-                    "--require-all-pass",
-                ],
-            )
-
-        if args.with_backend_selection_gate:
-            backend_policy_path = Path(args.backend_runtime_policy)
-            if not backend_policy_path.exists():
-                print(f"FAIL: missing --backend-runtime-policy: {backend_policy_path}")
-                return 1
-            backend_selection_command = [
-                sys.executable,
-                str(backend_selection_gate),
-                "--report",
-                str(report_path),
-                "--policy",
-                str(backend_policy_path),
-            ]
-            if args.backend_selection_lane.strip():
-                backend_selection_command.extend(
-                    ["--lane", args.backend_selection_lane.strip()]
-                )
-            run_gate("backend-selection", backend_selection_command)
-
-        if args.with_shader_artifact_gate:
-            shader_schema_path = Path(args.shader_artifact_schema)
-            if not shader_schema_path.exists():
-                print(f"FAIL: missing --shader-artifact-schema: {shader_schema_path}")
-                return 1
-            spirv_val = args.shader_artifact_spirv_val.strip()
-            if not spirv_val:
-                spirv_val = shutil.which("spirv-val") or ""
-            if args.shader_artifact_require_spirv_validation and not spirv_val:
-                print(
-                    "FAIL: --shader-artifact-require-spirv-validation "
-                    "requires --shader-artifact-spirv-val or spirv-val on PATH"
-                )
-                return 1
-            if spirv_val and shutil.which(spirv_val) is None:
-                print(f"FAIL: missing --shader-artifact-spirv-val executable: {spirv_val}")
-                return 1
-            shader_artifact_command = [
-                sys.executable,
-                str(shader_artifact_gate),
-                "--report",
-                str(report_path),
-                "--schema",
-                str(shader_schema_path),
-            ]
-            if args.shader_artifact_require_manifest:
-                shader_artifact_command.append("--require-manifest")
-            if spirv_val:
-                shader_artifact_command.extend(["--spirv-val", spirv_val])
-            if args.shader_artifact_require_spirv_validation and not spirv_val:
-                shader_artifact_command.append("--require-spirv-validation")
-            run_gate("shader-artifact", shader_artifact_command)
+        run_report_comparison(args, report_path, run_gate)
 
         if args.with_tint_compiler_evidence_gate:
             tint_report_path = Path(args.tint_compiler_evidence_report)
@@ -624,55 +509,7 @@ def main() -> int:
                 dxil_validate_command.append("--skip-zig-tests")
             run_gate("dxil-validate", dxil_validate_command)
 
-        sync_gate_runs = (
-            ("metal-sync", "metal", args.with_metal_sync_conformance_gate),
-            ("vulkan-sync", "vulkan", args.with_vulkan_sync_conformance_gate),
-        )
-        for label, backend, enabled in sync_gate_runs:
-            if not enabled:
-                continue
-            timing_policy_path = Path(args.backend_timing_policy)
-            if not timing_policy_path.exists():
-                print(f"FAIL: missing --backend-timing-policy: {timing_policy_path}")
-                return 1
-            run_gate(
-                label,
-                [
-                    sys.executable,
-                    str(sync_conformance_gate),
-                    "--backend",
-                    backend,
-                    "--report",
-                    str(report_path),
-                    "--timing-policy",
-                    str(timing_policy_path),
-                ],
-            )
-
-        timing_gate_runs = (
-            ("metal-timing-policy", "metal", args.with_metal_timing_policy_gate),
-            ("vulkan-timing-policy", "vulkan", args.with_vulkan_timing_policy_gate),
-        )
-        for label, backend, enabled in timing_gate_runs:
-            if not enabled:
-                continue
-            timing_policy_path = Path(args.backend_timing_policy)
-            if not timing_policy_path.exists():
-                print(f"FAIL: missing --backend-timing-policy: {timing_policy_path}")
-                return 1
-            run_gate(
-                label,
-                [
-                    sys.executable,
-                    str(timing_policy_gate),
-                    "--backend",
-                    backend,
-                    "--report",
-                    str(report_path),
-                    "--timing-policy",
-                    str(timing_policy_path),
-                ],
-            )
+        run_report_backend_timing(args, report_path, run_gate)
 
         if args.with_dropin_gate:
             if not args.dropin_artifact.strip():
@@ -858,6 +695,9 @@ def main() -> int:
                     ["--expected-backend-id", args.claim_expected_backend_id.strip()]
                 )
             run_gate("claim", claim_command)
+    except ValueError as exc:
+        print(exc)
+        return 1
     except subprocess.CalledProcessError as exc:
         print(f"FAIL: gate command failed with return code {exc.returncode}")
         return exc.returncode

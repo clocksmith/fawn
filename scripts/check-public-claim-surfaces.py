@@ -35,7 +35,7 @@ STALE_ASSET_POLICY_DOCS = {"docs/public-claim-boundary.md"}
 CLAIM_STATES = {"claim-indexed", "diagnostic", "status-only", "scaffolded"}
 METRIC_DIRECTIONS = {"lower-is-better", "higher-is-better", "status-only"}
 REQUIRED_ENTRY_FIELDS = {"id", "surface", "backend", "comparison", "metricDirection", "claimState"}
-PERCENT_PATTERN = re.compile(r"(?<![A-Za-z0-9_])[+-]\d+(?:\.\d+)?%")
+PERCENT_PATTERN = re.compile(r"(?<![A-Za-z0-9_])[+-]?\d+(?:\.\d+)?%")
 
 
 def read_text(path: Path) -> str:
@@ -139,8 +139,9 @@ def validate_public_docs(errors: list[str]) -> None:
         fail(errors, "README.md must reference reports/claim-index.json")
 
     package_readme = read_text(ROOT / "packages" / "doe-gpu" / "README.md")
-    if "claim-indexed" not in package_readme or "diagnostic" not in package_readme:
-        fail(errors, "packages/doe-gpu/README.md must explain claim-indexed and diagnostic evidence")
+    for owner in ("reports/claim-index.json", "docs/public-claim-boundary.md"):
+        if owner not in package_readme:
+            fail(errors, f"packages/doe-gpu/README.md must link the evidence owner {owner}")
     browser_boundaries = ("browser's incumbent WebGPU", "browser's existing WebGPU")
     if not any(boundary in package_readme for boundary in browser_boundaries):
         fail(errors, "packages/doe-gpu/README.md must keep doe-gpu/browser boundary explicit")

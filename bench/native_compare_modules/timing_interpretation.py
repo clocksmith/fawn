@@ -22,7 +22,6 @@ _OPERATION_TOTAL_SOURCES = {
     "dawn-perf-cpu-time",
     "dawn-perf-gpu-time",
     "dawn-perf-wall-ns",
-    "doe-trace-window",
 }
 _NARROW_OPERATION_SCOPE_BY_SOURCE = {
     "doe-execution-encode-ns": "operation-encode",

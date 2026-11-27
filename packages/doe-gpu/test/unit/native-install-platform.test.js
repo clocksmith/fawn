@@ -1,6 +1,7 @@
 // Package dependency versions and local installed-runtime tuples agree.
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import { nativeInstallPlatform } from '../lib/native-install-platform.js';
 import { platformPackageNames } from '../../src/vendor/webgpu/platform-package.js';
 
@@ -16,6 +17,10 @@ for (const [platform, arch, libraryName] of [
   // The installed package is the loader's first admitted name for the tuple.
   assert.equal(platformPackageNames(platform, arch)[0], tuple.packageName);
   const manifest = JSON.parse(readFileSync(new URL(`../../../${tuple.packageDirectory}/package.json`, import.meta.url)));
+  const directory = new URL(`../../../${tuple.packageDirectory}/`, import.meta.url);
+  const { libraryPath, addonPath } = await import(new URL('index.js', directory));
+  assert.equal(libraryPath, fileURLToPath(new URL(`bin/${libraryName}`, directory)));
+  assert.equal(addonPath, fileURLToPath(new URL('bin/doe_napi.node', directory)));
   assert.equal(manifest.name, tuple.packageName);
   // The wrapper pins each platform package exactly; versions may differ.
   assert.equal(wrapper.optionalDependencies[tuple.packageName], manifest.version);

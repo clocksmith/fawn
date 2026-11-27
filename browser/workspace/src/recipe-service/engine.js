@@ -1,5 +1,6 @@
 // Managed recipe graph engine: PII-free sub-recipe authoring, cross-template composition,
 // quorum-gated trace ingestion, whole-graph detour compression and empirical Bellman DP serving.
+import { createRecipeGraphStore } from './graph-store.js';
 import { createHash, createHmac } from 'node:crypto';
 import {
   analyzeTraceGraph,
@@ -206,6 +207,7 @@ function materializeSteps(dagKey, { template, origin, readScope = null }, valida
       depth: i,
       step: stepObj,
       next: afterNode.nodeId,
+      edgeKey: sha256Hex(canonicalJson([beforeNode.nodeId, afterNode.nodeId, s.kind, s.locator, s.slot])),
       meta: {
         beforeOutline: s.beforeOutline,
         beforeSlots: beforeNode.sortedSlots,
@@ -287,33 +289,7 @@ export function createManagedRecipeEngine({
     return hmacHex(secret, canonicalJson(['fawn-recipe-envelope-v1', payload]));
   }
 
-  async function ensureNamespaceRow(meta, now) {
-    const existing = await store.get(
-      'SELECT namespace_id, revision, dag_key FROM recipe_namespaces WHERE namespace_id = ?',
-      [meta.namespaceId],
-    );
-    if (existing) return Number(existing.revision);
-    await store.run(
-      `INSERT INTO recipe_namespaces
-        (namespace_id, scope_kind, workspace_id, origin, template, read_scope, dag_key, revision, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, 0, ?)`,
-      [meta.namespaceId, meta.scope, meta.workspaceOwner, meta.origin, meta.template, meta.readScope, meta.dagKey, now],
-    );
-    return 0;
-  }
-
-  async function loadGraphAndReduce(meta, limits = DEFAULT_LIMITS, { promotedOnly = false, persistReduction = false } = {}) {
-    const nodeRows = await store.all(
-      'SELECT * FROM recipe_nodes WHERE namespace_id = ?',
-      [meta.namespaceId],
-    );
-    const edgeRows = await store.all(
-      promotedOnly
-        ? 'SELECT * FROM recipe_edges WHERE namespace_id = ? AND promoted = 1'
-        : 'SELECT * FROM recipe_edges WHERE namespace_id = ?',
-      [meta.namespaceId],
-    );
-
+  function reduceRows(meta, limits, nodeRows, edgeRows) {
     const candidateNodes = new Map();
     for (const row of nodeRows) {
       candidateNodes.set(row.node_id, {
@@ -340,13 +316,6 @@ export function createManagedRecipeEngine({
       edgeByKey.set(`${row.from_node}->${row.to_node}:${canonicalJson(step)}`, row.edge_key);
     }
 
-    if (candidateNodes.size === 0) {
-      return {
-        nodes: new Map(),
-        stats: { deadNodesRemoved: 0, deadEdgesRemoved: 0, detourEdgesRemoved: 0, detourNodesRemoved: 0 },
-      };
-    }
-
     const reduced = reduceTraceGraph(candidateNodes, limits, {
       pruneDeadEnds: true,
       pruneDetours: true,
@@ -362,189 +331,16 @@ export function createManagedRecipeEngine({
       }
     }
 
-    if (persistReduction && !promotedOnly) {
-      const survivingNodeIds = new Set(reduced.nodes.keys());
-      const survivingEdgeKeys = new Set();
-      for (const [id, node] of reduced.nodes) {
-        for (const edge of node.edges) {
-          const k = edgeByKey.get(`${id}->${edge.next}:${canonicalJson(edge.step)}`);
-          if (k) survivingEdgeKeys.add(k);
-        }
+    const survivingEdges = new Set();
+    for (const [id, node] of reduced.nodes) {
+      for (const edge of node.edges) {
+        survivingEdges.add(edgeByKey.get(`${id}->${edge.next}:${canonicalJson(edge.step)}`));
       }
-      const cleanup = [];
-      for (const row of nodeRows) {
-        if (!survivingNodeIds.has(row.node_id)) {
-          cleanup.push({
-            sql: 'DELETE FROM recipe_nodes WHERE namespace_id = ? AND node_id = ?',
-            params: [meta.namespaceId, row.node_id],
-          });
-        } else {
-          const rNode = reduced.nodes.get(row.node_id);
-          cleanup.push({
-            sql: 'UPDATE recipe_nodes SET depth = ?, is_terminal = ? WHERE namespace_id = ? AND node_id = ?',
-            params: [rNode.depth, rNode.terminal ? 1 : 0, meta.namespaceId, row.node_id],
-          });
-        }
-      }
-      for (const row of edgeRows) {
-        if (!survivingEdgeKeys.has(row.edge_key)) {
-          cleanup.push({
-            sql: 'DELETE FROM recipe_edges WHERE namespace_id = ? AND edge_key = ?',
-            params: [meta.namespaceId, row.edge_key],
-          });
-        }
-      }
-      if (cleanup.length) await store.batch(cleanup);
     }
-
-    return reduced;
+    return { ...reduced, survivingEdges };
   }
 
-  async function upsertMaterializedRecords(meta, materialized, {
-    authorHash,
-    forcePromote = false,
-    clearIntermediateTerminals = new Set(),
-    runReduction = true,
-    limits = DEFAULT_LIMITS,
-    now = new Date().toISOString(),
-  }) {
-    await ensureNamespaceRow(meta, now);
-    const statements = [];
-
-    for (const record of materialized.records) {
-      const m = record.meta;
-      const beforeTerminal = clearIntermediateTerminals.has(record.id) ? 0 : 0;
-      const afterIsTerminal = materialized.terminal?.id === record.next ? 1 : 0;
-
-      statements.push({
-        sql: `INSERT INTO recipe_nodes
-                (namespace_id, node_id, outline_hash, outline_slots_json, same_outline_clicks, depth, is_terminal)
-              VALUES (?, ?, ?, ?, ?, ?, ?)
-              ON CONFLICT(namespace_id, node_id) DO UPDATE SET
-                is_terminal = CASE
-                  WHEN ? = 1 THEN 0
-                  ELSE MAX(recipe_nodes.is_terminal, excluded.is_terminal)
-                END`,
-        params: [
-          meta.namespaceId,
-          record.id,
-          m.beforeOutline,
-          canonicalJson(m.beforeSlots),
-          m.beforeClicks,
-          record.depth,
-          beforeTerminal,
-          clearIntermediateTerminals.has(record.id) ? 1 : 0,
-        ],
-      });
-
-      statements.push({
-        sql: `INSERT INTO recipe_nodes
-                (namespace_id, node_id, outline_hash, outline_slots_json, same_outline_clicks, depth, is_terminal)
-              VALUES (?, ?, ?, ?, ?, ?, ?)
-              ON CONFLICT(namespace_id, node_id) DO UPDATE SET
-                is_terminal = CASE
-                  WHEN ? = 1 THEN 0
-                  ELSE MAX(recipe_nodes.is_terminal, excluded.is_terminal)
-                END`,
-        params: [
-          meta.namespaceId,
-          record.next,
-          m.afterOutline,
-          canonicalJson(m.afterSlots),
-          m.afterClicks,
-          record.depth + 1,
-          afterIsTerminal,
-          clearIntermediateTerminals.has(record.next) ? 1 : 0,
-        ],
-      });
-
-      const edgeKey = sha256Hex(canonicalJson([
-        record.id,
-        record.next,
-        m.kind,
-        m.locator,
-        m.slot,
-      ]));
-
-      statements.push({
-        sql: `INSERT OR IGNORE INTO recipe_edge_authors
-                (namespace_id, edge_key, author_hash, created_at)
-              VALUES (?, ?, ?, ?)`,
-        params: [meta.namespaceId, edgeKey, authorHash, now],
-      });
-
-      const isCompleted = m.outcome === 'completed' ? 1 : 0;
-      const immediatePromote = meta.scope === 'workspace' || forcePromote || catalogQuorum <= 1 ? 1 : 0;
-      statements.push({
-        sql: `INSERT INTO recipe_edges (
-                namespace_id, edge_key, from_node, to_node,
-                before_outline, before_slots_json, before_clicks,
-                after_outline, after_slots_json, after_clicks,
-                step_kind, locator_json, slot_name,
-                attempts, completions, total_cost_ms, author_count, promoted, updated_at
-              ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, 1, ?, ?)
-              ON CONFLICT(namespace_id, edge_key) DO UPDATE SET
-                attempts = recipe_edges.attempts + 1,
-                completions = recipe_edges.completions + ?,
-                total_cost_ms = recipe_edges.total_cost_ms + ?,
-                promoted = MAX(recipe_edges.promoted, ?),
-                updated_at = excluded.updated_at`,
-        params: [
-          meta.namespaceId, edgeKey, record.id, record.next,
-          m.beforeOutline, canonicalJson(m.beforeSlots), m.beforeClicks,
-          m.afterOutline, canonicalJson(m.afterSlots), m.afterClicks,
-          m.kind, canonicalJson(m.locator), m.slot,
-          isCompleted, m.elapsedMs, immediatePromote, now,
-          isCompleted, m.elapsedMs, immediatePromote,
-        ],
-      });
-
-      // Recompute distinct author_count and quorum promotion cleanly.
-      statements.push({
-        sql: `UPDATE recipe_edges
-              SET author_count = (
-                    SELECT COUNT(*) FROM recipe_edge_authors
-                    WHERE namespace_id = ? AND edge_key = ?
-                  ),
-                  promoted = CASE
-                    WHEN promoted = 1 THEN 1
-                    WHEN completions >= ? AND (
-                      SELECT COUNT(*) FROM recipe_edge_authors
-                      WHERE namespace_id = ? AND edge_key = ?
-                    ) >= ? THEN 1
-                    ELSE 0
-                  END
-              WHERE namespace_id = ? AND edge_key = ?`,
-        params: [
-          meta.namespaceId, edgeKey,
-          catalogQuorum, meta.namespaceId, edgeKey, catalogQuorum,
-          meta.namespaceId, edgeKey,
-        ],
-      });
-    }
-
-    await store.batch(statements);
-    if (!runReduction) {
-      return { revision: 0, reduced: null };
-    }
-    const reduced = await loadGraphAndReduce(meta, limits, {
-      promotedOnly: false,
-      persistReduction: true,
-    });
-    await store.run(
-      'UPDATE recipe_namespaces SET revision = revision + 1, updated_at = ? WHERE namespace_id = ?',
-      [now, meta.namespaceId],
-    );
-    const nsRow = await store.get(
-      'SELECT revision FROM recipe_namespaces WHERE namespace_id = ?',
-      [meta.namespaceId],
-    );
-    return {
-      revision: Number(nsRow?.revision ?? 1),
-      reduced,
-    };
-  }
-
+  const graphs = createRecipeGraphStore(store, reduceRows, catalogQuorum);
   return {
     signEnvelope,
     async registerSubrecipe(principal, body) {
@@ -570,25 +366,20 @@ export function createManagedRecipeEngine({
       const workspaceOwner = scope === 'catalog' ? 'shared-catalog' : principal.workspaceId;
       const subrecipeId = sha256Hex(canonicalJson(['fawn-subrecipe-v1', scope, workspaceOwner, origin, name]));
       const now = new Date().toISOString();
-      const existing = await store.get(
-        'SELECT revision FROM recipe_subrecipes WHERE subrecipe_id = ?',
-        [subrecipeId],
-      );
-      const nextRevision = existing ? Number(existing.revision) + 1 : 1;
-      await store.run(
+      const saved = await store.get(
         `INSERT INTO recipe_subrecipes
           (subrecipe_id, scope_kind, workspace_id, origin, name, entry_outline, exit_outline, steps_json, revision, updated_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, ?)
          ON CONFLICT(subrecipe_id) DO UPDATE SET
            entry_outline = excluded.entry_outline,
            exit_outline = excluded.exit_outline,
            steps_json = excluded.steps_json,
-           revision = excluded.revision,
-           updated_at = excluded.updated_at`,
+           revision = recipe_subrecipes.revision + 1,
+           updated_at = excluded.updated_at RETURNING revision`,
         [
           subrecipeId, scope, workspaceOwner, origin, name,
           steps[0].beforeOutline, steps.at(-1).afterOutline,
-          canonicalJson(steps), nextRevision, now,
+          canonicalJson(steps), now,
         ],
       );
       return {
@@ -596,7 +387,7 @@ export function createManagedRecipeEngine({
         scope,
         origin,
         name,
-        revision: nextRevision,
+        revision: saved.revision,
         entryOutline: steps[0].beforeOutline,
         exitOutline: steps.at(-1).afterOutline,
         stepCount: materialized.records.length,
@@ -639,12 +430,6 @@ export function createManagedRecipeEngine({
       if (!submissionId) {
         throw serviceError(400, 'invalid-submission-id', 'Bounded submissionId is required for idempotent ingestion');
       }
-      const prior = await store.get(
-        'SELECT response_json FROM recipe_submissions WHERE submission_id = ?',
-        [submissionId],
-      );
-      if (prior) return JSON.parse(prior.response_json);
-
       const verificationId = validateIdentifier(body.verificationId, 'verificationId');
       if (body.reviewVerified !== true) {
         throw serviceError(400, 'unverified-trace-rejected', 'Only independently reviewVerified traces may be ingested');
@@ -656,38 +441,58 @@ export function createManagedRecipeEngine({
         template: body.template,
         readScope: body.readScope ?? null,
       });
-      if (!Array.isArray(body.steps) || body.steps.length < 1 || body.steps.length > limits.maxSteps) {
+      const authorHash = sha256Hex(canonicalJson(['author-v1', principal.workspaceId, principal.clientId]));
+      if (!Array.isArray(body.steps) || body.steps.length > limits.maxSteps) {
         throw serviceError(400, 'invalid-steps', `Trace steps must contain 1..${limits.maxSteps} transitions`);
       }
-      const steps = body.steps.map((step, index) => validateRawStep(step, index));
-      const materialized = materializeSteps(meta.dagKey, meta, steps);
-      const authorHash = sha256Hex(canonicalJson(['author-v1', principal.workspaceId, principal.clientId]));
-      const now = new Date().toISOString();
-      const { revision, reduced } = await upsertMaterializedRecords(meta, materialized, {
-        authorHash,
-        forcePromote: principal.role === 'publisher',
-        limits,
-        now,
+      const steps = body.steps.map(validateRawStep);
+      const requestHash = sha256Hex(canonicalJson([verificationId, steps, limits]));
+      const receiptKey = [meta.namespaceId, authorHash, submissionId];
+      async function priorResponse() {
+        const row = await store.get(
+          'SELECT * FROM recipe_submission_receipts WHERE namespace_id = ? AND author_hash = ? AND submission_id = ?',
+          receiptKey,
+        );
+        if (row) {
+          if (row.verification_id !== verificationId || (steps.length && row.request_hash !== requestHash)) {
+            throw serviceError(409, 'submission-conflict', 'Submission ID already used for a different trace');
+          }
+          return JSON.parse(row.response_json);
+        }
+        // Older receipts lack a request digest and a catalog contributor's workspace.
+        const legacy = await store.get(
+          'SELECT * FROM recipe_submissions WHERE submission_id = ? AND namespace_id = ? AND client_id = ?',
+          [submissionId, meta.namespaceId, principal.clientId],
+        );
+        if (!legacy) return null;
+        if (meta.scope === 'workspace' && legacy.verification_id === verificationId && !steps.length) {
+          return JSON.parse(legacy.response_json);
+        }
+        throw serviceError(409, 'legacy-submission', 'Existing receipt cannot verify this payload');
+      }
+      if (!steps.length) {
+        const prior = await priorResponse();
+        if (prior) return prior;
+        throw serviceError(400, 'invalid-steps', 'A new trace requires at least one step');
+      }
+      const segment = materializeSteps(meta.dagKey, meta, steps);
+      return graphs.commit(meta, limits, [segment], {
+        authorHash, forcePromote: principal.role === 'publisher', priorResponse,
+        finish(revision, reduced, statements) {
+          const response = {
+            submissionId, namespaceId: meta.namespaceId, scope: meta.scope, origin: meta.origin,
+            template: meta.template, revision, contractedSteps: segment.contractedSteps,
+            reduction: reduced.stats, compressionStats: analyzeTraceGraph(reduced.nodes, limits),
+          };
+          statements.push({
+            sql: `INSERT INTO recipe_submission_receipts
+                  (namespace_id, author_hash, submission_id, verification_id, request_hash, response_json)
+                  VALUES (?, ?, ?, ?, ?, ?)`,
+            params: [...receiptKey, verificationId, requestHash, JSON.stringify(response)],
+          });
+          return response;
+        },
       });
-
-      const stats = analyzeTraceGraph(reduced.nodes, limits);
-      const response = {
-        submissionId,
-        namespaceId: meta.namespaceId,
-        scope: meta.scope,
-        origin: meta.origin,
-        template: meta.template,
-        revision,
-        contractedSteps: materialized.contractedSteps,
-        reduction: reduced.stats,
-        compressionStats: stats,
-      };
-      await store.run(
-        `INSERT INTO recipe_submissions (submission_id, namespace_id, client_id, verification_id, response_json, created_at)
-         VALUES (?, ?, ?, ?, ?, ?)`,
-        [submissionId, meta.namespaceId, principal.clientId, verificationId, JSON.stringify(response), now],
-      );
-      return response;
     },
 
     async composeRecipe(principal, body) {
@@ -741,42 +546,22 @@ export function createManagedRecipeEngine({
         }
       }
       const authorHash = sha256Hex(canonicalJson(['composer-v1', principal.workspaceId, principal.clientId]));
-      const now = new Date().toISOString();
-      let latestResult = null;
-      for (let i = 0; i < materializedSegments.length; i++) {
-        const seg = materializedSegments[i];
-        const handoffCleared = new Set();
+      for (const seg of materializedSegments) {
         if (seg.terminal && nonTerminalSources.has(seg.terminal.id)) {
-          handoffCleared.add(seg.terminal.id);
+          seg.clearTerminal = seg.terminal.id;
+          seg.terminal = null;
         }
-        const effectiveSeg = handoffCleared.size
-          ? { ...seg, terminal: null }
-          : seg;
-        latestResult = await upsertMaterializedRecords(meta, effectiveSeg, {
-          authorHash,
-          forcePromote: true,
-          clearIntermediateTerminals: handoffCleared,
-          runReduction: i === materializedSegments.length - 1,
-          limits,
-          now,
-        });
       }
-
-      const finalReduced = await loadGraphAndReduce(meta, limits, {
-        promotedOnly: scope === 'catalog',
-        persistReduction: true,
+      return graphs.commit(meta, limits, materializedSegments, {
+        authorHash, forcePromote: true, promotedSummary: scope === 'catalog',
+        finish(revision, reduced) {
+          return {
+            namespaceId: meta.namespaceId, scope: meta.scope, origin: meta.origin,
+            template: meta.template, revision, composedSubrecipes: subrecipeNames,
+            reduction: reduced.stats, compressionStats: analyzeTraceGraph(reduced.nodes, limits),
+          };
+        },
       });
-      const stats = analyzeTraceGraph(finalReduced.nodes, limits);
-      return {
-        namespaceId: meta.namespaceId,
-        scope: meta.scope,
-        origin: meta.origin,
-        template: meta.template,
-        revision: latestResult?.revision ?? 1,
-        composedSubrecipes: subrecipeNames,
-        reduction: finalReduced.stats,
-        compressionStats: stats,
-      };
     },
 
     async resolveRecipe(principal, body) {
@@ -802,15 +587,7 @@ export function createManagedRecipeEngine({
         throw serviceError(400, 'invalid-current-outline', 'currentOutline must be a 64-hex structural hash');
       }
 
-      const nsRow = await store.get(
-        'SELECT revision FROM recipe_namespaces WHERE namespace_id = ?',
-        [meta.namespaceId],
-      );
-      const revision = Number(nsRow?.revision ?? 0);
-      const { nodes: reducedNodes, stats: reduction } = await loadGraphAndReduce(meta, limits, {
-        promotedOnly: meta.scope === 'catalog',
-        persistReduction: false,
-      });
+      const { revision, nodes: reducedNodes, stats: reduction } = await graphs.read(meta, limits);
 
       const availableSlotHashes = availableSlotNames === null
         ? null

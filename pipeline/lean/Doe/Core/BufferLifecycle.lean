@@ -1,30 +1,27 @@
 -- DoeBuffer lifecycle state machine.
--- Model context: native buffer operations. Exact runtime mirrors and source
--- hashes are emitted by the theoremMetadata registry during extraction.
--- Doe is intentionally more permissive than the WebGPU spec:
--- no precondition checks on mapAsync/unmap/getMappedRange/dispatch.
--- This module formally documents where Doe diverges from spec.
+-- Abstract lifecycle model. Native mapped-range access also depends on map mode,
+-- offsets and size. The predicates below have no runtime elimination binding.
 
-/-- Buffer states in Doe's lifecycle. -/
+/-- States in the lifecycle model. -/
 inductive BufferState where
-  | unmapped   -- alive, not mapped (CPU access still works via UMA)
+  | unmapped   -- alive and unmapped
   | mapped     -- alive, mapped for CPU access
-  | released   -- freed by doeBufferRelease, all access is undefined
+  | released   -- terminal state after release
   deriving Repr, DecidableEq
 
--- Doe transition functions (match Zig implementation)
+-- Lifecycle transitions in the abstract model
 
-/-- doeBufferMapAsync: sets mapped=true. No precondition check in Doe. -/
+/-- Mapping moves any live state to mapped. -/
 def doeMapAsync : BufferState → BufferState
   | .released => .released
   | _ => .mapped
 
-/-- doeBufferUnmap: sets mapped=false. No precondition check in Doe. -/
+/-- Unmapping moves any live state to unmapped. -/
 def doeUnmap : BufferState → BufferState
   | .released => .released
   | _ => .unmapped
 
-/-- doeBufferRelease: immediately frees the buffer. Terminal transition. -/
+/-- Releasing enters the terminal state. -/
 def doeRelease : BufferState → BufferState
   | _ => .released
 
@@ -62,49 +59,45 @@ theorem doeUnmapMap_roundtrip (s : BufferState) (hs : s ≠ .released) :
     doeMapAsync (doeUnmap s) = .mapped := by
   cases s <;> simp_all [doeMapAsync, doeUnmap]
 
--- WebGPU spec conformance gap documentation
+-- Comparison of permissive and strict predicates over the modeled states
 
-/-- What Doe allows for getMappedRange (permissive: any live buffer). -/
+/-- Permissive mapped-range predicate over live buffers. -/
 def doeAllowsGetMappedRange : BufferState → Bool
   | .released => false
   | _ => true
 
-/-- What the WebGPU spec allows for getMappedRange (strict: mapped only). -/
+/-- Strict mapped-range predicate restricted to mapped buffers. -/
 def specAllowsGetMappedRange : BufferState → Bool
   | .mapped => true
   | _ => false
 
-/-- What Doe allows for dispatch (permissive: any live buffer). -/
+/-- Permissive dispatch predicate over live buffers. -/
 def doeAllowsDispatch : BufferState → Bool
   | .released => false
   | _ => true
 
-/-- What the WebGPU spec allows for dispatch (strict: unmapped only). -/
+/-- Strict dispatch predicate restricted to unmapped buffers. -/
 def specAllowsDispatch : BufferState → Bool
   | .unmapped => true
   | _ => false
 
-/-- Formal gap: Doe allows getMappedRange on unmapped buffers (spec forbids).
-    This is intentional: Apple Silicon UMA makes CPU pointers valid without mapping. -/
+/-- The predicates differ on mapped-range access from the unmapped state. -/
 theorem doe_getMappedRange_gap :
     doeAllowsGetMappedRange .unmapped = true ∧ specAllowsGetMappedRange .unmapped = false := by
   exact ⟨rfl, rfl⟩
 
-/-- Formal gap: Doe allows dispatch on mapped buffers (spec forbids).
-    Doe has no mapped-state precondition check on command encoding. -/
+/-- The predicates differ on dispatch from the mapped state. -/
 theorem doe_dispatch_gap :
     doeAllowsDispatch .mapped = true ∧ specAllowsDispatch .mapped = false := by
   exact ⟨rfl, rfl⟩
 
-/-- Doe is a superset of spec for getMappedRange:
-    anything the spec permits, Doe also permits. -/
+/-- The permissive predicate includes every strict mapped-range state. -/
 theorem doe_getMappedRange_superset :
     ∀ s : BufferState, specAllowsGetMappedRange s = true → doeAllowsGetMappedRange s = true := by
   intro s h
   cases s <;> simp_all [doeAllowsGetMappedRange, specAllowsGetMappedRange]
 
-/-- Doe is a superset of spec for dispatch:
-    anything the spec permits, Doe also permits. -/
+/-- The permissive predicate includes every strict dispatch state. -/
 theorem doe_dispatch_superset :
     ∀ s : BufferState, specAllowsDispatch s = true → doeAllowsDispatch s = true := by
   intro s h

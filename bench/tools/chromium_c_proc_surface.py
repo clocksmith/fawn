@@ -189,7 +189,7 @@ def access_batch_source_failures(sources: dict[str, str]) -> list[str]:
             r"doe_mtl_commands_replay_shared_waits\(commands\.value\.metal,"
             r"device->access_batch\.value\.metal,&detail\),&detail\);.*"
             r"if\(failure\.status==NATIVE_OK\)return"
-            r"submit_backend_commands\(device,commands,false,true\);",
+            r"submit_backend_commands\(device,commands,false,true,NULL\);",
             "submit a replay and keep the original until accepted")
     forbid("flush", r"native_release_access_batch\(device\)|"
            r"native_command_release\(&device->access_batch\)|device->access_batch=",

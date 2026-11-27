@@ -7,7 +7,7 @@
  * before submission. The same pending owner keeps the device alive if a wait
  * cannot prove completion; releasing the call's staging lease never frees it. */
 static native_failure copy_now(native_device *device, doe_dx_buffer *source, uint64_t from,
-    doe_dx_buffer *destination, uint64_t to, uint64_t size, bool wait)
+    doe_dx_buffer *destination, uint64_t to, uint64_t size)
 {
     native_command_handle command = {0};
     native_failure failure = native_d3d12_prepare_recording(device);
@@ -22,8 +22,7 @@ static native_failure copy_now(native_device *device, doe_dx_buffer *source, uin
         if (native_command_release(&command) != NATIVE_OK) abort();
         return failure;
     }
-    return wait ? native_submit_backend_commands(device, command) :
-        native_submit_backend_commands_async(device, command);
+    return native_submit_backend_commands(device, command);
 }
 
 static void unlink_deferred(native_device *device, native_d3d12_buffer *payload)
@@ -36,37 +35,27 @@ static void unlink_deferred(native_device *device, native_d3d12_buffer *payload)
 }
 
 static native_failure upload(native_buffer *buffer, uint64_t offset,
-    const void *bytes, size_t size, bool initialize)
+    const void *bytes, size_t size)
 {
     native_device *device = buffer->device;
     native_d3d12_buffer *payload = buffer->handle.d3d12;
-    /* A write covering the whole allocation, padding included, is itself the
-     * complete initializing copy; the deferred zero fill would be overwritten.
-     * Any partial write first materializes every deferred zero fill. */
-    if (!initialize && payload->zero_deferred && !offset && size == payload->allocation_size)
-        unlink_deferred(device, payload);
-    doe_dx_buffer *staging = NULL;
-    uint64_t source_offset=0;
+    bool replaces_zero = payload->zero_deferred && !offset && size == payload->allocation_size;
+    doe_dx_upload_slice slice = {0};
     doe_dx_error error = {0};
-    /* Both paths snapshot through retained staging. Initialization uses the
-     * immutable source; accepted GPU ordering carries the full-zero proof. */
-    doe_dx_upload_slice slice={0};
-    doe_dx_status status;
-    if (initialize) status=doe_dx_zero_upload_acquire(device->backend.value.d3d12.context,size,&staging,&error);
-    else {
-        status=doe_dx_upload_slice_write(device->backend.value.d3d12.context,bytes,size,4,&slice,&error);
-        staging=slice.buffer; source_offset=slice.offset;
+    doe_dx_status status = doe_dx_upload_slice_write(device->backend.value.d3d12.context,
+        bytes, size, 4, &slice, &error);
+    if (status != DOE_DX_OK) return native_failure_d3d12(status, &error);
+
+    native_failure failure = native_failure_status(NATIVE_OK);
+    if (!replaces_zero) failure = native_d3d12_materialize_zero(device);
+    if (failure.status == NATIVE_OK) {
+        bool recorded = false;
+        failure = native_d3d12_write_record(device, slice.buffer, slice.offset, payload->allocation,
+            offset, size, &recorded);
+        /* The retained write log or a submitted copy now owns this initialization. */
+        if (replaces_zero && recorded) unlink_deferred(device, payload);
     }
-    native_failure failure=native_failure_d3d12(status,&error);
-    if (failure.status == NATIVE_OK && initialize)
-        failure = copy_now(device, staging, 0, buffer->handle.d3d12->allocation, offset, size, false);
-    else if (failure.status == NATIVE_OK) {
-        /* A partial write's deferred zero fill executes before the open writes. */
-        failure = native_d3d12_materialize_zero(device);
-        if (failure.status == NATIVE_OK)
-            failure = native_d3d12_write_record(device, staging, source_offset, payload->allocation, offset, size);
-    }
-    doe_dx_buffer_release(staging);
+    doe_dx_buffer_release(slice.buffer);
     return failure;
 }
 #endif
@@ -97,27 +86,32 @@ native_failure native_d3d12_materialize_zero(native_device *device)
         if (native_command_release(&command) != NATIVE_OK) abort();
         return failure;
     }
-    while (device->backend.value.d3d12.deferred_zero)
-        unlink_deferred(device, device->backend.value.d3d12.deferred_zero);
-    /* The pending owner adopts it; accepted queue order carries the zero proof. */
-    return native_submit_backend_commands_async(device, command);
+    bool submitted = false;
+    failure = native_submit_d3d12_copies(device, command, &submitted);
+    if (submitted) {
+        while (device->backend.value.d3d12.deferred_zero)
+            unlink_deferred(device, device->backend.value.d3d12.deferred_zero);
+    }
+    return failure;
 #else
     (void)device;
     return native_failure_status(NATIVE_OK);
 #endif
 }
 
-native_failure native_d3d12_buffer_create(native_buffer *buffer, uint64_t size, uint32_t usage,
+native_failure native_d3d12_buffer_create(native_buffer *buffer, uint64_t size, WGPUBufferUsage usage,
     native_buffer_memory_intent intent)
 {
 #if defined(_WIN32)
-    bool direct_readback=intent==NATIVE_BUFFER_MAP_READ;
-    bool direct_upload=intent==NATIVE_BUFFER_MAP_WRITE;
-    if (intent<NATIVE_BUFFER_GENERAL || intent>NATIVE_BUFFER_MAP_WRITE ||
-        (direct_upload && usage!=DOE_VK_BUFFER_COPY_SRC)) return native_failure_status(NATIVE_INVALID_ARGUMENT);
-    if (direct_readback && usage != DOE_VK_BUFFER_COPY_DST)
+    bool direct_readback = intent == NATIVE_BUFFER_MAP_READ;
+    bool direct_upload = intent == NATIVE_BUFFER_MAP_WRITE;
+    if (intent < NATIVE_BUFFER_GENERAL || intent > NATIVE_BUFFER_MAP_WRITE ||
+        (direct_upload && (!(usage & WGPUBufferUsage_MapWrite) ||
+            (usage & ~(WGPUBufferUsage_MapWrite | WGPUBufferUsage_CopySrc)))) ||
+        (direct_readback && (!(usage & WGPUBufferUsage_MapRead) ||
+            (usage & ~(WGPUBufferUsage_MapRead | WGPUBufferUsage_CopyDst)))))
         return native_failure_status(NATIVE_INVALID_ARGUMENT);
-    uint64_t alignment = usage & DOE_VK_BUFFER_UNIFORM ?
+    uint64_t alignment = usage & WGPUBufferUsage_Uniform ?
         buffer->device->backend.value.d3d12.caps.limits.uniform_offset_alignment : 4;
     uint64_t bound = native_allocation_bound(buffer->device);
     if (!alignment || (alignment & (alignment - 1)) || size > UINT64_MAX - (alignment - 1))
@@ -217,7 +211,7 @@ native_failure native_d3d12_buffer_read(native_buffer *buffer, uint64_t offset, 
         size, DOE_DX_READBACK, &staging, &error);
     native_failure failure = native_failure_d3d12(status, &error);
     if (failure.status == NATIVE_OK)
-        failure = copy_now(buffer->device, buffer->handle.d3d12->allocation, offset, staging, 0, size, true);
+        failure = copy_now(buffer->device, buffer->handle.d3d12->allocation, offset, staging, 0, size);
     if (failure.status == NATIVE_OK) {
         status = doe_dx_buffer_read(staging, 0, bytes, size, &error);
         failure = native_failure_d3d12(status, &error);
@@ -243,7 +237,7 @@ native_failure native_d3d12_buffer_write(native_buffer *buffer, uint64_t offset,
         doe_dx_status status=doe_dx_buffer_write(buffer->handle.d3d12->allocation,offset,bytes,size,&error);
         return native_failure_d3d12(status,&error);
     }
-    return upload(buffer, offset, bytes, size, false);
+    return upload(buffer, offset, bytes, size);
 #else
     (void)buffer;
     (void)offset;

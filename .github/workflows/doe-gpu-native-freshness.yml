@@ -1,10 +1,6 @@
 name: doe-gpu native freshness
 
-# Enforces the publish-time contract that platform packages
-# (doe-gpu-linux-x64, doe-gpu-darwin-arm64) cannot ship a libwebgpu_doe.so
-# that predates the current WGSL compiler source tree. Runs on every PR
-# touching either the Zig WGSL compiler source or the staging scripts,
-# so the freshness guard cannot regress silently.
+# Build and stage the committed C provider and verify source/hash rejection.
 
 on:
   workflow_dispatch:
@@ -18,8 +14,6 @@ concurrency:
 
 jobs:
   freshness-guard-unit:
-    # Pure-JS unit test of the source-tree hasher mirror. Runs on a
-    # plain runner because it does not need the Zig toolchain.
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -27,18 +21,18 @@ jobs:
         with:
           node-version: "22"
       - name: Run freshness guard unit test
-        run: node --test packages/doe-gpu/test/unit/stage-platform-freshness.test.js
+        run: node --test packages/doe-gpu/test/unit/{c-native-stage,stage-platform-freshness}.test.js
 
   rebuild-then-stage:
-    # End-to-end: build the drop-in .so from source, stage the platform
-    # package, and verify the freshness guard accepts the fresh artifact.
-    # Then simulate staleness by rewriting the metadata hash and assert
-    # the guard rejects it with the typed error.
-    if: github.event_name == 'workflow_dispatch'
     runs-on:
       - self-hosted
       - linux
       - amd-vulkan
+    env:
+      DOE_WEBGPU_LIB: ""
+      DOE_LIB: ""
+      DOE_NAPI_ADDON: ""
+      DOE_SKIP_NATIVE_REBUILD: ""
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v6
@@ -66,13 +60,17 @@ jobs:
             "v$ELECTRON_VERSION"
           echo "DOE_ELECTRON_EXECUTABLE=$electron_executable" >> "$GITHUB_ENV"
 
-      - name: zig build dropin
-        working-directory: runtime/zig
-        run: zig build dropin -Doptimize=ReleaseFast
+      - name: Select a fresh C staging directory
+        run: echo "DOE_C_STAGE=$RUNNER_TEMP/doe-c-stage-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT" >> "$GITHUB_ENV"
 
-      - name: Stage linux-x64 package (must succeed against fresh build)
-        working-directory: packages/doe-gpu-linux-x64
-        run: npm run stage
+      - name: Build and stage the C package and Node addon at the Linux glibc floor
+        run: |
+          target=x86_64-linux-gnu.2.34
+          cc="zig cc -target $target"
+          make -C runtime/c package REVISION=HEAD GLIBC_FLOOR=2.34 \
+            CC="$cc" CXX="zig c++ -target $target" BUILD="$DOE_C_STAGE-build" STAGE="$DOE_C_STAGE"
+          CC="$cc" npm --prefix packages/doe-gpu run build:addon
+          npm --prefix packages/doe-gpu-linux-x64 run stage
 
       - name: Verify Node clean install from staged packages
         working-directory: packages/doe-gpu
@@ -98,32 +96,32 @@ jobs:
         working-directory: packages/doe-gpu
         run: npm run test:integration:native-reliability:electron
 
-      - name: Inject stale hash and confirm stage refuses
+      - name: Stage rejects a stale C source hash and accepts the restored manifest
+        working-directory: packages/doe-gpu-linux-x64
         run: |
-          python3 - <<'PY'
-          import json, pathlib
-          path = pathlib.Path('runtime/zig/zig-out/share/doe-build-metadata.json')
-          doc = json.loads(path.read_text())
-          doc['wgslCompilerSourceSha256'] = 'c0ffee' * 10 + 'abcd'
-          path.write_text(json.dumps(doc, indent=2))
-          PY
-          set +e
-          (cd packages/doe-gpu-linux-x64 && node ../doe-gpu/scripts/stage-platform-package.js) > /tmp/stage-stale.log 2>&1
-          rc=$?
-          set -e
-          if [ $rc -eq 0 ]; then
-            echo "FAIL: stage returned 0 with a stale metadata hash; freshness guard regressed."
-            cat /tmp/stage-stale.log
+          set -euo pipefail
+          manifest="$DOE_C_STAGE/MANIFEST.json"
+          backup="$(mktemp)"
+          log="$(mktemp)"
+          cp "$manifest" "$backup"
+          trap 'cp "$backup" "$manifest"; rm -f "$backup" "$log"' EXIT
+          python3 - "$manifest" <<'PYTHON'
+          import json
+          from pathlib import Path
+          import sys
+
+          path = Path(sys.argv[1])
+          manifest = json.loads(path.read_text())
+          source = next(name for name in manifest["source_inputs"]
+                        if name.startswith("runtime/c/") and name.endswith(".c"))
+          manifest["source_inputs"][source] = "0" * 64
+          path.write_text(json.dumps(manifest))
+          PYTHON
+          if npm run stage > "$log" 2>&1; then
+            echo "stage accepted a stale C source hash" >&2
             exit 1
           fi
-          grep -q 'predates the current' /tmp/stage-stale.log || {
-            echo "FAIL: stage exited nonzero but did not emit the typed 'predates the current' message."
-            cat /tmp/stage-stale.log
-            exit 1
-          }
-          echo "ok: stage refused stale metadata with the typed error."
-
-      - name: Rebuild and re-stage to leave the workspace clean
-        run: |
-          cd runtime/zig && zig build dropin -Doptimize=ReleaseFast
-          cd ../../packages/doe-gpu-linux-x64 && npm run stage
+          cat "$log"
+          grep -F "C package predates or differs from source:" "$log"
+          cp "$backup" "$manifest"
+          npm run stage

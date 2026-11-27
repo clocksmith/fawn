@@ -77,9 +77,10 @@ native_failure native_d3d12_flush_writes(native_device *device)
     if (failure.status != NATIVE_OK) return failure;
     native_command_handle command = handle(device, writes->open);
     writes->open = NULL;
-    drop_log(writes); /* The command holds its own staging/destination leases. */
-    /* The pending owner adopts it on every result, including unknown completion. */
-    return native_submit_backend_commands_async(device, command);
+    bool submitted = false;
+    failure = native_submit_d3d12_copies(device, command, &submitted);
+    if (submitted) drop_log(writes);
+    return failure;
 #else
     (void)device;
     return native_failure_status(NATIVE_OK);
@@ -94,8 +95,9 @@ native_failure native_d3d12_prepare_recording(native_device *device)
 
 #if defined(_WIN32)
 native_failure native_d3d12_write_record(native_device *device, doe_dx_buffer *staging, uint64_t source_offset,
-    doe_dx_buffer *destination, uint64_t offset, uint64_t size)
+    doe_dx_buffer *destination, uint64_t offset, uint64_t size, bool *recorded)
 {
+    *recorded = false;
     native_d3d12_writes *writes = device->backend.value.d3d12.writes;
     if (!writes) {
         writes = calloc(1, sizeof(*writes));
@@ -133,8 +135,19 @@ native_failure native_d3d12_write_record(native_device *device, doe_dx_buffer *s
     }
     writes->log[writes->count++] = write;
     writes->bytes += size;
-    if (writes->count == WRITE_CAPACITY || writes->bytes >= WRITE_BYTES_LIMIT)
-        return native_d3d12_flush_writes(device);
+    if (writes->count == WRITE_CAPACITY || writes->bytes >= WRITE_BYTES_LIMIT) {
+        failure = native_d3d12_flush_writes(device);
+        if (writes->count) {
+            /* The batch never reached execution. Keep earlier accepted writes for
+             * replay and retract only this call's copy and its two log leases. */
+            --writes->count;
+            writes->bytes -= size;
+            doe_dx_buffer_release(staging);
+            doe_dx_buffer_release(destination);
+            return failure;
+        }
+    }
+    *recorded = true;
     return failure;
 }
 
@@ -158,7 +171,7 @@ native_failure native_d3d12_adopt_writes(native_device *device, native_command_h
     return native_failure_status(NATIVE_OK);
 }
 
-void native_d3d12_writes_recorded(native_device *device)
+void native_d3d12_writes_submitted(native_device *device)
 {
     drop_log(device->backend.value.d3d12.writes);
 }

@@ -414,7 +414,8 @@ native_pending *native_surface_retirement_take(native_device *device, native_pen
  * the explicit synchronous wait (programs and private initialization).
  * Failed asynchronous submissions poll once and retain unresolved ownership;
  * only an explicit synchronous caller may wait for recovery. */
-static native_failure submit_pending(native_device *device, native_pending *pending, bool wait, bool access_waits)
+static native_failure submit_pending(native_device *device, native_pending *pending, bool wait, bool access_waits,
+    bool *d3d12_submitted)
 {
     /* Other native submissions may already be encoded, but their commit must
      * follow every admitted producer dependency. Main batches replay waits at
@@ -437,6 +438,11 @@ static native_failure submit_pending(native_device *device, native_pending *pend
     }
     link_pending(device, pending);
     native_failure failure = native_command_submit(&pending->native);
+    /* Capture acceptance before polling can retire this command or report an
+     * unrelated failure. A failed fence signal leaves execution uncertain. */
+    if (d3d12_submitted)
+        *d3d12_submitted = failure.status == NATIVE_OK || failure.status == NATIVE_UNKNOWN ||
+            native_command_in_flight(&pending->native);
     if (failure.status == NATIVE_OK && access_waits) {
         doe_mtl_status accepted = doe_mtl_command_submission_status(pending->native.value.metal);
         failure = accepted == DOE_MTL_BUSY ? native_failure_status(NATIVE_UNKNOWN) :
@@ -486,11 +492,11 @@ native_failure native_submit_program(native_device *device, native_command_handl
     resources[0] = commands;
     *pending = (native_pending){.device=device,.native=native,.resources=resources,.count=1,.replay=true};
     native_device_retain(device);
-    return submit_pending(device, pending, true, false);
+    return submit_pending(device, pending, true, false, NULL);
 }
 
 static native_failure submit_backend_commands(native_device *device, native_command_handle commands,
-    bool wait, bool access_waits)
+    bool wait, bool access_waits, bool *d3d12_submitted)
 {
     native_pending *pending = calloc(1, sizeof(*pending));
     if (!pending) {
@@ -500,17 +506,23 @@ static native_failure submit_backend_commands(native_device *device, native_comm
     pending->device = device;
     native_device_retain(device);
     pending->native = commands;
-    return submit_pending(device, pending, wait, access_waits);
+    return submit_pending(device, pending, wait, access_waits, d3d12_submitted);
 }
 
 native_failure native_submit_backend_commands(native_device *device, native_command_handle commands)
 {
-    return submit_backend_commands(device, commands, true, false);
+    return submit_backend_commands(device, commands, true, false, NULL);
 }
 
 native_failure native_submit_backend_commands_async(native_device *device, native_command_handle commands)
 {
-    return submit_backend_commands(device, commands, false, false);
+    return submit_backend_commands(device, commands, false, false, NULL);
+}
+
+native_failure native_submit_d3d12_copies(native_device *device, native_command_handle commands, bool *submitted)
+{
+    *submitted = false;
+    return submit_backend_commands(device, commands, false, false, submitted);
 }
 
 native_failure native_flush_initialization(native_device *device)
@@ -530,7 +542,7 @@ native_failure native_flush_initialization(native_device *device)
     native_device_retain(device);
     pending->native = (native_command_handle){.kind=WGPUBackendType_Vulkan,.value.vulkan=batch};
     /* Queue order puts it before the caller's recording; it does not wait. */
-    return submit_pending(device, pending, false, false);
+    return submit_pending(device, pending, false, false, NULL);
 }
 
 native_command_handle native_take_access_batch(native_device *device)
@@ -552,7 +564,7 @@ native_failure native_flush_access_batch(native_device *device)
             failure = native_failure_metal(doe_mtl_commands_replay_shared_waits(commands.value.metal,
                 device->access_batch.value.metal, &detail), &detail);
         }
-        if (failure.status == NATIVE_OK) return submit_backend_commands(device, commands, false, true);
+        if (failure.status == NATIVE_OK) return submit_backend_commands(device, commands, false, true, NULL);
         if (native_command_release(&commands) != NATIVE_OK) abort();
         return failure;
     }
@@ -666,13 +678,14 @@ void wgpuQueueSubmit(WGPUQueue handle, size_t count, const WGPUCommandBuffer *ha
         if (resource_status != DOE_RESOURCE_OK) failure = native_failure_status(NATIVE_INVALID_ARGUMENT);
         else ++pending->count;
     }
+    bool adopted_writes = false;
     /* D3D12 materializes zero fills itself and adopts, not flushes, open writes. */
     if (failure.status == NATIVE_OK && device->backend.kind != WGPUBackendType_D3D12)
         failure = native_flush_initialization(device);
     if (failure.status == NATIVE_OK && device->backend.kind == WGPUBackendType_Metal)
         failure = native_metal_record_batch(device,&pending->native,pending->resources,count);
     else if (failure.status == NATIVE_OK && device->backend.kind == WGPUBackendType_D3D12)
-        failure = native_d3d12_record_batch(device,&pending->native,pending->resources,count);
+        failure = native_d3d12_record_batch(device, &pending->native, pending->resources, count, &adopted_writes);
     else {
         /* A pending shared-memory acquire becomes the head of this recording, so
          * acquire and work share one submission. */
@@ -696,8 +709,12 @@ void wgpuQueueSubmit(WGPUQueue handle, size_t count, const WGPUCommandBuffer *ha
     if (failure.status == NATIVE_OK) {
         /* Recovery preserves the original submission failure; successful release
          * is the backend's proof of terminal or never-dispatched ownership. */
-        failure = submit_pending(device, pending, false,
-            device->access_batch.kind == WGPUBackendType_Metal);
+        bool submitted = false;
+        failure = submit_pending(device, pending, false, device->access_batch.kind == WGPUBackendType_Metal,
+            adopted_writes ? &submitted : NULL);
+#if defined(_WIN32)
+        if (adopted_writes && submitted) native_d3d12_writes_submitted(device);
+#endif
     } else {
         if (native_command_release(&pending->native) != NATIVE_OK) abort();
         settle_resources(pending, false);

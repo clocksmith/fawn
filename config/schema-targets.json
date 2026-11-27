@@ -2,6 +2,10 @@
   "schemaVersion": 2,
   "targets": [
     {
+      "schema": "config/fawn-engineering-investigation-suite.schema.json",
+      "data": "config/fawn-engineering-investigation-suite.json"
+    },
+    {
       "schema": "config/csl-quarantine.schema.json",
       "data": "config/csl-quarantine.json"
     },
@@ -134,7 +138,7 @@
       "data": "reports/benchmarks/amd-vulkan/20261005-onnx-vulkan-campaign/native-build-metadata.json"
     },
     {
-      "schema": "config/onnx-vulkan-evidence.schema.json",
+      "schema": "config/onnx-vulkan-evidence-rows.schema.json",
       "data": "reports/benchmarks/amd-vulkan/20261005-onnx-vulkan-campaign/raw/compiler-reproduction/shaders.json"
     },
     {
@@ -238,7 +242,7 @@
       "data": "bench/out/maintenance/20260914-zig-file-reviews/host-entry/after.json"
     },
     {
-      "schema": "config/zig-compilation-bench.schema.json",
+      "schema": "config/zig-compilation-bench-rows.schema.json",
       "data": "bench/out/maintenance/20260914-zig-file-reviews/compilation/contract-rows.json"
     },
     {

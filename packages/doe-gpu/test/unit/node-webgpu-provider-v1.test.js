@@ -16,6 +16,16 @@ const globalNames = [
 const initialDescriptors = new Map(
   globalNames.map((name) => [name, Object.getOwnPropertyDescriptor(globalThis, name)]),
 );
+const initialNavigator = globalThis.navigator;
+const initialGpu = initialNavigator && Object.getOwnPropertyDescriptor(initialNavigator, 'gpu');
+function assertRestoredGlobals(except = null) {
+  for (const name of globalNames) {
+    if (name !== except) {
+      assert.deepEqual(Object.getOwnPropertyDescriptor(globalThis, name), initialDescriptors.get(name), name);
+    }
+  }
+  if (initialNavigator) assert.deepEqual(Object.getOwnPropertyDescriptor(initialNavigator, 'gpu'), initialGpu);
+}
 const globals = {
   GPUBufferUsage: 'globals.GPUBufferUsage',
   GPUShaderStage: 'globals.GPUShaderStage',
@@ -59,12 +69,60 @@ assert.deepEqual(observations.lastAdapterOptions, { powerPreference: 'low-power'
 
 await session.close();
 assert.equal(session.receipt.globals.restored, true);
-for (const name of globalNames) {
-  assert.deepEqual(
-    Object.getOwnPropertyDescriptor(globalThis, name),
-    initialDescriptors.get(name),
-    `${name} descriptor must be restored`,
-  );
+assertRestoredGlobals();
+
+const openFixture = () => openNodeWebGPU({
+  providers: [{
+    id: 'fixture', kind: 'module', module: fixtureUrl,
+    gpu: { kind: 'factory', path: 'createFakeGPU', args: [] }, globals,
+  }],
+  adapterOptions: null,
+  globals: { mode: 'replace' },
+});
+
+for (const olderClosesFirst of [true, false]) {
+  const older = await openFixture();
+  const newer = await openFixture();
+  assert.notEqual(older.gpu, newer.gpu);
+  const [first, last] = olderClosesFirst ? [older, newer] : [newer, older];
+  await first.close();
+  assert.equal(globalThis.navigator.gpu, last.gpu);
+  await first.close();
+  await last.close();
+  assertRestoredGlobals();
+}
+
+const owner = await openFixture();
+const borrower = await openNodeWebGPU({
+  providers: [{ id: 'installed', kind: 'global' }],
+  adapterOptions: null,
+  globals: { mode: 'install-missing' },
+});
+await owner.close();
+assert.equal(globalThis.navigator.gpu, borrower.gpu);
+assert.equal(globalThis.GPUMapMode, owner.module.globals.GPUMapMode);
+await borrower.close();
+assertRestoredGlobals();
+
+// Force a conflict after navigator.gpu and the first enum have been installed.
+const conflict = { occupied: true };
+Object.defineProperty(globalThis, 'GPUMapMode', { value: conflict, configurable: true });
+try {
+  const result = await probeNodeWebGPU({
+    providers: [{
+      id: 'rollback', kind: 'module', module: fixtureUrl,
+      gpu: { kind: 'factory', path: 'createFakeGPU', args: [] }, globals,
+    }],
+    adapterOptions: null,
+    globals: { mode: 'install-missing' },
+  });
+  assert.equal(result.receipt.attempts[0].code, 'DOE_PROVIDER_GLOBAL_CONFLICT');
+  assert.equal(globalThis.GPUMapMode, conflict);
+  assertRestoredGlobals('GPUMapMode');
+} finally {
+  const before = initialDescriptors.get('GPUMapMode');
+  if (before) Object.defineProperty(globalThis, 'GPUMapMode', before);
+  else delete globalThis.GPUMapMode;
 }
 
 const failedProbe = await probeNodeWebGPU({

@@ -105,8 +105,10 @@ bool doe_trace_write_semantic(FILE *out, const doe_semantic *semantic)
 }
 
 /* The execution fields that end every row, then the row's closing brace. */
-static bool write_execution(FILE *out, const doe_trace_identity *identity, const doe_trace_execution *execution)
+static bool write_execution(FILE *out, const doe_trace_identity *identity, const doe_trace_execution *execution, uint64_t timestamp_ns)
 {
+    const char *source = execution && execution->ok && timestamp_ns ? "execution-monotonic" : "unmeasured";
+    if (fprintf(out, ",\"timestampSource\":\"%s\"", source) < 0) return false;
     if (!execution) return fputs("}\n", out) >= 0;
     bool ok = fputs(",\"executionBackend\":", out) >= 0;
     ok = ok && doe_trace_write_string(out, identity->backend_id) && fputs(",\"backendId\":", out) >= 0 &&
@@ -149,7 +151,7 @@ bool doe_trace_write_row(FILE *out, const doe_trace_identity *identity, uint64_t
         d->requires_lean ? "true" : "false", d->blocking ? "true" : "false", d->score, d->matched_count) >= 0;
     ok = ok && doe_trace_write_string(out, d->action) && fputs(",\"toggle\":", out) >= 0 &&
         doe_trace_write_string(out, d->toggle ? d->toggle : "none");
-    return ok && write_execution(out, identity, execution);
+    return ok && write_execution(out, identity, execution, timestamp_ns);
 }
 
 bool doe_trace_write_plan_row(FILE *out, const doe_trace_identity *identity, uint64_t seq, uint64_t timestamp_ns,
@@ -162,7 +164,7 @@ bool doe_trace_write_plan_row(FILE *out, const doe_trace_identity *identity, uin
     ok = ok && doe_trace_write_string(out, command->label);
     if (ok && command->kind == DOE_COMMAND_KERNEL_DISPATCH)
         ok = fputs(",\"kernel\":", out) >= 0 && doe_trace_write_string(out, command->as.dispatch.kernel);
-    return ok && doe_trace_write_semantic(out, &command->semantic) && write_execution(out, identity, execution);
+    return ok && doe_trace_write_semantic(out, &command->semantic) && write_execution(out, identity, execution, timestamp_ns);
 }
 
 /* Shared by retained normalized command output and semantic repro bundles. */

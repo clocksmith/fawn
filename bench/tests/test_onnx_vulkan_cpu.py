@@ -15,6 +15,9 @@ from types import ModuleType
 import unittest
 from unittest.mock import patch
 
+from bench.tests.historical_sources import stage_historical_files
+
+
 REPO = Path(__file__).resolve().parents[2]
 OWNER = REPO / "bench/external-projects/onnx-vulkan-cpu"
 REPORT = REPO / "reports/benchmarks/amd-vulkan/20261008-onnx-vulkan-cpu-attribution"
@@ -38,8 +41,27 @@ with patch.dict("sys.modules", {"decision": DECISION}):
 
 
 class TestCpuAttribution(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls) -> None:
+        workspace = tempfile.TemporaryDirectory()
+        cls.addClassCleanup(workspace.cleanup)
+        cls.source = Path(workspace.name)
+        manifest = json.loads((REPORT / "manifest.json").read_bytes())
+        campaign = "reports/benchmarks/amd-vulkan/20261005-onnx-vulkan-campaign"
+        paths = [
+            *manifest["sources"],
+            *manifest["nativeSources"],
+            "config/onnx-vulkan-cpu-evidence.schema.json",
+            "config/onnx-vulkan-cpu-investigation.schema.json",
+            "config/onnx-vulkan-cpu-investigation.json",
+            f"{campaign}/manifest.json",
+            f"{campaign}/raw/execution-harness/application-provider.h",
+            f"{campaign}/raw/bridge-matched/adapter.zig",
+        ]
+        stage_historical_files(cls.source, REPO, "a6e72c29fcde06b90eaa78dbbc98f9059b9f7c14", paths)
+
     def test_completed_no_patch_decision_replays(self) -> None:
-        self.assertEqual(VERIFY.verify(REPORT, REPO)["candidate"], "none")
+        self.assertEqual(VERIFY.verify(REPORT, self.source)["candidate"], "none")
 
     def test_elf_virtual_address_differs_from_file_offset(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
@@ -94,7 +116,7 @@ class TestCpuAttribution(unittest.TestCase):
                 lambda value: value.update(performanceClaim=True),
             )
             with self.assertRaisesRegex(ValueError, "Decision replay drift"):
-                VERIFY.verify(target, REPO)
+                VERIFY.verify(target, self.source)
 
     def test_cpu_fallback_rejected_after_hash_rebinding(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
@@ -106,7 +128,7 @@ class TestCpuAttribution(unittest.TestCase):
                 Path(temporary), "raw/qualification/doe-matched.json", fallback
             )
             with self.assertRaisesRegex(ValueError, "CPU fallback"):
-                VERIFY.verify(target, REPO)
+                VERIFY.verify(target, self.source)
 
     def test_diagnostic_cannot_weaken_oracle_after_hash_rebinding(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
@@ -128,7 +150,7 @@ class TestCpuAttribution(unittest.TestCase):
             )
             manifest_path.write_text(json.dumps(manifest))
             with self.assertRaisesRegex(ValueError, "changed application semantics"):
-                VERIFY.verify(target, REPO)
+                VERIFY.verify(target, self.source)
 
     def test_altered_pc_is_not_rescued_by_unchanged_sample_totals(self) -> None:
         relative = "raw/caller-collection/0-sample-1000-doe/"
