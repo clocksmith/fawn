@@ -121,12 +121,12 @@ static size_t tracked_texture(const native_snapshot *snapshot, const doe_resourc
 
 bool native_snapshot_tracks_buffer(const native_device *device, const doe_resource_buffer *buffer)
 {
-    const native_snapshot *snapshot = open_branch(device);
+    const native_snapshot *snapshot = device->snapshot;
     return snapshot && tracked_buffer(snapshot, buffer) != SIZE_MAX;
 }
 bool native_snapshot_tracks_texture(const native_device *device, const doe_resource_texture *texture)
 {
-    const native_snapshot *snapshot = open_branch(device);
+    const native_snapshot *snapshot = device->snapshot;
     return snapshot && tracked_texture(snapshot, texture) != SIZE_MAX;
 }
 
@@ -211,17 +211,27 @@ static native_failure cache_bound_views(native_snapshot *snapshot, const native_
     return native_failure_status(NATIVE_OK);
 }
 
-static native_failure render_record(native_snapshot *snapshot, const doe_resource_render_record *record)
+/* The views a render pass writes: colors, resolves and a writable depth. */
+enum { RENDER_WRITTEN_VIEWS = 3 + 2 * DOE_RESOURCE_MAX_COLOR_ATTACHMENTS };
+static size_t written_views(const doe_resource_render_targets *targets, doe_resource_view **views)
 {
-    const doe_resource_render_packet *pass = doe_resource_render_record_borrow(record);
-    const doe_resource_render_targets *targets = &pass->targets;
-    doe_resource_view *views[3 + 2 * DOE_RESOURCE_MAX_COLOR_ATTACHMENTS] = {targets->color, targets->resolve_target,
-        !targets->depth_read_only || !targets->stencil_read_only ? targets->depth_stencil : NULL};
-    size_t count = 3;
+    size_t count = 0;
+    views[count++] = targets->color;
+    views[count++] = targets->resolve_target;
+    views[count++] = !targets->depth_read_only || !targets->stencil_read_only ? targets->depth_stencil : NULL;
     for (uint32_t i = 0; i < targets->color_count && i < DOE_RESOURCE_MAX_COLOR_ATTACHMENTS; ++i) {
         views[count++] = targets->colors[i].view;
         views[count++] = targets->colors[i].resolve_target;
     }
+    return count;
+}
+
+static native_failure render_record(native_snapshot *snapshot, const doe_resource_render_record *record)
+{
+    const doe_resource_render_packet *pass = doe_resource_render_record_borrow(record);
+    const doe_resource_render_targets *targets = &pass->targets;
+    doe_resource_view *views[RENDER_WRITTEN_VIEWS];
+    const size_t count = written_views(targets, views);
     for (size_t i = 0; i < count; ++i) {
         mark_view(snapshot, views[i]);
         native_failure failure = cache_view(snapshot, views[i]);
@@ -288,10 +298,90 @@ static native_failure scan_record(native_snapshot *snapshot, const doe_resource_
     return native_failure_status(NATIVE_OK);
 }
 
+/* Outside a branch the base is frozen: the next restore copies back only the
+ * previous branch's units, so a base write elsewhere would leave the slot
+ * stale. True when a pipeline that writes storage binds a tracked resource
+ * writably (a storage texture of such a pipeline counts as written). */
+static bool bound_writes(const native_snapshot *snapshot, const native_pipeline *pipeline,
+    doe_resource_pipeline_layout *layout, doe_resource_bind_group *const *groups,
+    const doe_resource_dispatch_offsets *offsets)
+{
+    if (!pipeline->marked && !pipeline->unmarked_writes) return false;
+    doe_resource_binding resolved[NATIVE_MAX_PIPELINE_BINDINGS];
+    if (native_resolve_resources(pipeline, layout, groups, offsets, resolved) != DOE_RESOURCE_OK) return true;
+    for (size_t i = 0; i < pipeline->binding_count; ++i) {
+        if (resolved[i].kind == DOE_BIND_BUFFER && pipeline->bindings[i].buffer_type == WGPUBufferBindingType_Storage &&
+            tracked_buffer(snapshot, resolved[i].resource.buffer.buffer) != SIZE_MAX) return true;
+        if (resolved[i].kind == DOE_BIND_STORAGE_TEXTURE &&
+            tracked_texture(snapshot, doe_resource_view_texture(resolved[i].resource.view)) != SIZE_MAX) return true;
+    }
+    return false;
+}
+
+static bool view_tracked(const native_snapshot *snapshot, const doe_resource_view *view)
+{
+    return view && tracked_texture(snapshot, doe_resource_view_texture(view)) != SIZE_MAX;
+}
+
+static bool writes_base(const native_snapshot *snapshot, const doe_resource_command *record)
+{
+    switch (record->kind) {
+    case DOE_COMMAND_COPY_BUFFER: return tracked_buffer(snapshot, record->value.copy.destination) != SIZE_MAX;
+    case DOE_COMMAND_CLEAR_BUFFER: return tracked_buffer(snapshot, record->value.clear.buffer) != SIZE_MAX;
+    case DOE_COMMAND_BUFFER_TEXTURE:
+        return record->value.texture.direction == DOE_RESOURCE_BUFFER_TO_TEXTURE ?
+            tracked_texture(snapshot, record->value.texture.texture) != SIZE_MAX :
+            tracked_buffer(snapshot, record->value.texture.buffer) != SIZE_MAX;
+    case DOE_COMMAND_COPY_TEXTURE: return tracked_texture(snapshot, record->value.blit.destination.texture) != SIZE_MAX;
+    case DOE_COMMAND_RESOLVE_QUERY: return tracked_buffer(snapshot, record->value.resolve.destination) != SIZE_MAX;
+    case DOE_COMMAND_RENDER: {
+        const doe_resource_render_record *render = record->value.render;
+        doe_resource_view *views[RENDER_WRITTEN_VIEWS];
+        const size_t count = written_views(&doe_resource_render_record_borrow(render)->targets, views);
+        for (size_t i = 0; i < count; ++i) if (view_tracked(snapshot, views[i])) return true;
+        const size_t draws = doe_resource_render_record_draw_count(render);
+        for (size_t i = 0; i < draws; ++i) {
+            const doe_resource_render_packet *bindings = NULL;
+            doe_resource_render_draw_args args;
+            if (!doe_resource_render_record_draw_borrow(render, i, &bindings, &args)) return true;
+            if (bindings->pipeline && bound_writes(snapshot, doe_resource_render_pipeline_native(bindings->pipeline),
+                    doe_resource_render_pipeline_get_layout(bindings->pipeline), bindings->groups, &bindings->offsets))
+                return true;
+        }
+        return false;
+    }
+    case DOE_COMMAND_DISPATCH:
+    case DOE_COMMAND_DISPATCH_INDIRECT: {
+        doe_resource_pipeline *pipeline = record->value.dispatch.pipeline;
+        return bound_writes(snapshot, doe_resource_pipeline_native(pipeline), doe_resource_pipeline_get_layout(pipeline),
+            record->value.dispatch.groups, record->value.dispatch.dynamic_offsets);
+    }
+    case DOE_COMMAND_WRITE_TIMESTAMP:
+    case DOE_COMMAND_BEGIN_OCCLUSION:
+    case DOE_COMMAND_END_OCCLUSION:
+        return false;
+    }
+    return true;
+}
+
+native_failure native_snapshot_admit_base(const native_device *device, doe_resource_commands *const *commands,
+    size_t count)
+{
+    const native_snapshot *snapshot = device->snapshot;
+    if (!snapshot || snapshot->active) return native_failure_status(NATIVE_OK);
+    for (size_t c = 0; c < count; ++c) {
+        size_t records = 0;
+        const doe_resource_command *record = doe_resource_commands_borrow(commands[c], &records);
+        for (size_t i = 0; i < records; ++i)
+            if (writes_base(snapshot, &record[i])) return native_failure_status(NATIVE_UNSUPPORTED);
+    }
+    return native_failure_status(NATIVE_OK);
+}
+
 native_failure native_snapshot_lower_begin(native_device *device, doe_resource_commands *const *commands, size_t count)
 {
     native_snapshot *snapshot = open_branch(device);
-    if (!snapshot) return native_failure_status(NATIVE_OK);
+    if (!snapshot) return native_snapshot_admit_base(device, commands, count);
     if (device->backend.kind != WGPUBackendType_Vulkan || snapshot->swapped)
         return native_failure_status(NATIVE_UNSUPPORTED);
     for (size_t c = 0; c < count; ++c) {

@@ -16,11 +16,15 @@
  * Stage 1 limits, each refused with a device error instead of run unmarked:
  * Vulkan devices only; one snapshot and one slot per device; write marks must
  * be enabled before any shader module is created; tracked buffers need
- * CopySrc and no map usage; tracked textures are single-sample, single-mip,
- * single-layer 2D with CopySrc; a branch submission that dispatches a pipeline
- * compiled without marks, or queue writes to a tracked resource during a
- * branch, are refused. Restore reads the marks on the host after the caller
- * has observed completion of the branch's work. */
+ * CopySrc, no map usage and must be unmapped; tracked textures are
+ * single-sample, single-mip, single-layer 2D with CopySrc; a branch submission
+ * that dispatches a pipeline compiled without marks, and queue writes to a
+ * tracked resource, are refused. Outside a branch the base stays frozen while
+ * the snapshot lives: submissions and compute programs that would write a
+ * tracked resource (copies, clears, attachments, writable storage bindings)
+ * are refused, since the next restore copies back only the previous branch's
+ * units. Restore reads the marks on the host after the caller has observed
+ * completion of the branch's work. */
 #ifndef DOE_NATIVE_SNAPSHOT_H
 #define DOE_NATIVE_SNAPSHOT_H
 #include "webgpu.h"

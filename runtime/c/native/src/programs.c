@@ -146,9 +146,11 @@ uint32_t doeNativeComputeProgramSubmit(void *handle)
     native_lock(device);
     native_failure failure = native_failure_status(native_device_result(device));
     if (failure.status == NATIVE_OK) failure = native_settle_pending(device).failure;
-    /* A prepared program bypasses branch lowering, so it would write the base. */
+    /* A prepared program bypasses branch lowering, so it would write the base;
+     * between branches it may run only if it writes no tracked resource. */
     if (failure.status == NATIVE_OK && device->snapshot && device->snapshot->active)
         failure = native_failure_status(NATIVE_UNSUPPORTED);
+    if (failure.status == NATIVE_OK) failure = native_snapshot_admit_base(device, &program->commands, 1);
     doe_resource_status replay = failure.status == NATIVE_OK ?
         doe_resource_commands_begin_replay(program->commands) : DOE_RESOURCE_STATE;
     if (failure.status == NATIVE_OK && replay != DOE_RESOURCE_OK)

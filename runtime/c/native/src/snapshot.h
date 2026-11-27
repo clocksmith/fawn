@@ -53,11 +53,18 @@ doe_vk_status native_marks_dispatch(native_device *device, const native_pipeline
     const doe_vk_binding_resource *bindings, doe_vk_binding_resource *mark, uint32_t *words);
 /* Submission lowering of an open branch: refuses unmarked writes, records the
  * host marks of fixed-function writes and lowers tracked resources against
- * the slot until native_snapshot_lower_end. A no-op outside a branch. */
+ * the slot until native_snapshot_lower_end. Outside a branch it is
+ * native_snapshot_admit_base. */
 native_failure native_snapshot_lower_begin(native_device *device, doe_resource_commands *const *commands,
     size_t count);
 void native_snapshot_lower_end(native_device *device);
-/* True when an open branch tracks the queue-write destination. */
+/* While a snapshot is live and no branch is open the base is frozen: refuses
+ * (UNSUPPORTED) commands that would write a tracked resource, because the next
+ * restore copies back only the previous branch's units. */
+native_failure native_snapshot_admit_base(const native_device *device, doe_resource_commands *const *commands,
+    size_t count);
+/* True when a live snapshot tracks the queue-write destination: inside a
+ * branch the write would bypass the slot, outside one it changes the base. */
 bool native_snapshot_tracks_buffer(const native_device *device, const doe_resource_buffer *buffer);
 bool native_snapshot_tracks_texture(const native_device *device, const doe_resource_texture *texture);
 /* The texel size of a format the snapshot can copy by tiles, else 0. */

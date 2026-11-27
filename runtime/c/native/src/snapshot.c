@@ -69,6 +69,9 @@ static bool track_buffer(native_device *device, WGPUBuffer buffer, native_snapsh
         return fail(device, "snapshot buffers need CopySrc and no map usage");
     if (!resource->size || resource->size > UINT32_MAX)
         return fail(device, "snapshot buffers must be nonempty and at most 4 GiB");
+    /* Unmapping a buffer mapped at creation would write the frozen base. */
+    if (wgpuBufferGetMapState(buffer) != WGPUBufferMapState_Unmapped)
+        return fail(device, "snapshot buffers must be unmapped");
     WGPUBufferDescriptor descriptor = WGPU_BUFFER_DESCRIPTOR_INIT;
     descriptor.size = resource->size;
     descriptor.usage = usage | WGPUBufferUsage_CopyDst;
