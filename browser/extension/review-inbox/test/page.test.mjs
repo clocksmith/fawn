@@ -104,9 +104,9 @@ test('Shift and a click, then a drag, add a person-chosen area around the contro
     send('click', { clientX: 140, clientY: 215, shiftKey: true });
     send('mousedown', { clientX: from.x, clientY: from.y });
     send('mousemove', { clientX: to.x, clientY: to.y });
+    // A drag that ends on another element, or outside the window, fires no click: the mouseup ends it.
     send('mouseup', { clientX: to.x, clientY: to.y });
-    send('click', { clientX: to.x, clientY: to.y });
-    return picked;
+    return Promise.race([picked, new Promise((_, reject) => setTimeout(() => reject(new Error('the pick never ended')), 1000))]);
   };
   const around = await drag({ x: 60, y: 150 }, { x: 400, y: 260 });
   assert.deepEqual([around.rect, around.point, around.area], [control, centre, { x: 60, y: 150, width: 340, height: 110 }]);
@@ -114,6 +114,14 @@ test('Shift and a click, then a drag, add a person-chosen area around the contro
   // A box that misses part of the control still covers all of it; one past the edge of the window stops there.
   assert.deepEqual((await drag({ x: 150, y: 210 }, { x: 500, y: 400 })).area, { x: 100, y: 200, width: 400, height: 200 });
   assert.deepEqual((await drag({ x: 900, y: 600 }, { x: 1300, y: 900 })).area, { x: 100, y: 200, width: 900, height: 500 });
+  // A click that does follow the drag, once the pick has ended, is swallowed: the page never sees it.
+  const picked = drag({ x: 60, y: 150 }, { x: 400, y: 260 });
+  let reachedPage = false;
+  const trailing = event('click', { clientX: 400, clientY: 260, stopImmediatePropagation: () => { reachedPage = false; }, preventDefault: () => {} });
+  await picked;
+  reachedPage = true;
+  for (const listener of [...(listeners.click ?? [])]) listener(trailing);
+  assert.equal(reachedPage, false, 'the trailing click is stopped');
   // Esc after Shift and a click keeps the control alone.
   const plain = picking();
   send('click', { clientX: 140, clientY: 215, shiftKey: true });
