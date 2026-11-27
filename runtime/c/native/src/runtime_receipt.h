@@ -5,6 +5,7 @@
 #ifndef DOE_NATIVE_RUNTIME_RECEIPT_H
 #define DOE_NATIVE_RUNTIME_RECEIPT_H
 #include "webgpu.h"
+#include "doe_native_snapshot.h"
 #include <stdbool.h>
 #include <stddef.h>
 
@@ -41,4 +42,9 @@ void native_receipt_adapter(const WGPUAdapterInfo *info);
 void native_receipt_debug(native_receipt_scope scope, bool marker, WGPUStringView label, bool accepted);
 /* An object label received through a descriptor or SetLabel. */
 void native_receipt_label(WGPUStringView label, bool accepted);
+/* A snapshot operation (doe_native_snapshot.h) and its verdict. ledger, when
+ * not NULL, is the snapshot's ledger after the operation; detail, when not
+ * NULL, is a refusal message. */
+void native_receipt_snapshot(const char *event, bool accepted, const DoeNativeSnapshotLedger *ledger,
+    uint64_t resources, const char *detail);
 #endif

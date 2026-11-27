@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: MIT */
 #include "snapshot.h"
+#include "runtime_receipt.h"
 #include <stdlib.h>
 #include <string.h>
 
@@ -35,6 +36,7 @@ uint32_t doeNativeSnapshotEnableWriteMarks(WGPUDevice handle)
     enabled = device->write_marks;
     native_unlock(device);
     if (refused) wgpuBufferRelease(sink);
+    native_receipt_snapshot("snapshot_write_marks", enabled, NULL, 0, NULL);
     return enabled ? 1 : 0;
 }
 
@@ -57,6 +59,7 @@ static void release_resources(native_snapshot *snapshot)
 
 static bool fail(native_device *device, const char *message)
 {
+    native_receipt_snapshot("snapshot_refused", false, NULL, 0, message);
     native_error(device, WGPUErrorType_Validation, message);
     return false;
 }
@@ -174,8 +177,10 @@ void *doeNativeSnapshotCreate(WGPUDevice handle, const DoeNativeSnapshotDesc *de
         release_resources(snapshot);
         native_device_release(device);
         free(snapshot);
+        native_receipt_snapshot("snapshot_created", false, NULL, count, NULL);
         return NULL;
     }
+    native_receipt_snapshot("snapshot_created", true, &snapshot->ledger, count, NULL);
     return snapshot;
 }
 
@@ -260,6 +265,7 @@ uint32_t doeNativeSnapshotBranchBegin(void *handle)
     snapshot->filled = true;
     snapshot->active = true;
     native_unlock(device);
+    native_receipt_snapshot("snapshot_branch_begin", true, &snapshot->ledger, snapshot->count, NULL);
     return 1;
 }
 
@@ -312,6 +318,7 @@ uint32_t doeNativeSnapshotBranchEnd(void *handle)
     }
     free(words);
     ++snapshot->ledger.branchesEnded;
+    native_receipt_snapshot("snapshot_branch_end", true, &snapshot->ledger, snapshot->count, NULL);
     return 1;
 }
 
@@ -344,6 +351,7 @@ void doeNativeSnapshotRelease(void *handle)
     native_lock(device);
     if (device->snapshot == snapshot) device->snapshot = NULL;
     native_unlock(device);
+    native_receipt_snapshot("snapshot_released", true, &snapshot->ledger, snapshot->count, NULL);
     release_resources(snapshot);
     free(snapshot);
     native_device_release(device);

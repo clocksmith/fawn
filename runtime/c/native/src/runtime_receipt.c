@@ -237,3 +237,34 @@ void native_receipt_label(WGPUStringView label, bool accepted)
     put_text(&line, accepted ? ",\"accepted\":true" : ",\"accepted\":false");
     emit(path, &line);
 }
+
+void native_receipt_snapshot(const char *event, bool accepted, const DoeNativeSnapshotLedger *ledger,
+    uint64_t resources, const char *detail)
+{
+    const char *path = receipt_path();
+    if (!path || !event) return;
+    receipt_line line = {.length = 0};
+    put_header(&line, event);
+    put_text(&line, accepted ? ",\"accepted\":true" : ",\"accepted\":false");
+    if (resources) {
+        put_text(&line, ",\"resources\":");
+        put_unsigned(&line, resources);
+    }
+    if (ledger) {
+        static const char *const names[] = {"declared_bytes", "branches_begun", "branches_ended",
+            "last_prepare_bytes", "total_prepare_bytes", "last_prepare_copies", "last_marked_units",
+            "last_marked_bytes", "prepare_submits", "branch_submits", "slot_views"};
+        const uint64_t values[] = {ledger->declaredBytes, ledger->branchesBegun, ledger->branchesEnded,
+            ledger->lastPrepareBytes, ledger->totalPrepareBytes, ledger->lastPrepareCopies,
+            ledger->lastMarkedUnits, ledger->lastMarkedBytes, ledger->prepareSubmits,
+            ledger->branchSubmits, ledger->slotViews};
+        for (size_t i = 0; i < sizeof(values) / sizeof(values[0]); ++i) {
+            put_text(&line, ",\"");
+            put_text(&line, names[i]);
+            put_text(&line, "\":");
+            put_unsigned(&line, values[i]);
+        }
+    }
+    if (detail) put_string_field(&line, "detail", (WGPUStringView){detail, strlen(detail)});
+    emit(path, &line);
+}
