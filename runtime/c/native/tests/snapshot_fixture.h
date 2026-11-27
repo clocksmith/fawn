@@ -11,10 +11,15 @@
 
 enum { PAGE = 65536, TILE = 256 };
 
+/* Vulkan's per-stage maxima here, so one pipeline can carry the sixteen
+ * writable storage resources write marks admit. */
 static inline void snapshot_device(state *s)
 {
     consumer_line_output();
-    consumer_init(s);
+    WGPULimits limits = WGPU_LIMITS_INIT;
+    limits.maxStorageBuffersPerShaderStage = 10;
+    limits.maxStorageTexturesPerShaderStage = 8;
+    consumer_init_device(s, NULL, 0, &limits);
     assert(doeNativeSnapshotEnableWriteMarks(s->device) == 1);
     assert(doeNativeSnapshotEnableWriteMarks(s->device) == 1);
 }

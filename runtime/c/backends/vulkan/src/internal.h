@@ -202,7 +202,7 @@ struct doe_vk_commands {
      * indirect dispatch's guard pipeline disturbs push-constant state, so the
      * target dispatch pushes these again. The pipeline is leased in dispatches. */
     doe_vk_pipeline *immediate_pipeline;
-    uint32_t immediate_words[16];
+    uint32_t immediate_words[DOE_VK_COMPUTE_IMMEDIATE_BYTES / 4];
     struct doe_vk_render_use *renders;
     struct doe_vk_query_use *queries;
     struct doe_vk_texture_use *textures;

@@ -86,6 +86,22 @@ static void refused(const char *source, const char *expected)
     }
 }
 
+/* count read_write storage buffers, eight per group, each written once. */
+static const char *writable_module(uint32_t count)
+{
+    static char source[4096];
+    size_t at = 0;
+    for (uint32_t k = 0; k < count; ++k)
+        at += (size_t)snprintf(source + at, sizeof(source) - at,
+            "@group(%u) @binding(%u) var<storage, read_write> a%u: array<u32>;\n", k / 8u, k % 8u, k);
+    at += (size_t)snprintf(source + at, sizeof(source) - at, "@compute @workgroup_size(1) fn main() {");
+    for (uint32_t k = 0; k < count; ++k)
+        at += (size_t)snprintf(source + at, sizeof(source) - at, " a%u[%u] = %uu;", k, 16384u * k, k);
+    snprintf(source + at, sizeof(source) - at, " }\n");
+    assert(at < sizeof(source) - 4);
+    return source;
+}
+
 /* Every marked access form: scalar, struct member vector component, whole
  * struct, fixed array element of a struct, matrix column, atomic, a store
  * through a pointer parameter, and a 2D textureStore. */
@@ -151,13 +167,15 @@ int main(int argc, char **argv)
     refused("@group(0) @binding(0) var image: texture_storage_2d_array<r32uint, write>;\n"
             "@compute @workgroup_size(1) fn main() { textureStore(image, vec2<u32>(0u), 0u, vec4<u32>(1u)); }\n",
             "2D storage textures only");
-    refused("@group(0) @binding(0) var<storage, read_write> a0: u32; @group(0) @binding(1) var<storage, read_write> a1: u32;\n"
-            "@group(0) @binding(2) var<storage, read_write> a2: u32; @group(0) @binding(3) var<storage, read_write> a3: u32;\n"
-            "@group(0) @binding(4) var<storage, read_write> a4: u32; @group(0) @binding(5) var<storage, read_write> a5: u32;\n"
-            "@group(0) @binding(6) var<storage, read_write> a6: u32; @group(0) @binding(7) var<storage, read_write> a7: u32;\n"
-            "@group(1) @binding(0) var<storage, read_write> a8: u32;\n"
-            "@compute @workgroup_size(1) fn main() { a0 = 1u; }\n", "at most 8 writable");
+    /* Sixteen writable resources fit: two words each, 128 immediate bytes,
+     * Vulkan's guaranteed push range. A seventeenth exceeds this fixture's
+     * resource capacity; native/tests/snapshot_canary.c shows its refusal. */
+    static compiled slots;
+    compile(writable_module(16u), DOE_COMPILER_WRITE_MARKS, &slots);
+    if (slots.status != DOE_COMPILER_OK) fprintf(stderr, "%s\n", slots.message);
+    assert(slots.status == DOE_COMPILER_OK && hidden_binding(&slots));
+    save(directory, "write-marks-slots.spv", &slots);
     printf("PASS write marks: hidden binding only under the flag and only with writable storage, "
-        "%zu extra stores, 4 refusals; no device used\n", opcode_count(&on, 62u) - opcode_count(&off, 62u));
+        "%zu extra stores, 16 slots, 3 refusals; no device used\n", opcode_count(&on, 62u) - opcode_count(&off, 62u));
     return 0;
 }

@@ -325,7 +325,11 @@ doe_vk_status doe_vk_pipeline_create_with_subgroup(doe_vk_context *context,
     const uint32_t *spirv, size_t word_count, const char *entrypoint,
     const doe_vk_binding_layout *layout, size_t binding_count, uint32_t required_subgroup_size,
     doe_vk_pipeline **out, doe_vk_error *error);
-/* Exact 4-byte-aligned push extent, at most64 bytes, participates in pipeline identity. */
+/* Exact 4-byte-aligned push extent, participates in pipeline identity: at most
+ * DOE_VK_COMPUTE_IMMEDIATE_BYTES (128, Vulkan's guaranteed push-constant range;
+ * WebGPU immediates stay within 64, the rest is the native snapshot's write
+ * marks) and the device's maxPushConstantsSize. Graphics pipelines take 64. */
+#define DOE_VK_COMPUTE_IMMEDIATE_BYTES 128u
 doe_vk_status doe_vk_pipeline_create_with_immediates(doe_vk_context *context,
     const uint32_t *spirv, size_t word_count, const char *entrypoint,
     const doe_vk_binding_layout *layout, size_t binding_count, uint32_t required_subgroup_size,

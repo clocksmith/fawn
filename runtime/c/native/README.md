@@ -1236,10 +1236,13 @@ creation and dispatch (`pipelines.c`, `queue.c`). Default devices are unchanged.
 
 `tests/snapshot_canary.c` runs one branch per write path (storage store and atomic, an
 over-aligned store crossing a page, an out-of-bounds store whose mark offset wraps,
-textureStore, buffer copy, buffer-to-texture and texture-to-texture copy, clear, render
+sixteen writable bindings in one pipeline, textureStore, buffer copy, buffer-to-texture and texture-to-texture copy, clear, render
 attachment) and requires every unit a CPU diff shows changed to be marked, the base to
 stay byte-identical and the next slot to start equal to the base; negative controls show
-the base check failing on a deliberate base write and the refusals.
+the base check failing on a deliberate base write and the refusals, including a
+seventeenth writable resource (two immediate words each exceed Vulkan's guaranteed 128
+bytes). The snapshot device requests Vulkan's per-stage maxima of 10 storage buffers and 8
+storage textures.
 `tests/snapshot_ledger.c` runs a 256 MiB W0/W1 workload against an independent CPU
 computation and a large-scratch workload, and prints the bytes each branch's slot
 preparation copied next to the declared-writable copy. Both are `make check-snapshot`.
