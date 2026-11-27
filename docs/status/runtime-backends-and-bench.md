@@ -26,6 +26,25 @@ arms. Row indices establish order. Any receipt selecting either legacy
 window label needs a matching measured-duration receipt or a rerun before
 it supports a performance claim.
 
+## macOS C package consumer check
+
+At `cfd8a4e0b1102f9489fc2d19efa09f570539abfd` the Darwin public export named
+`libwebgpu_doe.dylib`, while the C builder produced `libwebgpu_doe_c.dylib`.
+At `ac95c498b851bcc5e5e70f1671193439c9532cd5`, the C stage manifest supplies the
+Darwin platform and architecture, library filename and pinned `webgpu.h`
+SHA-256 to staging and resolution.
+
+A fresh Apple Silicon build at that revision packed the wrapper and platform
+tarballs and installed both into empty projects. Node v22.20.0 and Bun 1.3.10
+resolved the package's public export to the installed `doe-c` provider and each
+returned `[2, 4, 6, 8, 10, 12, 14, 16]` from the first kernel. Both installations
+used the same tarball SHA-256 values.
+
+| Tarball | SHA-256 |
+| --- | --- |
+| `doe-gpu@0.5.2` | `4277f338e4568066e21f695d76ae5020068bace81a5b3ca50efcc29e7de3ed03` |
+| `doe-gpu-darwin-arm64@0.5.2` | `74d8a52fada94a2be4a2a86f4d77b169b75c3e9855387ec808581ca8c6b2b3e2` |
+
 ## Windows native correctness boundary
 
 The native Windows lane exercises the bounded D3D12 copy and scalar-storage
