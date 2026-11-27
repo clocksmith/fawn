@@ -29,12 +29,13 @@ Fawn's browser.
 | --- | --- | --- |
 | The tab | the tab still exists | Click blocked |
 | The document | the same loaded document, not a reload or another page | Click blocked |
-| The element | the same node is still attached and is what sits under the click point | Click blocked |
+| The element | the same node is still attached, and what sits under the click point is that node or inside it (its label or icon), never a look-alike beside it | Click blocked |
 | The pixels | a fresh capture of the rectangle is byte-identical to the reviewed one | Click blocked, and the card shows the new image beside the old |
 | The application's record | where the recipe has one, the target and values that were approved still hold (for a Forgejo merge: the same pull request, still open and unmerged, with the head commit that was reviewed) | Click blocked as a stale approval; the reason says what changed |
 
 The click itself is a trusted click sent through the debugger API with a fence
-armed in every frame: if it lands on anything but the bound element it is
+armed in every frame: if it lands on anything but the bound element or something
+inside it (found on the event's composed path, so open shadow roots count) it is
 stopped before the page sees it.
 
 The lines under "What will change" (for a merge: the pull request's title and the commit
@@ -168,6 +169,11 @@ reconcile against, so it stays `unknown` until a person clears it.
 
 ## Test
 
+`test/page.test.mjs` needs no browser either. It loads page.js against a
+stand-in window and checks that the fence lets a click on the control or on
+anything inside it through, including inside an open shadow root, and stops a
+click on a look-alike sibling or on what holds the control.
+
 `test/lifecycle.test.mjs` needs no browser. It checks the state table, and
 loads the worker against a stand-in for `chrome` to check that illegal moves
 are refused, that tab closure and page replacement close open items, that
@@ -179,7 +185,7 @@ is unknown while a 4xx answer with the application's message is a refusal. It ne
 later, which loads the extension's `.js` files as modules.
 
 ```
-node --test test/lifecycle.test.mjs
+node --test test/lifecycle.test.mjs test/page.test.mjs
 ```
 
 The two tests below drive a real Chrome through `playwright-core`. Each prints
