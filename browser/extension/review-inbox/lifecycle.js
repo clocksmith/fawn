@@ -57,6 +57,7 @@ export const REASON = Object.freeze({
   controlGone: 'The reviewed control is no longer on the page.',
   covered: 'Something else now sits under the reviewed click point.',
   noCapture: 'The browser could not capture the reviewed area.',
+  pageSilent: 'The page did not answer in time, so it could not be checked.',
   pixelsChanged: 'The reviewed area changed after it was reviewed.',
   // What a check of the application's own record found: the target and values the approval was for.
   stale: changes => `Stale approval: ${changes.join('; ')}.`,
