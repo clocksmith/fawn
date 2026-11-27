@@ -58,18 +58,6 @@ full suites, physical GPU runs and release qualification remain separate.
 Once relevant checks pass, continue unless another change, failure or concrete
 unresolved question warrants more. A local pass proves only its exercised scope.
 
-## Git workflow
+## Git workflow and handoff
 
-Use path-limited commits in the shared checkout. Use an isolated checkout when
-a substantial change could collide with another session, and preserve its work
-when integrating. Deliver under the workspace [Git delivery rule](https://github.com/clocksmith/ouroboros/blob/main/deco/AGENTS.md#git-delivery).
-Keep generated output and local archives out of commits under the
-[retention policy](reports/README.md#retention).
-
-## Handoff
-
-Report what you changed, what you ran and what it showed, with commit hashes.
-Fix correctness failures rather than relabeling them or weakening acceptance.
-Public claims need current measured evidence, not progress language or a
-successful compile. A contract change updates its owner, consumer and checks
-together.
+Follow the workspace [Git delivery](https://github.com/clocksmith/ouroboros/blob/main/deco/AGENTS.md#git-delivery) and reporting rules in `../AGENTS.md`. Keep generated output and local archives out of commits under the [retention policy](reports/README.md#retention), and update a contract's owner, consumer, and checks together.
