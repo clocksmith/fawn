@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: MIT
- * Snapshot leak canary, one branch per write path: storage store, textureStore,
- * buffer copy, buffer-to-texture and texture-to-texture copy, clear and render
+ * Snapshot leak canary, one branch per write path: storage store, a store that
+ * crosses a page within its own alignment, textureStore, buffer copy,
+ * buffer-to-texture and texture-to-texture copy, clear and render
  * attachment. Each branch must (1) change its slot, (2) mark every unit the
  * CPU diff shows changed, (3) leave the base resources byte-identical, and
  * (4) hand the next branch a slot equal to the base: a missed mark survives
@@ -17,7 +18,7 @@ typedef struct canary {
     WGPUTextureView image_view;
     uint8_t *base_buffer, *base_image;
     void *snapshot;
-    WGPUComputePipeline store, texel;
+    WGPUComputePipeline store, texel, wide;
     WGPURenderPipeline draw;
 } canary;
 
@@ -34,6 +35,14 @@ static const char store_source[] =
     "  cells[65536u / 32u + i].b.z = 0x5a5a0000u + i;\n"
     "  atomicAdd(&counters[i], 1u);\n"
     "}\n";
+
+/* A store no wider than its alignment can still straddle a page: the binding
+ * offset is only 256-aligned, so element 127 of this 512-aligned array starts
+ * 256 bytes before a page boundary and its body ends on the next page. */
+static const char wide_source[] =
+    "struct Wide { @align(512) head: u32, body: array<u32, 127> }\n"
+    "@group(0) @binding(0) var<storage, read_write> wide: array<Wide>;\n"
+    "@compute @workgroup_size(1) fn main() { wide[127] = Wide(0u, array<u32, 127>()); }\n";
 
 /* An override constant takes the specialization compile path: its pipeline
  * must still carry marks, or the branch submission is refused. */
@@ -135,9 +144,22 @@ static WGPUBindGroup bind(canary *c, WGPUComputePipeline pipeline, const WGPUBin
     return group(&c->s, pipeline, entries, count);
 }
 
-typedef enum path { STORE, TEXEL, COPY, BUFFER_TEXTURE, TEXTURE_TEXTURE, CLEAR, ATTACHMENT, PATHS } path;
-static const char *const path_names[PATHS] = {"storage store and atomic", "textureStore", "buffer copy",
-    "buffer-to-texture copy", "texture-to-texture copy", "buffer clear", "render attachment"};
+typedef enum path { STORE, WIDE, TEXEL, COPY, BUFFER_TEXTURE, TEXTURE_TEXTURE, CLEAR, ATTACHMENT, PATHS } path;
+static const char *const path_names[PATHS] = {"storage store and atomic", "over-aligned store", "textureStore",
+    "buffer copy", "buffer-to-texture copy", "texture-to-texture copy", "buffer clear", "render attachment"};
+
+static void dispatch_one(canary *c, WGPUCommandEncoder encoder, WGPUComputePipeline pipeline,
+    const WGPUBindGroupEntry *entries, size_t count)
+{
+    WGPUBindGroup g = bind(c, pipeline, entries, count);
+    WGPUComputePassEncoder pass = wgpuCommandEncoderBeginComputePass(encoder, NULL);
+    wgpuComputePassEncoderSetPipeline(pass, pipeline);
+    wgpuComputePassEncoderSetBindGroup(pass, 0, g, 0, NULL);
+    wgpuComputePassEncoderDispatchWorkgroups(pass, 1, 1, 1);
+    wgpuComputePassEncoderEnd(pass);
+    wgpuComputePassEncoderRelease(pass);
+    wgpuBindGroupRelease(g);
+}
 
 static void record_path(canary *c, WGPUCommandEncoder encoder, path p)
 {
@@ -146,26 +168,18 @@ static void record_path(canary *c, WGPUCommandEncoder encoder, path p)
         WGPUBindGroupEntry entries[3] = {{.binding=0,.buffer=c->tracked,.size=4 * PAGE},
             {.binding=1,.buffer=c->tracked,.offset=8 * PAGE,.size=4 * PAGE},
             {.binding=2,.buffer=c->tracked,.offset=12 * PAGE,.size=4 * PAGE}};
-        WGPUBindGroup g = bind(c, c->store, entries, 3);
-        WGPUComputePassEncoder pass = wgpuCommandEncoderBeginComputePass(encoder, NULL);
-        wgpuComputePassEncoderSetPipeline(pass, c->store);
-        wgpuComputePassEncoderSetBindGroup(pass, 0, g, 0, NULL);
-        wgpuComputePassEncoderDispatchWorkgroups(pass, 1, 1, 1);
-        wgpuComputePassEncoderEnd(pass);
-        wgpuComputePassEncoderRelease(pass);
-        wgpuBindGroupRelease(g);
+        dispatch_one(c, encoder, c->store, entries, 3);
+        break;
+    }
+    case WIDE: {
+        /* Element 127 spans pages 4 and 5; only its body reaches page 5. */
+        WGPUBindGroupEntry entry = {.binding=0,.buffer=c->tracked,.offset=4 * PAGE + 256,.size=2 * PAGE};
+        dispatch_one(c, encoder, c->wide, &entry, 1);
         break;
     }
     case TEXEL: {
         WGPUBindGroupEntry entry = {.binding=0,.textureView=c->image_view};
-        WGPUBindGroup g = bind(c, c->texel, &entry, 1);
-        WGPUComputePassEncoder pass = wgpuCommandEncoderBeginComputePass(encoder, NULL);
-        wgpuComputePassEncoderSetPipeline(pass, c->texel);
-        wgpuComputePassEncoderSetBindGroup(pass, 0, g, 0, NULL);
-        wgpuComputePassEncoderDispatchWorkgroups(pass, 1, 1, 1);
-        wgpuComputePassEncoderEnd(pass);
-        wgpuComputePassEncoderRelease(pass);
-        wgpuBindGroupRelease(g);
+        dispatch_one(c, encoder, c->texel, &entry, 1);
         break;
     }
     case COPY:
@@ -312,6 +326,7 @@ int main(void)
     upload_image(&c, c.source_image, scratch);
     free(scratch);
     c.store = compute(&c, store_source, NULL);
+    c.wide = compute(&c, wide_source, NULL);
     const WGPUConstantEntry column = {.key={"column", WGPU_STRLEN},.value=300.0};
     c.texel = compute(&c, texel_source, &column);
     c.draw = render(&c);
@@ -334,6 +349,7 @@ int main(void)
     negative_controls(&c);
     doeNativeSnapshotRelease(c.snapshot);
     wgpuComputePipelineRelease(c.store);
+    wgpuComputePipelineRelease(c.wide);
     wgpuComputePipelineRelease(c.texel);
     wgpuRenderPipelineRelease(c.draw);
     wgpuTextureViewRelease(c.image_view);
