@@ -94,4 +94,14 @@ CREATE TABLE IF NOT EXISTS recipe_submission_receipts (
   response_json TEXT NOT NULL,
   PRIMARY KEY (namespace_id, author_hash, submission_id)
 );
+CREATE INDEX IF NOT EXISTS idx_recipe_submission_receipts_author
+  ON recipe_submission_receipts (author_hash, submission_id);
+
+CREATE TABLE IF NOT EXISTS recipe_trace_receipts (
+  author_hash TEXT NOT NULL,
+  submission_id TEXT NOT NULL,
+  request_hash TEXT NOT NULL,
+  response_json TEXT NOT NULL,
+  PRIMARY KEY (author_hash, submission_id)
+);
 `;

@@ -224,7 +224,7 @@ try {
   const searchOut = structuralOutlineHash([searchInput]);
 
   // Trace 1 has BOTH a modal loop (home -> menu -> home) AND a 2-click path (home -> menu -> search -> fill).
-  const firstIngest = await alphaClient.submitVerifiedTrace({
+  const detourTrace = {
     submissionId: 'trace-detour-1',
     scope: 'workspace',
     origin: 'https://app.example.com',
@@ -239,22 +239,14 @@ try {
       { beforeOutline: menuOut, afterOutline: searchOut, kind: 'click', locator: structuralLocator(subBtn), elapsedMs: 50 },
       { beforeOutline: searchOut, afterOutline: searchOut, kind: 'fill', locator: structuralLocator(searchInput), slot: 'query', elapsedMs: 40 },
     ],
-  });
+  };
+  const firstIngest = await alphaClient.submitVerifiedTrace(detourTrace);
   assert.equal(firstIngest.contractedSteps, 2, 'Server contracts home -> menu -> home loop');
   assert.equal(firstIngest.compressionStats.nodeCount, 4);
 
   // Idempotent retry of same submissionId returns exact same receipt without double-counting.
-  const retryIngest = await alphaClient.submitVerifiedTrace({
-    submissionId: 'trace-detour-1',
-    scope: 'workspace',
-    origin: 'https://app.example.com',
-    template: 'detour-demo',
-    verificationId: 'ver-1',
-    reviewVerified: true,
-    limits,
-    steps: [],
-  });
-  assert.equal(retryIngest.revision, firstIngest.revision);
+  const retryIngest = await alphaClient.submitVerifiedTrace(detourTrace);
+  assert.deepEqual(retryIngest, firstIngest);
 
   // Trace 2 discovers 1-click shortcut (home -> search -> fill): server prunes menu detour & garbage-collects menu node!
   const shortcutIngest = await alphaClient.submitVerifiedTrace({

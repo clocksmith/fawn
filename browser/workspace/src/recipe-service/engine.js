@@ -446,29 +446,45 @@ export function createManagedRecipeEngine({
         throw serviceError(400, 'invalid-steps', `Trace steps must contain 1..${limits.maxSteps} transitions`);
       }
       const steps = body.steps.map(validateRawStep);
-      const requestHash = sha256Hex(canonicalJson([verificationId, steps, limits]));
-      const receiptKey = [meta.namespaceId, authorHash, submissionId];
+      const requestHash = sha256Hex(canonicalJson([meta.namespaceId, verificationId, steps, limits]));
+      // authorHash contains both workspace and client identity, even for the shared catalog.
+      const receiptKey = [authorHash, submissionId];
+      function submissionConflict() {
+        return serviceError(409, 'submission-conflict', 'Submission ID already used for a different trace');
+      }
       async function priorResponse() {
         const row = await store.get(
-          'SELECT * FROM recipe_submission_receipts WHERE namespace_id = ? AND author_hash = ? AND submission_id = ?',
+          'SELECT request_hash, response_json FROM recipe_trace_receipts WHERE author_hash = ? AND submission_id = ?',
           receiptKey,
         );
         if (row) {
-          if (row.verification_id !== verificationId || (steps.length && row.request_hash !== requestHash)) {
-            throw serviceError(409, 'submission-conflict', 'Submission ID already used for a different trace');
-          }
+          if (row.request_hash !== requestHash) throw submissionConflict();
           return JSON.parse(row.response_json);
         }
-        // Older receipts lack a request digest and a catalog contributor's workspace.
-        const legacy = await store.get(
-          'SELECT * FROM recipe_submissions WHERE submission_id = ? AND namespace_id = ? AND client_id = ?',
-          [submissionId, meta.namespaceId, principal.clientId],
+        // Earlier digested receipts keyed by namespace can be checked without rewriting them.
+        const previous = await store.all(
+          `SELECT namespace_id, request_hash, response_json FROM recipe_submission_receipts
+           WHERE author_hash = ? AND submission_id = ? LIMIT 2`,
+          receiptKey,
         );
-        if (!legacy) return null;
-        if (meta.scope === 'workspace' && legacy.verification_id === verificationId && !steps.length) {
-          return JSON.parse(legacy.response_json);
+        if (previous.length) {
+          const [receipt] = previous;
+          const previousHash = sha256Hex(canonicalJson([verificationId, steps, limits]));
+          if (previous.length !== 1 || receipt.namespace_id !== meta.namespaceId || receipt.request_hash !== previousHash) {
+            throw submissionConflict();
+          }
+          return JSON.parse(receipt.response_json);
         }
-        throw serviceError(409, 'legacy-submission', 'Existing receipt cannot verify this payload');
+        // The oldest receipts lack a payload digest and a catalog contributor's workspace.
+        const legacy = await store.get(
+          `SELECT s.submission_id FROM recipe_submissions s
+           LEFT JOIN recipe_namespaces n ON n.namespace_id = s.namespace_id
+           WHERE s.submission_id = ? AND s.client_id = ?
+             AND (s.namespace_id = ? OR (n.scope_kind = 'workspace' AND n.workspace_id = ?))`,
+          [submissionId, principal.clientId, meta.namespaceId, principal.workspaceId],
+        );
+        if (legacy) throw serviceError(409, 'legacy-submission', 'Existing receipt cannot verify this payload');
+        return null;
       }
       if (!steps.length) {
         const prior = await priorResponse();
@@ -485,10 +501,10 @@ export function createManagedRecipeEngine({
             reduction: reduced.stats, compressionStats: analyzeTraceGraph(reduced.nodes, limits),
           };
           statements.push({
-            sql: `INSERT INTO recipe_submission_receipts
-                  (namespace_id, author_hash, submission_id, verification_id, request_hash, response_json)
-                  VALUES (?, ?, ?, ?, ?, ?)`,
-            params: [...receiptKey, verificationId, requestHash, JSON.stringify(response)],
+            sql: `INSERT INTO recipe_trace_receipts
+                  (author_hash, submission_id, request_hash, response_json)
+                  VALUES (?, ?, ?, ?)`,
+            params: [...receiptKey, requestHash, JSON.stringify(response)],
           });
           return response;
         },
