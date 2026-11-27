@@ -360,7 +360,8 @@ test('a reconciliation reads the record with GETs only and never clicks, runs in
     { id: 'open', answers: [pull(), pull()], state: UNAPPLIED, detail: /not merged, at head aaaaaaaaaa/, holds: null },
     { id: 'moved', answers: [pull({ head: { sha: OTHER } }), pull({ head: { sha: OTHER } })], state: UNAPPLIED, holds: false, reason: /Stale approval: pull request #12 now has head commit bbbbbbbbbb; the reviewed one was aaaaaaaaaa/ },
     { id: 'someone-else', answers: [mergedPull(OTHER), mergedPull(OTHER)], state: UNAPPLIED, holds: false, reason: /already merged/ },
-    { id: 'soon', answers: [pull(), pull()], more: { finishingAt: new Date().toISOString() }, state: UNKNOWN, detail: /may still be in progress/ },
+    // Too soon after the click for "nothing happened" to count: one read, no second one a second later.
+    { id: 'soon', answers: [pull()], more: { finishingAt: new Date().toISOString() }, state: UNKNOWN, detail: /may still be in progress/, withinMs: 500 },
     { id: 'disagree', answers: [pull(), pull({ head: { sha: OTHER } })], state: UNKNOWN, detail: new RegExp(REASON.readsDisagree.replace(/\./g, '\\.')) },
     { id: 'down', answers: [{ status: 502 }], state: UNKNOWN, detail: /answered HTTP 502/ },
     { id: 'elsewhere', answers: [], more: { summary: { title: 'x', lines: [], recipe: 'forgejo-merge', target: { base: 'http://elsewhere.test', repo: 'ana/payables', number: 12, head: HEAD } } }, state: UNKNOWN, detail: /not the reviewed page's origin/ },
@@ -372,8 +373,9 @@ test('a reconciliation reads the record with GETs only and never clicks, runs in
     const answers = [...c.answers];
     setRecord(() => answers.shift() ?? (() => { throw new Error('one read too many'); })());
     injections.length = 0; commands.length = 0; const seen = fetches.length;
-    const reply = await send({ inbox: 'reconcile', id: c.id });
+    const started = Date.now(), reply = await send({ inbox: 'reconcile', id: c.id });
     assert.equal(reply.ok, true, `${c.id}: ${reply.error}`);
+    if (c.withinMs) assert.ok(Date.now() - started < c.withinMs, `${c.id} answered without waiting to read again`);
     const after = stored.items[c.id];
     assert.equal(after.state, c.state, c.id);
     if (c.detail) assert.match(after.outcome.detail, c.detail, c.id);

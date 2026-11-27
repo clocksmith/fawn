@@ -19,7 +19,7 @@
 //
 // An item's states, the moves between them and the words for each reason are
 // defined once, in lifecycle.js. Here every change of state goes through `move`.
-import { STATE, REMOVED, REASON, OUTCOME, REREAD_MS, isOpen, isTerminal, isCheckable, refusal, reconciled, whenTabCloses, whenDocumentIs } from './lifecycle.js';
+import { STATE, REMOVED, REASON, OUTCOME, REREAD_MS, SETTLE_MS, isOpen, isTerminal, isCheckable, refusal, reconciled, whenTabCloses, whenDocumentIs } from './lifecycle.js';
 
 // Every wait on a page is bounded. A page that does not answer in time fails closed: it is not clicked.
 const RESULT_WINDOW_MS = 10000, RESULT_POLL_MS = 200, CAPTURE_TIMEOUT_MS = 2500, PAGE_TIMEOUT_MS = 2500, RECORD_TIMEOUT_MS = 8000;
@@ -420,13 +420,15 @@ async function reconcile(id) {
   const words = { noun: recipe?.noun ?? 'result', doneLabel: recipe?.doneLabel ?? 'Confirmed' };
   let found;
   try {
-    const firstReadAt = Date.now(), first = await viewRecord(item);
+    const sent = Date.parse(item.finishingAt), firstReadAt = Date.now(), first = await viewRecord(item);
+    const sinceSentMs = Number.isFinite(sent) ? firstReadAt - sent : 0;
     if (!first) found = { unsupported: true };
     else {
       const reads = [first];
-      if (!first.applied) { await new Promise(resolve => setTimeout(resolve, REREAD_MS)); reads.push(await viewRecord(item)); }
-      const sent = Date.parse(item.finishingAt);
-      found = { reads, sinceSentMs: Number.isFinite(sent) ? firstReadAt - sent : 0 };
+      // A second read only when it can settle something: not after a read that shows it done, and not so soon
+      // after the click that "nothing happened" would not count anyway.
+      if (!first.applied && sinceSentMs >= SETTLE_MS) { await new Promise(resolve => setTimeout(resolve, REREAD_MS)); reads.push(await viewRecord(item)); }
+      found = { reads, sinceSentMs };
     }
   } catch (error) { found = { failure: error.message }; }
   const answer = reconciled(found, words, now());
