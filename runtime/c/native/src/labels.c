@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: MIT */
 #include "internal.h"
+#include "runtime_receipt.h"
 
 void native_label(native_device *device, const void *identity, WGPUStringView label)
 {
@@ -13,6 +14,7 @@ void native_label(native_device *device, const void *identity, WGPUStringView la
     doe_label_status status = doe_label_store_set(device->labels, identity,
         (const unsigned char *)label.data, size);
     native_unlock(device);
+    native_receipt_label(label, status == DOE_LABEL_OK);
     if (status != DOE_LABEL_OK) native_error(device, native_label_error(status), "label storage failed");
 }
 void wgpuDeviceSetLabel(WGPUDevice device, WGPUStringView label)

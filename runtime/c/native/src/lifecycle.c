@@ -2,7 +2,9 @@
 #include "surface.h"
 #include "d3d12_queries.h"
 #include "adapter_request.h"
+#include "runtime_receipt.h"
 #include "doe_native_shared_memory.h"
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -70,6 +72,7 @@ WGPUInstance wgpuCreateInstance(const WGPUInstanceDescriptor *descriptor)
         instance_state_remove(state, NULL);
         return NULL;
     }
+    native_receipt_lifecycle_event(NATIVE_RECEIPT_INSTANCE_CREATED);
     return (WGPUInstance)instance;
 }
 
@@ -98,6 +101,19 @@ void wgpuAdapterRelease(WGPUAdapter handle)
     if (doe_mutex_destroy(&adapter->mutex).status != DOE_HOST_OK) abort();
     free(adapter);
     doe_instance_release(instance);
+}
+
+/* The receipt records the info this adapter reports through GetInfo. */
+static void receipt_adapter(const native_adapter *adapter)
+{
+    if (!native_receipt_enabled()) return;
+    WGPUAdapterInfo info = WGPU_ADAPTER_INFO_INIT;
+    if (native_backend_info(&adapter->backend, adapter->features, &info) != WGPUStatus_Success) {
+        fprintf(stderr, "doe_runtime_receipt_failed: adapter info unavailable\n");
+        return;
+    }
+    native_receipt_adapter(&info);
+    wgpuAdapterInfoFreeMembers(info);
 }
 
 typedef struct adapter_delivery {
@@ -198,6 +214,7 @@ WGPUFuture wgpuInstanceRequestAdapter(WGPUInstance handle,
                 delivery.adapter = adapter;
                 delivery.status = WGPURequestAdapterStatus_Success;
                 delivery.message = "";
+                receipt_adapter(adapter);
             } else {
                 native_backend_close(&backend);
                 delivery.status = WGPURequestAdapterStatus_Error;
@@ -438,6 +455,7 @@ static native_device *create_device(native_adapter *adapter, const WGPUDeviceDes
     device->adapter = adapter;
     wgpuAdapterAddRef((WGPUAdapter)adapter);
     native_loss_bind(loss, device);
+    native_receipt_lifecycle_event(NATIVE_RECEIPT_DEVICE_CREATED);
     return device;
 failed_errors:
     native_metal_completion_detach(device);
