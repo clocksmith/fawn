@@ -2,6 +2,16 @@
  * Public marker strings are diagnostics, not retained command data. State and
  * balance belong to each canonical recording owner, with no frontend counters. */
 #include "internal.h"
+#include "runtime_receipt.h"
+
+/* Push and marker labels go to the opt-in runtime receipt after the owner
+ * lock is released; Pop carries no label. */
+static void receipt_debug(native_receipt_scope scope, doe_resource_debug_operation operation,
+    const WGPUStringView *label, bool valid, doe_resource_status status)
+{
+    if (!label || !valid || operation == DOE_RESOURCE_DEBUG_POP) return;
+    native_receipt_debug(scope, operation == DOE_RESOURCE_DEBUG_MARKER, *label, status == DOE_RESOURCE_OK);
+}
 
 static void command_debug(WGPUCommandEncoder handle, doe_resource_debug_operation operation,
     const WGPUStringView *label)
@@ -16,6 +26,7 @@ static void command_debug(WGPUCommandEncoder handle, doe_resource_debug_operatio
     doe_resource_status status = valid ? doe_resource_encoder_debug(owner, operation) :
         doe_resource_encoder_invalidate(owner, DOE_RESOURCE_INVALID_ARGUMENT);
     native_unlock(device);
+    receipt_debug(NATIVE_RECEIPT_COMMAND_ENCODER, operation, label, valid, status);
     native_encoding_error(device, ended, status, "command debug recording failed");
 }
 void wgpuCommandEncoderInsertDebugMarker(WGPUCommandEncoder handle, WGPUStringView label)
@@ -44,6 +55,7 @@ static void compute_debug(WGPUComputePassEncoder handle, doe_resource_debug_oper
     doe_resource_status status = valid ? doe_resource_compute_pass_debug(owner, operation) :
         doe_resource_compute_pass_invalidate(owner, DOE_RESOURCE_INVALID_ARGUMENT);
     native_unlock(device);
+    receipt_debug(NATIVE_RECEIPT_COMPUTE_PASS, operation, label, valid, status);
     native_encoding_error(device, ended, status, "compute debug recording failed");
 }
 void wgpuComputePassEncoderInsertDebugMarker(WGPUComputePassEncoder handle, WGPUStringView label)
@@ -72,6 +84,7 @@ static void render_debug(WGPURenderPassEncoder handle, doe_resource_debug_operat
     doe_resource_status status = valid ? doe_resource_render_pass_debug(owner, operation) :
         doe_resource_render_pass_invalidate(owner, DOE_RESOURCE_INVALID_ARGUMENT);
     native_unlock(device);
+    receipt_debug(NATIVE_RECEIPT_RENDER_PASS, operation, label, valid, status);
     native_encoding_error(device, ended, status, "render debug recording failed");
 }
 void wgpuRenderPassEncoderInsertDebugMarker(WGPURenderPassEncoder handle, WGPUStringView label)
@@ -100,6 +113,7 @@ static void bundle_debug(WGPURenderBundleEncoder handle, doe_resource_debug_oper
     doe_resource_status status = valid ? doe_resource_bundle_encoder_debug(owner, operation) :
         doe_resource_bundle_encoder_invalidate(owner, DOE_RESOURCE_INVALID_ARGUMENT);
     native_unlock(device);
+    receipt_debug(NATIVE_RECEIPT_RENDER_BUNDLE, operation, label, valid, status);
     native_encoding_error(device, ended, status, "bundle debug recording failed");
 }
 void wgpuRenderBundleEncoderInsertDebugMarker(WGPURenderBundleEncoder handle, WGPUStringView label)

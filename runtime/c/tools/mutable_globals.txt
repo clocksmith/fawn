@@ -13,3 +13,4 @@ native_store runtime/c/labels/src/native.c process label store used by the nativ
 provider_once runtime/c/native/src/provider_pin.c host once guard for the provider image pin
 provider_image runtime/c/native/src/provider_pin.c process-lifetime POSIX dlopen reference or Win32 module PIN keeping worker code mapped
 provider_permanent runtime/c/native/src/provider_pin.c records permanent main-image residency or successful Win32 module PIN
+receipt_sequence runtime/c/native/src/runtime_receipt.c process-wide monotonic runtime receipt line counter (atomic); advanced only while DOE_RUNTIME_RECEIPT names a file

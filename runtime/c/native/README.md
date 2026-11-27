@@ -1070,6 +1070,28 @@ unfinished parallel ABI6 enum edits; checkpoint testing instead materialized the
 committed ABI5 compiler 54f0fb9f6f7202cb13d37e7440ea9d7e13e99b0f with the recorded
 runtime snapshot. That development drift is not a published checkpoint result.
 
+## Runtime receipt (opt-in)
+
+When `DOE_RUNTIME_RECEIPT` names a file, the provider appends one JSON line for
+each event it actually handles: `instance_created`, `adapter_returned` (with the
+backend/adapter type, PCI IDs and the strings `wgpuAdapterGetInfo` reports),
+`device_created`, every `pushDebugGroup`/`insertDebugMarker` label on a command
+encoder, compute pass, render pass or render bundle, and every object label it
+receives through a descriptor or `SetLabel` (`object_label`). Each line carries
+`pid`, `ppid` (POSIX), a process-wide `seq` and, for strings, the byte length;
+at most 256 bytes of a string are copied (`*_truncated` marks the rest) and bytes
+outside printable ASCII are written as one `\u00XX` escape per byte. Each line is
+one `write` on a file opened `O_APPEND` for that line, after any owner lock is
+released. An unset or empty variable changes nothing; an unwritable file is
+reported on stderr and never changes a WebGPU result. Inside a sandboxed browser
+GPU process the open is subject to that sandbox's file policy.
+
+A page label or debug group found in this file was received by this library, so
+it identifies which runtime executed the commands that carried it; it does not
+show that the commands produced correct results. `check-runtime-receipt` tests
+the writer on every host; `check-runtime-receipt-consumer` drives the public ABI
+on the CPU adapter.
+
 ## Doe shader-check extension
 
 `include/doe_native_shader_check.h` declares the device-less WGSL check the addon's

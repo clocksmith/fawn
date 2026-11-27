@@ -79,6 +79,13 @@ check-shader-cache-image-change: $(BUILD)/shader-cache $(BUILD)/shader-cache-cha
 	DOE_SHADER_CACHE_DIR="$$directory" $(BUILD)/shader-cache warm && DOE_SHADER_CACHE_DIR="$$directory" $(BUILD)/shader-cache-changed-image reload-miss
 check: check-shader-cache-reload check-shader-cache-no-build-id check-shader-cache-image-change
 endif
+# The receipt writer alone: no adapter, so it runs on every host.
+$(BUILD)/runtime-receipt: tests/runtime_receipt.c src/runtime_receipt.c src/runtime_receipt.h ../../vendor/webgpu-headers/webgpu.h | $(BUILD)
+	$(CC) $(CPPFLAGS) $(CFLAGS) tests/runtime_receipt.c src/runtime_receipt.c -o $@
+.PHONY: check-runtime-receipt
+check-runtime-receipt: $(BUILD)/runtime-receipt
+	@directory=$$(mktemp -d); trap 'rm -f "$$directory"/*.jsonl; rmdir "$$directory"' 0; $(BUILD)/runtime-receipt "$$directory"
+check check-portable: check-runtime-receipt
 .PHONY: native-library-name
 native-library-name:
 	@printf '%s\n' '$(notdir $(NATIVE_LIBRARY))'
@@ -526,7 +533,7 @@ check-empty-module: $(BUILD)/empty-shader
 clean:
 	rm -f $(BUILD)/d3d12-graphics-vertices $(BUILD)/d3d12-vertex-inputs $(BUILD)/draw-guard $(BUILD)/implicit-sampling $(BUILD)/d3d12-graphics-limits $(BUILD)/d3d12-graphics-layout $(BUILD)/d3d12-graphics $(BUILD)/depth-comparison $(BUILD)/all-any $(BUILD)/select $(BUILD)/pipeline-overrides $(BUILD)/texture-bindings $(BUILD)/command-resources $(BUILD)/indirect-dispatch $(BUILD)/texture-transfers $(BUILD)/d3d12-texture-desc $(BUILD)/atomic-operations
 	rm -f $(OBJECTS)
-	rm -f $(BUILD)/vulkan-creation-errors $(BUILD)/compilation-diagnostics $(BUILD)/shader-spans $(BUILD)/switch-control $(BUILD)/mapping-timing $(BUILD)/encoder-finish-oom $(BUILD)/map-oom $(BUILD)/fault-sweep $(BUILD)/concurrency $(BUILD)/lost-objects $(BUILD)/binding-aliases $(BUILD)/native.exports $(BUILD)/native.exports.tmp $(BUILD)/draw-budget $(BUILD)/indirect-render $(BUILD)/indexed-render $(BUILD)/depth-sampling $(BUILD)/readonly-depth-sampling $(BUILD)/cube-array $(BUILD)/view-formats $(BUILD)/point-list $(BUILD)/color-discard $(BUILD)/msaa-sampling $(BUILD)/format-features $(BUILD)/draw-features $(BUILD)/copy-layouts $(BUILD)/bc-compression $(BUILD)/component-swizzle $(BUILD)/encoder-errors $(BUILD)/core-formats $(BUILD)/indirect-compute $(BUILD)/backend-selection $(BUILD)/metal-bridge $(BUILD)/atomics $(BUILD)/debug $(BUILD)/msaa $(BUILD)/depth $(BUILD)/demote $(BUILD)/graphics-admission $(BUILD)/render-binding-minimums $(BUILD)/graphics $(BUILD)/empty-shader $(NATIVE_LIBRARY) $(BUILD)/libdoe_compiler.$(SHARED_SUFFIX) $(BUILD)/compute $(BUILD)/procedures-cxx $(BUILD)/lifecycle $(BUILD)/textures $(BUILD)/admission $(BUILD)/failures $(BUILD)/timestamps $(BUILD)/recovery $(BUILD)/pending-progress $(BUILD)/vulkan-identity $(BUILD)/provider-pin $(BUILD)/provider-pin-fixture.$(SHARED_SUFFIX) $(BUILD)/backend-failure $(BUILD)/depth-copies $(BUILD)/surface-present $(BUILD)/surface-platforms $(BUILD)/surface-faults $(BUILD)/uniform-standard $(BUILD)/wgsl-language-features $(BUILD)/texture-binding-view-dimension $(BUILD)/mrt $(BUILD)/anisotropy $(BUILD)/storage-textures $(BUILD)/compute-programs $(BUILD)/fused-commands $(BUILD)/shader-check $(BUILD)/shader-reflection $(BUILD)/adapter-info $(BUILD)/program-prepare $(BUILD)/surface-progress $(BUILD)/limits $(BUILD)/stage-buffer-budget $(BUILD)/large-storage-binding $(BUILD)/large-write $(BUILD)/slice-render $(BUILD)/mixed-resources $(BUILD)/offscreen-triangle
+	rm -f $(BUILD)/vulkan-creation-errors $(BUILD)/compilation-diagnostics $(BUILD)/shader-spans $(BUILD)/switch-control $(BUILD)/mapping-timing $(BUILD)/encoder-finish-oom $(BUILD)/map-oom $(BUILD)/fault-sweep $(BUILD)/concurrency $(BUILD)/lost-objects $(BUILD)/binding-aliases $(BUILD)/native.exports $(BUILD)/native.exports.tmp $(BUILD)/draw-budget $(BUILD)/indirect-render $(BUILD)/indexed-render $(BUILD)/depth-sampling $(BUILD)/readonly-depth-sampling $(BUILD)/cube-array $(BUILD)/view-formats $(BUILD)/point-list $(BUILD)/color-discard $(BUILD)/msaa-sampling $(BUILD)/format-features $(BUILD)/draw-features $(BUILD)/copy-layouts $(BUILD)/bc-compression $(BUILD)/component-swizzle $(BUILD)/encoder-errors $(BUILD)/core-formats $(BUILD)/indirect-compute $(BUILD)/backend-selection $(BUILD)/metal-bridge $(BUILD)/atomics $(BUILD)/debug $(BUILD)/msaa $(BUILD)/depth $(BUILD)/demote $(BUILD)/graphics-admission $(BUILD)/render-binding-minimums $(BUILD)/graphics $(BUILD)/empty-shader $(NATIVE_LIBRARY) $(BUILD)/libdoe_compiler.$(SHARED_SUFFIX) $(BUILD)/compute $(BUILD)/procedures-cxx $(BUILD)/lifecycle $(BUILD)/textures $(BUILD)/admission $(BUILD)/failures $(BUILD)/timestamps $(BUILD)/recovery $(BUILD)/pending-progress $(BUILD)/vulkan-identity $(BUILD)/provider-pin $(BUILD)/provider-pin-fixture.$(SHARED_SUFFIX) $(BUILD)/backend-failure $(BUILD)/depth-copies $(BUILD)/surface-present $(BUILD)/surface-platforms $(BUILD)/surface-faults $(BUILD)/uniform-standard $(BUILD)/wgsl-language-features $(BUILD)/texture-binding-view-dimension $(BUILD)/mrt $(BUILD)/anisotropy $(BUILD)/storage-textures $(BUILD)/compute-programs $(BUILD)/fused-commands $(BUILD)/shader-check $(BUILD)/shader-reflection $(BUILD)/adapter-info $(BUILD)/program-prepare $(BUILD)/surface-progress $(BUILD)/limits $(BUILD)/stage-buffer-budget $(BUILD)/large-storage-binding $(BUILD)/large-write $(BUILD)/slice-render $(BUILD)/mixed-resources $(BUILD)/offscreen-triangle $(BUILD)/runtime-receipt $(BUILD)/runtime-receipt-consumer
 
 $(BUILD)/offscreen-triangle: tests/offscreen_triangle.c tests/metal_graphics_cases.h tests/consumer.h tests/adapter_class.h $(NATIVE_LIBRARY)
 	$(CC) $(CPPFLAGS) $(CFLAGS) $< -L$(BUILD) -lwebgpu_doe_c -Wl,-rpath,$(abspath $(BUILD)) -o $@
@@ -882,6 +889,14 @@ check-async-completion: $(BUILD)/async-completion
 	$(BUILD)/async-completion
 check: check-async-completion
 PHYSICAL_CLIENTS += async-completion
+
+$(BUILD)/runtime-receipt-consumer: tests/runtime_receipt_consumer.c src/runtime_receipt.h tests/consumer.h tests/adapter_class.h $(NATIVE_LIBRARY)
+	$(CC) $(CPPFLAGS) $(CFLAGS) $< -L$(BUILD) -lwebgpu_doe_c -Wl,-rpath,$(abspath $(BUILD)) -o $@
+.PHONY: check-runtime-receipt-consumer
+check-runtime-receipt-consumer: $(BUILD)/runtime-receipt-consumer
+	$(BUILD)/runtime-receipt-consumer
+check: check-runtime-receipt-consumer
+PHYSICAL_CLIENTS += runtime-receipt-consumer
 
 # Prerequisites expand immediately, so they are declared after the last
 # PHYSICAL_CLIENTS append; the recipe above already reads the full list.
