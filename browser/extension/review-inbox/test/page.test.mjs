@@ -46,14 +46,24 @@ const twin = node('button (a look-alike sibling)', form), twinLabel = node('span
 const host = node('custom-button', form), root = node('#shadow-root', null, { isShadowRoot: true, host }), inner = node('button', root), innerLabel = node('span', inner);
 
 const fenced = (element, target) => {
-  globalThis.__fawnFence = { element, clicked: false, blocked: false };
+  globalThis.__fawnFence = { element, clicked: false, blocked: false, down: false };
   const stopped = press(target), fence = globalThis.__fawnFence;
   globalThis.__fawnFence = null;
-  return { clicked: fence.clicked, blocked: fence.blocked, stopped };
+  return { clicked: fence.clicked, blocked: fence.blocked, down: fence.down, stopped };
 };
 
 test('a click on the reviewed control or anything inside it passes the fence', () => {
-  for (const target of [button, label, icon, path]) assert.deepEqual(fenced(button, target), { clicked: true, blocked: false, stopped: 0 }, target.name);
+  for (const target of [button, label, icon, path]) assert.deepEqual(fenced(button, target), { clicked: true, blocked: false, down: true, stopped: 0 }, target.name);
+});
+
+test('the fence records a press that reached the control even when no click follows', () => {
+  globalThis.__fawnFence = { element: button, clicked: false, blocked: false, down: false };
+  press(label, ['pointerdown', 'mousedown']);
+  assert.deepEqual(globalThis.__fawnFence, { element: button, clicked: false, blocked: false, down: true });
+  globalThis.__fawnFence = { element: button, clicked: false, blocked: false, down: false };
+  press(twin, ['pointerdown', 'mousedown']);
+  assert.deepEqual([globalThis.__fawnFence.down, globalThis.__fawnFence.blocked], [false, true], 'a press on a look-alike is stopped and is not a press');
+  globalThis.__fawnFence = null;
 });
 
 test('a click on a look-alike sibling, on what holds the control, or on anything else is stopped', () => {
@@ -66,7 +76,7 @@ test('a click on a look-alike sibling, on what holds the control, or on anything
 });
 
 test('inside an open shadow root the reviewed control is found on the composed path, not by the retargeted host', () => {
-  assert.deepEqual(fenced(inner, innerLabel), { clicked: true, blocked: false, stopped: 0 });
+  assert.deepEqual(fenced(inner, innerLabel), { clicked: true, blocked: false, down: true, stopped: 0 });
   // The host is not the reviewed control, and neither is another control beside it.
   assert.equal(fenced(inner, host).blocked, true);
   assert.equal(fenced(inner, twin).blocked, true);

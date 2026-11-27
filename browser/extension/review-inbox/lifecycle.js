@@ -64,6 +64,8 @@ export const REASON = Object.freeze({
   recordUnread: message => `The application's record could not be read, so the approval could not be checked: ${message}`,
   // What happened to a click.
   fenced: 'The click did not land on the reviewed control, so it was stopped.',
+  pressedNotClicked: 'The press reached the reviewed control but no click followed; the control may have acted on the press. Nothing will be clicked again until this is reconciled.',
+  debuggerDetached: reason => `The browser's debugger let go of the page during the click (${reason}), so the click may or may not have gone out. Nothing will be clicked again until this is reconciled.`,
   noKnownSign: 'This kind of control has no known sign of its result.',
   neitherSign: 'The application showed neither success nor refusal. Nothing will be clicked again until this is reconciled.',
   workerStopped: 'The inbox stopped while this click was in progress. Nothing will be clicked again until this is reconciled.',
