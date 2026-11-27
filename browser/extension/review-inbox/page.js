@@ -87,8 +87,18 @@ function pick() {
     };
     // Whole pixels that enclose a rectangle.
     const whole = r => ({ x: Math.floor(r.x), y: Math.floor(r.y), width: Math.ceil(r.x + r.width) - Math.floor(r.x), height: Math.ceil(r.y + r.height) - Math.floor(r.y) });
-    let chosen = null, dragFrom = null, drawn = null;
+    let chosen = null, dragFrom = null, drawn = null, ended = false;
+    // A drag can end on another element or outside the window, and then the browser fires no click. The
+    // mouseup ends it; a click that does follow is swallowed once the picker has gone, so the page never sees it.
+    const swallowTrailingClick = () => {
+      const once = event => { if (!event.isTrusted) return; swallow(event); window.removeEventListener('click', once, true); };
+      window.addEventListener('click', once, true);
+      setTimeout(() => window.removeEventListener('click', once, true), 500);
+    };
     const done = element => {
+      if (ended) return;
+      ended = true;
+      if (drawn) swallowTrailingClick();
       // Let the outline leave the screen before the browser captures the control.
       box.remove(); hint.remove();
       requestAnimationFrame(() => requestAnimationFrame(() => {
@@ -124,6 +134,7 @@ function pick() {
         const x = Math.min(dragFrom.x, event.clientX), y = Math.min(dragFrom.y, event.clientY);
         drawn = { x, y, width: Math.abs(event.clientX - dragFrom.x), height: Math.abs(event.clientY - dragFrom.y) };
         dragFrom = null;
+        done(chosen);
       }
     };
     const move = event => {
