@@ -33,7 +33,7 @@ const PAIRS = Object.values(STATE).flatMap(from => [...Object.values(STATE), REM
 // loading the worker is a worker restart. An empty one is a browser that was restarted.
 let recoveryGate = null;
 function fakeChrome(tabs, items, session = { browserSession: 'earlier' }) {
-  const stored = { items: structuredClone(items) }, sessionStored = structuredClone(session), listeners = {}, detached = [], injections = [], commands = [], fetches = [], network = new Set(), clips = [];
+  const stored = { items: structuredClone(items) }, sessionStored = structuredClone(session), listeners = {}, detached = [], injections = [], commands = [], fetches = [], network = new Set(), clips = [], detachListeners = new Set();
   const event = name => ({ addListener: listener => { listeners[name] = listener; } });
   let gate = null;
   const chrome = {
@@ -70,12 +70,22 @@ function fakeChrome(tabs, items, session = { browserSession: 'earlier' }) {
     debugger: {
       attach: async () => {}, detach: async target => { detached.push(target.tabId); },
       onEvent: { addListener: listener => network.add(listener), removeListener: listener => network.delete(listener) },
+      onDetach: { addListener: listener => detachListeners.add(listener), removeListener: listener => detachListeners.delete(listener) },
       sendCommand: async (target, method, params) => {
         commands.push(params?.type ? `${method}:${params.type}` : method);
+        const tab = tabs[target.tabId];
+        // The person cancels the debugging bar, or opens DevTools, as the press goes out.
+        if (method === 'Input.dispatchMouseEvent' && params.type === tab?.detachOn) {
+          for (const listener of detachListeners) listener({ tabId: target.tabId }, 'canceled_by_user');
+          throw new Error(`Debugger is not attached to the tab with id: ${target.tabId}.`);
+        }
+        // What the fence in the page sees of the press: it reaches the reviewed control. A control that acts on
+        // the press and takes itself away gets no click.
+        if (method === 'Input.dispatchMouseEvent' && params.type === 'mousePressed' && globalThis.__fawnFence) globalThis.__fawnFence.down = true;
         if (method === 'Page.captureScreenshot') { clips.push(params.clip); return { data: tabs[target.tabId]?.image ?? 'AAAA' }; }
         // A trusted click that lands where the fence expects it, followed by what the tab's network does.
         if (method === 'Input.dispatchMouseEvent' && params.type === 'mouseReleased') {
-          if (globalThis.__fawnFence) globalThis.__fawnFence.clicked = true;
+          if (globalThis.__fawnFence && !tab?.actsOnPress) globalThis.__fawnFence.clicked = true;
           tabs[target.tabId]?.onClick?.(target.tabId, (name, body) => { for (const listener of network) listener({ tabId: target.tabId }, name, body); });
         }
         return {};
@@ -552,4 +562,16 @@ test('nothing the inbox or the browser asks for runs before an earlier browser s
   // the new page's and is not mistaken for one from the earlier session.
   assert.deepEqual([stored.items.ready.state, stored.items.ready.outcome.detail, stored.items.ready.tabId], [BLOCKED, REASON.browserRestarted, null]);
   assert.deepEqual([stored.items[fresh.id].state, stored.items[fresh.id].tabId], [PENDING, 7]);
+});
+
+test('a press that reached the control, or a click the debugger may not have finished sending, is unknown, never "nothing was sent"', async () => {
+  const tabs = { 7: live(['key-press'], { actsOnPress: true }), 8: live(['key-cut'], { detachOn: 'mouseReleased' }), 9: live(['key-early'], { detachOn: 'mousePressed' }) };
+  const { send } = await worker(tabs, [item('press', APPROVED, 7, { bound: 'key-press' }), item('cut', APPROVED, 8, { bound: 'key-cut' }), item('early', APPROVED, 9, { bound: 'key-early' })]);
+  const press = (await send({ inbox: 'finish', id: 'press' })).value;
+  assert.deepEqual([press.state, press.outcome.detail], [UNKNOWN, REASON.pressedNotClicked]);
+  for (const id of ['cut', 'early']) {
+    const cut = (await send({ inbox: 'finish', id })).value;
+    assert.deepEqual([cut.state, cut.outcome.text], [UNKNOWN, OUTCOME.maybeSent('result')], id);
+    assert.match(cut.outcome.detail, /^The browser's debugger let go of the page during the click \(canceled_by_user\)/, id);
+  }
 });

@@ -350,22 +350,33 @@ async function clickAndSettle(id) {
       await within(writes.ready, PAGE_TIMEOUT_MS, null);
       // Arm the fence in every frame, click through the debugger, then read what the fence saw. A frame that
       // does not answer has no fence, so nothing is clicked.
-      const armed = await within(everyFrame(item.tabId, key => { globalThis.__fawnFence = { element: globalThis.__fawnReviewed?.get(key) ?? null, clicked: false, blocked: false }; return true; }, [item.bound])
+      const armed = await within(everyFrame(item.tabId, key => { globalThis.__fawnFence = { element: globalThis.__fawnReviewed?.get(key) ?? null, clicked: false, blocked: false, down: false }; return true; }, [item.bound])
         .catch(() => null), PAGE_TIMEOUT_MS, null);
       if (!armed?.length || armed.some(frame => frame.result !== true)) return settle(STATE.BLOCKED, OUTCOME.blocked, REASON.pageSilent);
       const event = { x: item.point.x, y: item.point.y, button: 'left', clickCount: 1 };
-      let seen = [];
+      let seen = [], detached = null;
+      // The debugger can let go of the tab during the click: the person cancels its bar, or opens DevTools.
+      // Then neither the press nor the release is known to have gone out, or not.
+      const onDetach = (source, reason) => { if (source.tabId === item.tabId) detached ??= reason || 'detached'; };
+      chrome.debugger.onDetach?.addListener(onDetach);
       try {
         // The page may start navigating as the click lands, and then the browser can hold back its
-        // acknowledgement of the event for a long time. The event has been sent either way.
-        const send = type => within(chrome.debugger.sendCommand(target(item.tabId), 'Input.dispatchMouseEvent', { type, ...event }).catch(() => null), 1500, null);
+        // acknowledgement of the event for a long time. The event has been sent either way. An error is not
+        // swallowed as nothing: the event may have been dispatched before it.
+        const send = type => within(chrome.debugger.sendCommand(target(item.tabId), 'Input.dispatchMouseEvent', { type, ...event })
+          .catch(error => { detached ??= error.message; return null; }), 1500, null);
         await send('mousePressed');
-        await send('mouseReleased');
+        if (!detached) await send('mouseReleased');
       } finally {
+        chrome.debugger.onDetach?.removeListener(onDetach);
         seen = await within(everyFrame(item.tabId, () => { const fence = globalThis.__fawnFence; globalThis.__fawnFence = null;
-          return fence && { clicked: fence.clicked, blocked: fence.blocked }; }).catch(() => []), 1000, []);
+          return fence && { clicked: fence.clicked, blocked: fence.blocked, down: fence.down }; }).catch(() => []), 1000, []);
       }
-      const clicked = seen.some(frame => frame.result?.clicked), blocked = seen.some(frame => frame.result?.blocked);
+      const clicked = seen.some(frame => frame.result?.clicked), blocked = seen.some(frame => frame.result?.blocked), down = seen.some(frame => frame.result?.down);
+      if (detached && !clicked) return settle(STATE.UNKNOWN, OUTCOME.maybeSent(noun), REASON.debuggerDetached(detached));
+      // A press that reached the control is input the page has had, whether or not a click followed: a control
+      // can act on the press and take itself away. That is not "nothing was sent".
+      if (down && !clicked) return settle(STATE.UNKNOWN, OUTCOME.maybeSent(noun), REASON.pressedNotClicked);
       // A page that navigated at once leaves no fence to read; the click was sent to the bound element's document.
       const navigated = seen.length === 0 || seen.every(frame => !frame.result);
       if (blocked || (!clicked && !navigated)) return settle(STATE.BLOCKED, OUTCOME.blocked, REASON.fenced);

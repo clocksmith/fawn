@@ -38,7 +38,11 @@ Fawn's browser.
 The click itself is a trusted click sent through the debugger API with a fence
 armed in every frame: if it lands on anything but the bound element or something
 inside it (found on the event's composed path, so open shadow roots count) it is
-stopped before the page sees it.
+stopped before the page sees it. Only a click that never reached the control is
+"Click blocked": once the press has reached it, the result is at worst unknown,
+because a control can act on the press alone. If the debugger lets go of the
+page during the click (the person cancels its bar, or opens DevTools), the result
+is unknown too.
 
 The lines under "What will change" (for a merge: the pull request's title and the commit
 the form was opened for) are read from the page when the button is picked. They

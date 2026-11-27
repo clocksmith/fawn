@@ -18,7 +18,12 @@ for (const type of ['pointerdown', 'mousedown', 'pointerup', 'mouseup', 'click',
   window.addEventListener(type, event => {
     const fence = globalThis.__fawnFence;
     if (!fence || !event.isTrusted) return;
-    if (fence.element && event.composedPath().includes(fence.element)) { if (type === 'click') fence.clicked = true; return; }
+    if (fence.element && event.composedPath().includes(fence.element)) {
+      // A press that lands is input the control has had, even if no click follows.
+      if (type === 'pointerdown' || type === 'mousedown') fence.down = true;
+      if (type === 'click') fence.clicked = true;
+      return;
+    }
     fence.blocked = true;
     event.stopImmediatePropagation();
     event.preventDefault();
