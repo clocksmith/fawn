@@ -123,7 +123,7 @@ try {
 
   assert.equal(report.overlap.itemsWithOneWinner, count, 'exactly one Finish request may win each item');
   assert.equal(report.overlap.itemsPressedOnce, count, 'every approved button is pressed exactly once');
-  assert.equal(report.stopped.card.state, 'unconfirmed');
+  assert.equal(report.stopped.card.state, 'unknown');
   assert.match(report.stopped.card.text, /^Click may have been sent; result not confirmed$/);
   // Only a worker other than the one that started the click writes this, so it also shows the worker really stopped.
   assert.match(report.stopped.card.detail, /stopped while this click was in progress/);

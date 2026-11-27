@@ -7,8 +7,10 @@
 //   Click blocked            nothing was sent; the reason says what changed
 //   App refused              the click was sent and the application said no
 //   <done label>             the click was sent and the application shows it done
-//   Click sent; not confirmed  the click was sent and neither sign appeared
-// A finished item is closed. It is never clicked again; a person reviews again.
+//   Click sent; not confirmed  the click was sent and neither sign appeared, or its request got no answer
+// A finished item is never clicked again. One whose result is not known stays so, and blocks every Finish,
+// until a person reconciles it: a read of the application's own record, which writes nothing and ends as
+// confirmed, not applied (a person may then approve exactly this again) or still not known.
 //
 // The checks are separate asynchronous steps. An extension cannot order them
 // against the compositor or make the final hit test part of the dispatch; the
@@ -17,13 +19,32 @@
 //
 // An item's states, the moves between them and the words for each reason are
 // defined once, in lifecycle.js. Here every change of state goes through `move`.
-import { STATE, REMOVED, REASON, OUTCOME, isOpen, isTerminal, refusal, whenTabCloses, whenDocumentIs } from './lifecycle.js';
+import { STATE, REMOVED, REASON, OUTCOME, REREAD_MS, isOpen, isTerminal, isCheckable, refusal, reconciled, whenTabCloses, whenDocumentIs } from './lifecycle.js';
 
-const RESULT_WINDOW_MS = 10000, RESULT_POLL_MS = 200, CAPTURE_TIMEOUT_MS = 2500;
-// How an application shows the result of a control, per kind of control found by page.js.
+const RESULT_WINDOW_MS = 10000, RESULT_POLL_MS = 200, CAPTURE_TIMEOUT_MS = 2500, RECORD_TIMEOUT_MS = 8000;
+const short = sha => sha ? sha.slice(0, 10) : 'none';
+// How an application shows the result of a control, per kind of control found by page.js. `done` and
+// `refused` are what the page shows. `record` and `view` are the application's own record of the target, for
+// a control that has one: `record` gets the target page.js read when the control was picked and a reader that
+// can only GET, and `view` measures what it returns against the approved terms.
 const RECIPES = {
   'forgejo-merge': { noun: 'merge', done: '.issue-state-label.purple', doneLabel: 'Merge confirmed',
-    refused: '.flash-error, .toastify.on' },
+    refused: '.flash-error, .toastify.on',
+    record: (target, read) => read(`${target.base}/api/v1/repos/${target.repo}/pulls/${target.number}`),
+    // The approval is for one pull request, open and unmerged, at the head commit that was reviewed. The
+    // merge it sends names that commit, so only a merge of it is this approval's.
+    view: (target, pull) => {
+      const head = pull.head?.sha ?? null, number = `#${target.number}`, changes = [];
+      const same = pull.number === target.number && String(pull.base?.repo?.full_name).toLowerCase() === target.repo.toLowerCase();
+      if (!same) changes.push(`Forgejo answered for ${pull.base?.repo?.full_name ?? '?'}#${pull.number}, not ${target.repo}${number}`);
+      if (head !== target.head) changes.push(`pull request ${number} now has head commit ${short(head)}; the reviewed one was ${short(target.head)}`);
+      if (pull.merged) changes.push(`pull request ${number} is already merged`);
+      else if (pull.state !== 'open') changes.push(`pull request ${number} is ${pull.state}`);
+      return { applied: same && pull.merged === true && head === target.head, changes,
+        evidence: pull.merged ? `pull request ${number} merged${pull.merged_by?.login ? ' by ' + pull.merged_by.login : ''} as commit ${short(pull.merge_commit_sha)} from head ${short(head)}`
+          : `pull request ${number} is ${pull.state} and not merged, at head ${short(head)}`,
+        signature: JSON.stringify([pull.state, !!pull.merged, head, pull.merge_commit_sha ?? null]) };
+    } },
 };
 const target = tabId => ({ tabId });
 // A page that is navigating may not answer a script injection for a long time. Nothing after the click waits on one.
@@ -63,8 +84,9 @@ async function move(id, next) {
   if (left) release(left);
   return item;
 }
-// A fresh look at an open item. It changes no state, and is dropped if the item has closed or gone meanwhile.
-const note = (id, check) => write(id, before => before && isOpen(before.state) ? { ...before, check } : undefined);
+// A fresh look at an item that may still be approved or finished. It changes no state, and is dropped if the
+// item has moved on or gone meanwhile.
+const note = (id, check) => write(id, before => before && isCheckable(before.state) ? { ...before, check } : undefined);
 const checked = status => ({ at: now(), holds: status.holds, reason: status.reason, ...(status.image ? { image: status.image } : {}) });
 
 // The debugger lets go of a tab once none of its items is unfinished and no pick is under way there (a pick
@@ -88,11 +110,17 @@ async function whilePicking(tabId, work) {
   finally { picking.delete(tabId); letGo(tabId).catch(() => {}); }
 }
 // A worker that stops in the middle of a finish takes the rest of that finish with it. The next worker
-// cannot know whether the click went out, so it says so and leaves the item spent.
+// cannot know whether the click went out, so the result is not known until someone reconciles it. A worker
+// that stops while reading a record wrote nothing, and the result is as unknown as before.
 const WORKER = crypto.randomUUID();
-const recovered = load().then(items => Promise.all(Object.values(items).map(item => move(item.id, stored =>
-  stored.state === STATE.FINISHING && stored.finishingBy !== WORKER ? { state: STATE.UNCONFIRMED, outcome: { at: now(),
-    detail: REASON.workerStopped, text: OUTCOME.maybeSent(RECIPES[stored.summary?.recipe]?.noun ?? 'result') } } : null))));
+const nounOf = item => RECIPES[item.summary?.recipe]?.noun ?? 'result';
+const recovered = load().then(items => Promise.all(Object.values(items).map(item => move(item.id, stored => {
+  if (stored.state === STATE.FINISHING && stored.finishingBy !== WORKER)
+    return { state: STATE.UNKNOWN, outcome: { at: now(), detail: REASON.workerStopped, text: OUTCOME.maybeSent(nounOf(stored)) } };
+  if (stored.state === STATE.RECONCILING && stored.reconcilingBy !== WORKER)
+    return { state: STATE.UNKNOWN, outcome: { at: now(), detail: REASON.reconcileStopped, text: OUTCOME.stillUnknown(nounOf(stored)) } };
+  return null;
+}))));
 
 async function attach(tabId) {
   try { await chrome.debugger.attach(target(tabId), '1.3'); }
@@ -139,7 +167,29 @@ async function currentImage(item) {
   return withVisibleTab(item.tabId, () => capture(item.tabId, item.rect)).catch(() => null);
 }
 
-// Does the item's tab still show the document, element and pixels that were reviewed?
+// The application's own record of an item's target, read without writing anything. `read` is the only way
+// a recipe's record reaches the application: a GET for JSON on the reviewed page's own origin, with no method,
+// body or header the caller can choose. Nothing that goes through it is a click or a write.
+function reader(item) {
+  const origin = new URL(item.url).origin;
+  return async address => {
+    const url = new URL(address);
+    if (url.origin !== origin) throw new Error(`${url.origin} is not the reviewed page's origin`);
+    const response = await fetch(url, { method: 'GET', credentials: 'include', cache: 'no-store', redirect: 'error',
+      headers: { accept: 'application/json' }, signal: AbortSignal.timeout(RECORD_TIMEOUT_MS) });
+    if (!response.ok) throw new Error(`${url.pathname} answered HTTP ${response.status}`);
+    return response.json();
+  };
+}
+// What the record shows now, measured against the approved terms; null when the control has no record.
+async function viewRecord(item) {
+  const recipe = RECIPES[item.summary?.recipe], target = item.summary?.target;
+  if (!recipe?.record || !target) return null;
+  return recipe.view(target, await recipe.record(target, reader(item)));
+}
+
+// Does the item's tab still show the document, element and pixels that were reviewed, and where the
+// application keeps a record of the target, does it still hold the target and values that were approved?
 async function stillHolds(item) {
   const tab = await chrome.tabs.get(item.tabId).catch(() => null);
   if (!tab) return { holds: false, reason: REASON.tabClosed };
@@ -158,6 +208,9 @@ async function stillHolds(item) {
   const image = await currentImage(item);
   if (image === null) return { holds: false, reason: REASON.noCapture };
   if (image !== item.image) return { holds: false, reason: REASON.pixelsChanged, image };
+  let record;
+  try { record = await viewRecord(item); } catch (error) { return { holds: false, reason: REASON.recordUnread(error.message) }; }
+  if (record?.changes.length) return { holds: false, reason: REASON.stale(record.changes) };
   return { holds: true, reason: REASON.matches };
 }
 
@@ -187,27 +240,58 @@ async function pick(tabId) {
 
 async function check(id) {
   const item = (await load())[id];
-  if (!item || !isOpen(item.state)) return item ?? null;
+  if (!item || !isCheckable(item.state)) return item ?? null;
   return note(id, checked(await stillHolds(item)));
 }
 
+// A person approves what is pending, or approves again what the application's record showed was not applied.
+// Both run the same checks. An approval again keeps the earlier results for the card.
 async function approve(id) {
   const item = (await load())[id];
-  if (!item || item.state !== STATE.PENDING) throw new Error(REASON.notPending);
+  const refused = item ? refusal(item.state, STATE.APPROVED) : REASON.notPending;
+  if (refused) throw new Error(refused);
   const status = await stillHolds(item), check = checked(status);
   if (!status.holds) { await note(id, check); throw new Error(REASON.reviewAgain(status.reason)); }
-  return move(id, { state: STATE.APPROVED, approvedAt: now(), check });
+  return move(id, before => ({ state: STATE.APPROVED, approvedAt: now(), check, outcome: null,
+    earlier: [...(before.earlier ?? []), ...(before.outcome ? [before.outcome] : [])] }));
+}
+
+// The requests a click makes that could write: everything but GET, HEAD and OPTIONS, seen through the
+// debugger's network events from the moment the click is armed. A request whose answer never reached the page,
+// or whose answer was a server or gateway error, leaves the result unknown whatever the page then shows: the
+// page's error is about the connection, not the application's decision.
+function watchWrites(tabId) {
+  const requests = new Map();
+  const listener = (source, method, params) => {
+    if (source.tabId !== tabId) return;
+    if (method === 'Network.requestWillBeSent' && (requests.has(params.requestId) || !/^(GET|HEAD|OPTIONS)$/.test(params.request.method)))
+      requests.set(params.requestId, { url: params.request.url.split('?')[0], method: requests.get(params.requestId)?.method ?? params.request.method, settled: false });
+    const request = requests.get(params.requestId);
+    if (!request) return;
+    if (method === 'Network.responseReceived') Object.assign(request, { settled: true, status: params.response.status });
+    if (method === 'Network.loadingFailed') Object.assign(request, { settled: true, failed: params.errorText || 'failed' });
+  };
+  chrome.debugger.onEvent?.addListener(listener);
+  const all = () => [...requests.values()];
+  return {
+    ready: chrome.debugger.sendCommand(target(tabId), 'Network.enable', {}).catch(() => null),
+    // Writes whose answer was lost, in words; empty when none was.
+    lost: () => all().filter(r => r.failed || r.status >= 500).map(r => `${r.method} ${new URL(r.url).pathname}: ${r.failed ?? 'HTTP ' + r.status}`),
+    settled: () => all().every(r => r.settled),
+    stop: () => chrome.debugger.onEvent?.removeListener(listener),
+  };
 }
 
 async function finish(id) {
   await recovered;
-  // Closed from here on: whatever happens, this approval is spent, and only the request that spent it clicks.
-  const item = await move(id, { state: STATE.FINISHING, finishingBy: WORKER });
+  // Spent from here on: whatever happens, this approval is not clicked again, and only the request that spent it clicks.
+  const item = await move(id, { state: STATE.FINISHING, finishingBy: WORKER, finishingAt: now() });
   if (!item) throw new Error(REASON.notApproved);
   // If the item has gone by the time its result is known, the result is dropped: `move` does not bring it back.
   const settle = (state, text, detail = '', more = {}) => move(id, { ...more, state, outcome: { text, detail, at: now() } });
   const recipe = RECIPES[item.summary.recipe] ?? null;
   const noun = recipe?.noun ?? 'result';
+  let writes = null;
   try {
     const tab = await chrome.tabs.get(item.tabId).catch(() => null);
     if (!tab) return settle(STATE.BLOCKED, OUTCOME.blocked, REASON.tabClosed);
@@ -215,6 +299,8 @@ async function finish(id) {
       const status = await stillHolds(item);
       if (!status.holds) return settle(STATE.BLOCKED, OUTCOME.blocked, status.reason, { check: checked(status) });
       const before = recipe ? await resultState(item.tabId, recipe) : null;
+      writes = watchWrites(item.tabId);
+      await writes.ready;
       // Arm the fence in every frame, click through the debugger, then read what the fence saw.
       await everyFrame(item.tabId, key => { globalThis.__fawnFence = { element: globalThis.__fawnReviewed?.get(key) ?? null, clicked: false, blocked: false }; }, [item.bound]);
       const event = { x: item.point.x, y: item.point.y, button: 'left', clickCount: 1 };
@@ -233,23 +319,58 @@ async function finish(id) {
       // A page that navigated at once leaves no fence to read; the click was sent to the bound element's document.
       const navigated = seen.length === 0 || seen.every(frame => !frame.result);
       if (blocked || (!clicked && !navigated)) return settle(STATE.BLOCKED, OUTCOME.blocked, REASON.fenced);
-      if (!recipe || !before) return settle(STATE.UNCONFIRMED, OUTCOME.notConfirmed(noun), REASON.noKnownSign);
+      if (!recipe || !before) return settle(STATE.UNKNOWN, OUTCOME.notConfirmed(noun), REASON.noKnownSign);
       // Only what is new counts: a sign that was already there is this click's result only if the page
-      // reloaded or more of them appeared.
+      // reloaded or more of them appeared. A refusal counts only once every write the click made has its
+      // answer, and none of those answers was lost; it is seen twice in a row, so network events that
+      // arrive just after the page shows its error are not missed.
+      let refusalSeen = false;
       for (const deadline = Date.now() + RESULT_WINDOW_MS; ;) {
         const state = await resultSoon(item.tabId, recipe); // null while the page is navigating
         if (state) {
           const fresh = key => state[key] > 0 && (before[key] === 0 || state.document !== before.document || state[key] > before[key]);
-          if (fresh('refused')) return settle(STATE.REFUSED, OUTCOME.refused, state.said);
           if (fresh('done')) return settle(STATE.CONFIRMED, recipe.doneLabel);
-        }
-        if (Date.now() >= deadline) return settle(STATE.UNCONFIRMED, OUTCOME.notConfirmed(noun), REASON.neitherSign);
+          const lost = writes.lost();
+          if (lost.length) return settle(STATE.UNKNOWN, OUTCOME.notConfirmed(noun), REASON.answerLost(lost.join('; ')));
+          if (fresh('refused') && writes.settled()) {
+            if (refusalSeen) return settle(STATE.REFUSED, OUTCOME.refused, state.said);
+            refusalSeen = true;
+          } else refusalSeen = false;
+        } else if (writes.lost().length) return settle(STATE.UNKNOWN, OUTCOME.notConfirmed(noun), REASON.answerLost(writes.lost().join('; ')));
+        if (Date.now() >= deadline) return settle(STATE.UNKNOWN, OUTCOME.notConfirmed(noun), REASON.neitherSign);
         await new Promise(resolve => setTimeout(resolve, RESULT_POLL_MS));
       }
     }
   } catch (error) {
-    return settle(STATE.UNCONFIRMED, OUTCOME.maybeSent(noun), REASON.lostTrack(error.message));
+    return settle(STATE.UNKNOWN, OUTCOME.maybeSent(noun), REASON.lostTrack(error.message));
+  } finally {
+    writes?.stop();
   }
+}
+
+// Reconcile an item whose result is not known: read the application's own record of the target and say
+// what it shows. It is given no way to click or write. The record shows it done: confirmed. It shows it not
+// done, long enough after the click and the same on two reads: not applied, and a person may approve exactly
+// this again if the approved terms still hold. Anything else: still unknown, with the reason.
+async function reconcile(id) {
+  await recovered;
+  const item = await move(id, { state: STATE.RECONCILING, reconcilingBy: WORKER });
+  if (!item) throw new Error(REASON.notUnknown);
+  const recipe = RECIPES[item.summary?.recipe];
+  const words = { noun: recipe?.noun ?? 'result', doneLabel: recipe?.doneLabel ?? 'Confirmed' };
+  let found;
+  try {
+    const firstReadAt = Date.now(), first = await viewRecord(item);
+    if (!first) found = { unsupported: true };
+    else {
+      const reads = [first];
+      if (!first.applied) { await new Promise(resolve => setTimeout(resolve, REREAD_MS)); reads.push(await viewRecord(item)); }
+      const sent = Date.parse(item.finishingAt);
+      found = { reads, sinceSentMs: Number.isFinite(sent) ? firstReadAt - sent : 0 };
+    }
+  } catch (error) { found = { failure: error.message }; }
+  const answer = reconciled(found, words, now());
+  return move(id, before => ({ ...answer, earlier: [...(before.earlier ?? []), ...(before.outcome ? [before.outcome] : [])] }));
 }
 
 const operations = {
@@ -260,6 +381,7 @@ const operations = {
   check: message => check(message.id),
   approve: message => approve(message.id),
   finish: message => finish(message.id),
+  reconcile: message => reconcile(message.id),
   remove: message => move(message.id, { state: REMOVED }),
 };
 chrome.runtime.onMessage.addListener((message, sender, respond) => {
