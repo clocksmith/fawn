@@ -32,7 +32,7 @@ const PAIRS = Object.values(STATE).flatMap(from => [...Object.values(STATE), REM
 // `session` is what this browser session's storage holds: by default the mark a worker leaves there, so
 // loading the worker is a worker restart. An empty one is a browser that was restarted.
 function fakeChrome(tabs, items, session = { browserSession: 'earlier' }) {
-  const stored = { items: structuredClone(items) }, sessionStored = structuredClone(session), listeners = {}, detached = [], injections = [], commands = [], fetches = [], network = new Set();
+  const stored = { items: structuredClone(items) }, sessionStored = structuredClone(session), listeners = {}, detached = [], injections = [], commands = [], fetches = [], network = new Set(), clips = [];
   const event = name => ({ addListener: listener => { listeners[name] = listener; } });
   let gate = null;
   const chrome = {
@@ -45,7 +45,8 @@ function fakeChrome(tabs, items, session = { browserSession: 'earlier' }) {
       onRemoved: event('removed'), onUpdated: event('updated'),
       get: async id => { await gate; if (!tabs[id]) throw new Error(`No tab with id: ${id}.`); return { id, active: true, windowId: 1 }; },
       query: async () => [], update: async () => ({}),
-      sendMessage: async () => ({ cancelled: true }),
+      // What the picker in the tab answers: by default a person who pressed Esc.
+      sendMessage: async tabId => structuredClone(tabs[tabId]?.picks ?? { cancelled: true }),
     },
     windows: { update: async () => ({}) },
     scripting: { executeScript: async ({ target, func, args = [] }) => {
@@ -69,7 +70,7 @@ function fakeChrome(tabs, items, session = { browserSession: 'earlier' }) {
       onEvent: { addListener: listener => network.add(listener), removeListener: listener => network.delete(listener) },
       sendCommand: async (target, method, params) => {
         commands.push(params?.type ? `${method}:${params.type}` : method);
-        if (method === 'Page.captureScreenshot') return { data: tabs[target.tabId]?.image ?? 'AAAA' };
+        if (method === 'Page.captureScreenshot') { clips.push(params.clip); return { data: tabs[target.tabId]?.image ?? 'AAAA' }; }
         // A trusted click that lands where the fence expects it, followed by what the tab's network does.
         if (method === 'Input.dispatchMouseEvent' && params.type === 'mouseReleased') {
           if (globalThis.__fawnFence) globalThis.__fawnFence.clicked = true;
@@ -86,7 +87,7 @@ function fakeChrome(tabs, items, session = { browserSession: 'earlier' }) {
     const answer = await record(String(url));
     return { ok: answer.status === undefined, status: answer.status ?? 200, json: async () => answer };
   };
-  return { chrome, stored, sessionStored, listeners, detached, injections, commands, fetches, setRecord: answer => { record = answer; },
+  return { chrome, stored, sessionStored, listeners, detached, injections, commands, fetches, clips, setRecord: answer => { record = answer; },
     // Holds the next `tabs.get`, which is the first thing a finish does once it owns the item, until released.
     hold: () => { let open; gate = new Promise(resolve => { open = resolve; }); return () => { gate = null; open(); }; } };
 }
@@ -514,4 +515,17 @@ test('two approvals on one page are never clicked at once: the second waits, sti
   // Once the page is free it is finished like any other, and a page beside it was never held up.
   assert.equal((await send({ inbox: 'finish', id: 'b' })).value.state, UNKNOWN);
   assert.equal((await send({ inbox: 'finish', id: 'c' })).value.state, UNKNOWN);
+});
+
+test('an area a person drew around the control is what is captured and compared; the control is still what is clicked', async () => {
+  const control = { x: 100, y: 200, width: 80, height: 30 }, area = { x: 60, y: 150, width: 340, height: 110 };
+  const tabs = { 7: live(['key-p'], { picks: { key: 'key-p', rect: control, area, point: { x: 140, y: 215 }, url: 'http://shop.test/pay', pageTitle: 'Payments',
+    summary: { title: 'Click "Pay"', lines: ['Button: Pay'], recipe: null } } }) };
+  const { send, clips } = await worker(tabs, []);
+  const picked = (await send({ inbox: 'pick', tabId: 7 })).value;
+  assert.deepEqual([picked.rect, picked.controlRect, picked.point], [area, control, { x: 140, y: 215 }]);
+  assert.deepEqual(clips.map(clip => [clip.x, clip.y, clip.width, clip.height]), [[60, 150, 340, 110]]);
+  // A change anywhere in the area, such as the total beside the button, now blocks approval.
+  tabs[7].image = 'BBBB';
+  assert.equal((await send({ inbox: 'approve', id: picked.id })).error, REASON.reviewAgain(REASON.pixelsChanged));
 });

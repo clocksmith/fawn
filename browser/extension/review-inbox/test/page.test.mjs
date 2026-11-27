@@ -8,9 +8,17 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
 const listeners = {};
-globalThis.window = { addEventListener: (type, listener) => { (listeners[type] ??= []).push(listener); } };
+let onMessage = null;
+globalThis.window = { innerWidth: 1000, innerHeight: 700,
+  addEventListener: (type, listener) => { (listeners[type] ??= []).push(listener); },
+  removeEventListener: (type, listener) => { listeners[type] = (listeners[type] ?? []).filter(other => other !== listener); } };
 window.top = window;
-globalThis.chrome = { runtime: { onMessage: { addListener: () => {} } } };
+globalThis.chrome = { runtime: { onMessage: { addListener: listener => { onMessage = listener; } } } };
+// Enough of a document for the picker's outline and hint, which are drawn and removed.
+globalThis.document = { title: 'Payments', querySelector: () => null, documentElement: { append: () => {} },
+  createElement: () => ({ style: {}, textContent: '', remove: () => {} }) };
+globalThis.location = { href: 'http://shop.test/pay' };
+globalThis.requestAnimationFrame = callback => callback();
 await import('../page.js');
 
 // A node in a tree: `contains` and the path an event takes from it, through shadow roots to their hosts.
@@ -71,4 +79,44 @@ test('with no fence armed, or for an event the page made itself, the fence does 
   for (const listener of listeners.click) listener({ type: 'click', isTrusted: false, target: twin, composedPath: () => pathOf(twin), stopImmediatePropagation: () => assert.fail('stopped') });
   assert.deepEqual(globalThis.__fawnFence, { element: button, clicked: false, blocked: false });
   globalThis.__fawnFence = null;
+});
+
+// The picker: a plain click chooses the control alone; Shift and a click, then a drag, add an area around it
+// that is compared too.
+const payButton = { innerText: 'Pay 1,280.00', type: 'button', form: null, getAttribute: () => null, closest: () => payButton,
+  getBoundingClientRect: () => ({ x: 100, y: 200, left: 100, top: 200, right: 180, bottom: 230, width: 80, height: 30 }) };
+const event = (type, more = {}) => ({ type, isTrusted: true, target: payButton, composedPath: () => [payButton], clientX: 0, clientY: 0,
+  stopImmediatePropagation: () => {}, preventDefault: () => {}, ...more });
+const send = (type, more) => { for (const listener of [...(listeners[type] ?? [])]) listener(event(type, more)); };
+const picking = () => new Promise(resolve => onMessage({ fawn: 'pick' }, {}, resolve));
+const control = { x: 100, y: 200, width: 80, height: 30 }, centre = { x: 140, y: 215 };
+
+test('a plain click chooses the control and compares only its own pixels', async () => {
+  const picked = picking();
+  send('click', { clientX: 140, clientY: 215 });
+  const result = await picked;
+  assert.deepEqual([result.rect, result.point, result.area ?? null], [control, centre, null]);
+});
+
+test('Shift and a click, then a drag, add a person-chosen area around the control, never less than the control', async () => {
+  const drag = async (from, to) => {
+    const picked = picking();
+    send('click', { clientX: 140, clientY: 215, shiftKey: true });
+    send('mousedown', { clientX: from.x, clientY: from.y });
+    send('mousemove', { clientX: to.x, clientY: to.y });
+    send('mouseup', { clientX: to.x, clientY: to.y });
+    send('click', { clientX: to.x, clientY: to.y });
+    return picked;
+  };
+  const around = await drag({ x: 60, y: 150 }, { x: 400, y: 260 });
+  assert.deepEqual([around.rect, around.point, around.area], [control, centre, { x: 60, y: 150, width: 340, height: 110 }]);
+  assert.match(around.summary.lines.at(-1), /^Also compared: the area you drew around the button, 340 × 110 px$/);
+  // A box that misses part of the control still covers all of it; one past the edge of the window stops there.
+  assert.deepEqual((await drag({ x: 150, y: 210 }, { x: 500, y: 400 })).area, { x: 100, y: 200, width: 400, height: 200 });
+  assert.deepEqual((await drag({ x: 900, y: 600 }, { x: 1300, y: 900 })).area, { x: 100, y: 200, width: 900, height: 500 });
+  // Esc after Shift and a click keeps the control alone.
+  const plain = picking();
+  send('click', { clientX: 140, clientY: 215, shiftKey: true });
+  send('keydown', { key: 'Escape' });
+  assert.equal((await plain).area ?? null, null);
 });
