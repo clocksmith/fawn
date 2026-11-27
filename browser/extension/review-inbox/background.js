@@ -223,7 +223,13 @@ async function stillHolds(item) {
       const r = element.getBoundingClientRect();
       if (Math.floor(r.x) !== left || Math.floor(r.y) !== top) window.scrollBy({ left: Math.floor(r.x) - left, top: Math.floor(r.y) - top, behavior: 'instant' });
     }
-    return { bound: !!element, connected: !!element?.isConnected, sameUnderPoint: !!element && document.elementFromPoint(x, y) === element };
+    // What is under the point, followed into open shadow roots, must be the control or inside it, also
+    // across shadow roots (up through each root's host).
+    let hit = document.elementFromPoint(x, y);
+    for (let inner; hit?.shadowRoot && (inner = hit.shadowRoot.elementFromPoint(x, y)) && inner !== hit;) hit = inner;
+    let inside = false;
+    for (let at = hit; at && element && !inside; at = at.parentNode ?? at.host) inside = at === element;
+    return { bound: !!element, connected: !!element?.isConnected, sameUnderPoint: inside };
   }, [item.bound, item.point.x, item.point.y, item.rect.x, item.rect.y]).catch(() => null), PAGE_TIMEOUT_MS, SILENT);
   if (probe === SILENT) return { holds: false, reason: REASON.pageSilent };
   if (!probe || probe.documentId !== item.documentId || !probe.result.bound) return { holds: false, reason: REASON.documentReplaced };

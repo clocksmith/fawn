@@ -7,8 +7,10 @@
 //     The inbox deletes an entry when its item is closed or discarded. This
 //     file knows the entries by key only; item states live in lifecycle.js;
 //   - a fence: while one is armed, a trusted pointer event that does not land
-//     on the bound element is stopped before the page or the element under it
-//     sees it;
+//     on the bound element or something inside it (a label, an icon) is stopped
+//     before the page or the element under it sees it. "Inside" is read from
+//     the event's composed path, so a control in an open shadow root is found
+//     even though the window sees only its host;
 //   - a picker, started from the inbox, that lets a person choose the control.
 globalThis.__fawnReviewed ??= new Map();
 globalThis.__fawnFence = null;
@@ -16,7 +18,7 @@ for (const type of ['pointerdown', 'mousedown', 'pointerup', 'mouseup', 'click',
   window.addEventListener(type, event => {
     const fence = globalThis.__fawnFence;
     if (!fence || !event.isTrusted) return;
-    if (fence.element && event.target === fence.element) { if (type === 'click') fence.clicked = true; return; }
+    if (fence.element && event.composedPath().includes(fence.element)) { if (type === 'click') fence.clicked = true; return; }
     fence.blocked = true;
     event.stopImmediatePropagation();
     event.preventDefault();

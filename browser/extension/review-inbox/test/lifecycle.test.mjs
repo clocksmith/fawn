@@ -107,8 +107,10 @@ const pull = (more = {}) => ({ number: 12, state: 'open', merged: false, merge_c
 const mergedPull = (head = HEAD) => pull({ state: 'closed', merged: true, merge_commit_sha: 'c'.repeat(40), merged_by: { login: 'ben' }, head: { sha: head } });
 // A tab where every reviewed control is under its click point and looks as it did: one element held under
 // each key, so whichever is asked about is the one at the point.
+const element = (parent = null) => { const self = { isConnected: true, parentNode: parent, getBoundingClientRect: () => ({ x: 0, y: 0 }) };
+  self.contains = other => { for (let at = other; at; at = at.parentNode ?? at.host) if (at === self) return true; return false; }; return self; };
 const live = (keys, more = {}) => {
-  const element = { isConnected: true, getBoundingClientRect: () => ({ x: 0, y: 0 }) };
+  const element = { isConnected: true, getBoundingClientRect: () => ({ x: 0, y: 0 }), contains: other => other === element };
   return { documentId: 'document-1', reviewed: new Map(keys.map(key => [key, element])), pointed: element, ...more };
 };
 const byId = list => Object.fromEntries(list.map(entry => [entry.id, entry]));
@@ -483,4 +485,17 @@ test('a page that never draws or never answers cannot hold up a check or a Finis
   assert.deepEqual([silent.value.state, silent.value.outcome.detail], [BLOCKED, REASON.pageSilent]);
   assert.equal(commands.includes('Input.dispatchMouseEvent:mousePressed'), false, 'nothing was clicked');
   assert.equal(stored.items.s.state, BLOCKED);
+});
+
+test('the control under the click point may be the reviewed one or something inside it, never a look-alike beside it', async () => {
+  const button = element(), label = element(button), twin = element();
+  // An open shadow root: the document's hit test stops at the host; the root's own hit test finds the control.
+  const host = element(), inner = element(), innerLabel = element(inner);
+  host.shadowRoot = { elementFromPoint: () => innerLabel };
+  const at = (bound, pointed) => ({ documentId: 'document-1', reviewed: new Map([['key', bound]]), pointed });
+  const tabs = { 7: at(button, label), 8: at(button, twin), 9: at(inner, host) };
+  const { send } = await worker(tabs, [item('nested', PENDING, 7, { bound: 'key' }), item('twin', PENDING, 8, { bound: 'key' }), item('shadow', PENDING, 9, { bound: 'key' })]);
+  assert.equal((await send({ inbox: 'approve', id: 'nested' })).value?.state, APPROVED);
+  assert.equal((await send({ inbox: 'approve', id: 'twin' })).error, REASON.reviewAgain(REASON.covered));
+  assert.equal((await send({ inbox: 'approve', id: 'shadow' })).value?.state, APPROVED);
 });
