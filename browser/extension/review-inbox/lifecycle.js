@@ -66,6 +66,8 @@ export const REASON = Object.freeze({
   noKnownSign: 'This kind of control has no known sign of its result.',
   neitherSign: 'The application showed neither success nor refusal. Nothing will be clicked again until this is reconciled.',
   workerStopped: 'The inbox stopped while this click was in progress. Nothing will be clicked again until this is reconciled.',
+  browserStopped: 'The browser stopped while this click was in progress. Nothing will be clicked again until this is reconciled.',
+  browserRestarted: 'The browser was restarted, so the reviewed page is gone.',
   lostTrack: message => `The inbox lost track of this click: ${message}`,
   answerLost: requests => `The click's request went out but its answer did not reach the page (${requests}). It may or may not have been applied. Nothing will be clicked again until this is reconciled.`,
   // What a reconciliation found.

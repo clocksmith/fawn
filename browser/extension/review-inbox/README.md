@@ -157,11 +157,14 @@ reconcile against, so it stays `unknown` until a person clears it.
   click. A merge Forgejo takes longer than that to record would be reported as
   not applied; a person who approves again would then send a second merge
   request, which Forgejo refuses for a pull request that is already merged.
-- Approvals live for the browser session and are bound to loaded documents, so
-  they do not survive closing the browser, closing the tab or reloading the
-  page. An open item whose tab closes or whose page is replaced becomes
-  "Click blocked" at once, with the reason; it is never a click on something
-  unreviewed.
+- Approvals are bound to loaded documents, so they do not survive closing the
+  browser, closing the tab or reloading the page. An open item whose tab closes
+  or whose page is replaced becomes "Click blocked" at once, with the reason; it
+  is never a click on something unreviewed. Items themselves are kept in the
+  extension's local storage, so a browser crash or restart does not forget one
+  whose click may have gone out: after a restart, an item that was being clicked
+  or reconciled is `unknown`, a pending or approved one is blocked ("the browser
+  was restarted"), and every item lets go of its old tab.
 
 ## Test
 

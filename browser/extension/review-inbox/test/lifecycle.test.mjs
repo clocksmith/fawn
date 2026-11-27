@@ -29,12 +29,17 @@ const PAIRS = Object.values(STATE).flatMap(from => [...Object.values(STATE), REM
 // As much of `chrome` as the worker touches. A tab is reduced to what an item holds on it: the id of its
 // document and the map of reviewed elements, which injected functions see as the page's own. Nothing is
 // ever under the click point, so a finish that gets as far as looking at the page ends as blocked.
-function fakeChrome(tabs, items) {
-  const stored = { items: structuredClone(items) }, listeners = {}, detached = [], injections = [], commands = [], fetches = [], network = new Set();
+// `session` is what this browser session's storage holds: by default the mark a worker leaves there, so
+// loading the worker is a worker restart. An empty one is a browser that was restarted.
+function fakeChrome(tabs, items, session = { browserSession: 'earlier' }) {
+  const stored = { items: structuredClone(items) }, sessionStored = structuredClone(session), listeners = {}, detached = [], injections = [], commands = [], fetches = [], network = new Set();
   const event = name => ({ addListener: listener => { listeners[name] = listener; } });
   let gate = null;
   const chrome = {
-    storage: { session: { get: async () => structuredClone(stored), set: async change => { Object.assign(stored, structuredClone(change)); } } },
+    storage: {
+      local: { get: async () => structuredClone(stored), set: async change => { Object.assign(stored, structuredClone(change)); } },
+      session: { get: async () => structuredClone(sessionStored), set: async change => { Object.assign(sessionStored, structuredClone(change)); } },
+    },
     runtime: { onMessage: event('message') },
     tabs: {
       onRemoved: event('removed'), onUpdated: event('updated'),
@@ -78,7 +83,7 @@ function fakeChrome(tabs, items) {
     const answer = await record(String(url));
     return { ok: answer.status === undefined, status: answer.status ?? 200, json: async () => answer };
   };
-  return { chrome, stored, listeners, detached, injections, commands, fetches, setRecord: answer => { record = answer; },
+  return { chrome, stored, sessionStored, listeners, detached, injections, commands, fetches, setRecord: answer => { record = answer; },
     // Holds the next `tabs.get`, which is the first thing a finish does once it owns the item, until released.
     hold: () => { let open; gate = new Promise(resolve => { open = resolve; }); return () => { gate = null; open(); }; } };
 }
@@ -108,8 +113,8 @@ const byId = list => Object.fromEntries(list.map(entry => [entry.id, entry]));
 const quiet = () => new Promise(resolve => setImmediate(resolve));
 
 let loads = 0;
-async function worker(tabs, list) {
-  const fake = fakeChrome(tabs, byId(list));
+async function worker(tabs, list, session) {
+  const fake = fakeChrome(tabs, byId(list), session);
   globalThis.chrome = fake.chrome;
   const { move } = await import(`../background.js?load=${++loads}`);
   await quiet();
@@ -437,4 +442,27 @@ test('a worker that stops while reconciling leaves the item unknown, having writ
   const { stored, fetches } = await worker({ 7: tab('document-1') }, [merge('r', RECONCILING, { reconcilingBy: 'an-earlier-worker' })]);
   assert.deepEqual([stored.items.r.state, stored.items.r.outcome.detail], [UNKNOWN, REASON.reconcileStopped]);
   assert.deepEqual(fetches, []);
+});
+
+test('after a browser restart, an item whose click may have gone out is unknown and nothing reviewed can be clicked', async () => {
+  // Items are kept where a browser restart does not wipe them. The tabs and documents they were bound to are gone;
+  // tab 7 now belongs to some other page, which holds none of the reviewed elements.
+  const list = [item('waiting', PENDING), item('ready', APPROVED), merge('clicking', FINISHING, { finishingBy: 'a-worker-before-the-restart' }),
+    merge('reading', RECONCILING, { reconcilingBy: 'a-worker-before-the-restart' }), merge('unknown', UNKNOWN), merge('unapplied', UNAPPLIED), item('done', CONFIRMED)];
+  const { stored, sessionStored, send, setRecord } = await worker({ 7: live(['key-other']) }, list, {});
+  const state = id => [stored.items[id].state, stored.items[id].outcome?.detail, stored.items[id].tabId];
+  assert.deepEqual(state('waiting'), [BLOCKED, REASON.browserRestarted, null]);
+  assert.deepEqual(state('ready'), [BLOCKED, REASON.browserRestarted, null]);
+  assert.deepEqual(state('clicking'), [UNKNOWN, REASON.browserStopped, null]);
+  assert.deepEqual(state('reading'), [UNKNOWN, REASON.reconcileStopped, null]);
+  assert.deepEqual([stored.items.unknown.state, stored.items.unknown.outcome.text, stored.items.unknown.tabId], [UNKNOWN, 'An earlier result', null], 'kept as it was, without its tab');
+  assert.equal(stored.items.done.state, CONFIRMED);
+  assert.ok(sessionStored.browserSession, 'the new session is marked, so a worker restart is not taken for a browser restart');
+  // Nothing of it can be finished; the unknown one is reconciled from Forgejo's record as before.
+  for (const id of ['ready', 'clicking', 'unknown']) assert.equal((await send({ inbox: 'finish', id })).ok, false, id);
+  const again = await send({ inbox: 'approve', id: 'unapplied' });
+  assert.deepEqual([again.ok, stored.items.unapplied.state], [false, UNAPPLIED]);
+  assert.match(again.error, new RegExp(REASON.tabClosed));
+  setRecord(() => mergedPull());
+  assert.equal((await send({ inbox: 'reconcile', id: 'clicking' })).value.state, CONFIRMED);
 });
