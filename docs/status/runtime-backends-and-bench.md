@@ -6,6 +6,26 @@ Benchmark discovery and current coverage route to the generated
 storage, expanded-reader compatibility and receipt provenance; historical evidence
 keeps its original scope.
 
+## Trace timing audit, 2026-11-27
+
+At `cfd8a4e0b1102f9489fc2d19efa09f570539abfd`, the compare and single-runtime
+selectors accepted three row indices (`0`, `1`, `2`) as nanosecond timestamps.
+Both returned `0.000002 ms` when the recorded process wall interval was
+`125 ms`. The regression uses that input in both entry points.
+
+The retained-report check searched tracked text under `bench/out/`, `reports/`,
+and `docs/` for either legacy source label, `doe-trace-window` or
+`trace-window`, and the corresponding window fields. The check also read
+1,844 gzip or tar-gzip blobs, including 7,009 archived text entries, and the one
+XZ archive. It found no retained report selecting the fallback in that scope.
+Reports outside these tracked paths require their own provenance check.
+
+Use measured execution durations for operation comparisons. Process wall
+duration has its own label and requires the same measurement scope on both
+arms. Row indices establish order. Any receipt selecting either legacy
+window label needs a matching measured-duration receipt or a rerun before
+it supports a performance claim.
+
 ## Windows native correctness boundary
 
 The native Windows lane exercises the bounded D3D12 copy and scalar-storage

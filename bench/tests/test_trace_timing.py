@@ -25,7 +25,7 @@ class TraceWindowTests(unittest.TestCase):
         cases = [
             [row(1), row(2_000_001)],
             [row(1, "sequence"), row(2, "sequence")],
-            [{"timestampMonoNs": 0}, {"timestampMonoNs": 1}],
+            [{"seq": index, "timestampMonoNs": index} for index in range(3)],
             [row(1) | {"runId": "first"}, row(2_000_001) | {"runId": "second"}],
             [row(1) | {"scope": "build"}, row(2_000_001) | {"scope": "dispatch"}],
             [row(1) | {"clockDomain": "device"}, row(2_000_001) | {"clockDomain": "host"}],
@@ -35,12 +35,12 @@ class TraceWindowTests(unittest.TestCase):
             for rows in cases:
                 with self.subTest(rows=rows):
                     trace.write_text("\n".join(map(json.dumps, rows)), encoding="utf-8")
-                    compare = pick_measured_timing_ms(10.0, {}, trace, "operation", None)
-                    cached = pick_measured_timing_ms(10.0, {"timingMs": 1.0, "timingSource": "doe-trace-window"},
+                    compare = pick_measured_timing_ms(125.0, {}, trace, "operation", None)
+                    cached = pick_measured_timing_ms(125.0, {"timingMs": 1.0, "timingSource": "doe-trace-window"},
                                                      trace, "operation", None)
-                    single = single_runtime_timing(10.0, rows, {})
+                    single = single_runtime_timing(125.0, rows, {})
                     for elapsed, source, _ in (compare, cached, single):
-                        self.assertEqual((elapsed, source), (10.0, "wall-time"))
+                        self.assertEqual((elapsed, source), (125.0, "wall-time"))
 
     def test_legacy_row_delta_is_ineligible_for_operation_claims(self):
         self.assertEqual(classify_timing_source("doe-trace-window"), "unknown")
