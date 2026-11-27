@@ -296,8 +296,9 @@ dropped, which WGSL also permits. Fixed extents keep their constant clamps.
 text targets reject it) is the opt-in write tracking of the native snapshot extension
 ([spirv_marks.c](src/spirv_marks.c)). After every executed store or atomic on a
 read_write storage buffer it stores 1 into the hidden mark word of each 64 KiB page the
-access touches, computed from the access chain's clamped indices and the type layout,
-and after every in-bounds 2D `textureStore` into the word of its 256x256 tile. The mark
+access touches, computed from the access chain's clamped indices and the type layout
+(a value wider than the smaller of its alignment and 32 bytes, WebGPU's floor for
+binding offsets, also marks the page of its last byte), and after every in-bounds 2D `textureStore` into the word of its 256x256 tile. The mark
 buffer is a hidden storage binding (group 0, binding 1000); a hidden immediate block
 holds two words per writable resource (first mark index, then the binding byte offset
 or the tiles per row), in the source order of the module's writable storage resources.

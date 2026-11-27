@@ -132,6 +132,17 @@ int main(int argc, char **argv)
             "@compute @workgroup_size(1) fn main() { _ = a[u.x]; }\n", DOE_COMPILER_WRITE_MARKS, &plain);
     assert(plain.status == DOE_COMPILER_OK && !hidden_binding(&plain));
     save(directory, "write-marks-plain.spv", &plain);
+    /* A struct no wider than its 512-byte alignment is only 32-byte aligned in
+     * the buffer (the binding offset), so it can cross a page: two mark
+     * stores, each after an OpArrayLength of the mark buffer, besides the
+     * clamp's OpArrayLength of w. */
+    static compiled wide;
+    compile("struct Wide { @align(512) head: u32, body: array<u32, 127> }\n"
+            "@group(0) @binding(0) var<storage, read_write> w: array<Wide>;\n"
+            "@compute @workgroup_size(1) fn main() { w[127] = Wide(0u, array<u32, 127>()); }\n",
+        DOE_COMPILER_WRITE_MARKS, &wide);
+    assert(wide.status == DOE_COMPILER_OK && opcode_count(&wide, 68u) == 3u);
+    save(directory, "write-marks-wide.spv", &wide);
     refused("requires immediate_address_space; struct P { v: u32 } var<immediate> p: P;\n"
             "@group(0) @binding(0) var<storage, read_write> d: array<u32>;\n"
             "@compute @workgroup_size(1) fn main() { d[0] = p.v; }\n", "var<immediate>");

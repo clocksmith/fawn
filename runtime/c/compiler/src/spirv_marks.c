@@ -17,7 +17,10 @@
  * sink. A mark is a plain idempotent store: a race between invocations only
  * repeats it, and over-marking costs restore bytes, never correctness. */
 
-enum { MARK_PAGE_BYTES = 1u << DOE_COMPILER_WRITE_MARK_PAGE_SHIFT };
+/* WebGPU's floor for minStorageBufferOffsetAlignment: a binding (and dynamic)
+ * offset is a multiple of it, so a value is only aligned to the smaller of
+ * this and its own alignment within the buffer. */
+enum { MARK_PAGE_BYTES = 1u << DOE_COMPILER_WRITE_MARK_PAGE_SHIFT, MARK_BINDING_ALIGNMENT = 32u };
 
 static bool marks_enabled(const Emitter *e)
 {
@@ -59,6 +62,13 @@ static uint64_t stored_size(const CompilerWorkspace *c, const IrInstruction *ir)
 static uint64_t stored_alignment(const CompilerWorkspace *c, const IrInstruction *ir)
 {
     return atomic_opcode(ir->opcode) ? 4u : type_alignment(c, ir->type);
+}
+/* A value wider than its guaranteed buffer alignment can cross a page
+ * boundary, so its last byte's page is marked too. */
+static bool marks_tail(const CompilerWorkspace *c, const IrInstruction *ir)
+{
+    const uint64_t alignment = stored_alignment(c, ir);
+    return stored_size(c, ir) > (alignment < MARK_BINDING_ALIGNMENT ? alignment : MARK_BINDING_ALIGNMENT);
 }
 
 /* One access step's byte contribution: a constant, or index * stride. */
@@ -173,8 +183,7 @@ bool spirv_marks_plan(Emitter *e, const IrInstruction *ir)
         if (!path_constant(e, ir->operands.access.path, true, &constant)) return false;
         uint32_t unused;
         if (constant != 0u && !constant_word(e, constant, ir->source_offset, &unused)) return false;
-        if (stored_size(c, ir) > stored_alignment(c, ir) &&
-            !constant_word(e, stored_size(c, ir) - 1u, ir->source_offset, &unused)) return false;
+        if (marks_tail(c, ir) && !constant_word(e, stored_size(c, ir) - 1u, ir->source_offset, &unused)) return false;
         return true;
     }
     if (ir->opcode != IR_IMAGE || ir->operands.composite.kind != IMAGE_STORE) return true;
@@ -290,7 +299,7 @@ bool spirv_marks_buffer(Emitter *e, const IrInstruction *ir)
     const uint32_t first = base_word(e, 2u * slot), binding_offset = base_word(e, 2u * slot + 1u);
     const uint32_t start = offset == 0u ? binding_offset : binary(e, OP_IADD, binding_offset, offset);
     if (e->failed || !mark_page(e, first, start)) return false;
-    if (stored_size(c, ir) <= stored_alignment(c, ir)) return true;
+    if (!marks_tail(c, ir)) return true;
     uint32_t tail = 0u;
     if (!constant_word(e, stored_size(c, ir) - 1u, ir->source_offset, &tail)) return false;
     return mark_page(e, first, binary(e, OP_IADD, start, tail));
