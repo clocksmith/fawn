@@ -323,7 +323,6 @@ function watchWrites(tabId) {
 // a second Finish there is refused before it spends its approval.
 const clicking = new Set();
 async function finish(id) {
-  await recovered;
   const tabId = (await load())[id]?.tabId;
   if (tabId != null && clicking.has(tabId)) throw new Error(REASON.tabBusy);
   if (tabId != null) clicking.add(tabId);
@@ -404,7 +403,6 @@ async function clickAndSettle(id) {
 // done, long enough after the click and the same on two reads: not applied, and a person may approve exactly
 // this again if the approved terms still hold. Anything else: still unknown, with the reason.
 async function reconcile(id) {
-  await recovered;
   const item = await move(id, { state: STATE.RECONCILING, reconcilingBy: WORKER });
   if (!item) throw new Error(REASON.notUnknown);
   const recipe = RECIPES[item.summary?.recipe];
@@ -427,7 +425,7 @@ async function reconcile(id) {
 const operations = {
   tabs: async () => (await chrome.tabs.query({})).filter(tab => /^https?:/.test(tab.url ?? ''))
     .map(tab => ({ id: tab.id, title: tab.title, url: tab.url, active: tab.active, windowId: tab.windowId })),
-  items: async () => Object.values((await recovered, await load())).sort((a, b) => a.createdAt.localeCompare(b.createdAt)),
+  items: async () => Object.values(await load()).sort((a, b) => a.createdAt.localeCompare(b.createdAt)),
   pick: message => whilePicking(message.tabId, () => pick(message.tabId)),
   check: message => check(message.id),
   approve: message => approve(message.id),
@@ -438,18 +436,22 @@ const operations = {
 chrome.runtime.onMessage.addListener((message, sender, respond) => {
   const operation = operations[message?.inbox];
   if (!operation) return false;
-  Promise.resolve().then(() => operation(message)).then(value => respond({ ok: true, value }), error => respond({ ok: false, error: error.message }));
+  // Nothing runs before the items of an earlier worker or browser session are carried over: until then a tab id
+  // may still name a tab from before a restart.
+  recovered.then(() => operation(message)).then(value => respond({ ok: true, value }), error => respond({ ok: false, error: error.message }));
   return true;
 });
 // A tab that closes, or whose top document is replaced, takes its open items with it: nothing reviewed is
 // left there to click, so they close as blocked and say why. An item that is being finished is left to its finish.
 async function closeOpen(tabId, decide) {
+  await recovered;
   for (const item of Object.values(await load())) if (item.tabId === tabId && decide(item)) await move(item.id, decide).catch(() => null);
 }
 chrome.tabs.onRemoved.addListener(tabId => closeOpen(tabId, item => whenTabCloses(item, now())));
 // No tab event says "this is a new document", so on any change to a tab that has open items the tab is
 // asked which document it shows. A tab that does not answer is left for the checks before a click.
 chrome.tabs.onUpdated.addListener(async tabId => {
+  await recovered;
   if (!Object.values(await load()).some(item => item.tabId === tabId && isOpen(item.state))) return;
   const shown = await within(chrome.scripting.executeScript({ target: { tabId, frameIds: [0] }, func: () => true, injectImmediately: true })
     .then(([frame]) => frame?.documentId ?? null, () => null), 1000, null);
