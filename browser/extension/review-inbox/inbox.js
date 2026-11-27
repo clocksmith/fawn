@@ -67,6 +67,13 @@ function card(item) {
   for (const line of item.summary.lines) list.append(node('li', line));
   element.append(list);
 
+  // What the checks cover, said where the approval is given.
+  element.append(node('p', item.summary.target
+    ? 'Checked before the click: the page, the button, its pixels, and Forgejo\'s record of this pull request at this commit.'
+    : `Checked before the click: the page, the button and the pixels of ${item.controlRect && item.rect.width * item.rect.height > item.controlRect.width * item.controlRect.height
+      ? 'the area you drew around it' : 'the button alone'}. A change elsewhere on the page that alters what the click does is not caught.`, 'covers'));
+  element.dataset.covers = item.summary.target ? 'record' : 'pixels';
+
   element.append(node('h3', 'What you saw'));
   const seen = node('div', null, 'seen');
   seen.append(picture(item.image, `Captured at ${time(item.createdAt)}`, item.rect?.width));

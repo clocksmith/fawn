@@ -14,7 +14,9 @@ Fawn's browser.
    request: open the merge form).
 3. In the inbox choose the page and press **Pick a button to approve**, then
    click the button on the page. The click chooses the button; it does not
-   press it.
+   press it. To have more than the button compared, hold Shift while clicking
+   it, then drag a box around it and what its meaning depends on (a total, a
+   recipient); Esc keeps just the button.
 4. The card shows four things: what will change, what you saw, what changed
    since, and what actually happened. **Approve exactly this** covers those
    pixels only.
@@ -30,7 +32,7 @@ Fawn's browser.
 | The tab | the tab still exists | Click blocked |
 | The document | the same loaded document, not a reload or another page | Click blocked |
 | The element | the same node is still attached, and what sits under the click point is that node or inside it (its label or icon), never a look-alike beside it | Click blocked |
-| The pixels | a fresh capture of the rectangle is byte-identical to the reviewed one | Click blocked, and the card shows the new image beside the old |
+| The pixels | a fresh capture of the rectangle (the button, or the area drawn around it) is byte-identical to the reviewed one | Click blocked, and the card shows the new image beside the old |
 | The application's record | where the recipe has one, the target and values that were approved still hold (for a Forgejo merge: the same pull request, still open and unmerged, with the head commit that was reviewed) | Click blocked as a stale approval; the reason says what changed |
 
 The click itself is a trusted click sent through the debugger API with a fence
@@ -151,6 +153,11 @@ reconcile against, so it stays `unknown` until a person clears it.
   caught only by the element fence, not by the pixel comparison.
 - A control inside a closed shadow root cannot be bound: the extension sees
   only the host element.
+- For a control with no record recipe (anything but a Forgejo merge today),
+  only the page, the element and the compared pixels are checked. A change
+  elsewhere on the page that alters what the click does, such as a total beside
+  the button, is not caught unless it is inside the area the person drew. The
+  card says which of these applies.
 - Forgejo's API does not accept the browser's sign-in session, only tokens, and
   the inbox holds no token. It reads the record of a public repository; for a
   repository the API will not show without a token, the record cannot be read,

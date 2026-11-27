@@ -230,7 +230,7 @@ async function stillHolds(item) {
     let inside = false;
     for (let at = hit; at && element && !inside; at = at.parentNode ?? at.host) inside = at === element;
     return { bound: !!element, connected: !!element?.isConnected, sameUnderPoint: inside };
-  }, [item.bound, item.point.x, item.point.y, item.rect.x, item.rect.y]).catch(() => null), PAGE_TIMEOUT_MS, SILENT);
+  }, [item.bound, item.point.x, item.point.y, (item.controlRect ?? item.rect).x, (item.controlRect ?? item.rect).y]).catch(() => null), PAGE_TIMEOUT_MS, SILENT);
   if (probe === SILENT) return { holds: false, reason: REASON.pageSilent };
   if (!probe || probe.documentId !== item.documentId || !probe.result.bound) return { holds: false, reason: REASON.documentReplaced };
   if (!probe.result.connected) return { holds: false, reason: REASON.controlGone };
@@ -266,9 +266,12 @@ async function pick(tabId) {
   const { documentId } = shown;
   // The person may already be looking at another tab, which leaves this one drawing nothing: capture it
   // in front, then put back the tab they were looking at.
-  const image = await capture(tabId, picked.rect).catch(() => withVisibleTab(tabId, () => capture(tabId, picked.rect)));
+  // `rect` is what is captured and compared: the control, or the area a person drew around it. `controlRect`
+  // is where the control itself was, which is what a later check puts back in place.
+  const rect = picked.area ?? picked.rect;
+  const image = await capture(tabId, rect).catch(() => withVisibleTab(tabId, () => capture(tabId, rect)));
   const id = crypto.randomUUID();
-  return write(id, () => ({ id, tabId, windowId: tab.windowId, documentId, url: picked.url, pageTitle: picked.pageTitle, rect: picked.rect, point: picked.point,
+  return write(id, () => ({ id, tabId, windowId: tab.windowId, documentId, url: picked.url, pageTitle: picked.pageTitle, rect, controlRect: picked.rect, point: picked.point,
     bound: picked.key, image, summary: picked.summary, state: STATE.PENDING, createdAt: now(), check: { at: now(), holds: true, reason: REASON.matches } }));
 }
 

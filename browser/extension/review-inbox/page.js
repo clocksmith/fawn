@@ -59,7 +59,10 @@ function describeTarget(element) {
 }
 
 // One person picks one control. Hovering outlines it; a click chooses it and
-// never reaches the page; Escape cancels.
+// never reaches the page; Escape cancels. Shift and a click choose it and then
+// let the person drag a box around it and what its meaning depends on (a total,
+// a recipient): that whole area is what is compared, and the control is still
+// what is clicked. Escape then keeps the control alone.
 function pick() {
   return new Promise(resolve => {
     const box = document.createElement('div');
@@ -82,24 +85,59 @@ function pick() {
       box.remove(); hint.remove();
       resolve(result);
     };
-    const choose = event => {
-      swallow(event);
-      const element = control(event.target);
-      if (!element) { hint.textContent = 'That is not a button or link. Click the button you want approved. Esc cancels.'; return; }
+    // Whole pixels that enclose a rectangle.
+    const whole = r => ({ x: Math.floor(r.x), y: Math.floor(r.y), width: Math.ceil(r.x + r.width) - Math.floor(r.x), height: Math.ceil(r.y + r.height) - Math.floor(r.y) });
+    let chosen = null, dragFrom = null, drawn = null;
+    const done = element => {
       // Let the outline leave the screen before the browser captures the control.
       box.remove(); hint.remove();
       requestAnimationFrame(() => requestAnimationFrame(() => {
-        const r = element.getBoundingClientRect();
-        // Whole pixels that enclose the control.
-        const rect = { x: Math.floor(r.x), y: Math.floor(r.y), width: Math.ceil(r.right) - Math.floor(r.x), height: Math.ceil(r.bottom) - Math.floor(r.y) };
+        const r = element.getBoundingClientRect(), rect = whole({ x: r.x, y: r.y, width: r.right - r.x, height: r.bottom - r.y });
+        const summary = describeTarget(element);
+        // The drawn box always covers the whole control, and stops at the edges of the window.
+        let area = null;
+        if (drawn) {
+          const left = Math.max(0, Math.min(drawn.x, rect.x)), top = Math.max(0, Math.min(drawn.y, rect.y));
+          const right = Math.min(window.innerWidth, Math.max(drawn.x + drawn.width, rect.x + rect.width)), bottom = Math.min(window.innerHeight, Math.max(drawn.y + drawn.height, rect.y + rect.height));
+          area = whole({ x: left, y: top, width: right - left, height: bottom - top });
+          summary.lines.push(`Also compared: the area you drew around the button, ${area.width} × ${area.height} px`);
+        }
         const key = crypto.randomUUID();
         globalThis.__fawnReviewed.set(key, element);
-        finish({ key, rect, point: { x: rect.x + Math.floor(rect.width / 2), y: rect.y + Math.floor(rect.height / 2) },
-          url: location.href, pageTitle: document.title, summary: describeTarget(element) });
+        finish({ key, rect, ...(area ? { area } : {}), point: { x: rect.x + Math.floor(rect.width / 2), y: rect.y + Math.floor(rect.height / 2) },
+          url: location.href, pageTitle: document.title, summary });
       }));
     };
-    const key = event => { if (event.key === 'Escape') { swallow(event); finish({ cancelled: true }); } };
-    const handlers = [['mousemove', outline], ['click', choose], ['mousedown', swallow], ['mouseup', swallow], ['pointerdown', swallow], ['pointerup', swallow], ['keydown', key]];
+    const choose = event => {
+      swallow(event);
+      if (chosen) { if (drawn) done(chosen); return; }
+      const element = control(event.target);
+      if (!element) { hint.textContent = 'That is not a button or link. Click the button you want approved. Esc cancels.'; return; }
+      if (!event.shiftKey) { done(element); return; }
+      chosen = element;
+      hint.textContent = 'Now drag a box around the button and what it depends on, such as a total. Esc keeps just the button.';
+    };
+    const press = event => {
+      swallow(event);
+      if (chosen && event.type === 'mousedown') { dragFrom = { x: event.clientX, y: event.clientY }; drawn = null; }
+      if (chosen && event.type === 'mouseup' && dragFrom) {
+        const x = Math.min(dragFrom.x, event.clientX), y = Math.min(dragFrom.y, event.clientY);
+        drawn = { x, y, width: Math.abs(event.clientX - dragFrom.x), height: Math.abs(event.clientY - dragFrom.y) };
+        dragFrom = null;
+      }
+    };
+    const move = event => {
+      if (!chosen) { outline(event); return; }
+      if (!dragFrom) return;
+      const x = Math.min(dragFrom.x, event.clientX), y = Math.min(dragFrom.y, event.clientY);
+      Object.assign(box.style, { display: 'block', left: x + 'px', top: y + 'px', width: Math.abs(event.clientX - dragFrom.x) + 'px', height: Math.abs(event.clientY - dragFrom.y) + 'px' });
+    };
+    const key = event => {
+      if (event.key !== 'Escape') return;
+      swallow(event);
+      if (chosen) { drawn = null; done(chosen); } else finish({ cancelled: true });
+    };
+    const handlers = [['mousemove', move], ['click', choose], ['mousedown', press], ['mouseup', press], ['pointerdown', swallow], ['pointerup', swallow], ['keydown', key]];
     for (const [type, handler] of handlers) window.addEventListener(type, handler, true);
   });
 }
