@@ -60,10 +60,9 @@ unresolved question warrants more. A local pass proves only its exercised scope.
 
 ## Git workflow
 
-Use path-limited commits in the shared checkout. Use a branch or isolated
-worktree when a substantial change could collide with another session; preserve
-its work when integrating. Push coherent, checked changes to the agreed remote
-branch and report the commit or concrete blocker.
+Use path-limited commits in the shared checkout. Use an isolated checkout when
+a substantial change could collide with another session, and preserve its work
+when integrating. Deliver under the workspace [Git delivery rule](https://github.com/clocksmith/ouroboros/blob/main/deco/AGENTS.md#git-delivery).
 Keep generated output and local archives out of commits under the
 [retention policy](reports/README.md#retention).
 
