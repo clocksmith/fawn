@@ -318,6 +318,50 @@ static void run_path(canary *c, path p)
     free(start_buffer); free(start_image); free(after_buffer); free(after_image); free(base_buffer); free(base_image);
 }
 
+/* A fresh view of the tracked image per branch, as a renderer that creates
+ * its target view every frame does, released once its work is submitted:
+ * the snapshot must not keep a slot view (or the base view) for each. */
+static void fresh_views(canary *c)
+{
+    enum { BRANCHES = 32 };
+    WGPUShaderModule module = snapshot_module(&c->s, texel_source);
+    WGPUComputePipelineDescriptor descriptor = WGPU_COMPUTE_PIPELINE_DESCRIPTOR_INIT;
+    descriptor.compute.module = module;
+    WGPUComputePipeline pipeline = wgpuDeviceCreateComputePipeline(c->s.device, &descriptor);
+    wgpuShaderModuleRelease(module);
+    assert(pipeline);
+    DoeNativeSnapshotLedger ledger;
+    for (uint32_t b = 0; b < BRANCHES; ++b) {
+        assert(doeNativeSnapshotBranchBegin(c->snapshot) == 1);
+        WGPUTextureView view = wgpuTextureCreateView(c->image, NULL);
+        assert(view);
+        WGPUBindGroupEntry entry = {.binding=0,.textureView=view};
+        WGPUCommandEncoder encoder = wgpuDeviceCreateCommandEncoder(c->s.device, NULL);
+        dispatch_one(c, encoder, pipeline, &entry, 1);
+        submit(&c->s, encoder);
+        wgpuTextureViewRelease(view);
+        work_done(&c->s);
+        assert(doeNativeSnapshotBranchEnd(c->snapshot) == 1);
+    }
+    assert(doeNativeSnapshotGetLedger(c->snapshot, &ledger) == 1);
+    if (ledger.slotViews) {
+        fprintf(stderr, "FAIL view lifetime: %llu slot views held after %u branches with released views\n",
+            (unsigned long long)ledger.slotViews, (unsigned)BRANCHES);
+        abort();
+    }
+    wgpuComputePipelineRelease(pipeline);
+    /* The next branch starts equal to the base, so these writes were restored. */
+    assert(doeNativeSnapshotBranchBegin(c->snapshot) == 1);
+    uint8_t *buffer_bytes, *image_bytes;
+    observe(c, &buffer_bytes, &image_bytes);
+    assert(equals_base(c, buffer_bytes, image_bytes));
+    free(buffer_bytes);
+    free(image_bytes);
+    assert(doeNativeSnapshotBranchEnd(c->snapshot) == 1);
+    printf("views: %u branches each through a fresh, released view of the tracked image; no slot view outlives "
+        "its submission\n", (unsigned)BRANCHES);
+}
+
 static void pop_validation(canary *c, const char *what)
 {
     unsigned before = c->s.validation_errors;
@@ -438,6 +482,7 @@ int main(void)
     free(buffer_bytes);
     free(image_bytes);
     assert(doeNativeSnapshotBranchEnd(c.snapshot) == 1);
+    fresh_views(&c);
     negative_controls(&c);
     doeNativeSnapshotRelease(c.snapshot);
     wgpuComputePipelineRelease(c.store);

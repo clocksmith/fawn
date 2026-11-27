@@ -1219,9 +1219,11 @@ creation and dispatch (`pipelines.c`, `queue.c`). Default devices are unchanged.
 
 - While a branch is open, `wgpuQueueSubmit` lowers tracked buffers, textures and the
   views it meets against the slot for that recording only and restores the base
-  payloads before the device mutex is released (`snapshot_marks.c`). Copies, clears,
-  query resolves and render attachments mark their destination pages or tiles on the
-  host; an attachment marks its whole texture.
+  payloads before the device mutex is released (`snapshot_marks.c`). Each view of a
+  tracked texture gets a slot view for that recording only, which the recording
+  retains until its work retires (`slotViews` in the ledger counts the ones held).
+  Copies, clears, query resolves and render attachments mark their destination pages or
+  tiles on the host; an attachment marks its whole texture.
 - `BranchBegin` fills a new slot with a full copy and refills a recycled slot by copying
   back only the units the previous branch marked, GPU and host marks together, then
   clears the marks. `BranchEnd` needs the caller to have observed completion; it reads
@@ -1238,7 +1240,8 @@ creation and dispatch (`pipelines.c`, `queue.c`). Default devices are unchanged.
 over-aligned store crossing a page, an out-of-bounds store whose mark offset wraps,
 sixteen writable bindings in one pipeline, textureStore, buffer copy, buffer-to-texture and texture-to-texture copy, clear, render
 attachment) and requires every unit a CPU diff shows changed to be marked, the base to
-stay byte-identical and the next slot to start equal to the base; negative controls show
+stay byte-identical and the next slot to start equal to the base, then runs 32 branches
+through a fresh, released view each and requires no slot view to remain; negative controls show
 the base check failing on a deliberate base write and the refusals, including a
 seventeenth writable resource (two immediate words each exceed Vulkan's guaranteed 128
 bytes). The snapshot device requests Vulkan's per-stage maxima of 10 storage buffers and 8

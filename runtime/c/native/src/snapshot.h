@@ -23,8 +23,9 @@ typedef struct native_snapshot_resource {
     doe_vk_texture *saved_texture;
 } native_snapshot_resource;
 
+/* One per base view a lowering meets, released by native_snapshot_lower_end. */
 typedef struct native_snapshot_view {
-    doe_resource_view *view;           /* Base view, retained while cached. */
+    doe_resource_view *view;           /* Base view, kept alive by the submission's commands. */
     doe_vk_texture_view *slot;         /* Same view description over the slot image. */
     doe_vk_texture_view *saved;
     size_t resource;

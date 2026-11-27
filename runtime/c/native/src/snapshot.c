@@ -47,12 +47,7 @@ static void release_resources(native_snapshot *snapshot)
         doe_resource_buffer_release(resource->buffer);
         doe_resource_texture_release(resource->texture);
     }
-    for (size_t i = 0; i < snapshot->view_count; ++i) {
-        native_lock(snapshot->device);
-        doe_vk_texture_view_release(snapshot->views[i].slot);
-        native_unlock(snapshot->device);
-        doe_resource_view_release(snapshot->views[i].view);
-    }
+    /* Slot views live for one lowering (snapshot_marks.c): none remain. */
     if (snapshot->marks) wgpuBufferRelease(snapshot->marks);
     free(snapshot->views);
     free(snapshot->resources);
@@ -322,6 +317,9 @@ uint32_t doeNativeSnapshotGetLedger(void *handle, DoeNativeSnapshotLedger *out)
     native_snapshot *snapshot = handle;
     if (!snapshot || !out) return 0;
     *out = snapshot->ledger;
+    native_lock(snapshot->device);
+    out->slotViews = snapshot->view_count;
+    native_unlock(snapshot->device);
     return 1;
 }
 

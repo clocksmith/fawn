@@ -160,7 +160,9 @@ static void mark_view(native_snapshot *snapshot, const doe_resource_view *view)
     if (index != SIZE_MAX) mark_tiles(snapshot, index, 0, 0, UINT32_MAX, UINT32_MAX);
 }
 
-/* The slot view over the same description, created once per base view. */
+/* The slot view over the same description, created once per base view for
+ * one lowering. The submission's commands keep the base view alive until
+ * lower_end, and the recording retains the slot view it binds. */
 static native_failure cache_view(native_snapshot *snapshot, doe_resource_view *view)
 {
     if (!view) return native_failure_status(NATIVE_OK);
@@ -189,7 +191,6 @@ static native_failure cache_view(native_snapshot *snapshot, doe_resource_view *v
     doe_vk_texture_view *created = NULL;
     doe_vk_status status = doe_vk_texture_view_create(slot->texture, &native, &created, &error);
     if (status != DOE_VK_OK) return native_failure_vulkan(status, &error);
-    doe_resource_view_retain(view);
     snapshot->views[snapshot->view_count++] = (native_snapshot_view){view, created, NULL, index};
     return native_failure_status(NATIVE_OK);
 }
@@ -328,14 +329,20 @@ native_failure native_snapshot_lower_begin(native_device *device, doe_resource_c
 void native_snapshot_lower_end(native_device *device)
 {
     native_snapshot *snapshot = device->snapshot;
-    if (!snapshot || !snapshot->swapped) return;
-    for (size_t i = 0; i < snapshot->count; ++i) {
+    if (!snapshot) return;
+    for (size_t i = 0; snapshot->swapped && i < snapshot->count; ++i) {
         native_snapshot_resource *resource = &snapshot->resources[i];
         if (resource->buffer) ((native_buffer *)doe_resource_buffer_native(resource->buffer))->handle = resource->saved_buffer;
         else ((native_texture *)doe_resource_texture_native(resource->texture))->texture = resource->saved_texture;
     }
-    for (size_t i = 0; i < snapshot->view_count; ++i)
-        ((native_view *)doe_resource_view_native(snapshot->views[i].view))->view = snapshot->views[i].saved;
+    /* A slot view lives for this lowering only; the recording retains what it
+     * binds or renders to until its work retires. */
+    for (size_t i = 0; i < snapshot->view_count; ++i) {
+        if (snapshot->swapped)
+            ((native_view *)doe_resource_view_native(snapshot->views[i].view))->view = snapshot->views[i].saved;
+        doe_vk_texture_view_release(snapshot->views[i].slot);
+    }
+    snapshot->view_count = 0;
     snapshot->swapped = false;
 }
 
