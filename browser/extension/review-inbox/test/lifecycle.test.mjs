@@ -499,3 +499,19 @@ test('the control under the click point may be the reviewed one or something ins
   assert.equal((await send({ inbox: 'approve', id: 'twin' })).error, REASON.reviewAgain(REASON.covered));
   assert.equal((await send({ inbox: 'approve', id: 'shadow' })).value?.state, APPROVED);
 });
+
+test('two approvals on one page are never clicked at once: the second waits, still approved, and is refused with the reason', async () => {
+  const { send, stored, startFinish } = await worker({ 7: live(['key-a', 'key-b']), 8: live(['key-c']) },
+    [item('a', APPROVED, 7, { bound: 'key-a' }), item('b', APPROVED, 7, { bound: 'key-b' }), item('c', APPROVED, 8, { bound: 'key-c' })]);
+  // The first holds the page's fence from before its checks until its result.
+  const first = await startFinish('a');
+  assert.equal(stored.items.a.state, FINISHING);
+  const second = await Promise.race([send({ inbox: 'finish', id: 'b' }), new Promise(resolve => setTimeout(() => resolve('still waiting'), 1000))]);
+  assert.deepEqual(second, { ok: false, error: REASON.tabBusy });
+  assert.equal(stored.items.b.state, APPROVED, 'the refused one is not spent');
+  first.go();
+  assert.equal((await first.reply).value.state, UNKNOWN);
+  // Once the page is free it is finished like any other, and a page beside it was never held up.
+  assert.equal((await send({ inbox: 'finish', id: 'b' })).value.state, UNKNOWN);
+  assert.equal((await send({ inbox: 'finish', id: 'c' })).value.state, UNKNOWN);
+});

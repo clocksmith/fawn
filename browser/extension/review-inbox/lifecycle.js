@@ -83,6 +83,7 @@ export const REASON = Object.freeze({
   // Why a request was refused.
   notPending: 'This item is not waiting for approval.',
   notApproved: 'This item is not approved, or it is already being finished.',
+  tabBusy: 'Another approval on this page is being clicked right now. This one is still approved; finish it when that is done.',
   unknownNoFinish: 'The result of the last click is not known. Reconcile it before anything is clicked again.',
   unknownNoApprove: 'The result of the last click is not known. Reconcile it before approving again.',
   notUnknown: 'Only an item whose result is not known can be reconciled, and only by one request at a time.',

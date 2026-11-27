@@ -122,7 +122,9 @@ element it was holding for it.
 A finished item is never clicked again on its own. Except for an `unapplied`
 one, to try again, pick and approve again. Finishing claims the approval in one step, so if the inbox is open in
 two places and both ask at once, one of them clicks and the other is told the
-item is already being finished.
+item is already being finished. One page is clicked by one Finish at a time,
+because each frame has one fence: Finish on another approval for the same page
+while one is being clicked is refused, and that approval stays approved.
 
 If the extension is stopped while it is clicking, it cannot know afterwards
 whether the click went out. The card then says **Click may have been sent;
