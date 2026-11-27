@@ -94,9 +94,9 @@ function pick() {
     const whole = r => ({ x: Math.floor(r.x), y: Math.floor(r.y), width: Math.ceil(r.x + r.width) - Math.floor(r.x), height: Math.ceil(r.y + r.height) - Math.floor(r.y) });
     let chosen = null, dragFrom = null, drawn = null, ended = false;
     // A drag can end on another element or outside the window, and then the browser fires no click. The
-    // mouseup ends it. When the browser does make a click from that mouseup, it dispatches it in the same task,
-    // right after the mouseup: that one click is swallowed, so the page never sees it. The listener goes at the
-    // next task, so a click the person makes afterwards is theirs and reaches the page.
+    // release ends it. When the browser does make a click from that release, it dispatches it in the same task,
+    // right after the pointerup: that one click is swallowed, so the page never sees it. The listener goes at
+    // the next task, so a click the person makes afterwards is theirs and reaches the page.
     const swallowTrailingClick = () => {
       const once = event => { if (!event.isTrusted) return; swallow(event); window.removeEventListener('click', once, true); };
       window.addEventListener('click', once, true);
@@ -134,10 +134,12 @@ function pick() {
       chosen = element;
       hint.textContent = 'Now drag a box around the button and what it depends on, such as a total. Esc keeps just the button.';
     };
+    // The drag is read from pointer events. Swallowing pointerdown cancels it for the page, and the browser
+    // then sends no mousedown, mousemove or mouseup until the pointer is released, so those cannot be used.
     const press = event => {
       swallow(event);
-      if (chosen && event.type === 'mousedown') { dragFrom = { x: event.clientX, y: event.clientY }; drawn = null; }
-      if (chosen && event.type === 'mouseup' && dragFrom) {
+      if (chosen && event.type === 'pointerdown') { dragFrom = { x: event.clientX, y: event.clientY }; drawn = null; }
+      if (chosen && event.type === 'pointerup' && dragFrom) {
         const x = Math.min(dragFrom.x, event.clientX), y = Math.min(dragFrom.y, event.clientY);
         drawn = { x, y, width: Math.abs(event.clientX - dragFrom.x), height: Math.abs(event.clientY - dragFrom.y) };
         dragFrom = null;
@@ -155,7 +157,7 @@ function pick() {
       swallow(event);
       if (chosen) { drawn = null; done(chosen); } else finish({ cancelled: true });
     };
-    const handlers = [['mousemove', move], ['click', choose], ['mousedown', press], ['mouseup', press], ['pointerdown', swallow], ['pointerup', swallow], ['keydown', key]];
+    const handlers = [['pointermove', move], ['click', choose], ['pointerdown', press], ['pointerup', press], ['mousedown', swallow], ['mouseup', swallow], ['keydown', key]];
     for (const [type, handler] of handlers) window.addEventListener(type, handler, true);
   });
 }
