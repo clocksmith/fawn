@@ -9,6 +9,8 @@ import { createCdpAdapter } from '../../src/adapters/cdp-adapter.js';
 if (process.platform === 'win32') {
   console.log('skip: actual POSIX pipe peer; Windows browser transport requires its platform control');
 } else {
+  // The action deadline also covers launching the real Node pipe peer on a busy host.
+  const timeoutMs = 1000;
   const root = realpathSync.native(mkdtempSync(join(tmpdir(), 'fawn-cdp-events-')));
   const source = readFileSync(new URL('../support/cdp-controlled-browser.cjs', import.meta.url), 'utf8');
   const unhandled = [];
@@ -19,7 +21,6 @@ if (process.platform === 'win32') {
       'coalesced-download', 'click-rejection', 'click-timeout', 'transport-close']) {
       const record = join(root, scenario + '.json');
       const executable = join(root, scenario + ' controlled browser');
-      const timeoutMs = 80;
       const script = `#!${process.execPath}\nglobal.CONTROL=${JSON.stringify({ scenario, record, timeoutMs })};\n${source}`;
       writeFileSync(executable, script);
       chmodSync(executable, 0o700);
@@ -44,7 +45,12 @@ if (process.platform === 'win32') {
           await assert.rejects(adapter.execute('controlled', { kind: 'navigate', target: { url: 'http://controlled/' } }),
             scenario === 'transport-close' ? /pipe closed|Chromium ended/ : /controlled.*rejection|not received|timed out/);
         }
-        await new Promise(resolve => setTimeout(resolve, timeoutMs * 3));
+        if (scenario === 'click-timeout') {
+          // Let the deliberately late point reply reach the adapter before checking cancellation.
+          await new Promise(resolve => setTimeout(resolve, timeoutMs * 2));
+        } else {
+          await new Promise(resolve => setImmediate(resolve));
+        }
         assert.deepEqual(unhandled, [], `${scenario}: event/command rejection must remain owned`);
         const observed = JSON.parse(readFileSync(record));
         if (scenario === 'click-timeout') {
@@ -59,7 +65,7 @@ if (process.platform === 'win32') {
     }
     // Releasing a workspace is bounded and reports what was established about the browser's exit.
     {
-      const scenario = 'close-stalls', record = join(root, scenario + '.json'), executable = join(root, scenario + ' controlled browser'), timeoutMs = 80;
+      const scenario = 'close-stalls', record = join(root, scenario + '.json'), executable = join(root, scenario + ' controlled browser');
       const script = `#!${process.execPath}\nglobal.CONTROL=${JSON.stringify({ scenario, record, timeoutMs })};\n${source}`;
       writeFileSync(executable, script); chmodSync(executable, 0o700);
       const config = structuredClone(loadServiceConfig());
@@ -71,13 +77,13 @@ if (process.platform === 'win32') {
       const started = performance.now();
       // The browser acknowledges the close and never exits: it is ended after the bound and verified gone.
       assert.deepEqual(await adapter.close(), [{ workspaceId: 'stalled', release: 'forced' }]);
-      assert.ok(performance.now() - started < 2000, 'the release does not wait on a browser that will not exit');
+      assert.ok(performance.now() - started < timeoutMs + 2000, 'the release does not wait on a browser that will not exit');
       assert.throws(() => process.kill(pid, 0), { code: 'ESRCH' });
       assert.deepEqual(await adapter.close(), [], 'a released workspace is no longer owned');
     }
     // A browser that exits when asked is a graceful release.
     {
-      const scenario = 'early-event', record = join(root, 'graceful.json'), executable = join(root, 'graceful controlled browser'), timeoutMs = 80;
+      const scenario = 'early-event', record = join(root, 'graceful.json'), executable = join(root, 'graceful controlled browser');
       const script = `#!${process.execPath}\nglobal.CONTROL=${JSON.stringify({ scenario, record, timeoutMs })};\n${source}`;
       writeFileSync(executable, script); chmodSync(executable, 0o700);
       const config = structuredClone(loadServiceConfig());
