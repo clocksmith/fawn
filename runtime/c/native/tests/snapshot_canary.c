@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: MIT
  * Snapshot leak canary, one branch per write path: storage store, a store that
- * crosses a page within its own alignment, textureStore, buffer copy,
+ * crosses a page within its own alignment, an out-of-bounds store whose mark
+ * offset wraps, textureStore, buffer copy,
  * buffer-to-texture and texture-to-texture copy, clear and render
  * attachment. Each branch must (1) change its slot, (2) mark every unit the
  * CPU diff shows changed, (3) leave the base resources byte-identical, and
@@ -18,7 +19,7 @@ typedef struct canary {
     WGPUTextureView image_view;
     uint8_t *base_buffer, *base_image;
     void *snapshot;
-    WGPUComputePipeline store, texel, wide;
+    WGPUComputePipeline store, texel, wide, wrap;
     WGPURenderPipeline draw;
 } canary;
 
@@ -43,6 +44,18 @@ static const char wide_source[] =
     "struct Wide { @align(512) head: u32, body: array<u32, 127> }\n"
     "@group(0) @binding(0) var<storage, read_write> wide: array<Wide>;\n"
     "@compute @workgroup_size(1) fn main() { wide[127] = Wide(0u, array<u32, 127>()); }\n";
+
+/* An out-of-bounds index whose byte offset wraps 32 bits: 0x40040000 * 4 is
+ * 1 MiB modulo 2^32, so its mark index lands 16 pages past the binding, on
+ * the texture's first tile. With robust buffer access the store is discarded
+ * and only that stray mark is written; otherwise the index is clamped to the
+ * last element and its page is marked. Either way nothing is missed. */
+static const char wrap_source[] =
+    "@group(0) @binding(0) var<storage, read_write> data: array<u32>;\n"
+    "@compute @workgroup_size(1) fn main(@builtin(local_invocation_index) i: u32) {\n"
+    "  data[2u * 16384u + i] = 0x0b0b0b0bu;\n"
+    "  data[0x40040000u + i] = 0x0c0c0c0cu;\n"
+    "}\n";
 
 /* An override constant takes the specialization compile path: its pipeline
  * must still carry marks, or the branch submission is refused. */
@@ -144,9 +157,9 @@ static WGPUBindGroup bind(canary *c, WGPUComputePipeline pipeline, const WGPUBin
     return group(&c->s, pipeline, entries, count);
 }
 
-typedef enum path { STORE, WIDE, TEXEL, COPY, BUFFER_TEXTURE, TEXTURE_TEXTURE, CLEAR, ATTACHMENT, PATHS } path;
-static const char *const path_names[PATHS] = {"storage store and atomic", "over-aligned store", "textureStore",
-    "buffer copy", "buffer-to-texture copy", "texture-to-texture copy", "buffer clear", "render attachment"};
+typedef enum path { STORE, WIDE, WRAP, TEXEL, COPY, BUFFER_TEXTURE, TEXTURE_TEXTURE, CLEAR, ATTACHMENT, PATHS } path;
+static const char *const path_names[PATHS] = {"storage store and atomic", "over-aligned store",
+    "out-of-bounds store", "textureStore", "buffer copy", "buffer-to-texture copy", "texture-to-texture copy", "buffer clear", "render attachment"};
 
 static void dispatch_one(canary *c, WGPUCommandEncoder encoder, WGPUComputePipeline pipeline,
     const WGPUBindGroupEntry *entries, size_t count)
@@ -175,6 +188,11 @@ static void record_path(canary *c, WGPUCommandEncoder encoder, path p)
         /* Element 127 spans pages 4 and 5; only its body reaches page 5. */
         WGPUBindGroupEntry entry = {.binding=0,.buffer=c->tracked,.offset=4 * PAGE + 256,.size=2 * PAGE};
         dispatch_one(c, encoder, c->wide, &entry, 1);
+        break;
+    }
+    case WRAP: {
+        WGPUBindGroupEntry entry = {.binding=0,.buffer=c->tracked,.size=4 * PAGE};
+        dispatch_one(c, encoder, c->wrap, &entry, 1);
         break;
     }
     case TEXEL: {
@@ -327,6 +345,7 @@ int main(void)
     free(scratch);
     c.store = compute(&c, store_source, NULL);
     c.wide = compute(&c, wide_source, NULL);
+    c.wrap = compute(&c, wrap_source, NULL);
     const WGPUConstantEntry column = {.key={"column", WGPU_STRLEN},.value=300.0};
     c.texel = compute(&c, texel_source, &column);
     c.draw = render(&c);
@@ -334,7 +353,16 @@ int main(void)
     DoeNativeSnapshotDesc desc = {.bufferCount=1,.buffers=&c.tracked,.textureCount=1,.textures=&c.image};
     c.snapshot = doeNativeSnapshotCreate(c.s.device, &desc);
     assert(c.snapshot);
-    for (path p = STORE; p < PATHS; ++p) run_path(&c, p);
+    for (path p = STORE; p < PATHS; ++p) {
+        run_path(&c, p);
+        if (p != WRAP) continue;
+        /* The wrapped index could only add a mark, never drop one; the next
+         * branch's start check proves the extra unit was restored exactly. */
+        uint8_t tile;
+        assert(doeNativeSnapshotGetMarks(c.snapshot, 1, &tile, 1) == (SIDE / TILE) * (SIDE / TILE));
+        printf("       the out-of-bounds index %s\n", tile ? "was discarded; its wrapped mark over-marked texture tile 0" :
+            "was clamped to the binding's last element and marked there");
+    }
     /* The last path's writes are restored too. */
     assert(doeNativeSnapshotBranchBegin(c.snapshot) == 1);
     uint8_t *buffer_bytes, *image_bytes;
@@ -350,6 +378,7 @@ int main(void)
     doeNativeSnapshotRelease(c.snapshot);
     wgpuComputePipelineRelease(c.store);
     wgpuComputePipelineRelease(c.wide);
+    wgpuComputePipelineRelease(c.wrap);
     wgpuComputePipelineRelease(c.texel);
     wgpuRenderPipelineRelease(c.draw);
     wgpuTextureViewRelease(c.image_view);
