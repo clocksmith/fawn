@@ -31,6 +31,7 @@ const PAIRS = Object.values(STATE).flatMap(from => [...Object.values(STATE), REM
 // ever under the click point, so a finish that gets as far as looking at the page ends as blocked.
 // `session` is what this browser session's storage holds: by default the mark a worker leaves there, so
 // loading the worker is a worker restart. An empty one is a browser that was restarted.
+let recoveryGate = null;
 function fakeChrome(tabs, items, session = { browserSession: 'earlier' }) {
   const stored = { items: structuredClone(items) }, sessionStored = structuredClone(session), listeners = {}, detached = [], injections = [], commands = [], fetches = [], network = new Set(), clips = [];
   const event = name => ({ addListener: listener => { listeners[name] = listener; } });
@@ -38,7 +39,8 @@ function fakeChrome(tabs, items, session = { browserSession: 'earlier' }) {
   const chrome = {
     storage: {
       local: { get: async () => structuredClone(stored), set: async change => { Object.assign(stored, structuredClone(change)); } },
-      session: { get: async () => structuredClone(sessionStored), set: async change => { Object.assign(sessionStored, structuredClone(change)); } },
+      // Recovery starts by asking this; `slowRecovery` holds the answer until the test lets it go.
+      session: { get: async () => { await recoveryGate; return structuredClone(sessionStored); }, set: async change => { Object.assign(sessionStored, structuredClone(change)); } },
     },
     runtime: { onMessage: event('message') },
     tabs: {
@@ -119,15 +121,18 @@ const byId = list => Object.fromEntries(list.map(entry => [entry.id, entry]));
 const quiet = () => new Promise(resolve => setImmediate(resolve));
 
 let loads = 0;
-async function worker(tabs, list, session) {
+async function worker(tabs, list, session, { slowRecovery = false } = {}) {
   const fake = fakeChrome(tabs, byId(list), session);
   globalThis.chrome = fake.chrome;
+  let recover = () => {};
+  recoveryGate = slowRecovery ? new Promise(resolve => { recover = resolve; }) : null;
   const { move } = await import(`../background.js?load=${++loads}`);
+  recoveryGate = null;
   await quiet();
   const send = message => new Promise(resolve => fake.listeners.message(message, {}, resolve));
   // A finish that has taken its item and is waiting on the tab: the item stays `finishing` until `go()`.
   const startFinish = async id => { const go = fake.hold(), reply = send({ inbox: 'finish', id }); await quiet(); return { go, reply }; };
-  return { ...fake, move, send, startFinish };
+  return { ...fake, move, send, startFinish, recover };
 }
 
 test('the table allows exactly the listed moves and refuses every other one', () => {
@@ -528,4 +533,23 @@ test('an area a person drew around the control is what is captured and compared;
   // A change anywhere in the area, such as the total beside the button, now blocks approval.
   tabs[7].image = 'BBBB';
   assert.equal((await send({ inbox: 'approve', id: picked.id })).error, REASON.reviewAgain(REASON.pixelsChanged));
+});
+
+test('nothing the inbox or the browser asks for runs before an earlier browser session\'s items are carried over', async () => {
+  // Tab 7 is a new page that happens to have the id an approved item's tab had before the restart.
+  const control = { x: 0, y: 0, width: 10, height: 10 };
+  const tabs = { 7: live(['key-new'], { picks: { key: 'key-new', rect: control, point: { x: 5, y: 5 }, url: 'http://localhost/', pageTitle: 'A page',
+    summary: { title: 'Click "Pay"', lines: [], recipe: null } } }) };
+  const { send, stored, listeners, recover } = await worker(tabs, [item('ready', APPROVED)], {}, { slowRecovery: true });
+  const picked = send({ inbox: 'pick', tabId: 7 });
+  const closing = listeners.removed(7, { windowId: 1, isWindowClosing: false });
+  await quiet();
+  assert.deepEqual(Object.keys(stored.items), ['ready'], 'no new item before recovery');
+  recover();
+  const fresh = (await picked).value;
+  await closing;
+  // The old item closes because the browser restarted, not because the new page's tab closed; the new pick is
+  // the new page's and is not mistaken for one from the earlier session.
+  assert.deepEqual([stored.items.ready.state, stored.items.ready.outcome.detail, stored.items.ready.tabId], [BLOCKED, REASON.browserRestarted, null]);
+  assert.deepEqual([stored.items[fresh.id].state, stored.items[fresh.id].tabId], [PENDING, 7]);
 });
