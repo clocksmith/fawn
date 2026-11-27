@@ -377,6 +377,13 @@ def build_package(repo: Path, revision: str, build: Path, destination: Path,
                    *([f"no GLIBC symbol version above {glibc_floor}"] if glibc_floor else [])],
         "qualification": f"partial {system} developer package; no GPU execution, browser or production cutover qualification",
     }
+    if system == "Darwin":
+        manifest["native_library"] = {
+            "platform": "darwin",
+            "arch": {"arm64": "arm64", "x86_64": "x64"}[platform.machine()],
+            "filename": native_name,
+            "abi": artifacts["include/webgpu.h"],
+        }
     (moved / "MANIFEST.json").write_text(
         json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     # Exclusive creation refuses a concurrent destination. A copy failure leaves

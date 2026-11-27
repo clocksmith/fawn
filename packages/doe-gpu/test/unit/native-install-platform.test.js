@@ -1,9 +1,11 @@
 // Package dependency versions and local installed-runtime tuples agree.
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
+import { copyFileSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { nativeInstallPlatform } from '../lib/native-install-platform.js';
-import { platformPackageNames } from '../../src/vendor/webgpu/platform-package.js';
+import { platformPackageNames, resolvePlatformPackageLibraryPath } from '../../src/vendor/webgpu/platform-package.js';
 
 const wrapper = JSON.parse(readFileSync(new URL('../../package.json', import.meta.url)));
 for (const [platform, arch, libraryName] of [
@@ -18,9 +20,38 @@ for (const [platform, arch, libraryName] of [
   assert.equal(platformPackageNames(platform, arch)[0], tuple.packageName);
   const manifest = JSON.parse(readFileSync(new URL(`../../../${tuple.packageDirectory}/package.json`, import.meta.url)));
   const directory = new URL(`../../../${tuple.packageDirectory}/`, import.meta.url);
-  const { libraryPath, addonPath } = await import(new URL('index.js', directory));
-  assert.equal(libraryPath, fileURLToPath(new URL(`bin/${libraryName}`, directory)));
-  assert.equal(addonPath, fileURLToPath(new URL('bin/doe_napi.node', directory)));
+  if (platform === 'darwin') {
+    const installedRoot = realpathSync(mkdtempSync(join(tmpdir(), 'doe-darwin-export-')));
+    try {
+      const bin = join(installedRoot, 'bin');
+      mkdirSync(bin);
+      copyFileSync(new URL('index.js', directory), join(installedRoot, 'index.mjs'));
+      const stageManifest = join(bin, 'doe-c-manifest.json');
+      const filename = 'libwebgpu_fixture_c.dylib';
+      const abi = 'a'.repeat(64);
+      const artifact = {
+        native_library: { platform, arch, filename, abi },
+        artifacts: { 'include/webgpu.h': abi },
+        source_inputs: { 'runtime/vendor/webgpu-headers/webgpu.h': abi },
+      };
+      writeFileSync(stageManifest, JSON.stringify(artifact));
+      writeFileSync(join(bin, filename), 'fixture');
+      const { libraryPath, addonPath } = await import(pathToFileURL(join(installedRoot, 'index.mjs')));
+      assert.equal(libraryPath, join(installedRoot, 'bin', filename));
+      assert.equal(addonPath, join(installedRoot, 'bin', 'doe_napi.node'));
+      const options = { platform, arch, requireFn: { resolve: () => join(installedRoot, 'package.json') } };
+      assert.equal(resolvePlatformPackageLibraryPath(options), libraryPath);
+      artifact.native_library.arch = 'x64';
+      writeFileSync(stageManifest, JSON.stringify(artifact));
+      assert.equal(resolvePlatformPackageLibraryPath(options), null);
+    } finally {
+      rmSync(installedRoot, { recursive: true, force: true });
+    }
+  } else {
+    const { libraryPath, addonPath } = await import(new URL('index.js', directory));
+    assert.equal(libraryPath, fileURLToPath(new URL(`bin/${libraryName}`, directory)));
+    assert.equal(addonPath, fileURLToPath(new URL('bin/doe_napi.node', directory)));
+  }
   assert.equal(manifest.name, tuple.packageName);
   // The wrapper pins each platform package exactly; versions may differ.
   assert.equal(wrapper.optionalDependencies[tuple.packageName], manifest.version);

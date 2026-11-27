@@ -12,6 +12,7 @@ import {
 } from 'node:fs';
 import { cStageRoot, cLibraryName, cRuntimeDirectory, cStageFiles } from './c-native-stage.js';
 import { glibcFloorProblems } from './platform-staging.js';
+import { darwinLibraryFilename } from '../src/vendor/webgpu/platform-package.js';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -32,6 +33,15 @@ function resolveExistingPath(candidates, label) {
 
 function currentHostTag() {
   return `${process.platform}-${process.arch}`;
+}
+
+function darwinStageLibrary(stage, arch) {
+  const manifestPath = resolve(stage, 'MANIFEST.json');
+  const filename = darwinLibraryFilename(readJsonFile(manifestPath), arch);
+  if (!filename) {
+    throw new Error(`doe-gpu: Darwin C stage must declare its platform, architecture, filename and WebGPU ABI: ${manifestPath}`);
+  }
+  return resolve(stage, 'lib', filename);
 }
 
 function main() {
@@ -73,12 +83,17 @@ function main() {
     resolve(workspaceRoot, 'packages', 'doe-gpu', 'build', 'Release', 'doe_napi.node'),
     resolve(workspaceRoot, 'packages', 'doe-gpu', 'src', 'vendor', 'build', 'Release', 'doe_napi.node'),
   ], `${packageJson.name} addon`);
-  const libraryPath = resolveExistingPath([
-    process.env.DOE_WEBGPU_LIB,
-    process.env.DOE_LIB,
-    resolve(cStageRoot(workspaceRoot), cRuntimeDirectory(targetPlatform), cLibraryName(targetPlatform)),
-  ], `${packageJson.name} C shared library`);
-  if (!/(^|[\\/])(lib)?webgpu_doe_c\.(so|dylib|dll)$/.test(libraryPath)) {
+  const explicitLibrary = process.env.DOE_WEBGPU_LIB || process.env.DOE_LIB;
+  const libraryPath = targetPlatform === 'darwin'
+    ? darwinStageLibrary(explicitLibrary ? resolve(dirname(explicitLibrary), '..') : cStageRoot(workspaceRoot), targetArch)
+    : resolveExistingPath([
+      explicitLibrary,
+      resolve(cStageRoot(workspaceRoot), cRuntimeDirectory(targetPlatform), cLibraryName(targetPlatform)),
+    ], `${packageJson.name} C shared library`);
+  if (explicitLibrary && resolve(explicitLibrary) !== libraryPath && targetPlatform === 'darwin') {
+    throw new Error(`doe-gpu: explicit library differs from the Darwin C stage manifest: ${explicitLibrary}`);
+  }
+  if (targetPlatform !== 'darwin' && !/(^|[\\/])(lib)?webgpu_doe_c\.(so|dll)$/.test(libraryPath)) {
     throw new Error(
       `doe-gpu: ${packageJson.name} staging requires a C stage library (*webgpu_doe_c.{so,dylib,dll}), got "${libraryPath}".`,
     );

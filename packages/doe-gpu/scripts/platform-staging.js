@@ -6,6 +6,7 @@
 // compare content hashes first and stop with an actionable message.
 
 import { cStageRoot, cLibraryName, cRuntimeDirectory, cStageFiles } from './c-native-stage.js';
+import { darwinLibraryFilename } from '../src/vendor/webgpu/platform-package.js';
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { existsSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
@@ -53,13 +54,17 @@ function stagedPlatformProblems({ platformPackageRoot, packageRoot, workspaceRoo
     throw new Error(`Unsupported staging provider: ${provider}; platform staging requires provider="c"`);
   }
   const binRoot = resolve(platformPackageRoot, 'bin');
-  const cName = cLibraryName();
   const cStage = cStageRoot(workspaceRoot);
+  const manifestPath = resolve(cStage, 'MANIFEST.json');
+  const cName = process.platform === 'darwin' && existsSync(manifestPath)
+    ? darwinLibraryFilename(JSON.parse(readFileSync(manifestPath, 'utf8')), process.arch)
+    : cLibraryName();
+  if (!cName) return [`the Darwin C stage manifest lacks the expected runtime and ABI: ${manifestPath}`];
   const cLibrary = resolve(cStage, cRuntimeDirectory(), cName);
   const pairs = [
     ['addon', 'doe_napi.node', resolve(packageRoot, 'build', 'Release', 'doe_napi.node')],
     ['library', cName, cLibrary],
-    ['build metadata', 'doe-c-manifest.json', resolve(cStage, 'MANIFEST.json')],
+    ['build metadata', 'doe-c-manifest.json', manifestPath],
   ];
   const problems = [];
   if (existsSync(cLibrary)) {

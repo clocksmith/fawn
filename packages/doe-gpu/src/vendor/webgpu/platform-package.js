@@ -1,6 +1,6 @@
 import { spawnSync } from 'node:child_process';
 import { createRequire } from 'node:module';
-import { existsSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -75,6 +75,15 @@ function cLibraryBasenamesForPlatform(platform = process.platform) {
 function packageLibraryBasenamesForPlatform(platform = process.platform) {
   return cLibraryBasenamesForPlatform(platform);
 }
+function darwinLibraryFilename(manifest, arch) {
+  const library = manifest.native_library;
+  if (library?.platform !== 'darwin' || library.arch !== arch
+      || !/^libwebgpu_[a-z0-9_]+_c\.dylib$/u.test(library.filename)
+      || !/^[a-f0-9]{64}$/u.test(library.abi)
+      || library.abi !== manifest.artifacts?.['include/webgpu.h']
+      || library.abi !== manifest.source_inputs?.['runtime/vendor/webgpu-headers/webgpu.h']) return null;
+  return library.filename;
+}
 function cWorkspaceLibraryCandidates(root, platform = process.platform) {
   let stage = process.env.DOE_C_STAGE ? resolve(process.env.DOE_C_STAGE) : null;
   if (!stage) {
@@ -140,7 +149,19 @@ function resolvePlatformPackageLibraryPath(options = {}) {
   if (!packageRoot) {
     return null;
   }
-  for (const basename of packageLibraryBasenamesForPlatform(options.platform ?? process.platform)) {
+  const platform = options.platform ?? process.platform;
+  if (platform === 'darwin') {
+    const manifestPath = resolve(packageRoot, 'bin', 'doe-c-manifest.json');
+    if (existsSync(manifestPath)) {
+      const manifest = JSON.parse(readFileSync(manifestPath, 'utf8'));
+      if (manifest.native_library !== undefined) {
+        const filename = darwinLibraryFilename(manifest, options.arch ?? process.arch);
+        const candidate = filename && resolve(packageRoot, 'bin', filename);
+        return candidate && existsSync(candidate) ? candidate : null;
+      }
+    }
+  }
+  for (const basename of packageLibraryBasenamesForPlatform(platform)) {
     const candidate = resolve(packageRoot, 'bin', basename);
     if (existsSync(candidate)) {
       return candidate;
@@ -152,6 +173,7 @@ function resolvePlatformPackageLibraryPath(options = {}) {
 export {
   PACKAGE_ROOT,
   PLATFORM_PACKAGE_NAMES,
+  darwinLibraryFilename,
   platformPackageNames,
   WORKSPACE_ROOT,
   libraryBasenamesForPlatform,

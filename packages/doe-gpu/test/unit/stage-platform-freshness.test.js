@@ -96,10 +96,15 @@ function compilerNameFor(libraryName) {
       artifacts['NATIVE_BUILD.json'] = sha256Text('{}');
     }
 
+    const abi = sha256Text('webgpu.h');
+    const headerInput = 'runtime/vendor/webgpu-headers/webgpu.h';
+    mkdirSync(path.dirname(path.join(workspace, headerInput)), { recursive: true });
+    writeFileSync(path.join(workspace, headerInput), 'webgpu.h');
     const manifestJson = JSON.stringify({
       source_commit: head,
-      source_inputs: { [cSourceRel]: sha256Text(cSourceContent) },
-      artifacts,
+      source_inputs: { [cSourceRel]: sha256Text(cSourceContent), [headerInput]: abi },
+      artifacts: { ...artifacts, 'include/webgpu.h': abi },
+      native_library: { platform: process.platform, arch: process.arch, filename: libName, abi },
     });
 
     writeFileSync(path.join(packageRoot, 'build', 'Release', 'doe_napi.node'), 'addon-v1');
