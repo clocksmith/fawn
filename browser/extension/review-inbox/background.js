@@ -21,7 +21,9 @@
 // defined once, in lifecycle.js. Here every change of state goes through `move`.
 import { STATE, REMOVED, REASON, OUTCOME, REREAD_MS, isOpen, isTerminal, isCheckable, refusal, reconciled, whenTabCloses, whenDocumentIs } from './lifecycle.js';
 
-const RESULT_WINDOW_MS = 10000, RESULT_POLL_MS = 200, CAPTURE_TIMEOUT_MS = 2500, RECORD_TIMEOUT_MS = 8000;
+// Every wait on a page is bounded. A page that does not answer in time fails closed: it is not clicked.
+const RESULT_WINDOW_MS = 10000, RESULT_POLL_MS = 200, CAPTURE_TIMEOUT_MS = 2500, PAGE_TIMEOUT_MS = 2500, RECORD_TIMEOUT_MS = 8000;
+const SILENT = Symbol('silent');
 const short = sha => sha ? sha.slice(0, 10) : 'none';
 // How an application shows the result of a control, per kind of control found by page.js. `done` and
 // `refused` are what the page shows. `record` and `view` are the application's own record of the target, for
@@ -150,15 +152,18 @@ const everyFrame = (tabId, func, args = []) => chrome.scripting.executeScript({ 
 
 // PNG bytes of the rectangle, which is given in viewport coordinates. The debugger's clip is in page
 // coordinates, so the page's current scroll offset is added. Identical pixels encode identically in one browser.
-async function capture(tabId, rect) {
-  // A button looks different with the pointer over it. Every capture is taken with the pointer parked in
-  // the page's corner, so the reviewed image and every later comparison show the same resting state.
-  await chrome.debugger.sendCommand(target(tabId), 'Input.dispatchMouseEvent', { type: 'mouseMoved', x: 0, y: 0 });
-  const scroll = (await inPage(tabId, () => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve(
-    { x: window.visualViewport?.pageLeft ?? window.scrollX, y: window.visualViewport?.pageTop ?? window.scrollY })))))).result;
-  const shot = chrome.debugger.sendCommand(target(tabId), 'Page.captureScreenshot',
-    { format: 'png', clip: { x: rect.x + scroll.x, y: rect.y + scroll.y, width: rect.width, height: rect.height, scale: 1 }, captureBeyondViewport: false })
-    .then(result => result.data);
+// The whole capture is bounded, the wait for the page's next frames included: a tab in the background may
+// draw no frames at all.
+function capture(tabId, rect) {
+  const shot = (async () => {
+    // A button looks different with the pointer over it. Every capture is taken with the pointer parked in
+    // the page's corner, so the reviewed image and every later comparison show the same resting state.
+    await chrome.debugger.sendCommand(target(tabId), 'Input.dispatchMouseEvent', { type: 'mouseMoved', x: 0, y: 0 });
+    const scroll = (await inPage(tabId, () => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve(
+      { x: window.visualViewport?.pageLeft ?? window.scrollX, y: window.visualViewport?.pageTop ?? window.scrollY })))))).result;
+    return (await chrome.debugger.sendCommand(target(tabId), 'Page.captureScreenshot',
+      { format: 'png', clip: { x: rect.x + scroll.x, y: rect.y + scroll.y, width: rect.width, height: rect.height, scale: 1 }, captureBeyondViewport: false })).data;
+  })();
   return Promise.race([shot, new Promise((_, reject) => setTimeout(() => reject(new Error('capture-timeout')), CAPTURE_TIMEOUT_MS))]);
 }
 // A tab behind another may not draw. Bring it forward for as long as `work` needs its pixels, then put back
@@ -211,7 +216,7 @@ async function viewRecord(item) {
 async function stillHolds(item) {
   const tab = item.tabId == null ? null : await chrome.tabs.get(item.tabId).catch(() => null);
   if (!tab) return { holds: false, reason: REASON.tabClosed };
-  const probe = await inPage(item.tabId, (key, x, y, left, top) => {
+  const probe = await within(inPage(item.tabId, (key, x, y, left, top) => {
     const element = globalThis.__fawnReviewed?.get(key) ?? null;
     // Scrolling the page since the review is not a change: put the control back where it was reviewed.
     if (element?.isConnected) {
@@ -219,7 +224,8 @@ async function stillHolds(item) {
       if (Math.floor(r.x) !== left || Math.floor(r.y) !== top) window.scrollBy({ left: Math.floor(r.x) - left, top: Math.floor(r.y) - top, behavior: 'instant' });
     }
     return { bound: !!element, connected: !!element?.isConnected, sameUnderPoint: !!element && document.elementFromPoint(x, y) === element };
-  }, [item.bound, item.point.x, item.point.y, item.rect.x, item.rect.y]).catch(() => null);
+  }, [item.bound, item.point.x, item.point.y, item.rect.x, item.rect.y]).catch(() => null), PAGE_TIMEOUT_MS, SILENT);
+  if (probe === SILENT) return { holds: false, reason: REASON.pageSilent };
   if (!probe || probe.documentId !== item.documentId || !probe.result.bound) return { holds: false, reason: REASON.documentReplaced };
   if (!probe.result.connected) return { holds: false, reason: REASON.controlGone };
   if (!probe.result.sameUnderPoint) return { holds: false, reason: REASON.covered };
@@ -249,8 +255,12 @@ async function pick(tabId) {
   await new Promise(resolve => setTimeout(resolve, 800));
   const picked = await chrome.tabs.sendMessage(tabId, { fawn: 'pick' }, { frameId: 0 });
   if (!picked || picked.cancelled) return null;
-  const { documentId } = await inPage(tabId, () => true);
-  const image = await capture(tabId, picked.rect);
+  const shown = await within(inPage(tabId, () => true), PAGE_TIMEOUT_MS, null);
+  if (!shown) throw new Error(REASON.pageSilent);
+  const { documentId } = shown;
+  // The person may already be looking at another tab, which leaves this one drawing nothing: capture it
+  // in front, then put back the tab they were looking at.
+  const image = await capture(tabId, picked.rect).catch(() => withVisibleTab(tabId, () => capture(tabId, picked.rect)));
   const id = crypto.randomUUID();
   return write(id, () => ({ id, tabId, windowId: tab.windowId, documentId, url: picked.url, pageTitle: picked.pageTitle, rect: picked.rect, point: picked.point,
     bound: picked.key, image, summary: picked.summary, state: STATE.PENDING, createdAt: now(), check: { at: now(), holds: true, reason: REASON.matches } }));
@@ -316,11 +326,15 @@ async function finish(id) {
     {
       const status = await stillHolds(item);
       if (!status.holds) return settle(STATE.BLOCKED, OUTCOME.blocked, status.reason, { check: checked(status) });
-      const before = recipe ? await resultState(item.tabId, recipe) : null;
+      const before = recipe ? await within(resultState(item.tabId, recipe), PAGE_TIMEOUT_MS, null) : null;
+      if (recipe && !before) return settle(STATE.BLOCKED, OUTCOME.blocked, REASON.pageSilent);
       writes = watchWrites(item.tabId);
-      await writes.ready;
-      // Arm the fence in every frame, click through the debugger, then read what the fence saw.
-      await everyFrame(item.tabId, key => { globalThis.__fawnFence = { element: globalThis.__fawnReviewed?.get(key) ?? null, clicked: false, blocked: false }; }, [item.bound]);
+      await within(writes.ready, PAGE_TIMEOUT_MS, null);
+      // Arm the fence in every frame, click through the debugger, then read what the fence saw. A frame that
+      // does not answer has no fence, so nothing is clicked.
+      const armed = await within(everyFrame(item.tabId, key => { globalThis.__fawnFence = { element: globalThis.__fawnReviewed?.get(key) ?? null, clicked: false, blocked: false }; return true; }, [item.bound])
+        .catch(() => null), PAGE_TIMEOUT_MS, null);
+      if (!armed?.length || armed.some(frame => frame.result !== true)) return settle(STATE.BLOCKED, OUTCOME.blocked, REASON.pageSilent);
       const event = { x: item.point.x, y: item.point.y, button: 'left', clickCount: 1 };
       let seen = [];
       try {

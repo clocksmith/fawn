@@ -52,10 +52,13 @@ function fakeChrome(tabs, items, session = { browserSession: 'earlier' }) {
       const tab = tabs[target.tabId];
       if (!tab) throw new Error(`No tab with id: ${target.tabId}.`);
       injections.push(target.tabId);
+      // A page that never answers: busy with a long task, or stuck navigating.
+      if (tab.silent) return new Promise(() => {});
       // The page as the injected functions see it: the reviewed elements, what is under the click point, and
       // the application's signs (a refusal message once the page shows one).
       const signs = selector => selector.includes('toastify') ? tab.toasts ?? [] : [];
-      Object.assign(globalThis, { __fawnReviewed: tab.reviewed, requestAnimationFrame: callback => callback(),
+      // A tab in the background draws no frames, so an animation frame never comes.
+      Object.assign(globalThis, { __fawnReviewed: tab.reviewed, requestAnimationFrame: callback => { if (!tab.hidden) callback(); },
         window: { scrollX: 0, scrollY: 0, scrollBy: () => {} },
         document: { elementFromPoint: () => tab.pointed ?? null, querySelectorAll: signs } });
       try { return [{ frameId: 0, documentId: tab.documentId, result: await func(...args) }]; }
@@ -465,4 +468,19 @@ test('after a browser restart, an item whose click may have gone out is unknown 
   assert.match(again.error, new RegExp(REASON.tabClosed));
   setRecord(() => mergedPull());
   assert.equal((await send({ inbox: 'reconcile', id: 'clicking' })).value.state, CONFIRMED);
+});
+
+test('a page that never draws or never answers cannot hold up a check or a Finish: it is blocked, with the reason', async () => {
+  const tabs = { 7: live(['key-h', 'key-c']), 8: live(['key-s']) };
+  const { send, stored, commands } = await worker(tabs, [item('h', APPROVED, 7, { bound: 'key-h' }), item('c', PENDING, 7, { bound: 'key-c' }), item('s', APPROVED, 8, { bound: 'key-s' })]);
+  tabs[7].hidden = true; tabs[8].silent = true;
+  const bounded = (promise, ms = 8000) => Promise.race([promise, new Promise((_, reject) => setTimeout(() => reject(new Error('still waiting after ' + ms + ' ms')), ms))]);
+  const checked = await bounded(send({ inbox: 'check', id: 'c' }));
+  assert.deepEqual([checked.value.state, checked.value.check.holds, checked.value.check.reason], [PENDING, false, REASON.noCapture]);
+  const hidden = await bounded(send({ inbox: 'finish', id: 'h' }));
+  assert.deepEqual([hidden.value.state, hidden.value.outcome.detail], [BLOCKED, REASON.noCapture]);
+  const silent = await bounded(send({ inbox: 'finish', id: 's' }));
+  assert.deepEqual([silent.value.state, silent.value.outcome.detail], [BLOCKED, REASON.pageSilent]);
+  assert.equal(commands.includes('Input.dispatchMouseEvent:mousePressed'), false, 'nothing was clicked');
+  assert.equal(stored.items.s.state, BLOCKED);
 });
