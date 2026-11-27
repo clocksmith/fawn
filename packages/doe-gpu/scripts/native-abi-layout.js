@@ -72,9 +72,7 @@ function checkNativeAbiLayouts({ compiler, prefixArgs = [], includeDir, bridgeHe
         return `printf("${values.map(() => '%zu').join(' ')}\\n", ${values.join(', ')});`;
       });
       const source = `#include <stdio.h>\n#include <stddef.h>\n#include ${JSON.stringify(header)}\nint main(void) { ${rows.join('\n')} return 0; }\n`;
-      execFileSync(compiler, [...prefixArgs, '-std=c11', `-I${includeDir}`, '-x', 'c', '-', '-o', output], {
-        cwd: directory, input: source, stdio: ['pipe', 'pipe', 'pipe'],
-      });
+      execFileSync(compiler, [...prefixArgs, '-std=c11', `-I${includeDir}`, '-x', 'c', '-', '-o', output], { input: source, stdio: ['pipe', 'pipe', 'pipe'] });
       return execFileSync(output, { encoding: 'utf8' }).trim().split(/\r?\n/);
     });
     for (const [index, layout] of layouts.entries()) {

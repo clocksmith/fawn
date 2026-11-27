@@ -38,6 +38,7 @@ jobs:
           $evidence = Join-Path $env:RUNNER_TEMP 'doe-c-windows-host'
           New-Item -ItemType Directory -Force $evidence | Out-Null
           "EVIDENCE_ROOT=$evidence" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+          "DOE_SHADER_CACHE_DIR=$(Join-Path $evidence 'shader-cache')" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
           $env:EXACT_REVISION | Set-Content "$evidence/commit.txt"
           [System.Runtime.InteropServices.RuntimeInformation]::OSDescription | Set-Content "$evidence/host.txt"
           'Windows compiler DLL and CPU host controls requested; logs determine their outcome. No native runtime, CLI, GPU or production qualification.' |

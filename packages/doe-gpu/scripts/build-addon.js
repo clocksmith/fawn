@@ -32,7 +32,7 @@ function resolveNodeIncludeDir() {
   ];
   for (const candidate of candidates) {
     if (candidate && existsSync(resolve(candidate, 'node_api.h'))) {
-      return resolve(candidate);
+      return candidate;
     }
   }
   throw new Error(
@@ -43,9 +43,7 @@ function resolveNodeIncludeDir() {
 // The addon resolves N-API symbols from node.exe through Node's import library,
 // which sits beside the cached headers (<version>/<arch>/node.lib).
 function resolveNodeImportLibrary(includeDir, arch, environment) {
-  const library = environment.NODE_LIB
-    ? resolve(environment.NODE_LIB)
-    : resolve(includeDir, '..', '..', arch, 'node.lib');
+  const library = environment.NODE_LIB || resolve(includeDir, '..', '..', arch, 'node.lib');
   if (!existsSync(library)) {
     throw new Error(`Unable to locate ${library}. Run \`npx node-gyp install\` or set NODE_LIB.`);
   }
@@ -135,15 +133,14 @@ function compilerCommand(includeDir, {
 function main() {
   const includeDir = resolveNodeIncludeDir();
   const { compiler, prefixArgs, args } = compilerCommand(includeDir);
-  const executable = /[\\/]/u.test(compiler) ? resolve(compiler) : compiler;
   const checkedLayouts = checkNativeAbiLayouts({
-    compiler: executable, prefixArgs, includeDir,
+    compiler, prefixArgs, includeDir,
     bridgeHeader: resolve(BRIDGE_ROOT, 'doe_napi_internal.h'),
     upstreamHeader: resolve(WORKSPACE_ROOT, 'runtime/vendor/webgpu-headers/webgpu.h'),
   });
   mkdirSync(OUTPUT_DIR, { recursive: true });
-  execFileSync(executable, args, {
-    cwd: process.platform === 'win32' ? OUTPUT_DIR : PACKAGE_ROOT,
+  execFileSync(compiler, args, {
+    cwd: PACKAGE_ROOT,
     stdio: 'inherit',
   });
   writeAddonSourceStamp(OUTPUT_DIR, PACKAGE_ROOT, WORKSPACE_ROOT);
