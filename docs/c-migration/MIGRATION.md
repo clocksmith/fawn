@@ -35,9 +35,9 @@ blob at that revision, even when sparse checkout does not materialize the file:
 
 The prospective [quality and 50% size target](QUALITY_TARGET.md) and
 [common C guide](../../runtime/c/STYLE.md) govern new work without rewriting frozen
-receipts. The headline ceiling is 77,949 lines, with a separate mandatory fair
-implementation-only comparison. Inline-test spans and the final delivery closure
-are not yet audited; no achieved reduction or full feature parity is claimed.
+receipts. The 77,949-line engineering target and the audited implementation-only
+comparison govern source-size claims. Inline-test spans and the final delivery
+closure are not yet audited; no achieved reduction or full feature parity is claimed.
 
 **The immutable baseline contains zero C replacements.** Current bounded-owner
 results below do not turn partial compiler/runtime coverage into complete
@@ -54,6 +54,37 @@ Frozen subsystem contracts, integration results and their seals describe their
 recorded revisions, including the then-default Zig routes. They are historical
 evidence, not current selector policy. Keep those bytes and independent tests;
 current ownership follows the live architecture and executable selectors above.
+
+## Zig maintenance and retirement
+
+Freeze new Zig runtime features. Maintain the explicit Zig fallback for correctness,
+security and compatibility while it serves supported paths. Implement new runtime
+features in C. Qualify and retire Zig separately for each supported consumer and
+backend. Before retiring a path:
+
+1. Exercise the unchanged consumer through the intended C artifact and its supported
+   features. For distributed packages, build and pack the actual candidate, install
+   it in a clean project, and verify which provider the public entry point loaded.
+   Record the package and provider digests and verify the exercised output with an
+   independent oracle.
+2. Compare pinned C and Zig builds on matched physical hardware with representative
+   workloads. Freeze latency and memory tolerances, measurement scopes and pass
+   criteria before the run. Verify the selected harness measures the declared
+   scopes in both arms. The shared runners now reject the row-index fallback
+   described in the [trace timing audit](../status/runtime-backends-and-bench.md#trace-timing-audit-2026-11-27).
+   Use individual microbenchmarks to diagnose regressions. Apply the predeclared
+   acceptance criteria to the supported path as a whole.
+
+Keep the Apple M3 Node fallback until current builds retest uploads, pipeline
+creation and queue completion. In the reported October 2026 Node package snapshot,
+Zig had lower medians in 25 of 27 cases, and the geometric mean of the C/Zig latency
+ratios was 1.63. That snapshot sets the retest scope. The separate matched software
+Vulkan run established trace comparability for its workload on lavapipe.
+[Software Vulkan run record](https://github.com/clocksmith/fawn/commit/6345d59959f1cf5f71de66e2820fb66cb9c93585)
+
+Remove the runtime selector after the last supported path qualifies. Preserve a
+reproducible pinned Zig baseline with the source revision, build and toolchain
+inputs, and commands needed to rebuild it and run the retained comparisons.
 
 ## Current implementation workflow
 
@@ -134,9 +165,9 @@ interchangeable unit of migration completion.
   persistent pipeline cache, remaining argument/render/texture contracts,
   and platform package/helper routes.
 - Delivery and qualification: C-only builds for every retained consumer and
-  platform package; required independent and physical qualification; the audited
-  source-size target and full consumer/backend qualification. C is the current
-  selected default; retained Zig remains an explicit legacy/reference route.
+  platform package and the [retirement criteria](#zig-maintenance-and-retirement)
+  for each supported consumer and backend. Track the audited source-size target
+  under the [quality target](QUALITY_TARGET.md).
 
 The requested workflow is broad, disjoint subsystem implementation in parallel,
 with review and focused compile/behavior checks as code changes. Exhaustive
@@ -660,10 +691,10 @@ inputs, failure cases, and remaining exclusions with each candidate.
    removal with traced consumers and preserved tests. All declared production
    builds and consumers must work without a Zig implementation dependency.
    Migrate build/tool/test infrastructure necessary to keep that path reproducible.
-   Historical receipts and the retained reference are not translation targets
-   and must not be deleted to make the count reach zero. Only then consider a
-   production-default change, with the corresponding canonical authority update,
-   reversible rollout, full relevant gates, and independently qualified backends.
+   Preserve historical receipts and the retained reference. Use the
+   [retirement criteria](#zig-maintenance-and-retirement) for each fallback and
+   the final runtime selector. Update the owning consumer and release contracts
+   when a path qualifies, with a reversible rollout and its relevant gates.
 
 For every accepted increment, apply
 [refactor and language-evaluation law](../process.md#language-and-cleanup-evaluation):

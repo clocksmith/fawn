@@ -9,6 +9,9 @@ implementations, TSIR lowering, and native tools. Public JavaScript behavior is
 exposed through `packages/doe-gpu/`; benchmark and claim orchestration remains
 under `bench/`.
 
+Zig is in maintenance mode. The explicit fallback and new C work follow the
+[Zig maintenance and retirement criteria](../../docs/c-migration/MIGRATION.md#zig-maintenance-and-retirement).
+
 ## Source ownership
 
 Start with the [generated source map](src/README.md). Its responsibility labels,

@@ -5,7 +5,7 @@ Prospective after M11 `f01effdf070edf2f25cf0f2016c995df1e4d3bab`, not an achieve
 and unchanged. Follow [common C style](../../runtime/c/STYLE.md); later refactors need
 new checks. The [counting contract](quality-counting-contract.json) is policy, not a gate implementation.
 
-## Fixed baseline, two mandatory size checks
+## Fixed baseline and evidence for the size target
 The immutable [Zig inventory](zig-inventory.json), SHA-256
 `9bb2524f32d724a0d74b9a3a76c28c39719aef59bd5cb6b089fa6dc87bbd613d`, binds source
 `665475907494d2095a760596218b4c2d363cb436`, tree
@@ -25,6 +25,11 @@ An achieved-50% claim requires both:
    denominator never replaces the baseline or raises the headline ceiling.
 
 Unknown spans, missing source/counts or incomplete consumer closure block the claim.
+The 77,949-line ceiling is an engineering target for this claim. Runtime
+retirement follows the [consumer and backend criteria](MIGRATION.md#zig-maintenance-and-retirement).
+The reported 12% reduction came from a filename-filtered estimate. Measure the
+source, build dependencies and packed footprint required for the same supported
+features on both sides before claiming a reduction.
 
 ## Count the required delivery, not just `.c` files
 Use `len(data.splitlines())` on exact Python `bytes`, without decoding, newline

@@ -218,7 +218,9 @@ The independent compiler and runtime retain these outcomes:
   under the [recorded decision](README.md#selected-direction-a-better-doe-in-c)
   and [owner gates](docs/c-migration/MIGRATION.md). C is selected, not awaiting a
   further language contest. Current package, compiler-build, runtime CLI and Linux browser-launcher
-  selectors default to C; retained Zig requires explicit legacy selection.
+  selectors default to C; retained Zig requires explicit legacy selection. Follow
+  the [Zig maintenance and retirement criteria](docs/c-migration/MIGRATION.md#zig-maintenance-and-retirement)
+  for each supported consumer and backend.
   Default selection does not establish complete parity or qualification: the
   relevant behavior, lifetime, consumer and backend gates still apply. Preserve historical
   findings, source licenses and tests; publication is not production promotion.
