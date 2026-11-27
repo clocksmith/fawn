@@ -37,12 +37,12 @@ let busy = false;
 // soon as it is recorded, even if the reply is slow or lost while the browser switches tabs.
 const settled = id => new Promise(resolve => {
   const look = async () => {
-    const item = ((await chrome.storage.session.get('items')).items ?? {})[id];
+    const item = ((await chrome.storage.local.get('items')).items ?? {})[id];
     if (item && [STATE.APPROVED, STATE.FINISHING].includes(item.state)) return;
-    chrome.storage.session.onChanged.removeListener(look);
+    chrome.storage.local.onChanged.removeListener(look);
     resolve();
   };
-  chrome.storage.session.onChanged.addListener(look);
+  chrome.storage.local.onChanged.addListener(look);
 });
 async function act(button, message) {
   if (busy) return;
@@ -128,7 +128,7 @@ find('[data-pick]').addEventListener('click', event => {
   const tabId = Number(find('[data-tabs]').value);
   if (tabId) act(event.currentTarget, { inbox: 'pick', tabId });
 });
-chrome.storage.session.onChanged.addListener(() => render());
+chrome.storage.local.onChanged.addListener(() => render());
 chrome.tabs.onUpdated.addListener(() => { if (!busy) render(); });
 chrome.tabs.onRemoved.addListener(() => { if (!busy) render(); });
 render();

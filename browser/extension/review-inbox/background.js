@@ -51,9 +51,11 @@ const target = tabId => ({ tabId });
 const within = (promise, ms, fallback) => Promise.race([promise, new Promise(resolve => setTimeout(() => resolve(fallback), ms))]);
 const now = () => new Date().toISOString();
 
-// Items live in session storage: they outlive this worker's restarts and end with the browser session,
-// as the pages and elements they are bound to do.
-const load = async () => (await chrome.storage.session.get('items')).items ?? {};
+// Items live in local storage, which outlives this worker's restarts and the browser's: an item whose click
+// may have gone out must still be there, unknown, after a crash. The pages and elements items are bound to end
+// with the browser session; session storage holds a mark of the session, so a new worker can tell a worker
+// restart from a browser restart.
+const load = async () => (await chrome.storage.local.get('items')).items ?? {};
 // Everything that reads the items in order to change something runs on one chain, one step at a time.
 let writing = Promise.resolve();
 const inTurn = work => { const done = writing.then(work); writing = done.catch(() => {}); return done; };
@@ -63,7 +65,7 @@ const write = (id, decide) => inTurn(async () => {
   const items = await load(), before = items[id], after = decide(before);
   if (after === undefined) return before ?? null;
   if (after === null) delete items[id]; else items[id] = after;
-  await chrome.storage.session.set({ items });
+  await chrome.storage.local.set({ items });
   return after;
 });
 // The one way an item changes state, discarding it included. `next` is the change, state and all, or a
@@ -101,6 +103,7 @@ const letGo = tabId => inTurn(async () => {
 // item, and the debugger lets go of the tab if nothing there still needs it. Nothing waits on the page: it
 // may be gone, or busy navigating.
 function release(item) {
+  if (item.tabId == null) return; // its tab went with an earlier browser session
   inPage(item.tabId, key => { globalThis.__fawnReviewed?.delete(key); }, [item.bound]).catch(() => {});
   letGo(item.tabId).catch(() => {});
 }
@@ -111,16 +114,31 @@ async function whilePicking(tabId, work) {
 }
 // A worker that stops in the middle of a finish takes the rest of that finish with it. The next worker
 // cannot know whether the click went out, so the result is not known until someone reconciles it. A worker
-// that stops while reading a record wrote nothing, and the result is as unknown as before.
+// that stops while reading a record wrote nothing, and the result is as unknown as before. After a browser
+// restart the same holds, and in addition every tab, document and element an item was bound to is gone: an
+// open item closes as blocked, and every item forgets its tab, whose id may now belong to another page.
 const WORKER = crypto.randomUUID();
 const nounOf = item => RECIPES[item.summary?.recipe]?.noun ?? 'result';
-const recovered = load().then(items => Promise.all(Object.values(items).map(item => move(item.id, stored => {
-  if (stored.state === STATE.FINISHING && stored.finishingBy !== WORKER)
-    return { state: STATE.UNKNOWN, outcome: { at: now(), detail: REASON.workerStopped, text: OUTCOME.maybeSent(nounOf(stored)) } };
-  if (stored.state === STATE.RECONCILING && stored.reconcilingBy !== WORKER)
-    return { state: STATE.UNKNOWN, outcome: { at: now(), detail: REASON.reconcileStopped, text: OUTCOME.stillUnknown(nounOf(stored)) } };
+function carriedOver(stored, restarted) {
+  const unbound = restarted ? { tabId: null } : {};
+  if (stored.state === STATE.FINISHING && stored.finishingBy !== WORKER) return { ...unbound, state: STATE.UNKNOWN,
+    outcome: { at: now(), detail: restarted ? REASON.browserStopped : REASON.workerStopped, text: OUTCOME.maybeSent(nounOf(stored)) } };
+  if (stored.state === STATE.RECONCILING && stored.reconcilingBy !== WORKER) return { ...unbound, state: STATE.UNKNOWN,
+    outcome: { at: now(), detail: REASON.reconcileStopped, text: OUTCOME.stillUnknown(nounOf(stored)) } };
+  if (restarted && isOpen(stored.state)) return { ...unbound, state: STATE.BLOCKED, check: { at: now(), holds: false, reason: REASON.browserRestarted },
+    outcome: { at: now(), text: OUTCOME.blocked, detail: REASON.browserRestarted } };
   return null;
-}))));
+}
+const recovered = (async () => {
+  const restarted = !(await chrome.storage.session.get('browserSession')).browserSession;
+  for (const item of Object.values(await load())) {
+    await move(item.id, stored => carriedOver(stored, restarted)).catch(() => null);
+    // Not a change of state: the item keeps its result and only lets go of a tab that is no longer its own.
+    if (restarted) await write(item.id, stored => stored && stored.tabId !== null ? { ...stored, tabId: null } : undefined);
+  }
+  // Marked only once every item is carried over, so a worker that stops halfway starts over.
+  if (restarted) await chrome.storage.session.set({ browserSession: now() });
+})();
 
 async function attach(tabId) {
   try { await chrome.debugger.attach(target(tabId), '1.3'); }
@@ -191,7 +209,7 @@ async function viewRecord(item) {
 // Does the item's tab still show the document, element and pixels that were reviewed, and where the
 // application keeps a record of the target, does it still hold the target and values that were approved?
 async function stillHolds(item) {
-  const tab = await chrome.tabs.get(item.tabId).catch(() => null);
+  const tab = item.tabId == null ? null : await chrome.tabs.get(item.tabId).catch(() => null);
   if (!tab) return { holds: false, reason: REASON.tabClosed };
   const probe = await inPage(item.tabId, (key, x, y, left, top) => {
     const element = globalThis.__fawnReviewed?.get(key) ?? null;
@@ -293,7 +311,7 @@ async function finish(id) {
   const noun = recipe?.noun ?? 'result';
   let writes = null;
   try {
-    const tab = await chrome.tabs.get(item.tabId).catch(() => null);
+    const tab = item.tabId == null ? null : await chrome.tabs.get(item.tabId).catch(() => null);
     if (!tab) return settle(STATE.BLOCKED, OUTCOME.blocked, REASON.tabClosed);
     {
       const status = await stillHolds(item);
