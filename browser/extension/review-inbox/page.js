@@ -46,6 +46,9 @@ function describeTarget(element) {
     summary.recipe = 'forgejo-merge';
     summary.title = `Merge pull request #${merge[2]} in ${merge[1]}`;
     summary.lines = [title, head ? `At commit ${head.slice(0, 10)}` : 'Head commit not shown', `Button: ${summary.control}`];
+    // What the approval is for, in the application's own terms: this pull request at this head commit. The
+    // inbox reads Forgejo's record of it (under the same root as the form) before the click and to reconcile.
+    if (/^[0-9a-f]{40,64}$/.test(head)) summary.target = { base: action.origin + action.pathname.slice(0, merge.index), repo: merge[1], number: Number(merge[2]), head };
   } else {
     summary.title = `Click "${summary.control}"`;
     summary.lines = [`Button: ${summary.control}`, action ? `Submits to ${action.origin}${action.pathname}` : 'Not a form submission'];

@@ -1,7 +1,7 @@
 // The inbox page. It runs in the side panel, and the same page works in a tab.
 // Each card answers four questions about one approval: what will change, what
 // you saw, what changed since, and what actually happened.
-import { STATE, OUTCOME, isOpen } from './lifecycle.js';
+import { STATE, OUTCOME, isOpen, isCheckable } from './lifecycle.js';
 
 const call = async message => {
   const reply = await chrome.runtime.sendMessage(message);
@@ -16,8 +16,9 @@ const node = (tag, text, className) => {
   return element;
 };
 const notice = text => { const element = find('[data-notice]'); element.textContent = text ?? ''; element.hidden = !text; };
-const PILLS = { [STATE.PENDING]: 'Waiting for approval', [STATE.APPROVED]: 'Approved', [STATE.FINISHING]: 'Clicking…', [STATE.BLOCKED]: OUTCOME.blocked,
-  [STATE.REFUSED]: OUTCOME.refused, [STATE.CONFIRMED]: 'Done', [STATE.UNCONFIRMED]: 'Not confirmed' };
+const PILLS = { [STATE.PENDING]: 'Waiting for approval', [STATE.APPROVED]: 'Approved', [STATE.FINISHING]: 'Clicking…',
+  [STATE.UNKNOWN]: 'Unknown: reconcile', [STATE.RECONCILING]: 'Reading the record…', [STATE.UNAPPLIED]: 'Not applied',
+  [STATE.BLOCKED]: OUTCOME.blocked, [STATE.REFUSED]: OUTCOME.refused, [STATE.CONFIRMED]: 'Done' };
 const time = iso => new Date(iso).toLocaleTimeString();
 // The image is shown at the size it had on the page, whatever the screen's pixel density. One wider than
 // the card scrolls sideways inside its own frame, and says so, so it is never shrunk until it cannot be read.
@@ -73,7 +74,7 @@ function card(item) {
   element.append(seen);
 
   element.append(node('h3', 'What changed since'));
-  const open = isOpen(item.state), finishing = item.state === STATE.FINISHING;
+  const open = isOpen(item.state), finishing = item.state === STATE.FINISHING, reconciling = item.state === STATE.RECONCILING;
   const status = node('p', item.check?.holds ? `Nothing. Checked at ${time(item.check.at)}.` : item.check?.reason ?? 'Not checked yet.',
     'status' + (item.check?.holds === false ? ' changed' : ''));
   status.dataset.check = item.check?.holds === false ? 'changed' : 'holds';
@@ -86,7 +87,10 @@ function card(item) {
     outcome.append(node('strong', item.outcome.text));
     if (item.outcome.detail) outcome.append(node('span', item.outcome.detail));
   } else outcome.textContent = finishing ? 'Clicking the reviewed control…' : 'Nothing yet. Nothing is clicked until you finish.';
+  if (reconciling) outcome.append(node('span', 'Reading the application\'s record. Nothing is clicked or written.'));
   element.append(outcome);
+  // Results of earlier attempts on an item that was approved again.
+  for (const earlier of item.earlier ?? []) element.append(node('p', `Earlier, at ${time(earlier.at)}: ${earlier.text}. ${earlier.detail ?? ''}`.trim(), 'earlier'));
 
   const actions = node('div', null, 'actions');
   const button = (label, action, primary) => {
@@ -96,8 +100,11 @@ function card(item) {
     actions.append(control);
   };
   if (item.state === STATE.PENDING && item.check?.holds !== false) button('Approve exactly this', 'approve', true);
+  if (item.state === STATE.UNAPPLIED && item.check?.holds !== false) button('Approve exactly this again', 'approve', true);
   if (item.state === STATE.APPROVED && item.check?.holds !== false) button('Finish: click it', 'finish', true);
-  if (open) button('Check again', 'check');
+  // Reading the record never clicks or writes; it is the only thing an item with an unknown result offers.
+  if (item.state === STATE.UNKNOWN) button('Reconcile: read the record', 'reconcile', true);
+  if (isCheckable(item.state)) button('Check again', 'check');
   button(open ? 'Remove' : 'Clear', 'remove');
   element.append(actions);
   return element;

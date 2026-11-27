@@ -39,7 +39,9 @@ button:disabled { opacity: .5; cursor: default; }
 .outcome strong { display: block; font-size: 14px; }
 .outcome.confirmed { background: var(--good-bg); color: var(--good); }
 .outcome.refused, .outcome.blocked { background: var(--bad-bg); color: var(--bad); }
-.outcome.unconfirmed, .outcome.finishing { background: var(--warn-bg); color: var(--warn); }
+.outcome.unknown, .outcome.reconciling, .outcome.unapplied, .outcome.finishing { background: var(--warn-bg); color: var(--warn); }
+.outcome span { display: block; }
+.earlier { font-size: 12px; color: var(--muted); margin-top: 6px; overflow-wrap: anywhere; }
 .outcome.none { color: var(--muted); padding: 0; }
 .actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; }
 /* Narrow: a side panel or a phone. The state goes above the title so the title has the full width, and
