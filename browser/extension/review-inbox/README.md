@@ -232,6 +232,15 @@ FORGEJO_PASSWORD_FILE=... FORGEJO_TOKEN_FILE=... FORGEJO_CASES=control,after-res
 FAWN_REPEATS=5 node test/forgejo-inbox.test.mjs
 ```
 
+`test/area-pick.test.mjs` picks a button with Shift held and drags a box around
+it on a local page that records every click it receives, once across elements and
+once within one: the release ends the pick, the drawn area is what is compared,
+the page receives no click from the pick, and a click 200 ms later reaches it.
+
+```
+FAWN_EXTENSION_BROWSER=/path/to/chrome node test/area-pick.test.mjs
+```
+
 `test/overlapping-finish.test.mjs` checks that one approval is one click. A
 local page counts every press of each of its buttons. Each approved button gets
 three Finish requests at the same moment, from two inbox pages; one request

@@ -108,14 +108,16 @@ test('a plain click chooses the control and compares only its own pixels', async
   assert.deepEqual([result.rect, result.point, result.area ?? null], [control, centre, null]);
 });
 
-test('Shift and a click, then a drag, add a person-chosen area around the control, never less than the control', async () => {
+test('Shift and a click, then a drag (in pointer events, as Chrome sends it), add a person-chosen area around the control, never less than the control', async () => {
   const drag = async (from, to) => {
     const picked = picking();
     send('click', { clientX: 140, clientY: 215, shiftKey: true });
-    send('mousedown', { clientX: from.x, clientY: from.y });
-    send('mousemove', { clientX: to.x, clientY: to.y });
-    // A drag that ends on another element, or outside the window, fires no click: the mouseup ends it.
-    send('mouseup', { clientX: to.x, clientY: to.y });
+    send('pointerdown', { clientX: from.x, clientY: from.y });
+    send('pointermove', { clientX: to.x, clientY: to.y });
+    // What Chrome sends for a drag once the picker has cancelled the press: pointer events, and no mousedown,
+    // mousemove or mouseup. One that ends on another element, or outside the window, fires no click: the
+    // pointerup ends it.
+    send('pointerup', { clientX: to.x, clientY: to.y });
     return Promise.race([picked, new Promise((_, reject) => setTimeout(() => reject(new Error('the pick never ended')), 1000))]);
   };
   const around = await drag({ x: 60, y: 150 }, { x: 400, y: 260 });
@@ -124,7 +126,7 @@ test('Shift and a click, then a drag, add a person-chosen area around the contro
   // A box that misses part of the control still covers all of it; one past the edge of the window stops there.
   assert.deepEqual((await drag({ x: 150, y: 210 }, { x: 500, y: 400 })).area, { x: 100, y: 200, width: 400, height: 200 });
   assert.deepEqual((await drag({ x: 900, y: 600 }, { x: 1300, y: 900 })).area, { x: 100, y: 200, width: 900, height: 500 });
-  // The click the browser makes from that same mouseup comes in the same task, right after it: it is
+  // The click the browser makes from that same release comes in the same task, right after it: it is
   // swallowed, so the page never sees it. A click the person makes a moment later is theirs and reaches the page.
   const clickReaches = () => { let reached = true;
     const click = event('click', { clientX: 400, clientY: 260, stopImmediatePropagation: () => { reached = false; } });
@@ -132,9 +134,9 @@ test('Shift and a click, then a drag, add a person-chosen area around the contro
     return reached; };
   const picked = picking();
   send('click', { clientX: 140, clientY: 215, shiftKey: true });
-  send('mousedown', { clientX: 60, clientY: 150 });
-  send('mouseup', { clientX: 400, clientY: 260 });
-  assert.equal(clickReaches(), false, 'the click made from the mouseup is stopped');
+  send('pointerdown', { clientX: 60, clientY: 150 });
+  send('pointerup', { clientX: 400, clientY: 260 });
+  assert.equal(clickReaches(), false, 'the click made from the release is stopped');
   await picked;
   const quietDrag = drag({ x: 60, y: 150 }, { x: 400, y: 260 });
   await quietDrag;
