@@ -316,8 +316,18 @@ function watchWrites(tabId) {
   };
 }
 
+// Tabs where a finish is checking and clicking. Each frame has one fence, so one click at a time per tab:
+// a second Finish there is refused before it spends its approval.
+const clicking = new Set();
 async function finish(id) {
   await recovered;
+  const tabId = (await load())[id]?.tabId;
+  if (tabId != null && clicking.has(tabId)) throw new Error(REASON.tabBusy);
+  if (tabId != null) clicking.add(tabId);
+  try { return await clickAndSettle(id); }
+  finally { if (tabId != null) clicking.delete(tabId); }
+}
+async function clickAndSettle(id) {
   // Spent from here on: whatever happens, this approval is not clicked again, and only the request that spent it clicks.
   const item = await move(id, { state: STATE.FINISHING, finishingBy: WORKER, finishingAt: now() });
   if (!item) throw new Error(REASON.notApproved);
