@@ -277,13 +277,13 @@ bool spirv_marks_buffer(Emitter *e, const IrInstruction *ir)
         if (!step_layout(e, &c->accesses[w->object], &part, &stride)) return false;
         constant += part;
         if (stride == 0u) continue;
-        uint32_t stride_id;
+        uint32_t stride_id = 0u;
         if (!constant_word(e, stride, ir->source_offset, &stride_id)) return false;
         const uint32_t term = binary(e, OP_IMUL, w->cursor, stride_id);
         offset = offset == 0u ? term : binary(e, OP_IADD, offset, term);
     }
     if (constant != 0u) {
-        uint32_t constant_id;
+        uint32_t constant_id = 0u;
         if (!constant_word(e, constant, ir->source_offset, &constant_id)) return false;
         offset = offset == 0u ? constant_id : binary(e, OP_IADD, offset, constant_id);
     }
@@ -291,7 +291,7 @@ bool spirv_marks_buffer(Emitter *e, const IrInstruction *ir)
     const uint32_t start = offset == 0u ? binding_offset : binary(e, OP_IADD, binding_offset, offset);
     if (e->failed || !mark_page(e, first, start)) return false;
     if (stored_size(c, ir) <= stored_alignment(c, ir)) return true;
-    uint32_t tail;
+    uint32_t tail = 0u;
     if (!constant_word(e, stored_size(c, ir) - 1u, ir->source_offset, &tail)) return false;
     return mark_page(e, first, binary(e, OP_IADD, start, tail));
 }
