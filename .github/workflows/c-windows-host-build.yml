@@ -18,7 +18,8 @@ permissions:
 
 jobs:
   compiler-host:
-    runs-on: windows-latest
+    # The VS 2026 STL on windows-latest requires a newer Clang than the image ships.
+    runs-on: windows-2022
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v7
