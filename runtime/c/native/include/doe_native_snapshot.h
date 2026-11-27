@@ -53,6 +53,7 @@ typedef struct DoeNativeSnapshotLedger {
     uint64_t lastMarkedBytes;    /* Their bytes, clipped to each resource. */
     uint64_t prepareSubmits;
     uint64_t branchSubmits;
+    uint64_t slotViews;          /* Image views over slot textures the snapshot holds now. */
 } DoeNativeSnapshotLedger;
 
 /* 1 when every later WGSL module on this Vulkan device compiles with write
