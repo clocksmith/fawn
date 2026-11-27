@@ -6,9 +6,11 @@
  * attachment. Each branch must (1) change its slot, (2) mark every unit the
  * CPU diff shows changed, (3) leave the base resources byte-identical, and
  * (4) hand the next branch a slot equal to the base: a missed mark survives
- * the restore and fails there. Negative controls prove the base check can
- * fail and that unmarked write paths are refused, not run. */
+ * the restore and fails there. Every write path is refused between branches,
+ * where the base is frozen. Negative controls prove the base check can fail
+ * and that unmarked write paths are refused, not run. */
 #include "snapshot_fixture.h"
+#include "doe_native_programs.h"
 
 enum { BUFFER_BYTES = 16 * PAGE, SIDE = 512, TEXTURE_BYTES = SIDE * SIDE * 4 };
 
@@ -374,6 +376,89 @@ static void pop_validation(canary *c, const char *what)
     }
 }
 
+/* Pops a validation scope; true when it caught an error. */
+static void scope_reply(WGPUPopErrorScopeStatus status, WGPUErrorType type, WGPUStringView message,
+    void *userdata, void *unused)
+{
+    (void)message; (void)unused;
+    assert(status == WGPUPopErrorScopeStatus_Success);
+    *(WGPUErrorType *)userdata = type;
+}
+static bool scope_refused(canary *c)
+{
+    WGPUErrorType type = WGPUErrorType_Unknown;
+    WGPUPopErrorScopeCallbackInfo callback = {.mode=WGPUCallbackMode_AllowSpontaneous,.callback=scope_reply,
+        .userdata1=&type};
+    assert(wgpuDevicePopErrorScope(c->s.device, callback).id);
+    assert(type == WGPUErrorType_NoError || type == WGPUErrorType_Validation);
+    return type == WGPUErrorType_Validation;
+}
+
+/* Between branches the base is frozen. A write there would change base units
+ * the next restore does not copy, so that branch would start from stale data:
+ * every write path to a tracked resource outside a branch is refused. */
+static void base_writes(canary *c)
+{
+    const uint32_t word = 7;
+    wgpuDevicePushErrorScope(c->s.device, WGPUErrorFilter_Validation);
+    wgpuQueueWriteBuffer(c->s.queue, c->tracked, 2 * PAGE, &word, sizeof(word));
+    const bool refused = scope_refused(c);
+    uint8_t *base_buffer, *base_image, *slot_buffer, *slot_image;
+    observe(c, &base_buffer, &base_image);
+    assert(doeNativeSnapshotBranchBegin(c->snapshot) == 1);
+    observe(c, &slot_buffer, &slot_image);
+    assert(doeNativeSnapshotBranchEnd(c->snapshot) == 1);
+    if (memcmp(slot_buffer, base_buffer, BUFFER_BYTES) || memcmp(slot_image, base_image, TEXTURE_BYTES)) {
+        fputs("FAIL base write: a queue write between branches changed the base, and the next branch "
+            "started from stale data\n", stderr);
+        abort();
+    }
+    if (!refused || !equals_base(c, base_buffer, base_image)) {
+        fputs("FAIL base write: a queue write between branches was not refused\n", stderr);
+        abort();
+    }
+    free(base_buffer); free(base_image); free(slot_buffer); free(slot_image);
+    /* Every write path of the canary, outside a branch. */
+    for (path p = STORE; p < PATHS; ++p) {
+        wgpuDevicePushErrorScope(c->s.device, WGPUErrorFilter_Validation);
+        WGPUCommandEncoder encoder = wgpuDeviceCreateCommandEncoder(c->s.device, NULL);
+        record_path(c, encoder, p);
+        submit(&c->s, encoder);
+        if (!scope_refused(c)) {
+            fprintf(stderr, "FAIL base write: %s outside a branch was not refused\n", path_names[p]);
+            abort();
+        }
+    }
+    wgpuDevicePushErrorScope(c->s.device, WGPUErrorFilter_Validation);
+    upload_image(c, c->image, c->base_image);
+    if (!scope_refused(c)) {
+        fputs("FAIL base write: a queue texture write outside a branch was not refused\n", stderr);
+        abort();
+    }
+    /* A compute program bypasses submission lowering: refused when it writes the base. */
+    WGPUCommandEncoder encoder = wgpuDeviceCreateCommandEncoder(c->s.device, NULL);
+    wgpuCommandEncoderClearBuffer(encoder, c->tracked, 2 * PAGE, 256);
+    WGPUCommandBuffer commands = wgpuCommandEncoderFinish(encoder, NULL);
+    wgpuCommandEncoderRelease(encoder);
+    assert(commands);
+    void *program = doeNativeComputeProgramPrepare(c->s.queue, commands);
+    assert(program);
+    wgpuDevicePushErrorScope(c->s.device, WGPUErrorFilter_Validation);
+    const uint32_t submitted = doeNativeComputeProgramSubmit(program);
+    if (!scope_refused(c) || submitted) {
+        fputs("FAIL base write: a compute program writing the base was not refused\n", stderr);
+        abort();
+    }
+    work_done(&c->s);
+    doeNativeComputeProgramRelease(program);
+    wgpuCommandBufferRelease(commands);
+    observe(c, &base_buffer, &base_image);
+    assert(equals_base(c, base_buffer, base_image));
+    free(base_buffer); free(base_image);
+    printf("base writes: a queue buffer write, %u encoder write paths, a queue texture write and a compute program "
+        "refused between branches; base intact\n", (unsigned)PATHS);
+}
+
 static void negative_controls(canary *c)
 {
     /* An unmarked write path inside a branch is refused, never run. */
@@ -412,15 +497,34 @@ static void negative_controls(canary *c)
     wgpuShaderModuleRelease(module);
     if (refused) wgpuComputePipelineRelease(refused);
     pop_validation(c, "a seventeenth writable resource under write marks");
-    /* The base check itself can fail: a deliberate base write is caught. */
+    puts("negative controls: queue write in a branch refused, var<immediate> and 17 writable resources refused");
+}
+
+/* The base check itself can fail: once the snapshot is released, a
+ * deliberate write to the former base is caught. */
+static void detect_base_write(canary *c)
+{
+    const uint32_t word = 7;
     uint8_t *base_buffer, *base_image;
     wgpuQueueWriteBuffer(c->s.queue, c->tracked, 2 * PAGE, &word, sizeof(word));
     observe(c, &base_buffer, &base_image);
     assert(!equals_base(c, base_buffer, base_image));
     free(base_buffer);
     free(base_image);
-    puts("negative controls: queue write in a branch refused, var<immediate> and 17 writable resources refused, "
-        "deliberate base write detected");
+    /* A buffer still mapped at creation would write the base when unmapped. */
+    WGPUBufferDescriptor descriptor = WGPU_BUFFER_DESCRIPTOR_INIT;
+    descriptor.size = PAGE;
+    descriptor.usage = WGPUBufferUsage_Storage | WGPUBufferUsage_CopySrc;
+    descriptor.mappedAtCreation = true;
+    WGPUBuffer mapped = wgpuDeviceCreateBuffer(c->s.device, &descriptor);
+    assert(mapped);
+    wgpuDevicePushErrorScope(c->s.device, WGPUErrorFilter_Validation);
+    void *refused = doeNativeSnapshotCreate(c->s.device, &(DoeNativeSnapshotDesc){.bufferCount=1,.buffers=&mapped});
+    pop_validation(c, "a snapshot of a buffer still mapped at creation");
+    assert(!refused);
+    wgpuBufferUnmap(mapped);
+    wgpuBufferRelease(mapped);
+    puts("negative controls: a deliberate base write after release detected, a mapped buffer refused");
 }
 
 int main(void)
@@ -484,7 +588,9 @@ int main(void)
     assert(doeNativeSnapshotBranchEnd(c.snapshot) == 1);
     fresh_views(&c);
     negative_controls(&c);
+    base_writes(&c);
     doeNativeSnapshotRelease(c.snapshot);
+    detect_base_write(&c);
     wgpuComputePipelineRelease(c.store);
     wgpuComputePipelineRelease(c.wide);
     wgpuComputePipelineRelease(c.wrap);

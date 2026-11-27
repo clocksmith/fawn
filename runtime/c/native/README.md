@@ -1230,22 +1230,29 @@ creation and dispatch (`pipelines.c`, `queue.c`). Default devices are unchanged.
   the marks on the host. `doeNativeSnapshotGetLedger` reports the bytes and copy
   commands recorded; `doeNativeSnapshotGetMarks` exposes one branch's marks.
 - Refused, never run unmarked: non-Vulkan devices; a second snapshot or slot; tracked
-  buffers without CopySrc or with map usage, or above 4 GiB; textures other than
-  single-sample, single-mip, single-layer 2D; a branch submission that dispatches or
+  buffers without CopySrc, with map usage, still mapped, or above 4 GiB; textures other
+  than single-sample, single-mip, single-layer 2D; a branch submission that dispatches or
   draws a pipeline writing storage without marks; queue writes to a tracked resource
-  during a branch; compute programs submitted during a branch; render pipelines whose
-  fragment stage carries the mark binding.
+  while the snapshot lives; compute programs submitted during a branch; render pipelines
+  whose fragment stage carries the mark binding.
+- The base is frozen between branches: a submission or compute program outside a
+  branch that copies, clears, resolves or renders into a tracked resource, or binds one
+  writably to a pipeline that writes storage, is refused (`native_snapshot_admit_base`).
+  Marking such writes instead would need their GPU marks read back before the next
+  `BranchBegin`, which enqueues the restore without waiting; reads stay allowed.
 
 `tests/snapshot_canary.c` runs one branch per write path (storage store and atomic, an
 over-aligned store crossing a page, an out-of-bounds store whose mark offset wraps,
-sixteen writable bindings in one pipeline, textureStore, buffer copy, buffer-to-texture and texture-to-texture copy, clear, render
-attachment) and requires every unit a CPU diff shows changed to be marked, the base to
-stay byte-identical and the next slot to start equal to the base, then runs 32 branches
-through a fresh, released view each and requires no slot view to remain; negative controls show
-the base check failing on a deliberate base write and the refusals, including a
-seventeenth writable resource (two immediate words each exceed Vulkan's guaranteed 128
-bytes). The snapshot device requests Vulkan's per-stage maxima of 10 storage buffers and 8
-storage textures.
+sixteen writable bindings in one pipeline, textureStore, buffer copy, buffer-to-texture
+and texture-to-texture copy, clear, render attachment) and requires every unit a CPU
+diff shows changed to be marked, the base to stay byte-identical and the next slot to
+start equal to the base, then runs 32 branches through a fresh, released view each and
+requires no slot view to remain, and requires every write path, a queue write and a
+compute program to be refused between branches; negative controls show the base check
+failing on a deliberate write after release and the refusals, including a seventeenth
+writable resource (two immediate words each exceed Vulkan's guaranteed 128 bytes). The
+snapshot device requests Vulkan's per-stage maxima of 10 storage buffers and 8 storage
+textures.
 `tests/snapshot_ledger.c` runs a 256 MiB W0/W1 workload against an independent CPU
 computation and a large-scratch workload, and prints the bytes each branch's slot
 preparation copied next to the declared-writable copy. Both are `make check-snapshot`.
