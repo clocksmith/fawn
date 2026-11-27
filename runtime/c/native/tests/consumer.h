@@ -53,8 +53,10 @@ static inline void error_reply(WGPUDevice const *device, WGPUErrorType type, WGP
     ((state *)userdata)->last_error = type;
     fprintf(stderr, "native error: %.*s\n", (int)message.length, message.data);
 }
-/* Requests a device with exactly these optional features (count may be 0). */
-static inline void consumer_init_features(state *s, const WGPUFeatureName *features, size_t count)
+/* Requests a device with exactly these optional features (count may be 0)
+ * and, when limits is not NULL, these required limits. */
+static inline void consumer_init_device(state *s, const WGPUFeatureName *features, size_t count,
+    const WGPULimits *limits)
 {
     s->instance = wgpuCreateInstance(NULL);
     WGPURequestAdapterOptions options = WGPU_REQUEST_ADAPTER_OPTIONS_INIT;
@@ -65,10 +67,15 @@ static inline void consumer_init_features(state *s, const WGPUFeatureName *featu
     WGPUDeviceDescriptor descriptor = WGPU_DEVICE_DESCRIPTOR_INIT;
     descriptor.requiredFeatureCount = count;
     descriptor.requiredFeatures = features;
+    descriptor.requiredLimits = limits;
     descriptor.uncapturedErrorCallbackInfo = (WGPUUncapturedErrorCallbackInfo){.callback=error_reply,.userdata1=s};
     WGPURequestDeviceCallbackInfo device = {.mode=WGPUCallbackMode_AllowSpontaneous,.callback=device_reply,.userdata1=s};
     assert(wgpuAdapterRequestDevice(s->adapter,&descriptor,device).id && s->device);
     s->queue = wgpuDeviceGetQueue(s->device);
+}
+static inline void consumer_init_features(state *s, const WGPUFeatureName *features, size_t count)
+{
+    consumer_init_device(s, features, count, NULL);
 }
 static inline void consumer_init(state *s)
 {

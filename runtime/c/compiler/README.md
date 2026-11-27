@@ -303,7 +303,7 @@ buffer is a hidden storage binding (group 0, binding 1000); a hidden immediate b
 holds two words per writable resource (first mark index, then the binding byte offset
 or the tiles per row), in the source order of the module's writable storage resources.
 Indices clamp to the buffer's last word. The flag refuses `var<immediate>`, more than
-eight writable storage resources, a single store larger than one page, and
+sixteen writable storage resources (128 immediate bytes, Vulkan's guaranteed range), a single store larger than one page, and
 `textureStore` on other dimensions or through a function parameter. Without the flag,
 or without a writable storage resource, the output is unchanged. `make test-write-marks`
 checks this and runs `spirv-val` on the marked modules.

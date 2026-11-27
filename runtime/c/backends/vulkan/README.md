@@ -782,8 +782,10 @@ are not physical-GPU, Windows filesystem, native-window or performance evidence.
 ### Immediate data
 
 The additive compute constructor and graphics descriptor accept an aligned,
-bounded push-constant extent. The existing pipeline-layout owner validates the
-actual device limit and exact shader-stage visibility; the extent participates in
+bounded push-constant extent: at most 64 bytes for graphics and
+`DOE_VK_COMPUTE_IMMEDIATE_BYTES` (128, the range every Vulkan device guarantees) for
+compute, whose last 64 only the native snapshot's write marks use. The existing
+pipeline-layout owner validates the actual device limit and exact shader-stage visibility; the extent participates in
 the existing compute sharing key. `doe_vk_commands_set_immediates` records actual
 `vkCmdPushConstants` and retains its pipeline through the existing dispatch lease
 list. Graphics draws push their own immutable packet snapshot after binding.

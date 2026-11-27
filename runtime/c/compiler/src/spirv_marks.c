@@ -149,7 +149,7 @@ bool spirv_marks_plan_module(Emitter *e)
     }
     if (count == 0u) return true;
     if (count > DOE_COMPILER_WRITE_MARK_MAX_SLOTS)
-        return spirv_emit_error(e, 0u, "write marks support at most 8 writable storage resources per module");
+        return spirv_emit_error(e, 0u, "write marks support at most 16 writable storage resources per module");
     for (uint32_t i = 0u; i < c->workgroup_count; ++i)
         if (c->workgroups[i].state.resolved.address_space == MODULE_IMMEDIATE)
             return spirv_emit_error(e, 0u, "write marks use the immediate range; var<immediate> is refused");

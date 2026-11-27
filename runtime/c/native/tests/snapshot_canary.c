@@ -1,8 +1,8 @@
 /* SPDX-License-Identifier: MIT
  * Snapshot leak canary, one branch per write path: storage store, a store that
  * crosses a page within its own alignment, an out-of-bounds store whose mark
- * offset wraps, textureStore, buffer copy,
- * buffer-to-texture and texture-to-texture copy, clear and render
+ * offset wraps, sixteen writable bindings in one pipeline, textureStore,
+ * buffer copy, buffer-to-texture and texture-to-texture copy, clear and render
  * attachment. Each branch must (1) change its slot, (2) mark every unit the
  * CPU diff shows changed, (3) leave the base resources byte-identical, and
  * (4) hand the next branch a slot equal to the base: a missed mark survives
@@ -19,7 +19,9 @@ typedef struct canary {
     WGPUTextureView image_view;
     uint8_t *base_buffer, *base_image;
     void *snapshot;
-    WGPUComputePipeline store, texel, wide, wrap;
+    WGPUComputePipeline store, texel, wide, wrap, slots;
+    WGPUTexture spare[5];
+    WGPUTextureView spare_views[5];
     WGPURenderPipeline draw;
 } canary;
 
@@ -55,6 +57,35 @@ static const char wrap_source[] =
     "@compute @workgroup_size(1) fn main(@builtin(local_invocation_index) i: u32) {\n"
     "  data[2u * 16384u + i] = 0x0b0b0b0bu;\n"
     "  data[0x40040000u + i] = 0x0c0c0c0cu;\n"
+    "}\n";
+
+/* Sixteen writable resources: five untracked storage textures, the tracked
+ * image (slot 5) and ten bindings of the tracked buffer, one page each at
+ * pages 6-15 (slots 6-15), so every slot's two immediate words are used. */
+static const char slots_source[] =
+    "@group(0) @binding(0) var u0: texture_storage_2d<rgba8unorm, write>;\n"
+    "@group(0) @binding(1) var u1: texture_storage_2d<rgba8unorm, write>;\n"
+    "@group(0) @binding(2) var u2: texture_storage_2d<rgba8unorm, write>;\n"
+    "@group(0) @binding(3) var u3: texture_storage_2d<rgba8unorm, write>;\n"
+    "@group(0) @binding(4) var u4: texture_storage_2d<rgba8unorm, write>;\n"
+    "@group(0) @binding(5) var image: texture_storage_2d<rgba8unorm, write>;\n"
+    "@group(0) @binding(6) var<storage, read_write> b6: array<u32>;\n"
+    "@group(0) @binding(7) var<storage, read_write> b7: array<u32>;\n"
+    "@group(0) @binding(8) var<storage, read_write> b8: array<u32>;\n"
+    "@group(0) @binding(9) var<storage, read_write> b9: array<u32>;\n"
+    "@group(0) @binding(10) var<storage, read_write> b10: array<u32>;\n"
+    "@group(0) @binding(11) var<storage, read_write> b11: array<u32>;\n"
+    "@group(0) @binding(12) var<storage, read_write> b12: array<u32>;\n"
+    "@group(0) @binding(13) var<storage, read_write> b13: array<u32>;\n"
+    "@group(0) @binding(14) var<storage, read_write> b14: array<u32>;\n"
+    "@group(0) @binding(15) var<storage, read_write> b15: array<u32>;\n"
+    "@compute @workgroup_size(1) fn main() {\n"
+    "  let c = vec4<f32>(0.0, 0.5, 1.0, 1.0);\n"
+    "  textureStore(u0, vec2<u32>(0u), c); textureStore(u1, vec2<u32>(0u), c); textureStore(u2, vec2<u32>(0u), c);\n"
+    "  textureStore(u3, vec2<u32>(0u), c); textureStore(u4, vec2<u32>(0u), c);\n"
+    "  textureStore(image, vec2<u32>(300u, 300u), c);\n"
+    "  b6[100] = 6u; b7[100] = 7u; b8[100] = 8u; b9[100] = 9u; b10[100] = 10u;\n"
+    "  b11[100] = 11u; b12[100] = 12u; b13[100] = 13u; b14[100] = 14u; b15[100] = 15u;\n"
     "}\n";
 
 /* An override constant takes the specialization compile path: its pipeline
@@ -157,9 +188,10 @@ static WGPUBindGroup bind(canary *c, WGPUComputePipeline pipeline, const WGPUBin
     return group(&c->s, pipeline, entries, count);
 }
 
-typedef enum path { STORE, WIDE, WRAP, TEXEL, COPY, BUFFER_TEXTURE, TEXTURE_TEXTURE, CLEAR, ATTACHMENT, PATHS } path;
+typedef enum path { STORE, WIDE, WRAP, SLOTS, TEXEL, COPY, BUFFER_TEXTURE, TEXTURE_TEXTURE, CLEAR, ATTACHMENT,
+    PATHS } path;
 static const char *const path_names[PATHS] = {"storage store and atomic", "over-aligned store",
-    "out-of-bounds store", "textureStore", "buffer copy", "buffer-to-texture copy", "texture-to-texture copy", "buffer clear", "render attachment"};
+    "out-of-bounds store", "16 writable bindings", "textureStore", "buffer copy", "buffer-to-texture copy", "texture-to-texture copy", "buffer clear", "render attachment"};
 
 static void dispatch_one(canary *c, WGPUCommandEncoder encoder, WGPUComputePipeline pipeline,
     const WGPUBindGroupEntry *entries, size_t count)
@@ -193,6 +225,15 @@ static void record_path(canary *c, WGPUCommandEncoder encoder, path p)
     case WRAP: {
         WGPUBindGroupEntry entry = {.binding=0,.buffer=c->tracked,.size=4 * PAGE};
         dispatch_one(c, encoder, c->wrap, &entry, 1);
+        break;
+    }
+    case SLOTS: {
+        WGPUBindGroupEntry entries[16];
+        for (uint32_t k = 0; k < 5; ++k) entries[k] = (WGPUBindGroupEntry){.binding=k,.textureView=c->spare_views[k]};
+        entries[5] = (WGPUBindGroupEntry){.binding=5,.textureView=c->image_view};
+        for (uint32_t k = 6; k < 16; ++k)
+            entries[k] = (WGPUBindGroupEntry){.binding=k,.buffer=c->tracked,.offset=(uint64_t)k * PAGE,.size=PAGE};
+        dispatch_one(c, encoder, c->slots, entries, 16);
         break;
     }
     case TEXEL: {
@@ -311,6 +352,22 @@ static void negative_controls(canary *c)
     wgpuShaderModuleRelease(module);
     if (refused) wgpuComputePipelineRelease(refused);
     pop_validation(c, "var<immediate> under write marks");
+    /* A seventeenth writable resource needs more than the 128 immediate bytes
+     * every Vulkan device guarantees. */
+    wgpuDevicePushErrorScope(c->s.device, WGPUErrorFilter_Validation);
+    char *source = malloc(sizeof(slots_source) + 128);
+    assert(source);
+    const char *body = strstr(slots_source, "@compute");
+    int head = snprintf(source, sizeof(slots_source) + 128, "%.*s%s", (int)(body - slots_source), slots_source,
+        "@group(0) @binding(16) var u5: texture_storage_2d<rgba8unorm, write>;\n");
+    snprintf(source + head, sizeof(slots_source) + 128 - (size_t)head, "%s", body);
+    module = snapshot_module(&c->s, source);
+    free(source);
+    descriptor.compute.module = module;
+    refused = wgpuDeviceCreateComputePipeline(c->s.device, &descriptor);
+    wgpuShaderModuleRelease(module);
+    if (refused) wgpuComputePipelineRelease(refused);
+    pop_validation(c, "a seventeenth writable resource under write marks");
     /* The base check itself can fail: a deliberate base write is caught. */
     uint8_t *base_buffer, *base_image;
     wgpuQueueWriteBuffer(c->s.queue, c->tracked, 2 * PAGE, &word, sizeof(word));
@@ -318,7 +375,8 @@ static void negative_controls(canary *c)
     assert(!equals_base(c, base_buffer, base_image));
     free(base_buffer);
     free(base_image);
-    puts("negative controls: queue write in a branch refused, var<immediate> refused, deliberate base write detected");
+    puts("negative controls: queue write in a branch refused, var<immediate> and 17 writable resources refused, "
+        "deliberate base write detected");
 }
 
 int main(void)
@@ -346,6 +404,12 @@ int main(void)
     c.store = compute(&c, store_source, NULL);
     c.wide = compute(&c, wide_source, NULL);
     c.wrap = compute(&c, wrap_source, NULL);
+    c.slots = compute(&c, slots_source, NULL);
+    for (size_t k = 0; k < 5; ++k) {
+        c.spare[k] = image(&c, WGPUTextureUsage_StorageBinding);
+        c.spare_views[k] = wgpuTextureCreateView(c.spare[k], NULL);
+        assert(c.spare_views[k]);
+    }
     const WGPUConstantEntry column = {.key={"column", WGPU_STRLEN},.value=300.0};
     c.texel = compute(&c, texel_source, &column);
     c.draw = render(&c);
@@ -379,6 +443,11 @@ int main(void)
     wgpuComputePipelineRelease(c.store);
     wgpuComputePipelineRelease(c.wide);
     wgpuComputePipelineRelease(c.wrap);
+    wgpuComputePipelineRelease(c.slots);
+    for (size_t k = 0; k < 5; ++k) {
+        wgpuTextureViewRelease(c.spare_views[k]);
+        wgpuTextureRelease(c.spare[k]);
+    }
     wgpuComputePipelineRelease(c.texel);
     wgpuRenderPipelineRelease(c.draw);
     wgpuTextureViewRelease(c.image_view);

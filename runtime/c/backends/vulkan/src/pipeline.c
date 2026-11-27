@@ -78,7 +78,8 @@ doe_vk_status doe_vk_pipeline_layout_create(doe_vk_pipeline *pipeline,
         status = doe_vk_result(context, context->vk.vkCreateDescriptorSetLayout(context->device, &set, NULL, &pipeline->sets[group]), "vkCreateDescriptorSetLayout", error);
         if (status != DOE_VK_OK) return status;
     }
-    if (pipeline->immediate_bytes > 64 || pipeline->immediate_bytes % 4 ||
+    if (pipeline->immediate_bytes > (pipeline->graphics ? 64u : DOE_VK_COMPUTE_IMMEDIATE_BYTES) ||
+        pipeline->immediate_bytes % 4 ||
         pipeline->immediate_bytes > context->properties.limits.maxPushConstantsSize ||
         (pipeline->immediate_stages & ~stages) ||
         ((pipeline->immediate_bytes != 0) != (pipeline->immediate_stages != 0)))

@@ -11,7 +11,7 @@ doe_vk_status doe_vk_commands_set_immediates(doe_vk_commands *commands,
     doe_vk_status status=doe_vk_recording(commands);
     if (status != DOE_VK_OK) return status;
     if (!pipeline || pipeline->context != commands->context || size != pipeline->immediate_bytes ||
-        size>64 || size%4 || (size && !bytes)) return doe_vk_poison(commands,DOE_VK_INVALID_ARGUMENT);
+        size>DOE_VK_COMPUTE_IMMEDIATE_BYTES || size%4 || (size && !bytes)) return doe_vk_poison(commands,DOE_VK_INVALID_ARGUMENT);
     if (!size) return DOE_VK_OK;
     if (!commands->context->vk.vkCmdPushConstants) return doe_vk_poison(commands,DOE_VK_UNSUPPORTED);
     /* Reuse the existing dispatch lease list, not a second pipeline registry.
